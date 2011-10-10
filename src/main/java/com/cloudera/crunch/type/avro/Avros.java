@@ -132,10 +132,35 @@ public class Avros {
     return new AvroType<T>(clazz, schema);
   }
   
+  private static class AvroCollectionMapFn extends MapFn<Collection, Collection> {
+    
+    private final MapFn mapFn;
+    
+    public AvroCollectionMapFn(MapFn mapFn) {
+      this.mapFn = mapFn;
+    }
+    
+    @Override
+    public void initialize() {
+      this.mapFn.initialize();
+    }
+    
+    @Override
+    public Collection map(Collection input) {
+      Collection ret = Lists.newArrayList();
+      for (Object in : input) {
+        ret.add(mapFn.map(in));
+      }
+      return ret;
+    }
+  }
+  
   public static final <T> AvroType<Collection<T>> collections(PType<T> ptype) {
     AvroType<T> avroType = (AvroType<T>) ptype;
     Schema collectionSchema = Schema.createArray(avroType.getSchema());
-    return new AvroType(Collection.class, collectionSchema, ptype);
+    return new AvroType(Collection.class, collectionSchema, 
+        new AvroCollectionMapFn(avroType.getBaseInputMapFn()),
+        new AvroCollectionMapFn(avroType.getBaseOutputMapFn()), ptype);
   }
 
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {

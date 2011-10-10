@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.io.ArrayWritable;
+
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -340,7 +340,7 @@ public class Writables {
   }
 
   private static class ArrayCollectionMapFn<T> extends
-      MapFn<ArrayWritable, Collection<T>> {
+      MapFn<GenericArrayWritable, Collection<T>> {
     private final MapFn<Object, T> mapFn;
     private final Collection<T> collection;
 
@@ -350,7 +350,7 @@ public class Writables {
     }
 
     @Override
-    public Collection<T> map(ArrayWritable input) {
+    public Collection<T> map(GenericArrayWritable input) {
       collection.clear();
       for (Writable writable : input.get()) {
         mapFn.initialize();
@@ -361,11 +361,11 @@ public class Writables {
   }
 
   private static class CollectionArrayMapFn<T> extends
-      MapFn<Collection<T>, ArrayWritable> {
+      MapFn<Collection<T>, GenericArrayWritable> {
     private final Class<? extends Writable> clazz;
     private final MapFn<T, Object> mapFn;
 
-    private transient ArrayWritable arrayWritable;
+    private transient GenericArrayWritable arrayWritable;
 
     public CollectionArrayMapFn(Class<? extends Writable> clazz,
         MapFn<T, Object> mapFn) {
@@ -375,11 +375,11 @@ public class Writables {
 
     @Override
     public void initialize() {
-      arrayWritable = new ArrayWritable(clazz);
+      arrayWritable = new GenericArrayWritable(clazz);
     }
 
     @Override
-    public ArrayWritable map(Collection<T> input) {
+    public GenericArrayWritable map(Collection<T> input) {
       Writable[] w = new Writable[input.size()];
       int index = 0;
       for (T in : input) {
@@ -397,9 +397,9 @@ public class Writables {
   public static <T> PType<Collection<T>> collections(PType<T> ptype) {
     WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
     DataBridge handler = ptype.getDataBridge();
-    return new WritableType(Collection.class, ArrayWritable.class,
+    return new WritableType(Collection.class, GenericArrayWritable.class,
         new ArrayCollectionMapFn(handler.getInputMapFn()), new CollectionArrayMapFn(
-            wt.getTypeClass(), handler.getOutputMapFn()), ptype);
+            wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
   }
 
   // Not instantiable
