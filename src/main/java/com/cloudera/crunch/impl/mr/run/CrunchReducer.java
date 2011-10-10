@@ -25,7 +25,7 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
 
   private static final Log LOG = LogFactory.getLog(CrunchReducer.class);
   
-  private List<RTNode> nodes;
+  private RTNode node;
   private CrunchTaskContext ctxt;
 
   @Override
@@ -33,7 +33,8 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
     RTNodeSerializer serde = new RTNodeSerializer();
     this.ctxt = new CrunchTaskContext(context, NodeContext.REDUCE);
     try {
-      nodes = serde.deserialize(ctxt);
+      List<RTNode> nodes = serde.deserialize(ctxt);
+      this.node = nodes.get(0);
     } catch (IOException e) {
       LOG.info("Crunch deserialization error", e);
       throw new CrunchRuntimeException(e);
@@ -43,16 +44,12 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   @Override
   protected void reduce(Object key, Iterable<Object> values,
       Reducer<Object, Object, Object, Object>.Context context) {
-    for (RTNode node : nodes) {
-      node.process(key, values);
-    }
+    node.process(key, values);
   }
 
   @Override
   protected void cleanup(Reducer<Object, Object, Object, Object>.Context context) {
-    for (RTNode node : nodes) {
-      node.cleanup();
-    }
+    node.cleanup();
     ctxt.cleanup();
   }
 }
