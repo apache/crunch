@@ -96,7 +96,9 @@ public class DoNode {
   }
 
   public DoNode addChild(DoNode node) {
-    this.children.add(node);
+    if (!children.contains(node)) {
+      this.children.add(node);
+    }
     return this;
   }
 
@@ -132,15 +134,18 @@ public class DoNode {
     if (other == null || !(other instanceof DoNode)) {
       return false;
     }
+    if (this == other) {
+      return true;
+    }
     DoNode o = (DoNode) other;
     return (name.equals(o.name) && fn.equals(o.fn) && source == o.source &&
-        outputConverter == o.outputConverter && children.equals(o.children));
+        outputConverter == o.outputConverter);
   }
   
   @Override
   public int hashCode() {
     HashCodeBuilder hcb = new HashCodeBuilder();
     return hcb.append(name).append(fn).append(source)
-        .append(outputConverter).append(children).toHashCode();
+        .append(outputConverter).toHashCode();
   }
 }
