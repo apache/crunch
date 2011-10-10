@@ -51,6 +51,9 @@ public class CrunchJob extends ControlledJob {
             PlanningParameters.MULTI_OUTPUT_PREFIX + i + "-*");
         Path[] srcs = FileUtil.stat2Paths(fs.globStatus(src), src);
         Path dst = multiPaths.get(i);
+        if (!fs.exists(dst)) {
+          fs.mkdirs(dst);
+        }
         int minPartIndex = getMinPartIndex(dst, fs);
         for (Path s : srcs) {
           fs.rename(s, getDestFile(s, dst, minPartIndex++));
