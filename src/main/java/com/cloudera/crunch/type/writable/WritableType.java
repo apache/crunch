@@ -30,7 +30,7 @@ import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-class WritableType<T, W extends Writable> implements PType<T> {
+public class WritableType<T, W extends Writable> implements PType<T> {
 
   private static Converter WRITABLE_CONVERTER = new WritableValueConverter();
   

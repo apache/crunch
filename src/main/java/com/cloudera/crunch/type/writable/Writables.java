@@ -138,14 +138,16 @@ public class Writables {
   private static final MapFn<BytesWritable, ByteBuffer> BW_TO_BB = new MapFn<BytesWritable, ByteBuffer>() {
     @Override
     public ByteBuffer map(BytesWritable input) {
-      return ByteBuffer.wrap(input.getBytes());
+      return ByteBuffer.wrap(input.getBytes(), 0, input.getLength());
     }
   };
   
   private static final MapFn<ByteBuffer, BytesWritable> BB_TO_BW = new MapFn<ByteBuffer, BytesWritable>() {    
     @Override
     public BytesWritable map(ByteBuffer input) {
-      return new BytesWritable(input.array());
+      BytesWritable bw = new BytesWritable();
+      bw.set(input.array(), input.arrayOffset(), input.limit());
+      return bw;
     }
   };
 
