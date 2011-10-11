@@ -60,7 +60,13 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    */
   PTableType<K, V> getPTableType();
   
+  /**
+   * Returns the {@code PType} of the key.
+   */
   PType<K> getKeyType();
-  
+
+  /**
+   * Returns the {@code PType} of the value.
+   */
   PType<V> getValueType();
 }
