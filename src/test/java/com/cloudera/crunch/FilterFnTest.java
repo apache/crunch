@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
 
+@SuppressWarnings("serial")
 public class FilterFnTest {
 
   private static final FilterFn<String> TRUE = new FilterFn<String>() {

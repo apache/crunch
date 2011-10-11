@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 /**
  * A convenience class for three-element {@link Tuple}s.
  */
@@ -57,5 +59,32 @@ public class Tuple3<V1, V2, V3> extends Tuple {
 
   public int size() {
     return 3;
+  }
+  
+  @Override
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    return hcb.append(first).append(second).append(third).toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Tuple3 other = (Tuple3) obj;
+    return (first == other.first || (first != null && first.equals(other.first))) &&
+    	(second == other.second || (second != null && second.equals(other.second))) &&
+    	(third == other.third || (third != null && third.equals(other.third)));
+  }
+
+  @Override
+  public String toString() {
+	StringBuilder sb = new StringBuilder("Tuple3[");
+	sb.append(first).append(",").append(second).append(",").append(third);
+	return sb.append("]").toString();
   }
 }

@@ -69,7 +69,7 @@ public class TermFrequencyTest implements Serializable {
      * Output: PTable<Pair<String, String>, Long> 
      * Pair<Pair<word, title>, count in title>
      */
-    PTable<Pair<String, String>, Long> tf = Aggregate.count(docs.parallelDo("term frequency",
+    PTable<Pair<String, String>, Long> tf = Aggregate.count(docs.parallelDo("term document frequency",
         new DoFn<String, Pair<String, String>>() {
       @Override
       public void process(String doc, Emitter<Pair<String, String>> emitter) {
@@ -130,17 +130,6 @@ public class TermFrequencyTest implements Serializable {
     for (String line : lines) {
       if ("[well,A]\t0".equals(line)) {
         fail("Found " + line + " but well is in Document A 1 time");
-      }
-    }
-  }
-  
-  public static final void dump(String outputDir, String outputFile) throws IOException {
-    File inputFile = new File(outputDir, outputFile);
-    System.out.println("--" + outputDir + "/" + outputFile + "--");
-    if(inputFile.isFile()) {
-      List<String >lines = Files.readLines(inputFile, Charset.defaultCharset());
-      for (String line : lines) {
-        System.out.println(line);
       }
     }
   }

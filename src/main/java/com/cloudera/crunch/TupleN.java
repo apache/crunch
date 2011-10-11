@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 /**
  * A {@link Tuple} instance for an arbitrary number of values.
  */
@@ -33,5 +35,35 @@ public class TupleN extends Tuple {
 
   public int size() {
     return values.length;
+  }
+  
+  @Override
+  public int hashCode() {
+	HashCodeBuilder hcb = new HashCodeBuilder();
+	for (Object v : values) {
+	  hcb.append(v);
+	}
+	return hcb.toHashCode();
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    TupleN other = (TupleN) obj;
+    if (values.length != other.values.length) {
+      return false;
+    }
+    for (int i = 0; i < values.length; i++) {
+      if (values[i] != other.values[i] ||
+    	  (values[i] != null && !values[i].equals(other.values[i]))) {
+    	return false;
+      }
+    }
+    return true;
   }
 }

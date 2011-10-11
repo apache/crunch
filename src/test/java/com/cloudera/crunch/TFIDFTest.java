@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.hadoop.fs.Path;
@@ -34,23 +35,33 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.cloudera.crunch.type.writable.Writables;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 @SuppressWarnings("serial")
 public class TFIDFTest implements Serializable {  
+  // total number of documents, should calculate
+  protected static final double N = 2;
   
   @Test
   public void testWritables() throws IOException {
     run(new MRPipeline(TFIDFTest.class), WritableTypeFamily.getInstance());
   }
-  
+    
   /**
    * This method should generate a TF-IDF score for the input.
    */
-  public PTable<String, Pair<Long, Pair<String, Long>>> generateTFIDF(PCollection<String> docs,
+  public PTable<String, Collection<Pair<String, Double>>>  generateTFIDF(PCollection<String> docs,
       Path termFreqPath, PTypeFamily ptf) throws IOException {    
-    PTable<Pair<String, String>, Long> tf = Aggregate.count(docs.parallelDo("term frequency",
+    
+    /*
+     * Input: String
+     * Input title  text
+     * 
+     * Output: PTable<Pair<String, String>, Long> 
+     * Pair<Pair<word, title>, count in title>
+     */
+    PTable<Pair<String, String>, Long> tf = Aggregate.count(docs.parallelDo("term document frequency",
         new DoFn<String, Pair<String, String>>() {
       @Override
       public void process(String doc, Emitter<Pair<String, String>> emitter) {
@@ -65,28 +76,86 @@ public class TFIDFTest implements Serializable {
         }
       }
     }, ptf.pairs(ptf.strings(), ptf.strings())));
-    tf.writeTo(new SeqFileSourceTarget(termFreqPath, tf.getPType()));
     
-    PTable<String, Long> n = Aggregate.count(tf.parallelDo("little n (# of docs a word is in)",  
+    tf.writeTo(new SeqFileSourceTarget<Pair<Pair<String, String>, Long>>(termFreqPath, tf.getPType()));
+    
+    /*
+     * Input: Pair<Pair<String, String>, Long>
+     * Pair<Pair<word, title>, count in title>
+     * 
+     * Output: PTable<String, Long>
+     * PTable<word, # of docs containing word>
+     */
+    PTable<String, Long> n = Aggregate.count(tf.parallelDo("little n (# of docs contain word)",  
         new DoFn<Pair<Pair<String, String>, Long>, String>() {
       @Override
       public void process(Pair<Pair<String, String>, Long> input,
           Emitter<String> emitter) {
         emitter.emit(input.first().first());
       }
-    }, Writables.strings()));
+    }, ptf.strings()));
     
-    PTable<String, Pair<String, Long>> wordDocumentCountPair = tf.parallelDo("transform wordDocumentPairCount",
-        new MapFn<Pair<Pair<String, String>, Long>, Pair<String, Pair<String, Long>>>() {
+    /*
+     * Input: Pair<Pair<String, String>, Long>
+     * Pair<Pair<word, title>, count in title>
+     * 
+     * Output: PTable<String, Pair<String, Long>>
+     * PTable<word, Pair<title, count in title>>
+     */
+    PTable<String, Collection<Pair<String, Long>>> wordDocumentCountPair = tf.parallelDo("transform wordDocumentPairCount",
+        new DoFn<Pair<Pair<String, String>, Long>, Pair<String, Collection<Pair<String, Long>>>>() {
+          Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter;
+          Collection<Pair<String, Long>> buffer;
+          String key;
           @Override
-          public Pair<String, Pair<String, Long>> map(Pair<Pair<String, String>, Long> input) {
-            Pair<String, String> wordDocumentPair = input.first();            
-            return Pair.of(wordDocumentPair.first(), Pair.of(wordDocumentPair.second(), input.second()));
+          public void process(Pair<Pair<String, String>, Long> input,
+        	  Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter) {
+            this.emitter = emitter;
+            Pair<String, String> wordDocumentPair = input.first();
+            if(!wordDocumentPair.first().equals(key)) {
+              flush();
+              key = wordDocumentPair.first();
+              buffer = Lists.newArrayList();
+            }
+            buffer.add(Pair.of(wordDocumentPair.second(), input.second()));            
           }
-      }, ptf.tableOf(ptf.strings(), ptf.pairs(ptf.strings(), ptf.longs())));
-        
-    PTable<String, Pair<Long, Pair<String, Long>>>  joinedResults = Join.join(n, wordDocumentCountPair);
-    return joinedResults;
+          protected void flush() {
+            if(buffer != null) {
+              emitter.emit(Pair.of(key, buffer));
+              buffer = null;
+            }
+          }
+          @Override
+          public void cleanup() {
+            flush();
+          }
+      }, ptf.tableOf(ptf.strings(), ptf.collections(ptf.pairs(ptf.strings(), ptf.longs()))));
+
+    PTable<String, Pair<Long, Collection<Pair<String, Long>>>> joinedResults = Join.join(n, wordDocumentCountPair);
+
+    /*
+     * Input: Pair<String, Pair<Long, Collection<Pair<String, Long>>>
+     * Pair<word, Pair<# of docs containing word, Collection<Pair<title, term frequency>>>
+     * 
+     * Output: Pair<String, Collection<Pair<String, Double>>>
+     * Pair<word, Collection<Pair<title, tfidf>>>
+     */
+    return joinedResults.parallelDo("calculate tfidf",
+        new MapFn<Pair<String, Pair<Long, Collection<Pair<String, Long>>>>, Pair<String, Collection<Pair<String, Double>>>>() {
+          @Override
+          public Pair<String, Collection<Pair<String, Double>>> map(Pair<String, Pair<Long, Collection<Pair<String, Long>>>> input) {
+            Collection<Pair<String, Double>> tfidfs = Lists.newArrayList();
+            String word = input.first();
+            double n = input.second().first();
+            double idf = Math.log(N / n);
+            for(Pair<String, Long> tf : input.second().second()) {
+              double tfidf = tf.second() * idf;
+              tfidfs.add(Pair.of(tf.first(), tfidf));
+            }
+            return Pair.of(word, tfidfs);
+          }
+      
+    }, ptf.tableOf(ptf.strings(), ptf.collections(ptf.pairs(ptf.strings(), ptf.doubles()))));
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
@@ -94,27 +163,23 @@ public class TFIDFTest implements Serializable {
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("docs.txt")), input);
     
-    File output = File.createTempFile("output", "");
-    String outputPath1 = output.getAbsolutePath();
-    output.delete();
-    output = File.createTempFile("output", "");
-    String outputPath2 = output.getAbsolutePath();
-    output.delete();
-    File tfFile = File.createTempFile("termfreq", "");
-    Path tfPath = new Path(tfFile.getAbsolutePath());
-    tfFile.delete();
+    String outputPath1 = getOutput();
+    String outputPath2 = getOutput();
+    
+    Path tfPath = new Path(getOutput("termfreq"));
     
     PCollection<String> docs = pipeline.readTextFile(input.getAbsolutePath());
-    PTable<String, Pair<Long, Pair<String, Long>>>  joinedResults =
+        
+    PTable<String, Collection<Pair<String, Double>>> results =
         generateTFIDF(docs, tfPath, typeFamily);
-    pipeline.writeTextFile(joinedResults, outputPath1);
-    PTable<String, Pair<Long, Pair<String, Long>>> uppercased = joinedResults.parallelDo(
-        new MapKeysFn<String, String, Pair<Long, Pair<String, Long>>>() {
+    pipeline.writeTextFile(results, outputPath1);
+    PTable<String, Collection<Pair<String, Double>>> uppercased = results.parallelDo(
+        new MapKeysFn<String, String, Collection<Pair<String, Double>>>() {
           @Override
           public String map(String k1) {
             return k1.toUpperCase();
           } 
-        }, joinedResults.getPTableType());
+        }, results.getPTableType());
     pipeline.writeTextFile(uppercased, outputPath2);
     pipeline.done();
     
@@ -124,7 +189,7 @@ public class TFIDFTest implements Serializable {
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
-      if ("this\t[2,[A,4]]".equals(line)) {
+      if (line.startsWith("the") && line.contains("B,0.6931471805599453")) {
         passed = true;
         break;
       }
@@ -137,11 +202,22 @@ public class TFIDFTest implements Serializable {
     lines = Files.readLines(outputFile, Charset.defaultCharset());
     passed = false;
     for (String line : lines) {
-      if ("THIS\t[2,[A,4]]".equals(line)) {
+      if (line.startsWith("THE") && line.contains("B,0.6931471805599453")) {
         passed = true;
         break;
       }
     }
     assertTrue(passed);
-  }  
+  }
+  
+  public static String getOutput() throws IOException {
+    return getOutput("output");
+  }
+  
+  public static String getOutput(String prefix) throws IOException {
+    File output = File.createTempFile(prefix, "");
+    String path = output.getAbsolutePath();
+    output.delete();
+    return path;
+  }
 }

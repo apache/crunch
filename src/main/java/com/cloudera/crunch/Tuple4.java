@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 /**
  * A convenience class for four-element {@link Tuple}s.
  */
@@ -65,5 +67,34 @@ public class Tuple4<V1, V2, V3, V4> extends Tuple {
 
   public int size() {
     return 4;
+  }
+  
+  @Override
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    return hcb.append(first).append(second).append(third)
+    	.append(fourth).toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Tuple4 other = (Tuple4) obj;
+    return (first == other.first || (first != null && first.equals(other.first))) &&
+    	(second == other.second || (second != null && second.equals(other.second))) &&
+    	(third == other.third || (third != null && third.equals(other.third))) &&
+    	(fourth == other.fourth || (fourth != null && fourth.equals(other.fourth)));
+  }
+
+  @Override
+  public String toString() {
+	StringBuilder sb = new StringBuilder("Tuple4[");
+	sb.append(first).append(",").append(second).append(",").append(third);
+	return sb.append(",").append(fourth).append("]").toString();
   }
 }

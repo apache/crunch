@@ -1,3 +1,17 @@
+/**
+ * Copyright (c) 2011, Cloudera, Inc. All Rights Reserved.
+ *
+ * Cloudera, Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"). You may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for
+ * the specific language governing permissions and limitations under the
+ * License.
+ */
 package com.cloudera.crunch.type.writable;
 
 import java.io.DataInput;
@@ -18,6 +32,7 @@ public class GenericArrayWritable implements Writable {
   public GenericArrayWritable(Class<? extends Writable> valueClass) {
     this.valueClass = valueClass;
   }
+  
   public GenericArrayWritable() {
     // for deserialization
   }
@@ -32,13 +47,9 @@ public class GenericArrayWritable implements Writable {
 
   public void readFields(DataInput in) throws IOException {
     values = new Writable[in.readInt()];          // construct values
-    if(values.length > 0) {
+    if (values.length > 0) {
       String valueType = Text.readString(in);
-      try {
-        valueClass = Class.forName(valueType).asSubclass(Writable.class);      
-      } catch (ClassNotFoundException e) {
-        throw new CrunchRuntimeException(e);
-      }
+      setValueType(valueType);
       for (int i = 0; i < values.length; i++) {
         Writable value = WritableFactories.newInstance(valueClass);
         value.readFields(in);                       // read a value
@@ -46,12 +57,23 @@ public class GenericArrayWritable implements Writable {
       }
     }
   }
-
+  protected void setValueType(String valueType) {
+    if (valueClass == null) {
+      try {
+        valueClass = Class.forName(valueType).asSubclass(Writable.class);      
+      } catch (ClassNotFoundException e) {
+        throw new CrunchRuntimeException(e);
+      }
+    } else if (!valueType.equals(valueClass.getName()))  {
+      throw new IllegalStateException("Incoming " + valueType + " is not " + valueClass);
+    }
+  }
+  
   public void write(DataOutput out) throws IOException {
     out.writeInt(values.length);                 // write values;
-    if(values.length > 0) {
-      if(valueClass == null) {
-        valueClass = values[0].getClass();
+    if (values.length > 0) {
+      if (valueClass == null) {
+        throw new IllegalStateException("Value class not set by constructor or read");
       }
       Text.writeString(out, valueClass.getName());
       for (int i = 0; i < values.length; i++) {
@@ -59,9 +81,9 @@ public class GenericArrayWritable implements Writable {
       }
     }
   }
+  
   @Override
   public String toString() {
-    return "GenericArrayWritable [values=" + Arrays.toString(values)
-        + ", valueClass=" + valueClass + "]";
+    return Arrays.toString(values);
   }
 }

@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 /**
  * A convenience class for two-element {@link Tuple}s.
  */
@@ -53,5 +55,31 @@ public class Pair<K, V> extends Tuple {
 
   public int size() {
     return 2;
+  }
+  
+  @Override
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    return hcb.append(first).append(second).toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Pair<?, ?> other = (Pair<?, ?>) obj;
+    return (first == other.first || (first != null && first.equals(other.first))) &&
+    	(second == other.second || (second != null && second.equals(other.second)));
+  }
+
+  @Override
+  public String toString() {
+	StringBuilder sb = new StringBuilder("Pair[");
+	sb.append(first).append(",").append(second).append("]");
+	return sb.toString();
   }
 }
