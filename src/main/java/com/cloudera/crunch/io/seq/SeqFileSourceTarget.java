@@ -23,24 +23,23 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import com.cloudera.crunch.SourceTarget;
-import com.cloudera.crunch.io.MapReduceTarget;
-import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 
-public class SeqFileSourceTarget<T> implements SourceTarget<T>, PathTarget, MapReduceTarget {
+public class SeqFileSourceTarget<T> extends SeqFileTarget implements SourceTarget<T> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileSourceTarget.class);
   
-  private final Path path;
   private final PType<T> ptype;
   
+  public SeqFileSourceTarget(String path, PType<T> ptype) {
+    this(new Path(path), ptype);
+  }
+  
   public SeqFileSourceTarget(Path path, PType<T> ptype) {
-    this.path = path;
+    super(path);
     this.ptype = ptype;
   }
   
@@ -86,18 +85,5 @@ public class SeqFileSourceTarget<T> implements SourceTarget<T>, PathTarget, MapR
       LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
     }
     return 1L;
-  }
-
-  @Override
-  public boolean accept(OutputHandler handler, PType<?> ptype) {
-    handler.configure(this, ptype);
-    return true;
-  }
-
-  @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
-      String name) {
-    SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
-        ptype.getDataBridge(), outputPath, name);
   }
 }

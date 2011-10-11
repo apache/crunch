@@ -12,12 +12,11 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.io.text;
+package com.cloudera.crunch.io.seq;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
@@ -25,42 +24,18 @@ import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 
-public class TextFileTarget implements PathTarget, MapReduceTarget {
+public class SeqFileTarget implements PathTarget, MapReduceTarget {
 
   protected final Path path;
   
-  public TextFileTarget(String path) {
+  public SeqFileTarget(String path) {
     this(new Path(path));
   }
   
-  public TextFileTarget(Path path) {
+  public SeqFileTarget(Path path) {
     this.path = path;
   }
   
-  @Override
-  public Path getPath() {
-    return path;
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other == null || !(other instanceof TextFileTarget)) {
-      return false;
-    }
-    TextFileTarget o = (TextFileTarget) other;
-    return path.equals(o.path);
-  }
-  
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder().append(path).toHashCode();
-  }
-  
-  @Override
-  public String toString() {
-    return "TextTarget(" + path + ")";
-  }
-
   @Override
   public boolean accept(OutputHandler handler, PType<?> ptype) {
     handler.configure(this, ptype);
@@ -68,8 +43,14 @@ public class TextFileTarget implements PathTarget, MapReduceTarget {
   }
 
   @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
-    SourceTargetHelper.configureTarget(job, TextOutputFormat.class,
+  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
+      String name) {
+    SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
         ptype.getDataBridge(), outputPath, name);
+  }
+
+  @Override
+  public Path getPath() {
+    return path;
   }
 }

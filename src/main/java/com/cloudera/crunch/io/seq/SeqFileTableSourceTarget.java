@@ -43,9 +43,13 @@ public class SeqFileTableSourceTarget<K, V> extends TableSource<K, V>
   private final Path path;
   private final PTableType<K, V> tableType;
   
+  public SeqFileTableSourceTarget(String path, PTableType<K, V> tableType) {
+    this(new Path(path), tableType);
+  }
+  
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
-    this.tableType = tableType;
     this.path = path;
+    this.tableType = tableType;
   }
   
   @Override

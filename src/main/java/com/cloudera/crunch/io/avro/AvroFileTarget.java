@@ -31,6 +31,10 @@ public class AvroFileTarget implements PathTarget, MapReduceTarget {
 
   protected final Path path;
   
+  public AvroFileTarget(String path) {
+    this(new Path(path));
+  }
+  
   public AvroFileTarget(Path path) {
     this.path = path;
   }

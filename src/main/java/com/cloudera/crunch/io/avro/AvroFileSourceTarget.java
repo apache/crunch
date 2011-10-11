@@ -35,6 +35,10 @@ public class AvroFileSourceTarget<T> extends AvroFileTarget implements SourceTar
   
   private final AvroType<T> ptype;
   
+  public AvroFileSourceTarget(String path, AvroType<T> atype) {
+    this(new Path(path), atype);
+  }
+  
   public AvroFileSourceTarget(Path path, AvroType<T> ptype) {
     super(path);
     this.ptype = ptype;

@@ -33,6 +33,10 @@ public class TextFileSourceTarget extends TextFileTarget implements SourceTarget
 
   private static final Log LOG = LogFactory.getLog(TextFileSourceTarget.class);
   
+  public TextFileSourceTarget(String path) {
+    this(new Path(path));
+  }
+  
   public TextFileSourceTarget(Path path) {
     super(path);
   }
