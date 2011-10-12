@@ -58,11 +58,7 @@ public class Join {
     PTable<Pair<K, Integer>, Pair<U, V>> both = tag1.union(tag2);
     
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
-    if (ptf == AvroTypeFamily.getInstance()) {
-      optionsBuilder.partitionerClass(JoinUtils.AvroPairPartitioner.class);
-    } else {
-      optionsBuilder.partitionerClass(JoinUtils.TupleWritablePartitioner.class);
-    }
+    optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
     
     PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = both.groupByKey(
         optionsBuilder.build());

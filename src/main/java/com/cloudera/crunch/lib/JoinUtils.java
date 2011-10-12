@@ -30,7 +30,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Partitioner;
 
+import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.TupleWritable;
+import com.cloudera.crunch.type.writable.WritableTypeFamily;
 
 /**
  * Utilities that are useful in joining multiple data sets via a MapReduce.
@@ -38,6 +40,22 @@ import com.cloudera.crunch.type.writable.TupleWritable;
  */
 public class JoinUtils {
 
+  public static Class<? extends Partitioner> getPartitionerClass(PTypeFamily typeFamily) {
+    if (typeFamily == WritableTypeFamily.getInstance()) {
+      return TupleWritablePartitioner.class;
+    } else {
+      return AvroIndexedRecordPartitioner.class;
+    }
+  }
+  
+  public static Class<? extends RawComparator> getGroupingComparator(PTypeFamily typeFamily) {
+    if (typeFamily == WritableTypeFamily.getInstance()) {
+      return TupleWritableComparator.class;
+    } else {
+      return AvroPairGroupingComparator.class;
+    }
+  }
+  
   public static class TupleWritablePartitioner extends Partitioner<TupleWritable, Writable> {
     @Override
     public int getPartition(TupleWritable key, Writable value, int numPartitions) {
@@ -72,7 +90,7 @@ public class JoinUtils {
     }
   }
   
-  public static class AvroPairPartitioner extends Partitioner<AvroKey, AvroValue> {
+  public static class AvroIndexedRecordPartitioner extends Partitioner<AvroKey, AvroValue> {
     @Override
     public int getPartition(AvroKey key, AvroValue value, int numPartitions) {
       IndexedRecord record = (IndexedRecord) key.datum();
