@@ -16,6 +16,7 @@ package com.cloudera.crunch.type.writable;
 
 import java.util.List;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
@@ -87,5 +88,20 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   @Override
   public SourceTarget<Pair<K, V>> getDefaultFileSource(Path path) {
     return new SeqFileTableSourceTarget<K, V>(path, this);
-  }  
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+	if (obj == null || !(obj instanceof WritableTableType)) {
+	  return false;
+	}
+	WritableTableType that = (WritableTableType) obj;
+	return keyType.equals(that.keyType) && valueType.equals(that.valueType);
+  }
+  
+  @Override
+  public int hashCode() {
+	HashCodeBuilder hcb = new HashCodeBuilder();
+	return hcb.append(keyType).append(valueType).toHashCode();
+  }
 }

@@ -18,6 +18,8 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
@@ -32,7 +34,6 @@ import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
-import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -125,18 +126,22 @@ public class Avros {
     if (EXTENSIONS.containsKey(clazz)) {
       return (AvroType<T>) EXTENSIONS.get(clazz);
     }
-    return new AvroType<T>(clazz, SpecificData.get().getSchema(clazz));
+    return containers(clazz);
   }
 
-  public static final <T> AvroType<T> containers(Class<T> clazz, Schema schema) {
-    return new AvroType<T>(clazz, schema);
+  public static final AvroType<GenericData.Record> generics(Schema schema) {
+	return new AvroType<GenericData.Record>(GenericData.Record.class, schema);
   }
   
-  private static class AvroCollectionMapFn extends MapFn<Collection, Collection> {
+  public static final <T> AvroType<T> containers(Class<T> clazz) {
+    return new AvroType<T>(clazz, SpecificData.get().getSchema(clazz));
+  }
+  
+  private static class GenericDataArrayToCollection extends MapFn<GenericData.Array, Collection> {
     
     private final MapFn mapFn;
     
-    public AvroCollectionMapFn(MapFn mapFn) {
+    public GenericDataArrayToCollection(MapFn mapFn) {
       this.mapFn = mapFn;
     }
     
@@ -146,7 +151,7 @@ public class Avros {
     }
     
     @Override
-    public Collection map(Collection input) {
+    public Collection map(GenericData.Array input) {
       Collection ret = Lists.newArrayList();
       for (Object in : input) {
         ret.add(mapFn.map(in));
@@ -155,12 +160,45 @@ public class Avros {
     }
   }
   
+  private static class CollectionToGenericDataArray extends MapFn<Collection, GenericData.Array> {
+    
+    private final MapFn mapFn;
+    private final String jsonSchema;
+    private transient Schema schema;
+    
+    public CollectionToGenericDataArray(Schema schema, MapFn mapFn) {
+      this.mapFn = mapFn;
+      this.jsonSchema = schema.toString();
+    }
+    
+    @Override
+    public void initialize() {
+      this.mapFn.initialize();
+    }
+    
+    @Override
+    public GenericData.Array map(Collection input) {
+      if(schema == null) {
+        schema = new Schema.Parser().parse(jsonSchema);
+      }
+      GenericData.Array array = new GenericData.Array(input.size(), schema);
+      for (Object in : input) {
+        array.add(mapFn.map(in));
+      }
+      return array;
+    }
+  }
+  
   public static final <T> AvroType<Collection<T>> collections(PType<T> ptype) {
     AvroType<T> avroType = (AvroType<T>) ptype;
     Schema collectionSchema = Schema.createArray(avroType.getSchema());
+    GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getBaseInputMapFn());
+    input.initialize();
+    CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getBaseOutputMapFn());
+    output.initialize();
     return new AvroType(Collection.class, collectionSchema, 
-        new AvroCollectionMapFn(avroType.getBaseInputMapFn()),
-        new AvroCollectionMapFn(avroType.getBaseOutputMapFn()), ptype);
+        input,
+        output, ptype);
   }
 
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
@@ -235,14 +273,18 @@ public class Avros {
     }
   }
   
-  public static final <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
+  public static final <V1, V2> AvroType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     Schema schema = createTupleSchema(p1, p2);
+    GenericRecordToTuple input = new GenericRecordToTuple(p1, p2);
+    input.initialize();
+    TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
+    output.initialize();
     return new AvroType(Pair.class, schema,
-        new GenericRecordToTuple(p1, p2), new TupleToGenericRecord(schema, p1, p2),
+        input, output,
         p1, p2);
   }
 
-  public static final <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,
+  public static final <V1, V2, V3> AvroType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,
       PType<V2> p2, PType<V3> p3) {
     Schema schema = createTupleSchema(p1, p2, p3);
     return new AvroType(Tuple3.class, schema,
@@ -250,7 +292,7 @@ public class Avros {
         p1, p2, p3);
   }
 
-  public static final <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
+  public static final <V1, V2, V3, V4> AvroType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
     Schema schema = createTupleSchema(p1, p2, p3, p4);
     return new AvroType(Tuple4.class, schema,
@@ -258,17 +300,17 @@ public class Avros {
         p1, p2, p3, p4);
   }
 
-  public static final PType<TupleN> tuples(PType... ptypes) {
+  public static final AvroType<TupleN> tuples(PType... ptypes) {
     Schema schema = createTupleSchema(ptypes);
     return new AvroType(TupleN.class, schema,
         new GenericRecordToTuple(ptypes), new TupleToGenericRecord(schema, ptypes),
         ptypes);
   }
-
-  private static int tupleIndex = 0;
   
   private static Schema createTupleSchema(PType... ptypes) {
-    Schema schema = Schema.createRecord("tuple" + tupleIndex++, "", "crunch", false);
+	// Guarantee each tuple schema has a globally unique name
+	String tupleName = "tuple" + UUID.randomUUID().toString().replace('-', 'x');
+    Schema schema = Schema.createRecord(tupleName, "", "crunch", false);
     List<Schema.Field> fields = Lists.newArrayList();
     for (int i = 0; i < ptypes.length; i++) {
       AvroType atype = (AvroType) ptypes[i];
@@ -280,7 +322,7 @@ public class Avros {
     return schema;
   }
   
-  public static final <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value) {
+  public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {
     AvroType<K> avroKey = (AvroType<K>) key;
     AvroType<V> avroValue = (AvroType<V>) value;    
     return new AvroTableType(avroKey, avroValue, Pair.class);

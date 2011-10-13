@@ -24,7 +24,7 @@ import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 /**
- *
+ * The implementation of the PTableType interface for Avro-based serialization.
  *
  */
 public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, V> {
@@ -35,7 +35,8 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     private final String firstJson;
     private final String secondJson;
     
-    private Schema pairSchema;
+    private String pairSchemaJson;
+    private transient Schema pairSchema;
     
     public PairToAvroPair(AvroType keyType, AvroType valueType) {
       this.keyMapFn = keyType.getBaseOutputMapFn();
@@ -48,13 +49,16 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     public void initialize() {
       keyMapFn.initialize();
       valueMapFn.initialize();
-      pairSchema = org.apache.avro.mapred.Pair.getPairSchema(
+      pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
           new Schema.Parser().parse(firstJson),
-          new Schema.Parser().parse(secondJson));
+          new Schema.Parser().parse(secondJson)).toString();
     }
     
     @Override
     public org.apache.avro.mapred.Pair map(Pair input) {
+      if(pairSchema == null) {
+        pairSchema = new Schema.Parser().parse(pairSchemaJson);
+      }
       org.apache.avro.mapred.Pair avroPair = new org.apache.avro.mapred.Pair(pairSchema);
       avroPair.key(keyMapFn.map(input.first()));
       avroPair.value(valueMapFn.map(input.second()));

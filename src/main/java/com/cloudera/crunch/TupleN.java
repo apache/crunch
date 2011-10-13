@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
@@ -39,11 +41,11 @@ public class TupleN extends Tuple {
   
   @Override
   public int hashCode() {
-	HashCodeBuilder hcb = new HashCodeBuilder();
-	for (Object v : values) {
-	  hcb.append(v);
-	}
-	return hcb.toHashCode();
+  	HashCodeBuilder hcb = new HashCodeBuilder();
+  	for (Object v : values) {
+  	  hcb.append(v);
+  	}
+  	return hcb.toHashCode();
   }
   
   @Override
@@ -55,15 +57,11 @@ public class TupleN extends Tuple {
     if (getClass() != obj.getClass())
       return false;
     TupleN other = (TupleN) obj;
-    if (values.length != other.values.length) {
-      return false;
-    }
-    for (int i = 0; i < values.length; i++) {
-      if (values[i] != other.values[i] ||
-    	  (values[i] != null && !values[i].equals(other.values[i]))) {
-    	return false;
-      }
-    }
-    return true;
+    return Arrays.equals(this.values, other.values);
+  }
+
+  @Override
+  public String toString() {
+    return Arrays.toString(values);
   }
 }
