@@ -43,6 +43,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import static com.cloudera.crunch.Tuple.TupleType;
+
 /**
  * Defines static methods that are analogous to the methods defined in
  * {@link WritableTypeFamily} for convenient static importing.
@@ -242,11 +244,13 @@ public class Writables {
    * 
    */
   private static class TWTupleMapFn extends MapFn<TupleWritable, Tuple> {
+    private final TupleType tupleType;
     private final List<MapFn> fns;
 
     private transient Object[] values;
 
-    public TWTupleMapFn(PType... ptypes) {
+    public TWTupleMapFn(TupleType tupleType, PType... ptypes) {
+      this.tupleType = tupleType;
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         fns.add(ptype.getDataBridge().getInputMapFn());
@@ -273,7 +277,7 @@ public class Writables {
           values[i] = null;
         }
       }
-      return Tuple.tuplify(values);
+      return Tuple.tuplify(tupleType, values);
     }
   }
 
@@ -319,7 +323,7 @@ public class Writables {
   }
 
   public static <V1, V2> WritableType<Pair<V1, V2>, TupleWritable> pairs(PType<V1> p1, PType<V2> p2) {
-    TWTupleMapFn input = new TWTupleMapFn(p1, p2);
+    TWTupleMapFn input = new TWTupleMapFn(TupleType.PAIR, p1, p2);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2);
     output.initialize();
@@ -328,7 +332,7 @@ public class Writables {
 
   public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1,
       PType<V2> p2, PType<V3> p3) {
-    TWTupleMapFn input = new TWTupleMapFn(p1, p2, p3);
+    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLE3, p1, p2, p3);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3);
     output.initialize();
@@ -340,7 +344,7 @@ public class Writables {
 
   public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
-    TWTupleMapFn input = new TWTupleMapFn(p1, p2, p3, p4);
+    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLE4, p1, p2, p3, p4);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3, p4);
     output.initialize();
@@ -351,7 +355,7 @@ public class Writables {
   }
 
   public static WritableType<TupleN, TupleWritable> tuples(PType... ptypes) {
-    TWTupleMapFn input = new TWTupleMapFn(ptypes);
+    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLEN, ptypes);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
     output.initialize();

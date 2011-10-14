@@ -40,6 +40,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import static com.cloudera.crunch.Tuple.TupleType;
+
 /**
  * Defines static methods that are analogous to the methods defined in
  * {@link AvroTypeFamily} for convenient static importing.
@@ -202,11 +204,13 @@ public class Avros {
   }
 
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
+    private final TupleType tupleType;
     private final List<MapFn> fns;
     
     private transient Object[] values;
     
-    public GenericRecordToTuple(PType... ptypes) {
+    public GenericRecordToTuple(TupleType tupleType, PType... ptypes) {
+      this.tupleType = tupleType;
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
@@ -232,7 +236,7 @@ public class Avros {
           values[i] = fns.get(i).map(v);
         }
       }
-      return Tuple.tuplify(values);
+      return Tuple.tuplify(tupleType, values);
     }
   }
   
@@ -275,7 +279,7 @@ public class Avros {
   
   public static final <V1, V2> AvroType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     Schema schema = createTupleSchema(p1, p2);
-    GenericRecordToTuple input = new GenericRecordToTuple(p1, p2);
+    GenericRecordToTuple input = new GenericRecordToTuple(TupleType.PAIR, p1, p2);
     input.initialize();
     TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
     output.initialize();
@@ -288,7 +292,8 @@ public class Avros {
       PType<V2> p2, PType<V3> p3) {
     Schema schema = createTupleSchema(p1, p2, p3);
     return new AvroType(Tuple3.class, schema,
-        new GenericRecordToTuple(p1, p2, p3), new TupleToGenericRecord(schema, p1, p2, p3),
+        new GenericRecordToTuple(TupleType.TUPLE3, p1, p2, p3),
+        new TupleToGenericRecord(schema, p1, p2, p3),
         p1, p2, p3);
   }
 
@@ -296,14 +301,15 @@ public class Avros {
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
     Schema schema = createTupleSchema(p1, p2, p3, p4);
     return new AvroType(Tuple4.class, schema,
-        new GenericRecordToTuple(p1, p2, p3, p4), new TupleToGenericRecord(schema, p1, p2, p3, p4),
+        new GenericRecordToTuple(TupleType.TUPLE4, p1, p2, p3, p4),
+        new TupleToGenericRecord(schema, p1, p2, p3, p4),
         p1, p2, p3, p4);
   }
 
   public static final AvroType<TupleN> tuples(PType... ptypes) {
     Schema schema = createTupleSchema(ptypes);
     return new AvroType(TupleN.class, schema,
-        new GenericRecordToTuple(ptypes), new TupleToGenericRecord(schema, ptypes),
+        new GenericRecordToTuple(TupleType.TUPLEN, ptypes), new TupleToGenericRecord(schema, ptypes),
         ptypes);
   }
   

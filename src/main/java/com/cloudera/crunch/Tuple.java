@@ -22,18 +22,36 @@ package com.cloudera.crunch;
  */
 public abstract class Tuple {
 
-  public static Tuple tuplify(Object... values) {
-    switch (values.length) {
-    case 2:
+  public static enum TupleType { PAIR, TUPLE3, TUPLE4, TUPLEN }
+
+  public static Tuple tuplify(TupleType type, Object... values) {
+    switch(type) {
+    case PAIR:
       return Pair.of(values[0], values[1]);
-    case 3:
+    case TUPLE3:
       return new Tuple3(values[0], values[1], values[2]);
-    case 4:
+    case TUPLE4:
       return new Tuple4(values[0], values[1], values[2], values[3]);
+    case TUPLEN:
     default:
       return new TupleN(values);
     }
   }
+
+  public static Tuple tuplify(Object... values) {
+    switch (values.length) {
+    case 2:
+      return tuplify(TupleType.PAIR, values);
+    case 3:
+      return tuplify(TupleType.TUPLE3, values);
+    case 4:
+      return tuplify(TupleType.TUPLE4, values);
+    default:
+      return tuplify(TupleType.TUPLEN, values);
+    }
+  }
+
+
   
   /**
    * Returns the Object at the given index.
