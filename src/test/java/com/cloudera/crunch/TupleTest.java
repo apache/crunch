@@ -19,6 +19,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import static com.cloudera.crunch.Tuple.TupleType;
+
 import org.junit.Test;
 
 public class TupleTest {
@@ -113,4 +115,30 @@ public class TupleTest {
     assertTrue((new TupleN(first, second, third, null, null)).equals(
         new TupleN(first, second, third, null, null)));
   }
+
+  @Test
+  public void testTuplify() {
+    checkTuple(Tuple.tuplify("a", "b"), Pair.class, "a", "b");
+    checkTuple(Tuple.tuplify("a", "b", "c"), Tuple3.class, "a", "b", "c");
+    checkTuple(Tuple.tuplify("a", "b", "c", "d"), Tuple4.class, "a", "b", "c", "d");
+    checkTuple(Tuple.tuplify("a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
+
+    checkTuple(Tuple.tuplify(TupleType.PAIR, "a", "b"), Pair.class, "a", "b");
+    checkTuple(Tuple.tuplify(TupleType.TUPLE3, "a", "b", "c"), Tuple3.class, "a", "b", "c");
+    checkTuple(Tuple.tuplify(TupleType.TUPLE4, "a", "b", "c", "d"), Tuple4.class, "a", "b", "c", "d");
+    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
+
+    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b"), TupleN.class, "a", "b");
+    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c"), TupleN.class, "a", "b", "c");
+    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d"), TupleN.class, "a", "b", "c", "d");
+    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
+  }
+
+  private void checkTuple(Tuple t, Class<? extends Tuple> type, Object... values) {
+    assertEquals(type, t.getClass());
+    assertEquals(values.length, t.size());
+    for (int i = 0; i < values.length; i++)
+      assertEquals(values[i], t.get(i));
+  }
+
 }
