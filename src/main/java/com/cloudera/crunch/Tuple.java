@@ -22,6 +22,7 @@ package com.cloudera.crunch;
  */
 public abstract class Tuple {
 
+  @Deprecated
   public static Tuple tuplify(Object... values) {
     switch (values.length) {
     case 2:
