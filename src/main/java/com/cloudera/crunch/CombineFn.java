@@ -26,7 +26,7 @@ package com.cloudera.crunch;
 public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S, T>> {
 
   /**
-   * The associative and communative combiner function.
+   * The associative and commutative combiner function.
    * 
    * @param values the values to combine
    * @return the combined result of the inputs

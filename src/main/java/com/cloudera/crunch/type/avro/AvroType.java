@@ -18,6 +18,7 @@ import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 
@@ -32,7 +33,7 @@ import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 
 /**
- *
+ * The implementation of the PType interface for Avro-based serialization.
  *
  */
 public class AvroType<T> implements PType<T> {
@@ -57,8 +58,12 @@ public class AvroType<T> implements PType<T> {
     this.schema = schema;
     this.baseInputMapFn = inputMapFn;
     this.baseOutputMapFn = outputMapFn;
+    InputWrapperMapFn input = new InputWrapperMapFn(inputMapFn);
+    input.initialize();
+    OutputWrapperMapFn output = new OutputWrapperMapFn(outputMapFn);
+    output.initialize();
     this.handler = new DataBridge(AvroWrapper.class, NullWritable.class, AVRO_CONVERTER,
-        new InputWrapperMapFn(inputMapFn), new OutputWrapperMapFn(outputMapFn));
+        input, output);
     this.subTypes = ImmutableList.<PType>builder().add(ptypes).build();
   }
   
@@ -125,7 +130,13 @@ public class AvroType<T> implements PType<T> {
     public AvroWrapper<V> map(S input) {
       wrapper.datum(map.map(input));
       return wrapper;
+    }
+
+    @Override
+    public String toString() {
+      return "OutputWrapperMapFn [map=" + map + "]";
     } 
+    
   }
 
   @Override
@@ -144,18 +155,14 @@ public class AvroType<T> implements PType<T> {
       return false;
     }
     AvroType at = (AvroType) other;
-    if (subTypes.size() == at.subTypes.size()) {
-      for (int i = 0; i < subTypes.size(); i++) {
-        if (!subTypes.get(i).equals(at.subTypes.get(i))) {
-          return false;
-        }
-      }
-    }
-    return this == other;
+    return (typeClass.equals(at.typeClass) && subTypes.equals(at.subTypes));
+    
   }
   
   @Override
   public int hashCode() {
-    return 17 + 37*subTypes.hashCode();
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    hcb.append(typeClass).append(subTypes);
+    return hcb.toHashCode();
   }
 }

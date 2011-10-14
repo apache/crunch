@@ -18,10 +18,6 @@ package com.cloudera.crunch.type;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.mapreduce.Partitioner;
-
-import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;

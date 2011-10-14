@@ -117,4 +117,12 @@ public class RTNode implements Serializable {
       child.cleanup();
     }
   }
+
+  @Override
+  public String toString() {
+    return "RTNode [nodeName=" + nodeName + ", fn=" + fn + ", children="
+        + children + ", inputConverter=" + inputConverter
+        + ", outputConverter=" + outputConverter + ", outputName=" + outputName
+        + "]";
+  }
 }

@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.BinaryData;
 import org.apache.avro.mapred.AvroJob;
@@ -93,8 +94,12 @@ public class AvroTypeFamily implements PTypeFamily {
     return Avros.records(clazz);
   }
 
-  public <T> PType<T> containers(Class<T> clazz, Schema schema) {
-    return Avros.containers(clazz, schema);
+  public PType<GenericData.Record> generics(Schema schema) {
+	return Avros.generics(schema);
+  }
+  
+  public <T> PType<T> containers(Class<T> clazz) {
+    return Avros.containers(clazz);
   }
   
   @Override

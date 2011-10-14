@@ -220,11 +220,11 @@ public class Writables {
     return bytes;
   }
   
-  public static final <T> PType<T> records(Class<T> clazz) {
+  public static final <T> WritableType<T, T> records(Class<T> clazz) {
     if (EXTENSIONS.containsKey(clazz)) {
-      return (PType<T>) EXTENSIONS.get(clazz);
+      return EXTENSIONS.get(clazz);
     }
-    return (PType<T>) writables(clazz.asSubclass(Writable.class));
+    return (WritableType<T, T>) writables(clazz.asSubclass(Writable.class));
   }
 
   public static <W extends Writable> WritableType<W, W> writables(Class<W> clazz) {
@@ -232,7 +232,7 @@ public class Writables {
     return new WritableType<W, W>(clazz, clazz, wIdentity, wIdentity);
   }
 
-  public static <K, V> PTableType<K, V> tableOf(
+  public static <K, V> WritableTableType<K, V> tableOf(
       WritableType<K, ?> key, WritableType<V, ?> value) {
       return new WritableTableType(key, value);
   }
@@ -258,6 +258,9 @@ public class Writables {
       for (MapFn fn : fns) {
         fn.initialize();
       }
+      // The rest of the methods allocate new
+      // objects each time. However this one
+      // uses Tuple.tuplify which does a copy
       this.values = new Object[fns.size()];
     }
 
@@ -315,47 +318,64 @@ public class Writables {
     }
   }
 
-  public static <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
-    return new WritableType(Pair.class, TupleWritable.class, new TWTupleMapFn(
-        p1, p2), new TupleTWMapFn(p1, p2), p1, p2);
+  public static <V1, V2> WritableType<Pair<V1, V2>, TupleWritable> pairs(PType<V1> p1, PType<V2> p2) {
+    TWTupleMapFn input = new TWTupleMapFn(p1, p2);
+    input.initialize();
+    TupleTWMapFn output = new TupleTWMapFn(p1, p2);
+    output.initialize();
+    return new WritableType(Pair.class, TupleWritable.class, input, output, p1, p2);
   }
 
-  public static <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,
+  public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1,
       PType<V2> p2, PType<V3> p3) {
+    TWTupleMapFn input = new TWTupleMapFn(p1, p2, p3);
+    input.initialize();
+    TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3);
+    output.initialize();
     return new WritableType(Tuple3.class, TupleWritable.class,
-        new TWTupleMapFn(p1, p2, p3),
-        new TupleTWMapFn(p1, p2, p3),
+        input,
+        output,
         p1, p2, p3);
   }
 
-  public static <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
+  public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
+    TWTupleMapFn input = new TWTupleMapFn(p1, p2, p3, p4);
+    input.initialize();
+    TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3, p4);
+    output.initialize();
     return new WritableType(Tuple4.class, TupleWritable.class,
-        new TWTupleMapFn(p1, p2, p3, p4),
-        new TupleTWMapFn(p1, p2, p3, p4),
+        input,
+        output,
         p1, p2, p3, p4);
   }
 
-  public static PType<TupleN> tuples(PType... ptypes) {
+  public static WritableType<TupleN, TupleWritable> tuples(PType... ptypes) {
+    TWTupleMapFn input = new TWTupleMapFn(ptypes);
+    input.initialize();
+    TupleTWMapFn output = new TupleTWMapFn(ptypes);
+    output.initialize();
     return new WritableType(TupleN.class, TupleWritable.class,
-        new TWTupleMapFn(ptypes), new TupleTWMapFn(ptypes), ptypes);
+        input, output, ptypes);
   }
 
   private static class ArrayCollectionMapFn<T> extends
       MapFn<GenericArrayWritable, Collection<T>> {
     private final MapFn<Object, T> mapFn;
-    private final Collection<T> collection;
 
     public ArrayCollectionMapFn(MapFn<Object, T> mapFn) {
       this.mapFn = mapFn;
-      this.collection = Lists.newArrayList();
     }
 
     @Override
+    public void initialize() {
+      mapFn.initialize();      
+    }
+    
+    @Override
     public Collection<T> map(GenericArrayWritable input) {
-      collection.clear();
+      Collection<T> collection = Lists.newArrayList();
       for (Writable writable : input.get()) {
-        mapFn.initialize();
         collection.add(mapFn.map(writable));
       }
       return collection;
@@ -367,8 +387,6 @@ public class Writables {
     private final Class<? extends Writable> clazz;
     private final MapFn<T, Object> mapFn;
 
-    private transient GenericArrayWritable arrayWritable;
-
     public CollectionArrayMapFn(Class<? extends Writable> clazz,
         MapFn<T, Object> mapFn) {
       this.clazz = clazz;
@@ -377,18 +395,15 @@ public class Writables {
 
     @Override
     public void initialize() {
-      arrayWritable = new GenericArrayWritable(clazz);
+      mapFn.initialize();      
     }
-
+    
     @Override
     public GenericArrayWritable map(Collection<T> input) {
+      GenericArrayWritable arrayWritable = new GenericArrayWritable(clazz);
       Writable[] w = new Writable[input.size()];
       int index = 0;
       for (T in : input) {
-        // This isn't ideal, but it's the cheapest way to ensure
-        // that our mapFn will always return a new Writable instance
-        // each time we call it.
-        mapFn.initialize();
         w[index++] = ((Writable) mapFn.map(in));
       }
       arrayWritable.set(w);
@@ -396,7 +411,7 @@ public class Writables {
     }
   }
 
-  public static <T> PType<Collection<T>> collections(PType<T> ptype) {
+  public static <T> WritableType<Collection<T>, GenericArrayWritable<T>> collections(PType<T> ptype) {
     WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
     DataBridge handler = ptype.getDataBridge();
     return new WritableType(Collection.class, GenericArrayWritable.class,

@@ -14,6 +14,8 @@
  */
 package com.cloudera.crunch.type;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.cloudera.crunch.MapFn;
 
 /**
@@ -61,5 +63,23 @@ public class DataBridge {
   
   public Class<?> getValueClass() {
     return valueClass;
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+	if (obj == null || !(obj instanceof DataBridge)) {
+	  return false;
+	}
+	DataBridge that = (DataBridge) obj;
+	return (keyClass.equals(that.keyClass) && valueClass.equals(that.valueClass) &&
+		converter.equals(that.converter) && inputMapFn.equals(that.inputMapFn) &&
+		outputMapFn.equals(that.outputMapFn));
+  }
+  
+  @Override
+  public int hashCode() {
+	HashCodeBuilder hcb = new HashCodeBuilder();
+	hcb.append(keyClass).append(valueClass).append(converter).append(inputMapFn);
+	return hcb.append(outputMapFn).toHashCode();
   }
 }

@@ -19,13 +19,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 
-public class GenericArrayWritable implements Writable {
+public class GenericArrayWritable<T> implements Writable {
   private Writable[] values;
   private Class<? extends Writable> valueClass;
 
@@ -82,6 +83,26 @@ public class GenericArrayWritable implements Writable {
     }
   }
   
+  @Override
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    return hcb.append(values).toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    GenericArrayWritable other = (GenericArrayWritable) obj;
+    if (!Arrays.equals(values, other.values))
+      return false;
+    return true;
+  }
+
   @Override
   public String toString() {
     return Arrays.toString(values);
