@@ -17,7 +17,6 @@ package com.cloudera.crunch.impl.mr.plan;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import com.cloudera.crunch.DoCollection;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.google.common.collect.Lists;
 
@@ -37,7 +36,7 @@ class NodePath implements Iterable<PCollectionImpl> {
     this.path = Lists.newLinkedList(other.path);
   }
 
-  public void push(DoCollection stage) {
+  public void push(PCollectionImpl stage) {
     this.path.push((PCollectionImpl) stage);
   }
 

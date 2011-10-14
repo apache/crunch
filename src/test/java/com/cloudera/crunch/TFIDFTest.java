@@ -44,10 +44,15 @@ public class TFIDFTest implements Serializable {
   protected static final double N = 2;
   
   @Test
-  public void testWritables() throws IOException {
-    run(new MRPipeline(TFIDFTest.class), WritableTypeFamily.getInstance());
+  public void testWritablesSingleRun() throws IOException {
+    run(new MRPipeline(TFIDFTest.class), WritableTypeFamily.getInstance(), true);
   }
-    
+
+  @Test
+  public void testWritablesMultiRun() throws IOException {
+    run(new MRPipeline(TFIDFTest.class), WritableTypeFamily.getInstance(), false);
+  }
+
   /**
    * This method should generate a TF-IDF score for the input.
    */
@@ -158,7 +163,7 @@ public class TFIDFTest implements Serializable {
     }, ptf.tableOf(ptf.strings(), ptf.collections(ptf.pairs(ptf.strings(), ptf.doubles()))));
   }
   
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean singleRun) throws IOException {
     File input = File.createTempFile("docs", "txt");
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("docs.txt")), input);
@@ -173,6 +178,10 @@ public class TFIDFTest implements Serializable {
     PTable<String, Collection<Pair<String, Double>>> results =
         generateTFIDF(docs, tfPath, typeFamily);
     pipeline.writeTextFile(results, outputPath1);
+    if (!singleRun) {
+      pipeline.run();
+    }
+    
     PTable<String, Collection<Pair<String, Double>>> uppercased = results.parallelDo(
         new MapKeysFn<String, String, Collection<Pair<String, Double>>>() {
           @Override

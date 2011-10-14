@@ -97,7 +97,7 @@ public class PGroupedTableImpl<K, V> extends
   }
 
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitGroupedTable(this);
   }
 

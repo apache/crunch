@@ -55,7 +55,7 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitInputCollection(new InputCollection<Pair<K, V>>(source,
         pipeline));
   }

@@ -47,7 +47,7 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   }
   
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitInputCollection(this);
   }
 
@@ -60,5 +60,4 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
   }
-
 }

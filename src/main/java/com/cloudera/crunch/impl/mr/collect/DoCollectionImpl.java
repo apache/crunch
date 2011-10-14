@@ -16,14 +16,12 @@ package com.cloudera.crunch.impl.mr.collect;
 
 import java.util.List;
 
-import com.cloudera.crunch.DoCollection;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableList;
 
-public class DoCollectionImpl<S> extends PCollectionImpl<S> implements
-    DoCollection<S> {
+public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 
   private final PCollectionImpl<Object> parent;
   private final DoFn<Object, S> fn;
@@ -48,17 +46,13 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> implements
   }
 
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitDoFnCollection(this);
   }
 
   @Override
   public List<PCollectionImpl<?>> getParents() {
     return ImmutableList.<PCollectionImpl<?>> of(parent);
-  }
-
-  public DoFn<Object, S> getDoFn() {
-    return fn;
   }
 
   @Override

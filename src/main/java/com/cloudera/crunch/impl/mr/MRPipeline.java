@@ -89,6 +89,11 @@ public class MRPipeline implements Pipeline {
       LOG.error(e);
       return;
     }
+    for (Map.Entry<PCollectionImpl, Target> e : outputTargets.entrySet()) {
+      if (e.getValue() instanceof Source) {
+        e.getKey().materializeAt((Source) e.getValue());
+      }
+    }
     outputTargets.clear();
   }
 

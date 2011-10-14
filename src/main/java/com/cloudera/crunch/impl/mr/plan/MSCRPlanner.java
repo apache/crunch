@@ -232,6 +232,7 @@ public class MSCRPlanner {
     if (t == null || !(t instanceof Source)) {
       srcTarget = pipeline.createIntermediateOutput(splitTarget.getPType());
       outputs.put(splitTarget, srcTarget);
+      splitTarget.materializeAt(srcTarget);
     } else {
       srcTarget = (SourceTarget) t;
     }

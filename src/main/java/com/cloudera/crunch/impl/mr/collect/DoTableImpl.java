@@ -17,7 +17,6 @@ package com.cloudera.crunch.impl.mr.collect;
 import java.util.List;
 
 import com.cloudera.crunch.CombineFn;
-import com.cloudera.crunch.DoCollection;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
@@ -27,7 +26,7 @@ import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableList;
 
 public class DoTableImpl<K, V> extends PTableBase<K, V> implements
-    PTable<K, V>, DoCollection<Pair<K, V>> {
+    PTable<K, V> {
 
   private final PCollectionImpl<?> parent;
   private final DoFn<?, Pair<K, V>> fn;
@@ -47,17 +46,12 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements
   }
 
   @Override
-  public DoFn<Object, Pair<K, V>> getDoFn() {
-    return (DoFn<Object, Pair<K, V>>) fn;
-  }
-
-  @Override
   public PTableType<K, V> getPTableType() {
     return type;
   }
 
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitDoTable(this);
   }
 

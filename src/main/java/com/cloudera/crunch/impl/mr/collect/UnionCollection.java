@@ -56,7 +56,7 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
   }
   
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(this);
   }
 

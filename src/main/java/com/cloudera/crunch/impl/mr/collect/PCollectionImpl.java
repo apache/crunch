@@ -21,6 +21,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.Source;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
@@ -33,7 +34,8 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   private final String name;
   protected MRPipeline pipeline;
-
+  private Source<S> materializedAt;
+  
   public PCollectionImpl(String name) {
     this.name = name;
   }
@@ -81,6 +83,10 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     getPipeline().write(this, target);
   }
 
+  public void materializeAt(Source<S> source) {
+    this.materializedAt = source;
+  }
+  
   public PTypeFamily getTypeFamily() {
     return getPType().getFamily();
   }
@@ -124,5 +130,14 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     void visitGroupedTable(PGroupedTableImpl<?, ?> collection);
   }
 
-  public abstract void accept(Visitor visitor);
+  public void accept(Visitor visitor) {
+    if (materializedAt != null) {
+      visitor.visitInputCollection(new InputCollection<S>(materializedAt, 
+          (MRPipeline) getPipeline()));
+    } else {
+      acceptInternal(visitor);
+    }
+  }
+  
+  protected abstract void acceptInternal(Visitor visitor);
 }

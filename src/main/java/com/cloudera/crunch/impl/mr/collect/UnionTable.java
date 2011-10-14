@@ -77,7 +77,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
-  public void accept(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(new UnionCollection<Pair<K, V>>(
         parents));
   }
