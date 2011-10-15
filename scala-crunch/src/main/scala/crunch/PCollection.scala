@@ -6,10 +6,12 @@ import com.cloudera.crunch.`type`.{PType, PTableType}
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   def filter(f: Any => Boolean): PCollection[S] = {
+    ClosureCleaner.clean(f)
     parallelDo(new SFilterFn[S](f), getPType())
   }
 
   def map[T: ClassManifest](f: Any => T): PCollection[T] = {
+    ClosureCleaner.clean(f)
     parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
   }
 
@@ -17,10 +19,12 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
+    ClosureCleaner.clean(f)
     parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
   def flatMap[T: ClassManifest](f: Any => Seq[T]): PCollection[T] = {
+    ClosureCleaner.clean(f)
     parallelDo(new SDoFn[S, T](f), getPType(classManifest[T]))
   }
 
@@ -28,6 +32,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
+    ClosureCleaner.clean(f)
     parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
