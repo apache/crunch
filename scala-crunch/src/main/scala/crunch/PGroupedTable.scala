@@ -1,15 +1,15 @@
 package crunch
 
-import crunch.fn._
+import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => JPair}
 import java.lang.{Iterable => JIterable}
 import scala.collection.Iterable
 
 class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPair[K, JIterable[V]]](grouped) with JGroupedTable[K, V] {
 
-  def filter(f: (Any, Iterable[Any]) => Boolean): PTable[K, V] = {
+  def filter(f: (Any, Iterable[Any]) => Boolean) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SFilterGroupedTableFn[K, V](f), getPTableType())
+    parallelDo(new SGroupedTableFilterFn[K, V](f), grouped.getPType())
   }
 
   def map[T: ClassManifest](f: (Any, Iterable[Any]) => T) = {
@@ -41,4 +41,34 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
   override def combineValues(fn: CombineFn[K, V]) = new PTable[K, V](grouped.combineValues(fn))
 
   override def ungroup() = new PTable[K, V](grouped.ungroup())
+}
+
+class SGroupedTableFilterFn[K, V](f: (Any, Iterable[Any]) => Boolean) extends FilterFn[JPair[K, JIterable[V]]] {
+  override def accept(input: JPair[K, JIterable[V]]): Boolean = {
+    //f(Conversions.c2s(input.first()), Conversions.c2s(input.second()))
+    false
+  }
+}
+
+class SGroupedTableDoFn[K, V, T](fn: (Any, Iterable[Any]) => Seq[T]) extends DoFn[JPair[K, JIterable[V]], T] {
+  override def process(input: JPair[K, JIterable[V]], emitter: Emitter[T]): Unit = {
+    
+  }
+}
+
+class SGroupedTableDoTableFn[K, V, L, W](fn: (Any, Iterable[Any]) => Seq[(Any, Any)]) extends DoFn[JPair[K, JIterable[V]], JPair[L, W]] {
+  override def process(input: JPair[K, JIterable[V]], emitter: Emitter[JPair[L, W]]): Unit = {
+  }
+}
+
+class SGroupedTableMapFn[K, V, T](fn: (Any, Iterable[Any]) => T) extends MapFn[JPair[K, JIterable[V]], T] {
+  override def map(input: JPair[K, JIterable[V]]): T = {
+    null.asInstanceOf[T]
+  }
+}
+
+class SGroupedTableMapTableFn[K, V, L, W](fn: (Any, Iterable[Any]) => (Any, Any)) extends MapFn[JPair[K, JIterable[V]], JPair[L, W]] {
+  override def map(input: JPair[K, JIterable[V]]): JPair[L, W] = {
+    null.asInstanceOf[JPair[L, W]]
+  }
 }
