@@ -1,6 +1,7 @@
-package crunch
+package crunch.fn
 
 import com.cloudera.crunch.MapFn;
+import crunch.Conversions
 
 class SMapFn[S, T](fn: Any => T) extends MapFn[S, T] {
   override def map(input: S): T = {

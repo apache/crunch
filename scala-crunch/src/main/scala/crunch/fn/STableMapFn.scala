@@ -1,6 +1,7 @@
-package crunch
+package crunch.fn
 
 import com.cloudera.crunch.{MapFn, Pair => JPair};
+import crunch.Conversions
 
 class STableMapFn[K, V, T](fn: (Any, Any) => T) extends MapFn[JPair[K, V], T] {
   override def map(input: JPair[K, V]): T = {

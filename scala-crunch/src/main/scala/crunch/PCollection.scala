@@ -1,5 +1,6 @@
 package crunch
 
+import crunch.fn._
 import com.cloudera.crunch.{DoFn, PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
 import com.cloudera.crunch.`type`.{PType, PTableType}
 

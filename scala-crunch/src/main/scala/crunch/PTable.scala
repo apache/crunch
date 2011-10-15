@@ -1,5 +1,6 @@
 package crunch
 
+import crunch.fn._
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
 
 class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable) with JTable[K, V] {
