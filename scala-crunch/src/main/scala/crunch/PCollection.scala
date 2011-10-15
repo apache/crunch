@@ -46,12 +46,14 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     new PCollection[S](jcollect.union(others.map(baseCheck): _*))
   }
 
-  private def base = jcollect
+  def base = jcollect
 
   private def baseCheck(c: JCollection[S]): JCollection[S] = c match {
     case x: PCollection[S] => x.base
     case _ => c
   } 
+
+  def ++ (other: JCollection[S]) = union(other)
 
   override def parallelDo[T](fn: DoFn[S,T], ptype: PType[T]) = {
     new PCollection[T](jcollect.parallelDo(fn, ptype))

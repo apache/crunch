@@ -14,12 +14,12 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     new PTable[K, V](jtable.union(tables.map(baseCheck): _*))
   }
 
-  private def base = jtable
-
   private def baseCheck(c: JTable[K, V]): JTable[K, V] = c match {
-    case x: PTable[K, V] => x.base
+    case x: PTable[K, V] => x.base.asInstanceOf[PTable[K, V]]
     case _ => c
   }
+
+  def ++ (other: JTable[K, V]) = union(other)
 
   override def groupByKey() = new PGroupedTable(jtable.groupByKey())
 
