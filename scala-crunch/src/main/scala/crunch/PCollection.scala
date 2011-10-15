@@ -5,11 +5,39 @@ import com.cloudera.crunch.`type`.{PType, PTableType}
 
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
-  // TOOD: Scala wrap this, prolly
+  def filter(f: Any => Boolean): PCollection[S] = {
+    parallelDo(new SFilterFn[S](f), getPType())
+  }
+
+  def map[T: ClassManifest](f: Any => T): PCollection[T] = {
+    parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
+  }
+
+  def map[K: ClassManifest, V: ClassManifest](f: Any => (K, V)): PTable[K, V] = {
+    val ptf = getTypeFamily()
+    val keyType = getPType(classManifest[K])
+    val valueType = getPType(classManifest[V])
+    parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
+  }
+
+  def flatMap[T: ClassManifest](f: Any => Seq[T]): PCollection[T] = {
+    parallelDo(new SDoFn[S, T](f), getPType(classManifest[T]))
+  }
+
+  def flatMap[K: ClassManifest, V: ClassManifest](f: Any => Seq[(K, V)]): PTable[K, V] = {
+    val ptf = getTypeFamily()
+    val keyType = getPType(classManifest[K])
+    val valueType = getPType(classManifest[V])
+    parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
+  }
+
+  private def getPType[T](m: ClassManifest[T]): PType[T] = {
+    Conversions.getPType(m, getTypeFamily()).asInstanceOf[PType[T]]
+  }
+
   override def getPipeline() = jcollect.getPipeline()
 
   override def union(others: JCollection[S]*) = {
-    // TODO: Potentially unwrap the others to their raw JCollections
     new PCollection[S](jcollect.union(others.map(baseCheck): _*))
   }
 
