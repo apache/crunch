@@ -1,7 +1,7 @@
 package crunch
 
-import crunch.fn._
-import com.cloudera.crunch.{DoFn, PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
+import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
+import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
 import com.cloudera.crunch.`type`.{PType, PTableType}
 
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
@@ -84,3 +84,38 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   override def getName() = jcollect.getName()
 }
+
+class SDoFn[S, T](fn: Any => Seq[T]) extends DoFn[S, T] {
+  override def process(input: S, emitter: Emitter[T]): Unit = {
+    for (v <- fn(Conversions.c2s(input))) {
+      emitter.emit(Conversions.s2c(v).asInstanceOf[T])
+    }
+  }
+}
+
+class SDoTableFn[S, K, V](fn: Any => Seq[(K, V)]) extends DoFn[S, JPair[K, V]] {
+  override def process(input: S, emitter: Emitter[JPair[K, V]]): Unit = {
+    for (v <- fn(Conversions.c2s(input))) {
+      emitter.emit(Conversions.s2c(v).asInstanceOf[JPair[K, V]])
+    }
+  }
+}
+
+class SFilterFn[T](f: Any => Boolean) extends FilterFn[T] {
+  override def accept(input: T): Boolean = {
+    f(Conversions.c2s(input));
+  }
+}
+
+class SMapFn[S, T](fn: Any => T) extends MapFn[S, T] {
+  override def map(input: S): T = {
+    Conversions.s2c(fn(Conversions.c2s(input))).asInstanceOf[T]
+  }
+}
+
+class SMapTableFn[S, K, V](fn: Any => (K, V)) extends MapFn[S, JPair[K, V]] {
+  override def map(input: S): JPair[K, V] = {
+    Conversions.s2c(fn(Conversions.c2s(input))).asInstanceOf[JPair[K, V]]
+  }
+}
+
