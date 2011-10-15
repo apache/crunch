@@ -10,12 +10,12 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SFilterFn[S](f), getPType())
   }
 
-  def map[T: ClassManifest](f: Any => T): PCollection[T] = {
+  def map[T: ClassManifest](f: Any => T) = {
     ClosureCleaner.clean(f)
     parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
   }
 
-  def map[K: ClassManifest, V: ClassManifest](f: Any => (K, V)): PTable[K, V] = {
+  def map[K: ClassManifest, V: ClassManifest](f: Any => (K, V)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
@@ -23,12 +23,12 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
-  def flatMap[T: ClassManifest](f: Any => Seq[T]): PCollection[T] = {
+  def flatMap[T: ClassManifest](f: Any => Seq[T]) = {
     ClosureCleaner.clean(f)
     parallelDo(new SDoFn[S, T](f), getPType(classManifest[T]))
   }
 
-  def flatMap[K: ClassManifest, V: ClassManifest](f: Any => Seq[(K, V)]): PTable[K, V] = {
+  def flatMap[K: ClassManifest, V: ClassManifest](f: Any => Seq[(K, V)]) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
@@ -36,7 +36,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
-  private def getPType[T](m: ClassManifest[T]): PType[T] = {
+  protected def getPType[T](m: ClassManifest[T]): PType[T] = {
     Conversions.getPType(m, getTypeFamily()).asInstanceOf[PType[T]]
   }
 

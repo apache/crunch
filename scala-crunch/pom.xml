@@ -68,6 +68,7 @@
               <args>
                 <arg>-make:transitive</arg>
                 <arg>-dependencyfile</arg>
+                <arg>-deprecation</arg>
                 <arg>${project.build.directory}/.scala_dependencies</arg>
               </args>
             </configuration>
