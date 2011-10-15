@@ -59,9 +59,16 @@ public class SourceTargetHelper {
   }
   
   public static long getPathSize(Configuration conf, Path path) throws IOException {
-    FileSystem fs = FileSystem.get(conf);
+	return getPathSize(FileSystem.get(conf), path);
+  }
+  
+  public static long getPathSize(FileSystem fs, Path path) throws IOException {
+    FileStatus[] stati = fs.listStatus(path);
+    if (stati.length == 0) {
+      throw new IllegalArgumentException("Path " + path + " does not exist!");
+    }
     long size = 0;
-    for (FileStatus status : fs.listStatus(path)) {
+    for (FileStatus status : stati) {
       size += status.getLen();
     }
     return size;
