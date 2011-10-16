@@ -10,7 +10,7 @@ class ExampleWordTest extends AssertionsForJUnit {
   @Test def wordCount() = {
     val pipeline = new Pipeline[ExampleWordTest]()
     val shakes = pipeline.readTextFile("/tmp/shakes.txt")
-    val counts = Aggregate.count(shakes.flatMap((line: String) => line.split("\\s+")))
+    val counts = Aggregate.count(shakes.flatMap(_.split("\\s+")))
     pipeline.writeTextFile(counts, "/tmp/wc")
     pipeline.done()
   }

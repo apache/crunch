@@ -6,31 +6,31 @@ import com.cloudera.crunch.`type`.{PType, PTableType}
 
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
-  def filter(f: Any => Boolean): PCollection[S] = {
+  def filter(f: S => Boolean): PCollection[S] = {
     ClosureCleaner.clean(f)
     parallelDo(new SFilterFn[S](f), getPType())
   }
 
-  def map[X: ClassManifest, T: ClassManifest](f: X => T) = {
+  def map[T: ClassManifest](f: S => T) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SMapFn[X, S, T](f), getPType(classManifest[T]))
+    parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
   }
 
-  def map2[X: ClassManifest, K: ClassManifest, V: ClassManifest](f: X => (K, V)) = {
+  def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
     println(keyType + " " + valueType)
     ClosureCleaner.clean(f)
-    parallelDo(new SMapTableFn[S, X, K, V](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
-  def flatMap[X: ClassManifest, T: ClassManifest](f: X => Traversable[T]) = {
+  def flatMap[T: ClassManifest](f: S => Traversable[T]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SDoFn[X, S, T](f), getPType(classManifest[T]))
+    parallelDo(new SDoFn[S, T](f), getPType(classManifest[T]))
   }
 
-  def flatMap2[K: ClassManifest, V: ClassManifest](f: Any => Traversable[(K, V)]) = {
+  def flatMap2[K: ClassManifest, V: ClassManifest](f: S => Traversable[(K, V)]) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
@@ -86,37 +86,37 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
   override def getName() = jcollect.getName()
 }
 
-class SDoFn[X, S, T](fn: X => Traversable[T]) extends DoFn[S, T] {
+class SDoFn[S, T](fn: S => Traversable[T]) extends DoFn[S, T] {
   override def process(input: S, emitter: Emitter[T]): Unit = {
-    for (v <- fn(Conversions.c2s(input).asInstanceOf[X])) {
+    for (v <- fn(Conversions.c2s(input).asInstanceOf[S])) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[T])
     }
   }
 }
 
-class SDoTableFn[S, K, V](fn: Any => Traversable[(K, V)]) extends DoFn[S, JPair[K, V]] {
+class SDoTableFn[S, K, V](fn: S => Traversable[(K, V)]) extends DoFn[S, JPair[K, V]] {
   override def process(input: S, emitter: Emitter[JPair[K, V]]): Unit = {
-    for (v <- fn(Conversions.c2s(input))) {
+    for (v <- fn(Conversions.c2s(input).asInstanceOf[S])) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[JPair[K, V]])
     }
   }
 }
 
-class SFilterFn[T](f: Any => Boolean) extends FilterFn[T] {
+class SFilterFn[T](f: T => Boolean) extends FilterFn[T] {
   override def accept(input: T): Boolean = {
-    f(Conversions.c2s(input));
+    f(Conversions.c2s(input).asInstanceOf[T]);
   }
 }
 
-class SMapFn[X, S, T](fn: X => T) extends MapFn[S, T] {
+class SMapFn[S, T](fn: S => T) extends MapFn[S, T] {
   override def map(input: S): T = {
-    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[X])).asInstanceOf[T]
+    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[T]
   }
 }
 
-class SMapTableFn[S, X, K, V](fn: X => (K, V)) extends MapFn[S, JPair[K, V]] {
+class SMapTableFn[S, K, V](fn: S => (K, V)) extends MapFn[S, JPair[K, V]] {
   override def map(input: S): JPair[K, V] = {
-    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[X])).asInstanceOf[JPair[K, V]]
+    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[JPair[K, V]]
   }
 }
 
