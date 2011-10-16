@@ -38,6 +38,8 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
     parallelDo(new SGroupedTableDoTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }
 
+  def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
+
   override def combineValues(fn: CombineFn[K, V]) = new PTable[K, V](grouped.combineValues(fn))
 
   override def ungroup() = new PTable[K, V](grouped.ungroup())
@@ -45,6 +47,12 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
 
 object PGroupedTable {
   implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = new PGroupedTable[K, V](jgrouped)
+}
+
+class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
+  override def combine(v: JIterable[V]) = {
+    Conversions.s2c(f(new ConversionIterable[V](v))).asInstanceOf[V]
+  }
 }
 
 class ConversionIterator[S](iterator: java.util.Iterator[S]) extends Iterator[S] {
