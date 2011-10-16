@@ -2,8 +2,11 @@ package crunch
 
 import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
 import com.cloudera.crunch.{Source, TableSource, Target}
+import com.cloudera.crunch.impl.mr.MRPipeline
 
-class Pipeline(jpipeline: JPipeline) {
+class Pipeline[R: ClassManifest]() {
+  val jpipeline = new MRPipeline(classManifest[R].erasure)
+
   def getConfiguration() = jpipeline.getConfiguration()
 
   def read[T](source: Source[T]) = new PCollection[T](jpipeline.read(source))
