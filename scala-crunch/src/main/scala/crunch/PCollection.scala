@@ -16,7 +16,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
   }
 
-  def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
+  def map[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[K])
     val valueType = getPType(classManifest[V])
@@ -48,12 +48,15 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     new PCollection[S](jcollect.union(others.map(baseCheck): _*))
   }
 
-  def base = jcollect
-
-  private def baseCheck(c: JCollection[S]): JCollection[S] = c match {
+  def base: JCollection[S] = jcollect match {
     case x: PCollection[S] => x.base
-    case _ => c
-  } 
+    case _ => jcollect
+  }
+
+  def baseCheck(collect: JCollection[S]) = collect match {
+    case x: PCollection[S] => x.base
+    case _ => collect
+  }
 
   def ++ (other: JCollection[S]) = union(other)
 
@@ -84,6 +87,10 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
   override def getSize() = jcollect.getSize()
 
   override def getName() = jcollect.getName()
+}
+
+object PCollection {
+  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = new PCollection[S](jcollect)
 }
 
 class SDoFn[S, T](fn: S => Traversable[T]) extends DoFn[S, T] {

@@ -11,17 +11,17 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
 
   override def getValueType() = jtable.getValueType()
 
-  def filter(f: (Any, Any) => Boolean): PTable[K, V] = {
+  def filter(f: (K, V) => Boolean): PTable[K, V] = {
     ClosureCleaner.clean(f)
     parallelDo(new STableFilterFn[K, V](f), getPTableType())
   }
 
-  def map[T: ClassManifest](f: (Any, Any) => T) = {
+  def map[T: ClassManifest](f: (K, V) => T) = {
     ClosureCleaner.clean(f)
     parallelDo(new STableMapFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def map2[L: ClassManifest, W: ClassManifest](f: (Any, Any) => (L, W)) = {
+  def map2[L: ClassManifest, W: ClassManifest](f: (K, V) => (L, W)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -29,12 +29,12 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     parallelDo(new STableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }
 
-  def flatMap[T: ClassManifest](f: (Any, Any) => Traversable[T]) = {
+  def flatMap[T: ClassManifest](f: (K, V) => Traversable[T]) = {
     ClosureCleaner.clean(f)
     parallelDo(new STableDoFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def flatMap2[L: ClassManifest, W: ClassManifest](f: (Any, Any) => Traversable[(L, W)]) = {
+  def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, V) => Traversable[(L, W)]) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -60,38 +60,42 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
   override def groupByKey(options: GroupingOptions) = new PGroupedTable(jtable.groupByKey(options))
 }
 
-class STableFilterFn[K, V](f: (Any, Any) => Boolean) extends FilterFn[JPair[K, V]] {
+object PTable {
+  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = new PTable[K, V](jtable)
+}
+
+class STableFilterFn[K, V](f: (K, V) => Boolean) extends FilterFn[JPair[K, V]] {
   override def accept(input: JPair[K, V]): Boolean = {
-    f(Conversions.c2s(input.first()), Conversions.c2s(input.second()));
+    f(Conversions.c2s(input.first()).asInstanceOf[K], Conversions.c2s(input.second()).asInstanceOf[V]);
   }
 }
 
-class STableDoFn[K, V, T](fn: (Any, Any) => Traversable[T]) extends DoFn[JPair[K, V], T] {
+class STableDoFn[K, V, T](fn: (K, V) => Traversable[T]) extends DoFn[JPair[K, V], T] {
   override def process(input: JPair[K, V], emitter: Emitter[T]): Unit = {
-    for (v <- fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))) {
+    for (v <- fn(Conversions.c2s(input.first()).asInstanceOf[K], Conversions.c2s(input.second()).asInstanceOf[V])) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[T])
     }
   }
 }
 
-class STableDoTableFn[K, V, L, W](fn: (Any, Any) => Traversable[(Any, Any)]) extends DoFn[JPair[K, V], JPair[L, W]] {
+class STableDoTableFn[K, V, L, W](fn: (K, V) => Traversable[(L, W)]) extends DoFn[JPair[K, V], JPair[L, W]] {
   override def process(input: JPair[K, V], emitter: Emitter[JPair[L, W]]): Unit = {
-    for ((f, s) <- fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))) {
+    for ((f, s) <- fn(Conversions.c2s(input.first()).asInstanceOf[K], Conversions.c2s(input.second()).asInstanceOf[V])) {
       emitter.emit(JPair.of(Conversions.s2c(f), Conversions.s2c(s)).asInstanceOf[JPair[L, W]])
     }
   }
 }
 
-class STableMapFn[K, V, T](fn: (Any, Any) => T) extends MapFn[JPair[K, V], T] {
+class STableMapFn[K, V, T](fn: (K, V) => T) extends MapFn[JPair[K, V], T] {
   override def map(input: JPair[K, V]): T = {
-    val v = fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))
+    val v = fn(Conversions.c2s(input.first()).asInstanceOf[K], Conversions.c2s(input.second()).asInstanceOf[V])
     Conversions.s2c(v).asInstanceOf[T]
   }
 }
 
-class STableMapTableFn[K, V, L, W](fn: (Any, Any) => (Any, Any)) extends MapFn[JPair[K, V], JPair[L, W]] {
+class STableMapTableFn[K, V, L, W](fn: (K, V) => (L, W)) extends MapFn[JPair[K, V], JPair[L, W]] {
   override def map(input: JPair[K, V]): JPair[L, W] = {
-    val (f, s) = fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))
+    val (f, s) = fn(Conversions.c2s(input.first()).asInstanceOf[K], Conversions.c2s(input.second()).asInstanceOf[V])
     JPair.of(Conversions.s2c(f), Conversions.s2c(s)).asInstanceOf[JPair[L, W]]
   }
 }

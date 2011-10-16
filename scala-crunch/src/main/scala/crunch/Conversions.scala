@@ -9,15 +9,15 @@ object Conversions {
     val clazz = m.erasure
     if (classOf[java.lang.String].equals(clazz)) {
       ptf.strings()
-    } else if (classOf[Double].equals(clazz)) {
+    } else if (classOf[Double].equals(clazz) || classOf[java.lang.Double].equals(clazz)) {
       ptf.doubles()
-    } else if (classOf[Boolean].equals(clazz)) {
+    } else if (classOf[Boolean].equals(clazz) || classOf[java.lang.Boolean].equals(clazz)) {
       ptf.booleans()
-    } else if (classOf[Float].equals(clazz)) {
+    } else if (classOf[Float].equals(clazz) || classOf[java.lang.Float].equals(clazz)) {
       ptf.floats()
-    } else if (classOf[Int].equals(clazz)) {
+    } else if (classOf[Int].equals(clazz) || classOf[java.lang.Integer].equals(clazz)) {
       ptf.ints()
-    } else if (classOf[Long].equals(clazz)) {
+    } else if (classOf[Long].equals(clazz) || classOf[java.lang.Long].equals(clazz)) {
       ptf.longs()
     } else if (classOf[Traversable[_]].equals(clazz)) {
       getPType(m.typeArguments(0).asInstanceOf[ClassManifest[_]], ptf)
