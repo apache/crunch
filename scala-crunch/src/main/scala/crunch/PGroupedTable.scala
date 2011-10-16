@@ -17,7 +17,7 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
     parallelDo(new SGroupedTableMapFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def map[L: ClassManifest, W: ClassManifest](f: (Any, Iterable[Any]) => (L, W)) = {
+  def map2[L: ClassManifest, W: ClassManifest](f: (Any, Iterable[Any]) => (L, W)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -25,12 +25,12 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
     parallelDo(new SGroupedTableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }
 
-  def flatMap[T: ClassManifest](f: (Any, Iterable[Any]) => Seq[T]) = {
+  def flatMap[T: ClassManifest](f: (Any, Iterable[Any]) => Traversable[T]) = {
     ClosureCleaner.clean(f)
     parallelDo(new SGroupedTableDoFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def flatMap[L: ClassManifest, W: ClassManifest](f: (Any, Iterable[Any]) => Seq[(L, W)]) = {
+  def flatMap2[L: ClassManifest, W: ClassManifest](f: (Any, Iterable[Any]) => Traversable[(L, W)]) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -59,7 +59,7 @@ class SGroupedTableFilterFn[K, V](f: (Any, Iterable[Any]) => Boolean) extends Fi
   }
 }
 
-class SGroupedTableDoFn[K, V, T](fn: (Any, Iterable[Any]) => Seq[T]) extends DoFn[JPair[K, JIterable[V]], T] {
+class SGroupedTableDoFn[K, V, T](fn: (Any, Iterable[Any]) => Traversable[T]) extends DoFn[JPair[K, JIterable[V]], T] {
   override def process(input: JPair[K, JIterable[V]], emitter: Emitter[T]): Unit = {
     for (v <- fn(Conversions.c2s(input.first()), new ConversionIterable[V](input.second()))) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[T])
@@ -67,7 +67,7 @@ class SGroupedTableDoFn[K, V, T](fn: (Any, Iterable[Any]) => Seq[T]) extends DoF
   }
 }
 
-class SGroupedTableDoTableFn[K, V, L, W](fn: (Any, Iterable[Any]) => Seq[(Any, Any)]) extends DoFn[JPair[K, JIterable[V]], JPair[L, W]] {
+class SGroupedTableDoTableFn[K, V, L, W](fn: (Any, Iterable[Any]) => Traversable[(Any, Any)]) extends DoFn[JPair[K, JIterable[V]], JPair[L, W]] {
   override def process(input: JPair[K, JIterable[V]], emitter: Emitter[JPair[L, W]]): Unit = {
     for ((f, s) <- fn(Conversions.c2s(input.first()), new ConversionIterable[V](input.second()))) {
       emitter.emit(JPair.of(Conversions.s2c(f).asInstanceOf[L], Conversions.s2c(s).asInstanceOf[W]))

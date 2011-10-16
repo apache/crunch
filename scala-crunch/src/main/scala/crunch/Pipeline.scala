@@ -24,7 +24,12 @@ class Pipeline(jpipeline: JPipeline) {
     new PCollection[String](jpipeline.readTextFile(pathName))
   }
 
-  def writeTextFile[T](pcollect: PCollection[T], pathName: String): Unit = {
-    jpipeline.writeTextFile(pcollect.base, pathName)
+  def writeTextFile[T](pcollect: JCollection[T], pathName: String): Unit = {
+    jpipeline.writeTextFile(baseCheck(pcollect), pathName)
+  }
+
+  private def baseCheck[T](c: JCollection[T]) = c match {
+    case x: PCollection[T] => x.base
+    case _ => c
   }
 }

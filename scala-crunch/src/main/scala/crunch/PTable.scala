@@ -21,7 +21,7 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     parallelDo(new STableMapFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def map[L: ClassManifest, W: ClassManifest](f: (Any, Any) => (L, W)) = {
+  def map2[L: ClassManifest, W: ClassManifest](f: (Any, Any) => (L, W)) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -29,12 +29,12 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     parallelDo(new STableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }
 
-  def flatMap[T: ClassManifest](f: (Any, Any) => Seq[T]) = {
+  def flatMap[T: ClassManifest](f: (Any, Any) => Traversable[T]) = {
     ClosureCleaner.clean(f)
     parallelDo(new STableDoFn[K, V, T](f), getPType(classManifest[T]))
   }
 
-  def flatMap[L: ClassManifest, W: ClassManifest](f: (Any, Any) => Seq[(L, W)]) = {
+  def flatMap2[L: ClassManifest, W: ClassManifest](f: (Any, Any) => Traversable[(L, W)]) = {
     val ptf = getTypeFamily()
     val keyType = getPType(classManifest[L])
     val valueType = getPType(classManifest[W])
@@ -66,7 +66,7 @@ class STableFilterFn[K, V](f: (Any, Any) => Boolean) extends FilterFn[JPair[K, V
   }
 }
 
-class STableDoFn[K, V, T](fn: (Any, Any) => Seq[T]) extends DoFn[JPair[K, V], T] {
+class STableDoFn[K, V, T](fn: (Any, Any) => Traversable[T]) extends DoFn[JPair[K, V], T] {
   override def process(input: JPair[K, V], emitter: Emitter[T]): Unit = {
     for (v <- fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[T])
@@ -74,7 +74,7 @@ class STableDoFn[K, V, T](fn: (Any, Any) => Seq[T]) extends DoFn[JPair[K, V], T]
   }
 }
 
-class STableDoTableFn[K, V, L, W](fn: (Any, Any) => Seq[(Any, Any)]) extends DoFn[JPair[K, V], JPair[L, W]] {
+class STableDoTableFn[K, V, L, W](fn: (Any, Any) => Traversable[(Any, Any)]) extends DoFn[JPair[K, V], JPair[L, W]] {
   override def process(input: JPair[K, V], emitter: Emitter[JPair[L, W]]): Unit = {
     for ((f, s) <- fn(Conversions.c2s(input.first()), Conversions.c2s(input.second()))) {
       emitter.emit(JPair.of(Conversions.s2c(f), Conversions.s2c(s)).asInstanceOf[JPair[L, W]])
