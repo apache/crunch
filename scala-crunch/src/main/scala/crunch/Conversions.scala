@@ -5,35 +5,35 @@ import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 
 object Conversions {
 
-  def getPType(m: OptManifest[_], ptf: PTypeFamily): PType[_] = {
-    println("Manifesting: " + m)
-    m match {
-      case x: ClassManifest[Traversable[String]] => ptf.strings()
-      case x: ClassManifest[Traversable[Long]] => ptf.longs()
-      case x: ClassManifest[Traversable[Int]] => ptf.ints()
-      case x: ClassManifest[Traversable[Float]] => ptf.floats()
-      case x: ClassManifest[Traversable[Double]] => ptf.doubles()
-      case x: ClassManifest[Traversable[Boolean]] => ptf.booleans()
-      case x: ClassManifest[String] => ptf.strings()
-      case x: ClassManifest[Long] => ptf.longs()
-      case x: ClassManifest[Int] => ptf.ints()
-      case x: ClassManifest[Float] => ptf.floats()
-      case x: ClassManifest[Double] => ptf.doubles()
-      case x: ClassManifest[Boolean] => ptf.booleans()
-      case x: ClassManifest[Tuple2[_, _]] => {
-        val ta = x.typeArguments
-        ptf.pairs(getPType(ta(0), ptf), getPType(ta(1), ptf))
-      }
-      case x: ClassManifest[Tuple3[_, _, _]] => {
-        val ta = x.typeArguments
-        ptf.triples(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf))
-      }
-      case x: ClassManifest[Tuple4[_, _, _, _]] => {
-        val ta = x.typeArguments
-        ptf.quads(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf),
+  def getPType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
+    val clazz = m.erasure
+    if (classOf[java.lang.String].equals(clazz)) {
+      ptf.strings()
+    } else if (classOf[Double].equals(clazz)) {
+      ptf.doubles()
+    } else if (classOf[Boolean].equals(clazz)) {
+      ptf.booleans()
+    } else if (classOf[Float].equals(clazz)) {
+      ptf.floats()
+    } else if (classOf[Int].equals(clazz)) {
+      ptf.ints()
+    } else if (classOf[Long].equals(clazz)) {
+      ptf.longs()
+    } else if (classOf[Traversable[_]].equals(clazz)) {
+      getPType(m.typeArguments(0).asInstanceOf[ClassManifest[_]], ptf)
+    } else if (classOf[Tuple2[_, _]].equals(clazz)) {
+      val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
+      ptf.pairs(getPType(ta(0), ptf), getPType(ta(1), ptf))
+    } else if (classOf[Tuple3[_, _, _]].equals(clazz)) {
+      val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
+      ptf.triples(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf))
+    } else if (classOf[Tuple4[_, _, _, _]].equals(clazz)) {
+      val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
+      ptf.quads(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf),
           getPType(ta(3), ptf))
-      }
-      case x: ClassManifest[_] => ptf.records(x.erasure)
+    } else {
+      println("Could not match manifest: " + m + " with class: " + clazz)
+      ptf.records(clazz)
     }
   }
 
