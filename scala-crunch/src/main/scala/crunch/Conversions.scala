@@ -5,7 +5,7 @@ import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 
 object Conversions {
 
-  def getPType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
+  def toPType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
     val clazz = m.erasure
     if (classOf[java.lang.String].equals(clazz)) {
       ptf.strings()
@@ -20,17 +20,17 @@ object Conversions {
     } else if (classOf[Long].equals(clazz) || classOf[java.lang.Long].equals(clazz)) {
       ptf.longs()
     } else if (classOf[Traversable[_]].equals(clazz)) {
-      getPType(m.typeArguments(0).asInstanceOf[ClassManifest[_]], ptf)
+      toPType(m.typeArguments(0).asInstanceOf[ClassManifest[_]], ptf)
     } else if (classOf[Tuple2[_, _]].equals(clazz)) {
       val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
-      ptf.pairs(getPType(ta(0), ptf), getPType(ta(1), ptf))
+      ptf.pairs(toPType(ta(0), ptf), toPType(ta(1), ptf))
     } else if (classOf[Tuple3[_, _, _]].equals(clazz)) {
       val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
-      ptf.triples(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf))
+      ptf.triples(toPType(ta(0), ptf), toPType(ta(1), ptf), toPType(ta(2), ptf))
     } else if (classOf[Tuple4[_, _, _, _]].equals(clazz)) {
       val ta = m.typeArguments.map(_.asInstanceOf[ClassManifest[_]])
-      ptf.quads(getPType(ta(0), ptf), getPType(ta(1), ptf), getPType(ta(2), ptf),
-          getPType(ta(3), ptf))
+      ptf.quads(toPType(ta(0), ptf), toPType(ta(1), ptf), toPType(ta(2), ptf),
+          toPType(ta(3), ptf))
     } else {
       println("Could not match manifest: " + m + " with class: " + clazz)
       ptf.records(clazz)

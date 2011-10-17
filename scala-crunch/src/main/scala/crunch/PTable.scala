@@ -18,26 +18,26 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
 
   def map[T: ClassManifest](f: (K, V) => T) = {
     ClosureCleaner.clean(f)
-    parallelDo(new STableMapFn[K, V, T](f), getPType(classManifest[T]))
+    parallelDo(new STableMapFn[K, V, T](f), createPType(classManifest[T]))
   }
 
   def map2[L: ClassManifest, W: ClassManifest](f: (K, V) => (L, W)) = {
     val ptf = getTypeFamily()
-    val keyType = getPType(classManifest[L])
-    val valueType = getPType(classManifest[W])
+    val keyType = createPType(classManifest[L])
+    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
     parallelDo(new STableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }
 
   def flatMap[T: ClassManifest](f: (K, V) => Traversable[T]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new STableDoFn[K, V, T](f), getPType(classManifest[T]))
+    parallelDo(new STableDoFn[K, V, T](f), createPType(classManifest[T]))
   }
 
   def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, V) => Traversable[(L, W)]) = {
     val ptf = getTypeFamily()
-    val keyType = getPType(classManifest[L])
-    val valueType = getPType(classManifest[W])
+    val keyType = createPType(classManifest[L])
+    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
     parallelDo(new STableDoTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
   }

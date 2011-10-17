@@ -13,13 +13,13 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   def map[T: ClassManifest](f: S => T) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SMapFn[S, T](f), getPType(classManifest[T]))
+    parallelDo(new SMapFn[S, T](f), createPType(classManifest[T]))
   }
 
   def map[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
     val ptf = getTypeFamily()
-    val keyType = getPType(classManifest[K])
-    val valueType = getPType(classManifest[V])
+    val keyType = createPType(classManifest[K])
+    val valueType = createPType(classManifest[V])
     println(keyType + " " + valueType)
     ClosureCleaner.clean(f)
     parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
@@ -27,19 +27,19 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   def flatMap[T: ClassManifest](f: S => Traversable[T]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SDoFn[S, T](f), getPType(classManifest[T]))
+    parallelDo(new SDoFn[S, T](f), createPType(classManifest[T]))
   }
 
   def flatMap2[K: ClassManifest, V: ClassManifest](f: S => Traversable[(K, V)]) = {
     val ptf = getTypeFamily()
-    val keyType = getPType(classManifest[K])
-    val valueType = getPType(classManifest[V])
+    val keyType = createPType(classManifest[K])
+    val valueType = createPType(classManifest[V])
     ClosureCleaner.clean(f)
     parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
-  protected def getPType[T](m: ClassManifest[T]): PType[T] = {
-    Conversions.getPType(m, getTypeFamily()).asInstanceOf[PType[T]]
+  protected def createPType[T](m: ClassManifest[T]): PType[T] = {
+    Conversions.toPType(m, getTypeFamily()).asInstanceOf[PType[T]]
   }
 
   override def getPipeline() = jcollect.getPipeline()
