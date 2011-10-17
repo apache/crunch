@@ -16,7 +16,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SMapFn[S, T](f), createPType(classManifest[T]))
   }
 
-  def map[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
+  def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
     val ptf = getTypeFamily()
     val keyType = createPType(classManifest[K])
     val valueType = createPType(classManifest[V])
