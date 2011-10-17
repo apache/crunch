@@ -34,7 +34,7 @@ public class Aggregate {
    */
   public static <S> PTable<S, Long> count(PCollection<S> collect) {
     PTypeFamily tf = collect.getTypeFamily();
-    return collect.parallelDo("count:" + collect.getName(), new MapFn<S, Pair<S, Long>>() {
+    return collect.parallelDo("Aggregate.count", new MapFn<S, Pair<S, Long>>() {
       @Override
       public Pair<S, Long> map(S input) {
         return Pair.of(input, 1L);

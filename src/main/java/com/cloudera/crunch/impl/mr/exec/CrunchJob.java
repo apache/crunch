@@ -17,6 +17,8 @@ package com.cloudera.crunch.impl.mr.exec;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
@@ -30,6 +32,8 @@ import com.google.common.collect.Lists;
 
 public class CrunchJob extends ControlledJob {
 
+  private final Log log = LogFactory.getLog(CrunchJob.class);
+  
   private final Path workingPath;
   private final List<Path> multiPaths;
   private final boolean mapOnlyJob;
@@ -99,4 +103,15 @@ public class CrunchJob extends ControlledJob {
     }
   }
 
+  @Override
+  protected synchronized void submit() {
+    super.submit();
+    if (this.state == State.RUNNING) {
+      log.info("Running job \"" + getJobName() + "\"");
+      log.info("Job status available at: " + job.getTrackingURL());
+    } else {
+      log.info("Error occurred starting job \"" + getJobName() + "\":");
+      log.info(getMessage());
+    }
+  }
 }

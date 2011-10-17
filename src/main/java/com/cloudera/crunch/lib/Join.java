@@ -25,7 +25,6 @@ import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.google.common.collect.Lists;
 
 /**
@@ -40,14 +39,14 @@ public class Join {
     PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
         ptf.pairs(left.getValueType(), right.getValueType()));
     
-    PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("tag:" + left.getName(),
+    PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("joinTag1",
         new MapFn<Pair<K, U>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
           @Override
           public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, U> input) {
             return Pair.of(Pair.of(input.first(), 0), Pair.of(input.second(), (V) null));
           }
         }, ptt);
-    PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("tag:" + right.getName(),
+    PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("joinTag2",
         new MapFn<Pair<K, V>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
           @Override
           public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, V> input) {
@@ -62,9 +61,10 @@ public class Join {
     
     PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = both.groupByKey(
         optionsBuilder.build());
+    
     PTableType<K, Pair<U, V>> ret = ptf.tableOf(left.getKeyType(),
         ptf.pairs(left.getValueType(), right.getValueType()));
-    return grouped.parallelDo("untag:" + grouped.getName(),
+    return grouped.parallelDo("join" + grouped.getName(),
         new DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>>() {  
           private transient K key;
           private transient List<U> firstValues;
