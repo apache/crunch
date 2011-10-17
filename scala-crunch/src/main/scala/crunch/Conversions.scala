@@ -2,6 +2,7 @@ package crunch
 
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Tuple => CTuple, TupleN => CTupleN}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily};
+import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
 import java.nio.ByteBuffer
 
 object Conversions {
@@ -11,15 +12,15 @@ object Conversions {
     val clazz = m.erasure
     if (classOf[java.lang.String].equals(clazz)) {
       ptf.strings()
-    } else if (classOf[Double].equals(clazz) || classOf[java.lang.Double].equals(clazz)) {
+    } else if (classOf[Double].equals(clazz) || classOf[JDouble].equals(clazz)) {
       ptf.doubles()
-    } else if (classOf[Boolean].equals(clazz) || classOf[java.lang.Boolean].equals(clazz)) {
+    } else if (classOf[Boolean].equals(clazz) || classOf[JBoolean].equals(clazz)) {
       ptf.booleans()
-    } else if (classOf[Float].equals(clazz) || classOf[java.lang.Float].equals(clazz)) {
+    } else if (classOf[Float].equals(clazz) || classOf[JFloat].equals(clazz)) {
       ptf.floats()
-    } else if (classOf[Int].equals(clazz) || classOf[java.lang.Integer].equals(clazz)) {
+    } else if (classOf[Int].equals(clazz) || classOf[JInteger].equals(clazz)) {
       ptf.ints()
-    } else if (classOf[Long].equals(clazz) || classOf[java.lang.Long].equals(clazz)) {
+    } else if (classOf[Long].equals(clazz) || classOf[JLong].equals(clazz)) {
       ptf.longs()
     } else if (classOf[ByteBuffer].equals(clazz)) {
       ptf.bytes()

@@ -38,6 +38,12 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
   }
 
+  def groupBy[K: ClassManifest](f: S => K): PGroupedTable[K, S] = {
+    val ptype = getTypeFamily().tableOf(createPType(classManifest[K]), getPType())
+    ClosureCleaner.clean(f)
+    parallelDo(new SMapKeyFn[S, K](f), ptype).groupByKey()
+  }
+
   protected def createPType[T](m: ClassManifest[T]): PType[T] = {
     Conversions.toPType(m, getTypeFamily()).asInstanceOf[PType[T]]
   }
@@ -53,7 +59,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     case _ => jcollect
   }
 
-  def baseCheck(collect: JCollection[S]) = collect match {
+  protected def baseCheck(collect: JCollection[S]) = collect match {
     case x: PCollection[S] => x.base
     case _ => collect
   }
@@ -127,3 +133,9 @@ class SMapTableFn[S, K, V](fn: S => (K, V)) extends MapFn[S, JPair[K, V]] {
   }
 }
 
+class SMapKeyFn[S, K](fn: S => K) extends MapFn[S, JPair[K, S]] {
+  override def map(input: S): JPair[K, S] = {
+    val sc = Conversions.c2s(input).asInstanceOf[S]
+    JPair.of(Conversions.s2c(fn(sc)).asInstanceOf[K], input)
+  }
+}
