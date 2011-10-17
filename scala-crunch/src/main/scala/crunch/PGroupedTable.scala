@@ -18,11 +18,8 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
   }
 
   def map2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => (L, W)) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[L])
-    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new SGroupedTableMapTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   def flatMap[T: ClassManifest](f: (K, Iterable[V]) => Traversable[T]) = {
@@ -31,11 +28,8 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
   }
 
   def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => Traversable[(L, W)]) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[L])
-    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableDoTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new SGroupedTableDoTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))

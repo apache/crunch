@@ -17,12 +17,8 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
   }
 
   def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[K])
-    val valueType = createPType(classManifest[V])
-    println(keyType + " " + valueType)
     ClosureCleaner.clean(f)
-    parallelDo(new SMapTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new SMapTableFn[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
   }
 
   def flatMap[T: ClassManifest](f: S => Traversable[T]) = {
@@ -31,17 +27,18 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
   }
 
   def flatMap2[K: ClassManifest, V: ClassManifest](f: S => Traversable[(K, V)]) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[K])
-    val valueType = createPType(classManifest[V])
     ClosureCleaner.clean(f)
-    parallelDo(new SDoTableFn[S, K, V](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new SDoTableFn[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
   }
 
   def groupBy[K: ClassManifest](f: S => K): PGroupedTable[K, S] = {
     val ptype = getTypeFamily().tableOf(createPType(classManifest[K]), getPType())
     ClosureCleaner.clean(f)
     parallelDo(new SMapKeyFn[S, K](f), ptype).groupByKey()
+  }
+
+  protected def createPTableType[K, V](k: ClassManifest[K], v: ClassManifest[V]) = {
+    getTypeFamily().tableOf(createPType(k), createPType(v))
   }
 
   protected def createPType[T](m: ClassManifest[T]): PType[T] = {
@@ -66,7 +63,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   def ++ (other: JCollection[S]) = union(other)
 
-  override def parallelDo[T](fn: DoFn[S,T], ptype: PType[T]) = {
+  override def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
     new PCollection[T](jcollect.parallelDo(fn, ptype))
   }
 

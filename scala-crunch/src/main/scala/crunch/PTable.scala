@@ -22,11 +22,8 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
   }
 
   def map2[L: ClassManifest, W: ClassManifest](f: (K, V) => (L, W)) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[L])
-    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
-    parallelDo(new STableMapTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new STableMapTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   def flatMap[T: ClassManifest](f: (K, V) => Traversable[T]) = {
@@ -35,11 +32,8 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
   }
 
   def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, V) => Traversable[(L, W)]) = {
-    val ptf = getTypeFamily()
-    val keyType = createPType(classManifest[L])
-    val valueType = createPType(classManifest[W])
     ClosureCleaner.clean(f)
-    parallelDo(new STableDoTableFn[K, V, L, W](f), ptf.tableOf(keyType, valueType))
+    parallelDo(new STableDoTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   override def union(tables: JTable[K, V]*) = {
