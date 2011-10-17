@@ -15,17 +15,11 @@
 package com.cloudera.crunch;
 
 import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
 
 /**
- * The base class for {@code Source} implementations that return a {@link PTable}.
+ * The interface {@code Source} implementations that return a {@link PTable}.
  *
  */
-public abstract class TableSource<K, V> implements Source<Pair<K, V>> {
-  @Override
-  public PType<Pair<K, V>> getType() {
-    return getTableType();
-  }
-  
-  public abstract PTableType<K, V> getTableType();
+public interface TableSource<K, V> extends Source<Pair<K, V>> {
+  PTableType<K, V> getTableType();
 }
