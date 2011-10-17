@@ -238,10 +238,16 @@ public class MSCRPlanner {
     }
 
     PCollectionImpl inputNode = (PCollectionImpl) pipeline.read(srcTarget);
-    currentNodePaths.clear();
-    for (NodePath gbkPath : gbkPaths) {
-      currentNodePaths.add(gbkPath.splitAt(splitIndex, inputNode));
+    Set<NodePath> nextNodePaths = Sets.newHashSet();
+    for (NodePath nodePath : currentNodePaths) {
+      if (gbkPaths.contains(nodePath)) {
+    	nextNodePaths.add(nodePath.splitAt(splitIndex, inputNode));
+      } else {
+    	nextNodePaths.add(nodePath);
+      }
     }
+    currentNodePaths.clear();
+    currentNodePaths.addAll(nextNodePaths);
   }
 
   private Set<PGroupedTableImpl> getWorkingGroupings(
