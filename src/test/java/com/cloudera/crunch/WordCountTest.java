@@ -50,17 +50,38 @@ public class WordCountTest {
     }, typeFamily.strings()));
   }
   
+  public static PTable<String, Long> substr(PTable<String, Long> ptable) {
+	return ptable.parallelDo(new DoFn<Pair<String, Long>, Pair<String, Long>>() {
+	  public void process(Pair<String, Long> input,
+		  Emitter<Pair<String, Long>> emitter) {
+		if (input.first().length() > 0) {
+		  emitter.emit(Pair.of(input.first().substring(0, 1), input.second()));
+		}
+	  }      
+    }, ptable.getPTableType());
+  }
+  
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance(), false);
   }
 
   @Test
-  public void testAvro() throws IOException {
-    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
+  public void testWritablesWithSecond() throws IOException {
+	run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance(), true);
   }
   
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  @Test
+  public void testAvro() throws IOException {
+    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance(), false);
+  }
+  
+  @Test
+  public void testAvroWithSecond() throws IOException {
+    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance(), true);
+  }
+  
+  public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean runSecond) throws IOException {
     File input = File.createTempFile("shakes", "txt");
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
@@ -70,7 +91,17 @@ public class WordCountTest {
     output.delete();
     
     PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
-    pipeline.writeTextFile(wordCount(shakespeare, typeFamily), outputPath);
+    PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
+    pipeline.writeTextFile(wordCount, outputPath);
+    
+    if (runSecond) {
+      File substrCount = File.createTempFile("substr", "");
+      String substrPath = substrCount.getAbsolutePath();
+      substrCount.delete();
+      PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(
+          CombineFn.<String>SUM_LONGS());
+      pipeline.writeTextFile(we, substrPath);
+    }
     pipeline.done();
     
     File outputFile = new File(output, "part-r-00000");
