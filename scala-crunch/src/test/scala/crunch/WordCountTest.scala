@@ -16,8 +16,7 @@ class ExampleWordTest extends AssertionsForJUnit {
     val wordCount = count(words)
     pipeline.writeTextFile(wordCount, "/tmp/wc")
     val uc = wordCount.map2((w, c) => ((w.substring(0, 1), w.length), c.longValue()))
-    val cc = uc.groupByKey().combine(v => v.sum)
-        .map2((k, v) => (k._1.toUpperCase, v))
+    val cc = uc.groupByKey().combine(v => v.sum).map2((k, v) => (k._1.toUpperCase, v))
     pipeline.writeTextFile(cc, "/tmp/cc")
     pipeline.done()
   }
