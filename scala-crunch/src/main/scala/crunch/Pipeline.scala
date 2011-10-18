@@ -3,9 +3,10 @@ package crunch
 import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
 import com.cloudera.crunch.{Source, TableSource, Target}
 import com.cloudera.crunch.impl.mr.MRPipeline
+import org.apache.hadoop.conf.Configuration
 
-class Pipeline[R: ClassManifest]() {
-  val jpipeline = new MRPipeline(classManifest[R].erasure)
+class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
+  val jpipeline = new MRPipeline(classManifest[R].erasure, conf)
 
   def getConfiguration() = jpipeline.getConfiguration()
 
