@@ -29,6 +29,7 @@ import org.junit.Test;
 import com.cloudera.crunch.fn.MapKeysFn;
 import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.From;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -107,8 +108,8 @@ public class CogroupTest {
     String outputPath = output.getAbsolutePath();
     output.delete();
     
-    PCollection<String> shakespeare = pipeline.readTextFile(shakesInput.getAbsolutePath());
-    PCollection<String> maugham = pipeline.readTextFile(maughamInput.getAbsolutePath());
+    PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInput.getAbsolutePath()));
+    PCollection<String> maugham = pipeline.read(From.textFile(maughamInput.getAbsolutePath()));
     pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), outputPath);
     pipeline.done();
     
