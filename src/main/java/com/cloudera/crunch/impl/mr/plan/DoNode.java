@@ -83,8 +83,20 @@ public class DoNode {
         source);
   }
 
+  public boolean isInputNode() {
+    return source != null;
+  }
+  
+  public boolean isOutputNode() {
+    return outputConverter != null;
+  }
+  
   public String getName() {
     return name;
+  }
+  
+  public List<DoNode> getChildren() {
+    return children;
   }
   
   public Source getSource() {

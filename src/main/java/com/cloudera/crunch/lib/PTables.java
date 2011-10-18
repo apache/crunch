@@ -27,7 +27,7 @@ import com.cloudera.crunch.Pair;
 public class PTables {
 
   public static <K, V> PCollection<K> keys(PTable<K, V> ptable) {
-    return ptable.parallelDo(new DoFn<Pair<K, V>, K>() {
+    return ptable.parallelDo("PTables.keys", new DoFn<Pair<K, V>, K>() {
       @Override
       public void process(Pair<K, V> input, Emitter<K> emitter) {
         emitter.emit(input.first());
@@ -36,7 +36,7 @@ public class PTables {
   }
   
   public static <K, V> PCollection<V> values(PTable<K, V> ptable) {
-    return ptable.parallelDo(new DoFn<Pair<K, V>, V>() {
+    return ptable.parallelDo("PTables.values", new DoFn<Pair<K, V>, V>() {
       @Override
       public void process(Pair<K, V> input, Emitter<V> emitter) {
         emitter.emit(input.second());

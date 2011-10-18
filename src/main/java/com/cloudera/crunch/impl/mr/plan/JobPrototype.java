@@ -123,10 +123,12 @@ public class JobPrototype {
 
     job.setMapperClass(CrunchMapper.class);
     List<DoNode> inputNodes;
+    DoNode reduceNode = null;
     RTNodeSerializer serializer = new RTNodeSerializer();
     if (group != null) {
       job.setReducerClass(CrunchReducer.class);
       List<DoNode> reduceNodes = Lists.newArrayList(outputNodes);
+      reduceNode = reduceNodes.get(0);
       serializer.serialize(reduceNodes, conf, NodeContext.REDUCE);
 
       group.configureShuffle(job);
@@ -166,10 +168,20 @@ public class JobPrototype {
       }
       job.setInputFormatClass(CrunchInputFormat.class);
     }
-
+    job.setJobName(createJobName(inputNodes, reduceNode));
+    
     return new CrunchJob(job, workingPath, outputHandler);
   }
 
+  private String createJobName(List<DoNode> mapNodes, DoNode reduceNode) {
+    JobNameBuilder builder = new JobNameBuilder();
+    builder.visit(mapNodes);
+    if (reduceNode != null) {
+      builder.visit(reduceNode);
+    }
+    return builder.build();
+  }
+  
   private DoNode walkPath(Iterator<PCollectionImpl> iter, DoNode working) {
     while (iter.hasNext()) {
       PCollectionImpl collect = iter.next();

@@ -25,10 +25,6 @@ import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.Lists;
 
-/**
- * 
- *
- */
 public class Cogroup {
   
   /**
@@ -44,16 +40,16 @@ public class Cogroup {
     PType<V> rightType = right.getPTableType().getValueType();
     PType<Pair<U, V>> itype = ptf.pairs(leftType, rightType);
 
-    PTable<K, Pair<U, V>> cgLeft = left.parallelDo("cg1:" + left.getName(),
+    PTable<K, Pair<U, V>> cgLeft = left.parallelDo("coGroupTag1",
         new CogroupFn1<K, U, V>(), ptf.tableOf(keyType, itype));
-    PTable<K, Pair<U, V>> cgRight = right.parallelDo("cg2:" + right.getName(),
+    PTable<K, Pair<U, V>> cgRight = right.parallelDo("coGroupTag2",
         new CogroupFn2<K, U, V>(), ptf.tableOf(keyType, itype));
     
     PTable<K, Pair<U, V>> both = cgLeft.union(cgRight);
 
     PType<Pair<Collection<U>, Collection<V>>> otype = ptf.pairs(
         ptf.collections(leftType), ptf.collections(rightType));
-    return both.groupByKey().parallelDo("cg3" + both.getName(),
+    return both.groupByKey().parallelDo("cogroup",
         new PostGroupFn<K, U, V>(), ptf.tableOf(keyType, otype));
   }
 

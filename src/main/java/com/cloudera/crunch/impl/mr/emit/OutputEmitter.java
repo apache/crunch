@@ -35,8 +35,9 @@ public class OutputEmitter<T, K, V> implements Emitter<T> {
 
   public void emit(T emitted) {
     try {
-      this.context.write(converter.outputKey(emitted),
-          converter.outputValue(emitted));
+      K key = converter.outputKey(emitted);
+      V value = converter.outputValue(emitted);
+      this.context.write(key, value);
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
     } catch (InterruptedException e) {

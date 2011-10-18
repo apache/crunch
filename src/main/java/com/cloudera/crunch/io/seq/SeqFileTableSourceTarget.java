@@ -35,8 +35,8 @@ import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
-public class SeqFileTableSourceTarget<K, V> extends TableSource<K, V>
-    implements SourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
+public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
+    SourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableSourceTarget.class);
   
@@ -82,6 +82,11 @@ public class SeqFileTableSourceTarget<K, V> extends TableSource<K, V>
   }
 
   @Override
+  public PType<Pair<K, V>> getType() {
+    return tableType;
+  }
+  
+  @Override
   public PTableType<K, V> getTableType() {
     return tableType;
   }
@@ -108,4 +113,5 @@ public class SeqFileTableSourceTarget<K, V> extends TableSource<K, V>
     SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
         ptype.getDataBridge(), outputPath, name);
   }
+
 }

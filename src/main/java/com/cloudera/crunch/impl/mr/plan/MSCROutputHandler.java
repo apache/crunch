@@ -23,6 +23,7 @@ import com.cloudera.crunch.Target;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.io.hbase.HBaseTarget;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Lists;
 
@@ -53,6 +54,10 @@ public class MSCROutputHandler implements OutputHandler {
       multiPaths.add(((PathTarget) target).getPath());
       workingNode.setOutputName(name);
       ((MapReduceTarget) target).configureForMapReduce(job, ptype, path, name);
+      return true;
+    }
+    if (target instanceof HBaseTarget) {
+      ((HBaseTarget) target).configureForMapReduce(job, null, null, null);
       return true;
     }
     return false;

@@ -46,7 +46,7 @@ public class PGroupedTableImpl<K, V> extends
   }
 
   PGroupedTableImpl(PTableBase<K, V> parent, GroupingOptions groupingOptions) {
-    super("Grouped(" + parent.getName() + ")");
+    super("GBK");
     this.parent = parent;
     this.groupingOptions = groupingOptions;
     this.ptype = parent.getPTableType().getGroupedTableType();
@@ -74,17 +74,8 @@ public class PGroupedTableImpl<K, V> extends
   }
 
   public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
-    return new DoTableImpl<K, V>(getCombineTableName(), this, combineFn,
+    return new DoTableImpl<K, V>("combine", this, combineFn,
         parent.getPTableType());
-  }
-
-  private String getCombineTableName() {
-    return "combine(" + getName() + ")";
-  }
-
-  public PTable<K, V> ungroup() {
-    return parallelDo("ungroup(" + getName() + ")",
-        new Ungroup<K, V>(), parent.getPTableType());
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
@@ -94,6 +85,10 @@ public class PGroupedTableImpl<K, V> extends
         emitter.emit(Pair.of(input.first(), v));
       }
     }
+  }
+
+  public PTable<K, V> ungroup() {
+    return parallelDo("ungroup", new Ungroup<K, V>(), parent.getPTableType());
   }
 
   @Override
@@ -108,12 +103,11 @@ public class PGroupedTableImpl<K, V> extends
 
   @Override
   public DoNode createDoNode() {
-    return DoNode.createFnNode("R:" + getName(),
+    return DoNode.createFnNode(getName(),
         ptype.getGroupingBridge().getInputMapFn(), ptype);
   }
 
   public DoNode getGroupingNode() {
-    return DoNode.createGroupingNode("M:" + getName(),
-        ptype);
+    return DoNode.createGroupingNode("", ptype);
   }
 }
