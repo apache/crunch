@@ -82,7 +82,7 @@ public class TFIDFTest implements Serializable {
       }
     }, ptf.pairs(ptf.strings(), ptf.strings())));
     
-    tf.writeTo(new SeqFileSourceTarget<Pair<Pair<String, String>, Long>>(termFreqPath, tf.getPType()));
+    tf.write(new SeqFileSourceTarget<Pair<Pair<String, String>, Long>>(termFreqPath, tf.getPType()));
     
     /*
      * Input: Pair<Pair<String, String>, Long>

@@ -22,6 +22,10 @@ import com.cloudera.crunch.io.hbase.HBaseTarget;
 import com.cloudera.crunch.io.seq.SeqFileTarget;
 import com.cloudera.crunch.io.text.TextFileTarget;
 
+/**
+ * Static factory methods for creating various {@link Target} types.
+ *
+ */
 public class To {
   public static Target avroFile(String pathName) {
 	return avroFile(new Path(pathName));
