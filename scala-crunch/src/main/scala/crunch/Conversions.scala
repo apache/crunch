@@ -62,7 +62,7 @@ object Conversions {
        case 8 => Tuple8(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7))
        case 9 => Tuple9(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8))
        case 10 => Tuple10(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8), v(9))
-       case _ => { println("Seriously? A " + v.length + " tuple?"); null }
+       case _ => { println("Seriously? A " + v.length + " tuple?"); obj }
      }
     }
     case _ => obj
