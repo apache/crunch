@@ -109,30 +109,28 @@ public class TFIDFTest implements Serializable {
      */
     PTable<String, Collection<Pair<String, Long>>> wordDocumentCountPair = tf.parallelDo("transform wordDocumentPairCount",
         new DoFn<Pair<Pair<String, String>, Long>, Pair<String, Collection<Pair<String, Long>>>>() {
-          Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter;
           Collection<Pair<String, Long>> buffer;
           String key;
           @Override
           public void process(Pair<Pair<String, String>, Long> input,
         	  Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter) {
-            this.emitter = emitter;
             Pair<String, String> wordDocumentPair = input.first();
             if(!wordDocumentPair.first().equals(key)) {
-              flush();
+              flush(emitter);
               key = wordDocumentPair.first();
               buffer = Lists.newArrayList();
             }
             buffer.add(Pair.of(wordDocumentPair.second(), input.second()));            
           }
-          protected void flush() {
+          protected void flush(Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter) {
             if(buffer != null) {
               emitter.emit(Pair.of(key, buffer));
               buffer = null;
             }
           }
           @Override
-          public void cleanup() {
-            flush();
+          public void cleanup(Emitter<Pair<String, Collection<Pair<String, Long>>>> emitter) {
+            flush(emitter);
           }
       }, ptf.tableOf(ptf.strings(), ptf.collections(ptf.pairs(ptf.strings(), ptf.longs()))));
 
