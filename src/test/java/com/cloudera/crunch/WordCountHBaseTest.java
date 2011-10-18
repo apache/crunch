@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Random;
 
@@ -34,7 +33,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.hbase.zookeeper.MiniZooKeeperCluster;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,12 +41,10 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
 import com.cloudera.crunch.io.hbase.HBaseTarget;
 import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.writable.WritableType;
 import com.cloudera.crunch.type.writable.Writables;
 
 public class WordCountHBaseTest {
-  private static final Log LOG = LogFactory.getLog(WordCountHBaseTest.class);
+  protected static final Log LOG = LogFactory.getLog(WordCountHBaseTest.class);
 
   private static final byte[] COUNTS_COLFAM = Bytes.toBytes("cf");
   private static final byte[] WORD_COLFAM = Bytes.toBytes("cf");
@@ -90,8 +86,9 @@ public class WordCountHBaseTest {
     tmpDir.deleteOnExit();
     conf.set("hadoop.log.dir", tmpDir.getAbsolutePath());
     conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
-    MiniZooKeeperCluster zkCluster = hbaseTestUtil.startMiniZKCluster();
-    zkCluster.setClientPort(2181);
+    conf.setInt("hbase.master.info.port", -1);
+    conf.setInt("hbase.regionserver.info.port", -1);
+    hbaseTestUtil.startMiniZKCluster();
     hbaseTestUtil.startMiniCluster();
     hbaseTestUtil.startMiniMapReduceCluster();
   }
@@ -110,9 +107,8 @@ public class WordCountHBaseTest {
   
   public void run(Pipeline pipeline) throws IOException {
     
-    WritableType<Result, Result> wt = Writables.writables(Result.class);
     Random rand = new Random();
-    int postFix = rand.nextInt();
+    int postFix = Math.abs(rand.nextInt());
     String inputTableName = "crunch_words_" + postFix;
     String outputTableName = "crunch_counts_" + postFix;
 
@@ -134,8 +130,8 @@ public class WordCountHBaseTest {
       pipeline.write(wordCount(shakespeare), new HBaseTarget(outputTableName));
       pipeline.done();
       
-      assertIsInt(outputTable, "cat", 2);
-      assertIsInt(outputTable, "dog", 1);    
+      assertIsLong(outputTable, "cat", 2);
+      assertIsLong(outputTable, "dog", 1);    
     } finally {
       // not quite sure...
     }
@@ -148,7 +144,7 @@ public class WordCountHBaseTest {
     return key + 1;
   }
   
-  protected void assertIsInt(HTable table, String key, int i) throws IOException {
+  protected void assertIsLong(HTable table, String key, long i) throws IOException {
     Get get = new Get(Bytes.toBytes(key));
     get.addColumn(COUNTS_COLFAM, null);
     Result result = table.get(get);
