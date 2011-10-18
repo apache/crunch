@@ -8,33 +8,41 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   def filter(f: S => Boolean): PCollection[S] = {
     ClosureCleaner.clean(f)
-    parallelDo(new SFilterFn[S](f), getPType())
+    parallelDo(new DSFilterFn[S](f), getPType())
   }
 
   def map[T: ClassManifest](f: S => T) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SMapFn[S, T](f), createPType(classManifest[T]))
+    parallelDo(new DSMapFn[S, T](f), createPType(classManifest[T]))
   }
 
   def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SMapTableFn[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
+    parallelDo(new DSMapFn2[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
   }
 
   def flatMap[T: ClassManifest](f: S => Traversable[T]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SDoFn[S, T](f), createPType(classManifest[T]))
+    parallelDo(new DSDoFn[S, T](f), createPType(classManifest[T]))
   }
 
   def flatMap2[K: ClassManifest, V: ClassManifest](f: S => Traversable[(K, V)]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SDoTableFn[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
+    parallelDo(new DSDoFn2[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
   }
 
   def groupBy[K: ClassManifest](f: S => K): PGroupedTable[K, S] = {
     val ptype = getTypeFamily().tableOf(createPType(classManifest[K]), getPType())
     ClosureCleaner.clean(f)
-    parallelDo(new SMapKeyFn[S, K](f), ptype).groupByKey()
+    parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
+  }
+
+  def apply[T: ClassManifest](name: String, doFn: DoFn[S, T]) = {
+    parallelDo(name, doFn, createPType(classManifest[T]))
+  }
+
+  def apply2[K: ClassManifest, V: ClassManifest](name: String, doFn: DoFn[S, JPair[K, V]]) = {
+    parallelDo(name, doFn, createPTableType(classManifest[K], classManifest[V]))
   }
 
   protected def createPTableType[K, V](k: ClassManifest[K], v: ClassManifest[V]) = {
@@ -96,43 +104,67 @@ object PCollection {
   implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = new PCollection[S](jcollect)
 }
 
-class SDoFn[S, T](fn: S => Traversable[T]) extends DoFn[S, T] {
+trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
   override def process(input: S, emitter: Emitter[T]): Unit = {
-    for (v <- fn(Conversions.c2s(input).asInstanceOf[S])) {
+    for (v <- apply(Conversions.c2s(input).asInstanceOf[S])) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[T])
     }
   }
 }
 
-class SDoTableFn[S, K, V](fn: S => Traversable[(K, V)]) extends DoFn[S, JPair[K, V]] {
+trait SDoFn2[S, K, V] extends DoFn[S, JPair[K, V]] with Function1[S, Traversable[(K, V)]] {
   override def process(input: S, emitter: Emitter[JPair[K, V]]): Unit = {
-    for (v <- fn(Conversions.c2s(input).asInstanceOf[S])) {
+    for (v <- apply(Conversions.c2s(input).asInstanceOf[S])) {
       emitter.emit(Conversions.s2c(v).asInstanceOf[JPair[K, V]])
     }
   }
 }
 
-class SFilterFn[T](f: T => Boolean) extends FilterFn[T] {
+trait SFilterFn[T] extends FilterFn[T] with Function1[T, Boolean] {
   override def accept(input: T): Boolean = {
-    f(Conversions.c2s(input).asInstanceOf[T]);
+    apply(Conversions.c2s(input).asInstanceOf[T]);
   }
 }
 
-class SMapFn[S, T](fn: S => T) extends MapFn[S, T] {
+trait SMapFn[S, T] extends MapFn[S, T] with Function1[S, T] {
   override def map(input: S): T = {
-    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[T]
+    Conversions.s2c(apply(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[T]
   }
 }
 
-class SMapTableFn[S, K, V](fn: S => (K, V)) extends MapFn[S, JPair[K, V]] {
+trait SMapFn2[S, K, V] extends MapFn[S, JPair[K, V]] with Function1[S, (K, V)] {
   override def map(input: S): JPair[K, V] = {
-    Conversions.s2c(fn(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[JPair[K, V]]
+    Conversions.s2c(apply(Conversions.c2s(input).asInstanceOf[S])).asInstanceOf[JPair[K, V]]
   }
 }
 
-class SMapKeyFn[S, K](fn: S => K) extends MapFn[S, JPair[K, S]] {
+trait SMapKeyFn[S, K] extends MapFn[S, JPair[K, S]] with Function1[S, K] {
   override def map(input: S): JPair[K, S] = {
     val sc = Conversions.c2s(input).asInstanceOf[S]
-    JPair.of(Conversions.s2c(fn(sc)).asInstanceOf[K], input)
+    JPair.of(Conversions.s2c(apply(sc)).asInstanceOf[K], input)
   }
+}
+
+class DSDoFn[S, T](fn: S => Traversable[T]) extends SDoFn[S, T] {
+  def apply(x: S) = fn(x)
+}
+
+class DSDoFn2[S, K, V](fn: S => Traversable[(K, V)]) extends SDoFn2[S, K, V] {
+  override def apply(x: S) = fn(x)
+}
+
+class DSFilterFn[T](fn: T => Boolean) extends SFilterFn[T] {
+  override def apply(x: T) = fn(x)
+}
+
+class DSMapFn[S, T](fn: S => T) extends SMapFn[S, T] {
+  override def apply(x: S) = fn(x)
+}
+
+class DSMapFn2[S, K, V](fn: S => (K, V)) extends SMapFn2[S, K, V] {
+  def apply(x: S) = fn(x)
+}
+
+class DSMapKeyFn[S, K](fn: S => K) extends SMapKeyFn[S, K] {
+  def apply(x: S) = fn(x)
 }
