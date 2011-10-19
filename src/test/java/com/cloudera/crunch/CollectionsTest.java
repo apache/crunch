@@ -43,14 +43,22 @@ import org.junit.Test;
 public class CollectionsTest {
   
   public static class AggregateStringListFn implements CombineFn.Aggregator<Collection<String>> {
+    private final Collection<String> rtn = Lists.newArrayList();
+    
     @Override
-    public Iterable<Collection<String>> apply(Iterable<Collection<String>> values) {
-      Collection<String> rtn = Lists.newArrayList();
-      for(Collection<String> list : values) {
-        rtn.addAll(list);
-      }
-      return ImmutableList.of(rtn);
+    public void reset() {
+      rtn.clear();
+    }
+    
+    @Override
+    public void update(Collection<String> values) {
+      rtn.addAll(values);
     }      
+    
+    @Override
+    public Iterable<Collection<String>> results() {
+      return ImmutableList.of(rtn);
+    }
   }
   
   public static PTable<String, Collection<String>> listOfCharcters(PCollection<String> lines, PTypeFamily typeFamily) {
