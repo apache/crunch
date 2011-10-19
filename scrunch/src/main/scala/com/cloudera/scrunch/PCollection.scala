@@ -2,12 +2,16 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
-import com.cloudera.crunch.`type`.{PType, PTableType}
-
-import Conversions._
+import com.cloudera.crunch.fn.IdentityFn
+import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
+import com.cloudera.scrunch.Conversions._
 
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
+  def using(typeFamily: PTypeFamily) = {
+    parallelDo(IdentityFn.getInstance[S](), typeFamily.as(getPType()))
+  }
+  
   def filter(f: S => Boolean): PCollection[S] = {
     parallelDo(new DSFilterFn[S](f), getPType())
   }
@@ -54,7 +58,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
   }
 
   protected def createPType[T](m: ClassManifest[T]): PType[T] = {
-    toPType(m, getTypeFamily()).asInstanceOf[PType[T]]
+    manifest2PType(m, getTypeFamily()).asInstanceOf[PType[T]]
   }
 
   override def getPipeline() = jcollect.getPipeline()

@@ -2,7 +2,7 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
-import Conversions._
+import com.cloudera.scrunch.Conversions._
 
 class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable) with JTable[K, V] {
 

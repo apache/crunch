@@ -16,19 +16,17 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
     new PTable[K, V](jpipeline.read(source))
   }
 
-  def write(pcollect: PCollection[_], target: Target): Unit = {
+  def write(pcollect: PCollection[_], target: Target) {
     jpipeline.write(pcollect.base, target)
   }
 
-  def run(): Unit = jpipeline.run()
+  def run() { jpipeline.run() }
 
-  def done(): Unit = jpipeline.done()
+  def done() { jpipeline.done() }
 
-  def readTextFile(pathName: String) = {
-    new PCollection[String](jpipeline.readTextFile(pathName))
-  }
-
-  def writeTextFile[T](pcollect: PCollection[T], pathName: String): Unit = {
+  def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
+  
+  def writeTextFile[T](pcollect: PCollection[T], pathName: String) {
     jpipeline.writeTextFile(pcollect.base, pathName)
   }
 }

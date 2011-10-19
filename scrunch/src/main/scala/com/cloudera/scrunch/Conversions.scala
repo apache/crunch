@@ -8,14 +8,23 @@ import java.nio.ByteBuffer
 
 object Conversions {
 
-  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = new PTable[K, V](jtable)
+  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = jtable match {
+    case x: PTable[K, V] => x
+    case _ => new PTable[K, V](jtable)
+  }
   
-  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = new PCollection[S](jcollect)
+  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = jcollect match {
+    case x: PCollection[S] => x
+    case _ => new PCollection[S](jcollect)
+  }
   
-  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = new PGroupedTable[K, V](jgrouped)
+  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = jgrouped match {
+    case x: PGroupedTable[K, V] => x
+    case _ => new PGroupedTable[K, V](jgrouped)
+  }
   
-  def toPType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
-    def conv(x: OptManifest[_]): PType[_] = toPType(x.asInstanceOf[ClassManifest[_]], ptf)
+  def manifest2PType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
+    def conv(x: OptManifest[_]): PType[_] = manifest2PType(x.asInstanceOf[ClassManifest[_]], ptf)
     val clazz = m.erasure
     if (classOf[java.lang.String].equals(clazz)) {
       ptf.strings()

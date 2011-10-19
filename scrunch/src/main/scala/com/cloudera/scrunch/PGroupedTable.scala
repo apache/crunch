@@ -2,36 +2,36 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => JPair}
+import com.cloudera.scrunch.Conversions._
 import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
 
-import Conversions._
 
 class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPair[K, JIterable[V]]](grouped) with JGroupedTable[K, V] {
 
   def filter(f: (K, Iterable[V]) => Boolean) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableFilterFn[K, V](f), grouped.getPType())
+    parallelDo(new DSFilterGroupedFn[K, V](f), grouped.getPType())
   }
 
   def map[T: ClassManifest](f: (K, Iterable[V]) => T) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableMapFn[K, V, T](f), createPType(classManifest[T]))
+    parallelDo(new DSMapGroupedFn[K, V, T](f), createPType(classManifest[T]))
   }
 
   def map2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => (L, W)) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableMapTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
+    parallelDo(new DSMapGroupedFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   def flatMap[T: ClassManifest](f: (K, Iterable[V]) => Traversable[T]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableDoFn[K, V, T](f), createPType(classManifest[T]))
+    parallelDo(new DSDoGroupedFn[K, V, T](f), createPType(classManifest[T]))
   }
 
   def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => Traversable[(L, W)]) = {
     ClosureCleaner.clean(f)
-    parallelDo(new SGroupedTableDoTableFn[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
+    parallelDo(new DSDoGroupedFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
@@ -42,6 +42,7 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
 }
 
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
+  ClosureCleaner.clean(f)
   override def combine(v: JIterable[V]) = {
     s2c(f(new ConversionIterable[V](v))).asInstanceOf[V]
   }
@@ -56,37 +57,63 @@ class ConversionIterable[S](iterable: JIterable[S]) extends Iterable[S] {
   override def iterator() = new ConversionIterator[S](iterable.iterator())
 }
 
-class SGroupedTableFilterFn[K, V](f: (K, Iterable[V]) => Boolean) extends FilterFn[JPair[K, JIterable[V]]] {
+trait SFilterGroupedFn[K, V] extends FilterFn[JPair[K, JIterable[V]]] with Function2[K, Iterable[V], Boolean] {
   override def accept(input: JPair[K, JIterable[V]]): Boolean = {
-    f(Conversions.c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
+    apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
   }
 }
 
-class SGroupedTableDoFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) extends DoFn[JPair[K, JIterable[V]], T] {
+trait SDoGroupedFn[K, V, T] extends DoFn[JPair[K, JIterable[V]], T] with Function2[K, Iterable[V], Traversable[T]] {
   override def process(input: JPair[K, JIterable[V]], emitter: Emitter[T]): Unit = {
-    for (v <- fn(Conversions.c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
-      emitter.emit(Conversions.s2c(v).asInstanceOf[T])
+    for (v <- apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
+      emitter.emit(s2c(v).asInstanceOf[T])
     }
   }
 }
 
-class SGroupedTableDoTableFn[K, V, L, W](fn: (K, Iterable[V]) => Traversable[(L, W)]) extends DoFn[JPair[K, JIterable[V]], JPair[L, W]] {
+trait SDoGroupedFn2[K, V, L, W] extends DoFn[JPair[K, JIterable[V]], JPair[L, W]]
+    with Function2[K, Iterable[V], Traversable[(L, W)]] {
   override def process(input: JPair[K, JIterable[V]], emitter: Emitter[JPair[L, W]]): Unit = {
-    for ((f, s) <- fn(Conversions.c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
-      emitter.emit(JPair.of(Conversions.s2c(f).asInstanceOf[L], Conversions.s2c(s).asInstanceOf[W]))
+    for ((f, s) <- apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
+      emitter.emit(JPair.of(s2c(f).asInstanceOf[L], s2c(s).asInstanceOf[W]))
     }
   }
 }
 
-class SGroupedTableMapFn[K, V, T](fn: (K, Iterable[V]) => T) extends MapFn[JPair[K, JIterable[V]], T] {
+trait SMapGroupedFn[K, V, T] extends MapFn[JPair[K, JIterable[V]], T] with Function2[K, Iterable[V], T] {
   override def map(input: JPair[K, JIterable[V]]): T = {
-    Conversions.s2c(fn(Conversions.c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))).asInstanceOf[T]
+    s2c(apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))).asInstanceOf[T]
   }
 }
 
-class SGroupedTableMapTableFn[K, V, L, W](fn: (K, Iterable[V]) => (L, W)) extends MapFn[JPair[K, JIterable[V]], JPair[L, W]] {
+trait SMapGroupedFn2[K, V, L, W] extends MapFn[JPair[K, JIterable[V]], JPair[L, W]] with Function2[K, Iterable[V], (L, W)]{
   override def map(input: JPair[K, JIterable[V]]): JPair[L, W] = {
-    val (f, s) = fn(Conversions.c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
-    JPair.of(Conversions.s2c(f).asInstanceOf[L], Conversions.s2c(s).asInstanceOf[W])
+    val (f, s) = apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
+    JPair.of(s2c(f).asInstanceOf[L], s2c(s).asInstanceOf[W])
   }
+}
+
+class DSFilterGroupedFn[K, V](fn: (K, Iterable[V]) => Boolean) extends SFilterGroupedFn[K, V] {
+  ClosureCleaner.clean(fn)
+  def apply(k: K, v: Iterable[V]) = fn(k, v)    
+}
+
+class DSDoGroupedFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) extends SDoGroupedFn[K, V, T] {
+  ClosureCleaner.clean(fn)
+  def apply(k: K, v: Iterable[V]) = fn(k, v)    
+}
+
+class DSDoGroupedFn2[K, V, L, W](fn: (K, Iterable[V]) => Traversable[(L, W)]) extends SDoGroupedFn2[K, V, L, W] {
+  ClosureCleaner.clean(fn)
+  def apply(k: K, v: Iterable[V]) = fn(k, v)  
+}
+
+class DSMapGroupedFn[K, V, T](fn: (K, Iterable[V]) => T) extends SMapGroupedFn[K, V, T] {
+  ClosureCleaner.clean(fn)
+  def apply(k: K, v: Iterable[V]) = fn(k, v)  
+}
+
+class DSMapGroupedFn2[K, V, L, W](fn: (K, Iterable[V]) => (L, W)) extends SMapGroupedFn2[K, V, L, W] {
+  ClosureCleaner.clean(fn)
+  def apply(k: K, v: Iterable[V]) = fn(k, v)
 }
