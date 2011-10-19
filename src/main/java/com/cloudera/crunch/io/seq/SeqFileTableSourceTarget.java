@@ -20,23 +20,27 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
-    SourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
+    ReadableSourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableSourceTarget.class);
   
@@ -112,6 +116,21 @@ public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
       String name) {
     SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
         ptype.getDataBridge(), outputPath, name);
+  }
+
+  @Override
+  public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
+	FileSystem fs = FileSystem.get(conf);
+	if (!fs.exists(path)) {
+	  throw new IOException("Path " + path + " does not exist on FileSystem: " + fs);
+	}
+	
+	SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+	Writable key = (Writable) ReflectionUtils.newInstance(reader.getKeyClass(), conf);
+	Writable value = (Writable) ReflectionUtils.newInstance(reader.getValueClass(), conf);
+	
+	reader.next(key, value);
+	return null;
   }
 
 }
