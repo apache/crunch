@@ -37,8 +37,16 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
   }
 
+  def apply[T: ClassManifest](doFn: DoFn[S, T]) = {
+    parallelDo(doFn, createPType(classManifest[T])) 
+  }
+
   def apply[T: ClassManifest](name: String, doFn: DoFn[S, T]) = {
     parallelDo(name, doFn, createPType(classManifest[T]))
+  }
+
+  def apply2[K: ClassManifest, V: ClassManifest](doFn: DoFn[S, JPair[K, V]]) = {
+    parallelDo(doFn, createPTableType(classManifest[K], classManifest[V])) 
   }
 
   def apply2[K: ClassManifest, V: ClassManifest](name: String, doFn: DoFn[S, JPair[K, V]]) = {
@@ -89,7 +97,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     new PTable[K, V](jcollect.parallelDo(name, fn, ptype))
   }
 
-  override def writeTo(target: Target) = jcollect.writeTo(target)
+  override def write(target: Target) = jcollect.write(target)
 
   override def getPType() = jcollect.getPType()
 
