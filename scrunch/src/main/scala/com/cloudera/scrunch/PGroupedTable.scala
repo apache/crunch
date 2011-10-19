@@ -1,9 +1,11 @@
-package crunch
+package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => JPair}
 import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
+
+import Conversions._
 
 class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPair[K, JIterable[V]]](grouped) with JGroupedTable[K, V] {
 
@@ -39,20 +41,15 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
   override def ungroup() = new PTable[K, V](grouped.ungroup())
 }
 
-object PGroupedTable {
-  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = new PGroupedTable[K, V](jgrouped)
-}
-
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
   override def combine(v: JIterable[V]) = {
-    Conversions.s2c(f(new ConversionIterable[V](v))).asInstanceOf[V]
+    s2c(f(new ConversionIterable[V](v))).asInstanceOf[V]
   }
 }
 
 class ConversionIterator[S](iterator: java.util.Iterator[S]) extends Iterator[S] {
-  override def hasNext(): Boolean = iterator.hasNext()
-
-  override def next(): S = Conversions.c2s(iterator.next()).asInstanceOf[S]
+  override def hasNext() = iterator.hasNext()
+  override def next() = c2s(iterator.next()).asInstanceOf[S]
 }
 
 class ConversionIterable[S](iterable: JIterable[S]) extends Iterable[S] {

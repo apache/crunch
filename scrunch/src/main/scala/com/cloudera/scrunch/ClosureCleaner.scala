@@ -1,4 +1,4 @@
-package crunch
+package com.cloudera.scrunch
 
 import scala.collection.mutable.Map
 import scala.collection.mutable.Set

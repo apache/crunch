@@ -1,4 +1,4 @@
-package crunch
+package com.cloudera.scrunch
 
 import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
 import com.cloudera.crunch.{Source, TableSource, Target}

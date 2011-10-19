@@ -1,8 +1,8 @@
-package crunch
+package com.cloudera.scrunch
 
 import com.cloudera.crunch.io.{From => from, To => to}
 import com.cloudera.crunch.lib.Aggregate
-import crunch.PTable._
+import com.cloudera.scrunch.Conversions._
 
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Assert._

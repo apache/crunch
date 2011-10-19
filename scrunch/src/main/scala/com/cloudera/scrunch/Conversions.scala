@@ -1,5 +1,6 @@
-package crunch
+package com.cloudera.scrunch
 
+import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable}
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Tuple => CTuple, TupleN => CTupleN}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
@@ -7,6 +8,12 @@ import java.nio.ByteBuffer
 
 object Conversions {
 
+  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = new PTable[K, V](jtable)
+  
+  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = new PCollection[S](jcollect)
+  
+  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = new PGroupedTable[K, V](jgrouped)
+  
   def toPType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
     def conv(x: OptManifest[_]): PType[_] = toPType(x.asInstanceOf[ClassManifest[_]], ptf)
     val clazz = m.erasure
