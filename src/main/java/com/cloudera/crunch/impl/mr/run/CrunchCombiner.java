@@ -14,17 +14,11 @@
  */
 package com.cloudera.crunch.impl.mr.run;
 
-import com.cloudera.crunch.impl.mr.plan.DoNode;
+public class CrunchCombiner extends CrunchReducer {
 
-/**
- * Enum that is associated with a serialized {@link DoNode} instance, so we know
- * how to use it within the context of a particular MR job.
- * 
- */
-public enum NodeContext {
-  MAP, REDUCE, COMBINE;
-
-  public String getConfigurationKey() {
-    return "crunch.donode." + toString().toLowerCase();
+  @Override
+  protected NodeContext getNodeContext() {
+    return NodeContext.COMBINE;
   }
+  
 }

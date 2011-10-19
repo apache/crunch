@@ -27,6 +27,7 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -41,14 +42,14 @@ import org.junit.Test;
 @SuppressWarnings("serial")
 public class CollectionsTest {
   
-  public static class CombineStringListFn extends CombineFn<String, Collection<String>> {
+  public static class AggregateStringListFn implements CombineFn.Aggregator<Collection<String>> {
     @Override
-    public Collection<String> combine(Iterable<Collection<String>> values) {
+    public Iterable<Collection<String>> apply(Iterable<Collection<String>> values) {
       Collection<String> rtn = Lists.newArrayList();
       for(Collection<String> list : values) {
         rtn.addAll(list);
       }
-      return rtn;
+      return ImmutableList.of(rtn);
     }      
   }
   
@@ -67,7 +68,7 @@ public class CollectionsTest {
       }
     }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings())))
     .groupByKey()
-    .combineValues(new CombineStringListFn());
+    .combineValues(CombineFn.<String, Collection<String>>aggregator(new AggregateStringListFn()));
   }
   
   @Test
