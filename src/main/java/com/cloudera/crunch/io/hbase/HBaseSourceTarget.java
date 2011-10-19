@@ -95,6 +95,7 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
 
   @Override
   public long getSize(Configuration conf) {
-    return 1L;
+    // TODO something smarter here.
+    return 1000L * 1000L * 1000L;
   }
 }

@@ -282,8 +282,7 @@ This section contains an almost certainly incomplete list of known limitations o
 
 * The Avro-based type system doesn't have robust support for multiple inputs/outputs that use different Avro schemas, so
 joins based on Avro files with different data schemas may not work.
-* We're currently missing support for MapReduce jobs over HBase. We would also like to have easy support for reading and
-writing data from/to HCatalog.
+* We would like to have easy support for reading and writing data from/to HCatalog.
 * The decision of how to split up processing tasks between dependent MapReduce jobs is very naiive right now- we simply
 delegate all of the work to the reduce stage of the predecessor job. We should take advantage of information about the
 expected size of different PCollections to optimize this processing.
