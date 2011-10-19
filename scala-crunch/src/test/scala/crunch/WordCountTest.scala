@@ -1,5 +1,6 @@
 package crunch
 
+import com.cloudera.crunch.io.{From => from, To => to}
 import com.cloudera.crunch.lib.Aggregate
 import crunch.PTable._
 
@@ -14,13 +15,13 @@ object MyDoFn extends SMapFn[String, String] {
 class ExampleWordTest extends AssertionsForJUnit {
   @Test def wordCount() = {
     val pipeline = new Pipeline[ExampleWordTest]
-    val input = pipeline.readTextFile("/tmp/shakes.txt")
+    val input = pipeline.read(from.textFile("/tmp/shakes.txt"))
     val words = input.apply(MyDoFn).flatMap(_.split("\\s+"))
     val wordCount = Aggregate.count(words)
     pipeline.writeTextFile(wordCount, "/tmp/wc")
     val uc = wordCount.map2((w, c) => ((w.substring(0, 1), w.length), c.longValue()))
     val cc = uc.groupByKey().combine(v => v.sum).map2((k, v) => (k._1, v))
-    pipeline.writeTextFile(cc, "/tmp/cc")
+    pipeline.write(cc, to.textFile("/tmp/cc"))
     pipeline.done()
   }
 }
