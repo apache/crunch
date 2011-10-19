@@ -79,7 +79,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return new DoTableImpl<K, V>(name, this, fn, type);
   }
 
-  public void writeTo(Target target) {
+  public void write(Target target) {
     getPipeline().write(this, target);
   }
 

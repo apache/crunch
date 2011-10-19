@@ -26,8 +26,8 @@ import java.util.List;
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.io.From;
+import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.type.writable.Writables;
 import com.google.common.io.Files;
 
@@ -35,12 +35,12 @@ public class TextPairTest  {
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(TextPairTest.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(TextPairTest.class));
   }
   
   private static final String CANARY = "Writables.STRING_TO_TEXT";
   
-  public static PCollection<Pair<String, String>> wordDuplicate(PCollection<String> words, PTypeFamily typeFamily) {
+  public static PCollection<Pair<String, String>> wordDuplicate(PCollection<String> words) {
     return words.parallelDo("my word duplicator", new DoFn<String, Pair<String, String>>() {
       private static final long serialVersionUID = 1L;
       @Override
@@ -55,7 +55,7 @@ public class TextPairTest  {
     }, Writables.pairs(Writables.strings(), Writables.strings()));
   }
   
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  public void run(Pipeline pipeline) throws IOException {
     File input = File.createTempFile("shakes", "txt");
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
@@ -64,8 +64,8 @@ public class TextPairTest  {
     String outputPath = output.getAbsolutePath();
     output.delete();
     
-    PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
-    pipeline.writeTextFile(wordDuplicate(shakespeare, typeFamily), outputPath);
+    PCollection<String> shakespeare = pipeline.read(From.textFile(input.getAbsolutePath()));
+    pipeline.write(wordDuplicate(shakespeare), To.textFile(outputPath));
     pipeline.done();
     
     File outputFile = new File(output, "part-m-00000");

@@ -66,8 +66,10 @@ public abstract class DoFn<S, T> implements Serializable {
    * Called during the cleanup of the MapReduce job this {@code DoFn}
    * is associated with. Subclasses may override this method to do
    * appropriate cleanup.
+   * 
+   * @param emitter The emitter that was used for output
    */
-  public void cleanup() {
+  public void cleanup(Emitter<T> emitter) {
   }
 
   /**

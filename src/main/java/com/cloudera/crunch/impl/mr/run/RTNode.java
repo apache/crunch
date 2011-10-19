@@ -111,7 +111,7 @@ public class RTNode implements Serializable {
   }
 
   public void cleanup() {
-    fn.cleanup();
+    fn.cleanup(emitter);
     emitter.flush();
     for (RTNode child : children) {
       child.cleanup();

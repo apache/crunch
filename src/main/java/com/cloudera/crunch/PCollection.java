@@ -85,7 +85,7 @@ public interface PCollection<S> {
    * 
    * @param target The target to write to
    */
-  void writeTo(Target target);
+  void write(Target target);
   
   /**
    * Returns the {@code PType} of this {@code PCollection}.
