@@ -27,13 +27,13 @@ import org.apache.hadoop.io.Writable;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.io.PathReaderFactory;
+import com.cloudera.crunch.io.FileReaderFactory;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class SeqFileTableReaderFactory<K, V> implements PathReaderFactory<Pair<K, V>> {
+public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K, V>> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableReaderFactory.class);
   

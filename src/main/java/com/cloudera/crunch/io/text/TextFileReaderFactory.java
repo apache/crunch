@@ -25,11 +25,11 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.cloudera.crunch.io.PathReaderFactory;
+import com.cloudera.crunch.io.FileReaderFactory;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class TextFileReaderFactory implements PathReaderFactory<String> {
+public class TextFileReaderFactory implements FileReaderFactory<String> {
 
   private static final Log LOG = LogFactory.getLog(TextFileReaderFactory.class);
   

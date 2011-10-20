@@ -28,7 +28,7 @@ public class CompositePathIterable<T> implements Iterable<T> {
 
   private final FileStatus[] stati;
   private final FileSystem fs;
-  private final PathReaderFactory<T> readerFactory;
+  private final FileReaderFactory<T> readerFactory;
 
   private static final PathFilter FILTER = new PathFilter() {
 	@Override
@@ -37,7 +37,7 @@ public class CompositePathIterable<T> implements Iterable<T> {
 	}
   };
   
-  public static <S> Iterable<S> create(FileSystem fs, Path path, PathReaderFactory<S> readerFactory) throws IOException {
+  public static <S> Iterable<S> create(FileSystem fs, Path path, FileReaderFactory<S> readerFactory) throws IOException {
 	FileStatus[] stati = fs.listStatus(path, FILTER);
 	if (stati.length == 0) {
 	  throw new IOException("No files found to materialize at: " + path);
@@ -45,7 +45,7 @@ public class CompositePathIterable<T> implements Iterable<T> {
 	return new CompositePathIterable<S>(stati, fs, readerFactory);
   }
   
-  private CompositePathIterable(FileStatus[] stati, FileSystem fs, PathReaderFactory<T> readerFactory) {
+  private CompositePathIterable(FileStatus[] stati, FileSystem fs, FileReaderFactory<T> readerFactory) {
 	this.stati = stati;
 	this.fs = fs;
 	this.readerFactory = readerFactory;

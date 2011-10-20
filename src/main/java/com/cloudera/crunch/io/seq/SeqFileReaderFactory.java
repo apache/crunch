@@ -27,12 +27,12 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
 import com.cloudera.crunch.MapFn;
-import com.cloudera.crunch.io.PathReaderFactory;
+import com.cloudera.crunch.io.FileReaderFactory;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class SeqFileReaderFactory<T> implements PathReaderFactory<T> {
+public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileReaderFactory.class);
   

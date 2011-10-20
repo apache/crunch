@@ -19,6 +19,6 @@ import java.util.Iterator;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public interface PathReaderFactory<T> {
+public interface FileReaderFactory<T> {
   Iterator<T> read(FileSystem fs, Path path);
 }
