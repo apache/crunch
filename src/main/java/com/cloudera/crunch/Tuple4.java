@@ -27,6 +27,10 @@ public class Tuple4<V1, V2, V3, V4> extends Tuple {
   private final V3 third;
   private final V4 fourth;
 
+  public static <A, B, C, D> Tuple4<A, B, C, D> of(A a, B b, C c, D d) {
+    return new Tuple4<A, B, C, D>(a, b, c, d);
+  }
+  
   public Tuple4(V1 first, V2 second, V3 third, V4 fourth) {
     this.first = first;
     this.second = second;

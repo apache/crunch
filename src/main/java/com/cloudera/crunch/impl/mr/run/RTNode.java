@@ -20,11 +20,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
-import com.cloudera.crunch.fn.IdentityFn;
-import com.cloudera.crunch.impl.mr.emit.CombineFnEmitter;
 import com.cloudera.crunch.impl.mr.emit.IntermediateEmitter;
 import com.cloudera.crunch.impl.mr.emit.MultipleOutputEmitter;
 import com.cloudera.crunch.impl.mr.emit.OutputEmitter;
@@ -74,16 +71,7 @@ public class RTNode implements Serializable {
             outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
-      if (children.size() == 1 && children.get(0).isLeafNode()
-          && fn instanceof CombineFn
-          && ctxt.getNodeContext() == NodeContext.MAP) {
-        this.emitter = new CombineFnEmitter((CombineFn) fn, children.get(0),
-            ctxt.getContext().getConfiguration().getInt(
-                RuntimeParameters.AGGREGATOR_BUCKETS, 1000));
-        this.fn = IdentityFn.getInstance();
-      } else {
-        this.emitter = new IntermediateEmitter(children);
-      }
+      this.emitter = new IntermediateEmitter(children);
     } else {
       throw new CrunchRuntimeException("Invalid RTNode config: no emitter for: " + nodeName);
     }

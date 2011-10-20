@@ -16,53 +16,141 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
+
 import org.junit.Test;
 
+import static com.cloudera.crunch.CombineFn.*;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 public class CombineFnTest {
+  
+  private <T> Iterable<T> applyAggregator(Aggregator<T> a, Iterable<T> values) {
+    a.reset();
+    for (T value : values) {
+      a.update(value);
+    }
+    return a.results();
+  }
+  
   @Test
   public void testSums() {
-    assertEquals(new Long(1775L),
-        CombineFn.SUM_LONGS().combine(ImmutableList.of(29L, 17L, 1729L)));
-    
-    assertEquals(new Integer(1775),
-        CombineFn.SUM_INTS().combine(ImmutableList.of(29, 17, 1729)));
+    assertEquals(ImmutableList.of(1775L),
+        applyAggregator(SUM_LONGS, ImmutableList.of(29L, 17L, 1729L)));
 
-    assertEquals(new Float(1775.0f),
-        CombineFn.SUM_FLOATS().combine(ImmutableList.of(29f, 17f, 1729f)));
+    assertEquals(ImmutableList.of(1765L),
+        applyAggregator(SUM_LONGS, ImmutableList.of(29L, 7L, 1729L)));
 
-    assertEquals(new Double(1775.0),
-        CombineFn.SUM_DOUBLES().combine(ImmutableList.of(29.0, 17.0, 1729.0)));
+    assertEquals(ImmutableList.of(1775),
+        applyAggregator(SUM_INTS, ImmutableList.of(29, 17, 1729)));
+
+    assertEquals(ImmutableList.of(1775.0f),
+        applyAggregator(SUM_FLOATS, ImmutableList.of(29f, 17f, 1729f)));
+
+    assertEquals(ImmutableList.of(1775.0),
+        applyAggregator(SUM_DOUBLES, ImmutableList.of(29.0, 17.0, 1729.0)));
   }
   
   @Test
   public void testMax() {
-    assertEquals(new Long(1729L),
-        CombineFn.MAX_LONGS().combine(ImmutableList.of(29L, 17L, 1729L)));
+    assertEquals(ImmutableList.of(1729L),
+        applyAggregator(MAX_LONGS, ImmutableList.of(29L, 17L, 1729L)));
     
-    assertEquals(new Integer(1729),
-        CombineFn.MAX_INTS().combine(ImmutableList.of(29, 17, 1729)));
+    assertEquals(ImmutableList.of(1729),
+        applyAggregator(MAX_INTS, ImmutableList.of(29, 17, 1729)));
 
-    assertEquals(new Float(1729.0f),
-        CombineFn.MAX_FLOATS().combine(ImmutableList.of(29f, 17f, 1729f)));
+    assertEquals(ImmutableList.of(1729.0f),
+        applyAggregator(MAX_FLOATS, ImmutableList.of(29f, 17f, 1729f)));
 
-    assertEquals(new Double(1729.0),
-        CombineFn.MAX_DOUBLES().combine(ImmutableList.of(29.0, 17.0, 1729.0)));
+    assertEquals(ImmutableList.of(1729.0),
+        applyAggregator(MAX_DOUBLES, ImmutableList.of(29.0, 17.0, 1729.0)));
+    
+    assertEquals(ImmutableList.of(1745.0f),
+        applyAggregator(MAX_FLOATS, ImmutableList.of(29f, 1745f, 17f, 1729f)));
+
+    
   }
   
   @Test
   public void testMin() {
-    assertEquals(new Long(17L),
-        CombineFn.MIN_LONGS().combine(ImmutableList.of(29L, 17L, 1729L)));
+    assertEquals(ImmutableList.of(17L),
+        applyAggregator(MIN_LONGS, ImmutableList.of(29L, 17L, 1729L)));
     
-    assertEquals(new Integer(17),
-        CombineFn.MIN_INTS().combine(ImmutableList.of(29, 17, 1729)));
+    assertEquals(ImmutableList.of(17),
+        applyAggregator(MIN_INTS, ImmutableList.of(29, 17, 1729)));
 
-    assertEquals(new Float(17.0f),
-        CombineFn.MIN_FLOATS().combine(ImmutableList.of(29f, 17f, 1729f)));
+    assertEquals(ImmutableList.of(17.0f),
+        applyAggregator(MIN_FLOATS, ImmutableList.of(29f, 17f, 1729f)));
 
-    assertEquals(new Double(17.0),
-        CombineFn.MIN_DOUBLES().combine(ImmutableList.of(29.0, 17.0, 1729.0)));
+    assertEquals(ImmutableList.of(17.0),
+        applyAggregator(MIN_DOUBLES, ImmutableList.of(29.0, 17.0, 1729.0)));
+    
+    assertEquals(ImmutableList.of(29),
+        applyAggregator(MIN_INTS, ImmutableList.of(29, 170, 1729)));
+  }
+
+  @Test
+  public void testMaxN() {
+    assertEquals(ImmutableList.of(98, 1009), applyAggregator(new MaxNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testMinN() {
+    assertEquals(ImmutableList.of(17, 29), applyAggregator(new MinNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testFirstN() {
+    assertEquals(ImmutableList.of(17, 34), applyAggregator(new FirstNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testLastN() {
+    assertEquals(ImmutableList.of(29, 1009), applyAggregator(new LastNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+  
+  @Test
+  public void testPairs() {
+    List<Pair<Long, Double>> input = ImmutableList.of(Pair.of(1720L, 17.29), Pair.of(9L, -3.14));
+    Aggregator<Pair<Long, Double>> a = new PairAggregator<Long, Double>(SUM_LONGS, MIN_DOUBLES);
+    assertEquals(Pair.of(1729L, -3.14), Iterables.getOnlyElement(applyAggregator(a, input)));
+  }
+  
+  @Test
+  public void testTrips() {
+    List<Tuple3<Float, Double, Double>> input = ImmutableList.of(
+        Tuple3.of(17.29f, 12.2, 0.1), Tuple3.of(3.0f, 1.2, 3.14), Tuple3.of(-1.0f, 14.5, -0.98));
+    Aggregator<Tuple3<Float, Double, Double>> a = new TripAggregator<Float, Double, Double>(
+        MAX_FLOATS, MAX_DOUBLES, MIN_DOUBLES);
+    assertEquals(Tuple3.of(17.29f, 14.5, -0.98),
+        Iterables.getOnlyElement(applyAggregator(a, input)));
+  }
+  
+  @Test
+  public void testQuads() {
+    List<Tuple4<Float, Double, Double, Integer>> input = ImmutableList.of(
+        Tuple4.of(17.29f, 12.2, 0.1, 1), Tuple4.of(3.0f, 1.2, 3.14, 2),
+        Tuple4.of(-1.0f, 14.5, -0.98, 3));
+    Aggregator<Tuple4<Float, Double, Double, Integer>> a =
+        new QuadAggregator<Float, Double, Double, Integer>(MAX_FLOATS, MAX_DOUBLES, MIN_DOUBLES,
+            SUM_INTS);
+    assertEquals(Tuple4.of(17.29f, 14.5, -0.98, 6),
+        Iterables.getOnlyElement(applyAggregator(a, input)));
+  }
+
+  @Test
+  public void testTupleN() {
+    List<TupleN> input = ImmutableList.of(new TupleN(1, 3.0, 1, 2.0, 4L),
+        new TupleN(4, 17.0, 1, 9.7, 12L));
+    Aggregator<TupleN> a = new TupleNAggregator(MIN_INTS, SUM_DOUBLES, MAX_INTS,
+        MIN_DOUBLES, MAX_LONGS);
+    assertEquals(new TupleN(1, 20.0, 1, 2.0, 12L),
+        Iterables.getOnlyElement(applyAggregator(a, input)));
   }
 }
