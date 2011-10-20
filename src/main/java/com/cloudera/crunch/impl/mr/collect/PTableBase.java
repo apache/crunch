@@ -19,6 +19,7 @@ import java.util.List;
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.Target;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Lists;
 
@@ -50,6 +51,7 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
     return new PGroupedTableImpl<K, V>(this, groupingOptions);
   }
 
+  @Override
   public PTable<K, V> union(PTable<K, V>... others) {
     List<PTableBase<K, V>> internal = Lists.newArrayList();
     internal.add(this);
@@ -57,5 +59,11 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
       internal.add((PTableBase<K, V>) table);
     }
     return new UnionTable<K, V>(internal);
+  }
+  
+  @Override
+  public PTable<K, V> write(Target target) {
+    getPipeline().write(this, target);
+    return this;
   }
 }
