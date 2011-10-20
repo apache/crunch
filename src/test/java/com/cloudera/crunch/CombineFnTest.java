@@ -90,6 +90,30 @@ public class CombineFnTest {
     assertEquals(ImmutableList.of(29),
         applyAggregator(MIN_INTS, ImmutableList.of(29, 170, 1729)));
   }
+
+  @Test
+  public void testMaxN() {
+    assertEquals(ImmutableList.of(98, 1009), applyAggregator(new MaxNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testMinN() {
+    assertEquals(ImmutableList.of(17, 29), applyAggregator(new MinNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testFirstN() {
+    assertEquals(ImmutableList.of(17, 34), applyAggregator(new FirstNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
+
+  @Test
+  public void testLastN() {
+    assertEquals(ImmutableList.of(29, 1009), applyAggregator(new LastNAggregator<Integer>(2),
+        ImmutableList.of(17, 34, 98, 29, 1009)));
+  }
   
   @Test
   public void testPairs() {

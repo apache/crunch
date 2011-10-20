@@ -223,32 +223,72 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     return aggregator(MAX_LONGS);
   }
 
+  public static final <K> CombineFn<K, Long> MAX_LONGS(int n) {
+    return aggregator(new MaxNAggregator<Long>(n));
+  }
+  
   public static final <K> CombineFn<K, Integer> MAX_INTS() {
     return aggregator(MAX_INTS);
+  }
+
+  public static final <K> CombineFn<K, Integer> MAX_INTS(int n) {
+    return aggregator(new MaxNAggregator<Integer>(n));
   }
 
   public static final <K> CombineFn<K, Float> MAX_FLOATS() {
     return aggregator(MAX_FLOATS);
   }
 
+  public static final <K> CombineFn<K, Float> MAX_FLOATS(int n) {
+    return aggregator(new MaxNAggregator<Float>(n));
+  }
+
   public static final <K> CombineFn<K, Double> MAX_DOUBLES() {
     return aggregator(MAX_DOUBLES);
+  }
+  
+  public static final <K> CombineFn<K, Double> MAX_DOUBLES(int n) {
+    return aggregator(new MaxNAggregator<Double>(n));
   }
   
   public static final <K> CombineFn<K, Long> MIN_LONGS() {
     return aggregator(MIN_LONGS);
   }
 
+  public static final <K> CombineFn<K, Long> MIN_LONGS(int n) {
+    return aggregator(new MinNAggregator<Long>(n));
+  }
+
   public static final <K> CombineFn<K, Integer> MIN_INTS() {
     return aggregator(MIN_INTS);
   }
 
+  public static final <K> CombineFn<K, Integer> MIN_INTS(int n) {
+    return aggregator(new MinNAggregator<Integer>(n));
+  }
+  
   public static final <K> CombineFn<K, Float> MIN_FLOATS() {
     return aggregator(MIN_FLOATS);
   }
 
+  public static final <K> CombineFn<K, Float> MIN_FLOATS(int n) {
+    return aggregator(new MinNAggregator<Float>(n));
+  }
+  
   public static final <K> CombineFn<K, Double> MIN_DOUBLES() {
     return aggregator(MIN_DOUBLES);
+  }
+
+  public static final <K> CombineFn<K, Double> MIN_DOUBLES(int n) {
+    return aggregator(new MinNAggregator<Double>(n));
+  }
+  
+  public static final <K, V> CombineFn<K, V> FIRST_N(int n) {
+    return aggregator(new FirstNAggregator<V>(n));
+  }
+
+  public static final <K, V> CombineFn<K, V> LAST_N(int n) {
+    return aggregator(new LastNAggregator<V>(n));
   }
   
   public static Aggregator<Long> SUM_LONGS = new Aggregator<Long>() {
@@ -495,27 +535,18 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     }
   };
 
-  public static class MaxNAggregator<V> implements Aggregator<V> {
+  public static class MaxNAggregator<V extends Comparable<V>> implements Aggregator<V> {
     private final int arity;
-    private final Class<Comparator<V>> cmpClass;
-    
-    private transient Comparator<V> cmp;
     private transient SortedSet<V> elements;
 
-    public MaxNAggregator(int arity, Class<Comparator<V>> cmpClass) {
+    public MaxNAggregator(int arity) {
       this.arity = arity;
-      this.cmpClass = cmpClass;
     }
 
     @Override
     public void reset() {
       if (elements == null) {
-        try {
-          cmp = cmpClass.newInstance();
-        } catch (Exception e) {
-          throw new CrunchRuntimeException(e);
-        }
-        elements = Sets.newTreeSet(cmp);
+        elements = Sets.newTreeSet();
       } else {
         elements.clear();
       }
@@ -525,7 +556,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public void update(V value) {
       if (elements.size() < arity) {
         elements.add(value);
-      } else if (cmp.compare(value, elements.first()) > 0) {
+      } else if (value.compareTo(elements.first()) > 0) {
         elements.remove(elements.first());
         elements.add(value);
       }
@@ -533,31 +564,22 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     
     @Override
     public Iterable<V> results() {
-      return elements;
+      return ImmutableList.copyOf(elements);
     }
   }
   
-  public static class MinNAggregator<V> implements Aggregator<V> {
+  public static class MinNAggregator<V extends Comparable<V>> implements Aggregator<V> {
     private final int arity;
-    private final Class<Comparator<V>> cmpClass;
-    
-    private transient Comparator<V> cmp;
     private transient SortedSet<V> elements;
     
-    public MinNAggregator(int arity, Class<Comparator<V>> cmpClass) {
+    public MinNAggregator(int arity) {
       this.arity = arity;
-      this.cmpClass = cmpClass;
     }
 
     @Override
     public void reset() {
       if (elements == null) {
-        try {
-          cmp = cmpClass.newInstance();
-        } catch (Exception e) {
-          throw new CrunchRuntimeException(e);
-        }
-        elements = Sets.newTreeSet(cmp);
+        elements = Sets.newTreeSet();
       } else {
         elements.clear();
       }
@@ -567,7 +589,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public void update(V value) {
       if (elements.size() < arity) {
         elements.add(value);
-      } else if (cmp.compare(value, elements.last()) < 0) {
+      } else if (value.compareTo(elements.last()) < 0) {
         elements.remove(elements.last());
         elements.add(value);
       }
@@ -575,7 +597,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     
     @Override
     public Iterable<V> results() {
-      return elements;
+      return ImmutableList.copyOf(elements);
     }
   }
   
@@ -602,7 +624,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     
     @Override
     public Iterable<V> results() {
-      return elements;
+      return ImmutableList.copyOf(elements);
     }
   }
 
@@ -630,7 +652,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     
     @Override
     public Iterable<V> results() {
-      return elements;
+      return ImmutableList.copyOf(elements);
     }
   }
 
