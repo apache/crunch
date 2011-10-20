@@ -57,8 +57,9 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
 
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
   ClosureCleaner.clean(f)
-  override def combine(v: JIterable[V]) = {
-    s2c(f(new ConversionIterable[V](v))).asInstanceOf[V]
+  override def process(input: JPair[K, JIterable[V]], emitfn: Emitter[JPair[K, V]]) = {
+    val v = s2c(f(new ConversionIterable[V](input.second()))).asInstanceOf[V]
+    emitfn.emit(JPair.of(input.first(), v))
   }
 }
 

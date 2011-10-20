@@ -34,6 +34,8 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
     jpipeline.write(pcollect.base, target)
   }
 
+  def materialize[T](pcollect: PCollection[T]) = jpipeline.materialize(pcollect)
+
   def run() { jpipeline.run() }
 
   def done() { jpipeline.done() }

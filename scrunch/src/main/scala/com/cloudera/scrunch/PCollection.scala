@@ -107,6 +107,8 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     new PTable[K, V](jcollect.parallelDo(name, fn, ptype))
   }
 
+  override def materialize(): java.lang.Iterable[S] = jcollect.materialize()
+
   override def write(target: Target) { jcollect.write(target) }
 
   override def getPType() = jcollect.getPType()
