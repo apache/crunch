@@ -40,6 +40,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     this.name = name;
   }
 
+  @Override
   public String getName() {
     return name;
   }
@@ -49,6 +50,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return getName();
   }
   
+  @Override
   public PCollection<S> union(PCollection<S>... collections) {
     List<PCollectionImpl<S>> internal = Lists.newArrayList();
     internal.add(this);
@@ -58,35 +60,46 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return new UnionCollection<S>(internal);
   }
 
+  @Override
   public <T> PCollection<T> parallelDo(DoFn<S, T> fn, PType<T> type) {
     MRPipeline pipeline = (MRPipeline) getPipeline();
     return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
   }
 
+  @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn,
       PType<T> type) {
     return new DoCollectionImpl<T>(name, this, fn, type);
   }
 
+  @Override
   public <K, V> PTable<K, V> parallelDo(DoFn<S, Pair<K, V>> fn,
       PTableType<K, V> type) {
     MRPipeline pipeline = (MRPipeline) getPipeline();
     return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
   }
 
+  @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn,
       PTableType<K, V> type) {
     return new DoTableImpl<K, V>(name, this, fn, type);
   }
 
+  @Override
   public void write(Target target) {
     getPipeline().write(this, target);
   }
 
+  @Override
+  public Iterable<S> materialize() {
+	return getPipeline().materialize(this);
+  }
+  
   public void materializeAt(Source<S> source) {
     this.materializedAt = source;
   }
   
+  @Override
   public PTypeFamily getTypeFamily() {
     return getPType().getFamily();
   }
@@ -103,6 +116,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return parents.get(0);
   }
 
+  @Override
   public Pipeline getPipeline() {
     if (pipeline == null) {
       pipeline = (MRPipeline) getParents().get(0).getPipeline();
