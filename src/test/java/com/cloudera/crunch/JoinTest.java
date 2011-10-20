@@ -93,7 +93,7 @@ public class JoinTest {
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInput.getAbsolutePath());
     PCollection<String> maugham = pipeline.readTextFile(maughamInput.getAbsolutePath());
     PTable<String, Long> joined = join(shakespeare, maugham, typeFamily);
-    Iterable<Pair<String, Long>> lines = pipeline.materialize(joined);
+    Iterable<Pair<String, Long>> lines = joined.materialize();
     
     boolean passed = false;
     for (Pair<String, Long> line : lines) {

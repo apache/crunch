@@ -33,9 +33,7 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.List;
 
 import org.junit.Test;
 
@@ -94,25 +92,17 @@ public class CollectionsTest {
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
     
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
     PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
-    pipeline.writeTextFile(listOfCharcters(shakespeare, typeFamily), outputPath);
-    pipeline.done();
+    Iterable<Pair<String, Collection<String>>> lines = listOfCharcters(shakespeare, typeFamily).materialize();
     
-    File outputFile = new File(output, "part-r-00000");
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
-    for (String line : lines) {
-      if(line.startsWith("yellow")) {
+    for (Pair<String, Collection<String>> line : lines) {
+      if(line.first().startsWith("yellow")) {
         passed = true;
         break;
       }
     }
+    pipeline.done();
     assertTrue(passed);
-
-    output.deleteOnExit();
   }  
 }

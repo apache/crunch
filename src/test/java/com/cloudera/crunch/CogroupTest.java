@@ -38,10 +38,6 @@ import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.base.Splitter;
 import com.google.common.io.Files;
 
-/**
- *
- *
- */
 public class CogroupTest {
 
   private static class WordSplit extends DoFn<String, Pair<String, Long>> {
