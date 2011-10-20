@@ -40,7 +40,7 @@ import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileSourceTarget;
-import com.cloudera.crunch.materialize.CrunchIterable;
+import com.cloudera.crunch.materialize.MaterializableIterable;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.collect.Maps;
@@ -53,7 +53,7 @@ public class MRPipeline implements Pipeline {
   
   private final Class<?> jarClass;
   private final Map<PCollectionImpl, Target> outputTargets;
-  private final Map<PCollectionImpl, CrunchIterable> outputTargetsToMaterialize;
+  private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
   private final Configuration conf;
   private final Path tempDirectory;
   private int tempFileIndex;
@@ -94,7 +94,7 @@ public class MRPipeline implements Pipeline {
       }
       
       if (outputTargetsToMaterialize.containsKey(e.getKey())) {
-    	CrunchIterable c = outputTargetsToMaterialize.get(e.getKey());
+    	MaterializableIterable c = outputTargetsToMaterialize.get(e.getKey());
     	c.materialize();
     	outputTargetsToMaterialize.remove(e.getKey());
       }
@@ -147,7 +147,7 @@ public class MRPipeline implements Pipeline {
 		srcTarget = (ReadableSourceTarget) st;
 	  }
 	}
-	CrunchIterable<T> c = new CrunchIterable<T>(this, srcTarget);
+	MaterializableIterable<T> c = new MaterializableIterable<T>(this, srcTarget);
 	PCollectionImpl impl = (PCollectionImpl) pcollection;
 	outputTargets.put(impl, srcTarget);
 	outputTargetsToMaterialize.put(impl, c);

@@ -65,6 +65,8 @@ public class TextPairTest  {
     output.delete();
     
     PCollection<String> shakespeare = pipeline.read(From.textFile(input.getAbsolutePath()));
+    // Check to see whether a pcollection has a source-- either because we materialzied it,
+    // or if it is an input collection. This is the path to both skewJoins and in-memory joins.
     pipeline.write(wordDuplicate(shakespeare), To.textFile(outputPath));
     pipeline.done();
     
