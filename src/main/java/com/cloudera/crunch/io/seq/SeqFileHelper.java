@@ -24,7 +24,8 @@ import com.cloudera.crunch.type.writable.WritableType;
 
 public class SeqFileHelper {
   static <T> Writable newInstance(PType<T> ptype, Configuration conf) {
-	return ReflectionUtils.newInstance(((WritableType) ptype).getSerializationClass(), conf); 
+	return (Writable) ReflectionUtils.newInstance(
+	    ((WritableType) ptype).getSerializationClass(), conf); 
   }
   
   static <T> MapFn<Writable, T> getInputMapFn(PType<T> ptype) {

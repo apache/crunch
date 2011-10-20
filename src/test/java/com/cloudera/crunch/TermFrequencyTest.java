@@ -28,6 +28,8 @@ import java.util.List;
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
@@ -105,32 +107,23 @@ public class TermFrequencyTest implements Serializable {
       pipeline.writeTextFile(wordDocumentCountPair, transformedTFOutputPath1);
     }
     
-    pipeline.writeTextFile(tf, tfOutputPath);
+    SourceTarget<String> st = At.textFile(tfOutputPath);
+    pipeline.write(tf, st);
     
     pipeline.run();
     
     // test the case we should see
-    File outputFile = new File(tfOutputPath, "part-r-00000");
-    outputFile.deleteOnExit();
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
+    Iterable<String> lines = ((ReadableSourceTarget<String>) st).read(pipeline.getConfiguration());
     boolean passed = false;
-    for (String line : lines) {
-      if ("[well,A]\t1".equals(line)) {
-        passed = true;
-        break;
-      }
-    }
-    assertTrue(passed);
-
-    // test we do not see odd trailing entry
-    outputFile = new File(tfOutputPath, "part-r-00000");
-    outputFile.deleteOnExit();
-    lines = Files.readLines(outputFile, Charset.defaultCharset());
-    passed = false;
     for (String line : lines) {
       if ("[well,A]\t0".equals(line)) {
         fail("Found " + line + " but well is in Document A 1 time");
       }
+      if ("[well,A]\t1".equals(line)) {
+        passed = true;
+      }
     }
+    assertTrue(passed);
+    pipeline.done();
   }
 }
