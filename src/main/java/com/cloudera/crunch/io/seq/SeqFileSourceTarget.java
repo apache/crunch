@@ -20,15 +20,19 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
+import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.SourceTarget;
+import com.cloudera.crunch.io.CompositePathIterable;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 
-public class SeqFileSourceTarget<T> extends SeqFileTarget implements SourceTarget<T> {
+public class SeqFileSourceTarget<T> extends SeqFileTarget implements ReadableSourceTarget<T> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileSourceTarget.class);
   
@@ -85,5 +89,12 @@ public class SeqFileSourceTarget<T> extends SeqFileTarget implements SourceTarge
       LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
     }
     return 1L;
+  }
+  
+  @Override
+  public Iterable<T> read(Configuration conf) throws IOException {
+	FileSystem fs = FileSystem.get(conf);
+	return CompositePathIterable.create(fs, path, 
+	    new SeqFileReaderFactory<T>(ptype, conf));
   }
 }

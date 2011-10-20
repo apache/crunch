@@ -140,7 +140,7 @@ public class MRPipeline implements Pipeline {
 	}
 	if (srcTarget == null) {
 	  SourceTarget<T> st = createIntermediateOutput(pcollection.getPType());
-	  if (!(srcTarget instanceof ReadableSourceTarget)) {
+	  if (!(st instanceof ReadableSourceTarget)) {
 		throw new IllegalArgumentException("The PType for the given PCollection is not readable"
 		    + " and cannot be materialized");
 	  } else {

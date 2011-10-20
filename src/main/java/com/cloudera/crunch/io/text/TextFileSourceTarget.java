@@ -14,26 +14,22 @@
  */
 package com.cloudera.crunch.io.text;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Iterator;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
+import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.Writables;
-import com.google.common.collect.UnmodifiableIterator;
 
 public class TextFileSourceTarget extends TextFileTarget implements ReadableSourceTarget<String> {
 
@@ -88,38 +84,7 @@ public class TextFileSourceTarget extends TextFileTarget implements ReadableSour
 
   @Override
   public Iterable<String> read(Configuration conf) throws IOException {
-	FileSystem fs = FileSystem.get(conf);
-	FSDataInputStream is = fs.open(path);
-	BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-	return new BRIterable(reader);
-  }
-
-  private static class BRIterable implements Iterable<String> {
-	private final BufferedReader reader;
-	
-	public BRIterable(BufferedReader reader) {
-	  this.reader = reader;
-	}
-	
-	@Override
-	public Iterator<String> iterator() {
-	  return new UnmodifiableIterator<String>() {
-		private String nextLine;
-		@Override
-		public boolean hasNext() {
-		  try {
-			return (nextLine = reader.readLine()) != null;
-		  } catch (IOException e) {
-			LOG.info("Exception reading text file stream", e);
-			return false;
-		  }
-		}
-
-		@Override
-		public String next() {
-		  return nextLine;
-		}
-	  };
-	}
+	return CompositePathIterable.create(FileSystem.get(conf), path,
+	    new TextFileReaderFactory());
   }
 }
