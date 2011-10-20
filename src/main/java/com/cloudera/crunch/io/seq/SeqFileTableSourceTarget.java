@@ -20,23 +20,25 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.TableSource;
+import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
-    SourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
+    ReadableSourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableSourceTarget.class);
   
@@ -114,4 +116,10 @@ public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
         ptype.getDataBridge(), outputPath, name);
   }
 
+  @Override
+  public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
+	FileSystem fs = FileSystem.get(conf);
+	return CompositePathIterable.create(fs, path, 
+	    new SeqFileTableReaderFactory<K, V>(tableType, conf));
+  }
 }

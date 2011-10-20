@@ -14,6 +14,8 @@
  */
 package com.cloudera.crunch;
 
+import java.util.Collection;
+
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -53,6 +55,15 @@ public interface Pipeline {
    */
   void write(PCollection<?> collection, Target target);
 
+  /**
+   * Create the given PCollection and read the data it contains
+   * into the returned Collection instance for client use.
+   *
+   * @param pcollection The PCollection to materialize
+   * @return the data from the PCollection as a read-only Collection
+   */
+  <T> Iterable<T> materialize(PCollection<T> pcollection);
+  
   /**
    * Constructs and executes a series of MapReduce jobs in order
    * to write data to the output targets.

@@ -28,10 +28,14 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   private RTNode node;
   private CrunchTaskContext ctxt;
 
+  protected NodeContext getNodeContext() {
+    return NodeContext.REDUCE;
+  }
+  
   @Override
   protected void setup(Reducer<Object, Object, Object, Object>.Context context) {
     RTNodeSerializer serde = new RTNodeSerializer();
-    this.ctxt = new CrunchTaskContext(context, NodeContext.REDUCE);
+    this.ctxt = new CrunchTaskContext(context, getNodeContext());
     try {
       List<RTNode> nodes = serde.deserialize(ctxt);
       this.node = nodes.get(0);

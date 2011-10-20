@@ -20,12 +20,9 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
 
 import org.junit.Test;
 
-import com.cloudera.crunch.fn.MapKeysFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Join;
@@ -33,8 +30,6 @@ import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.google.common.base.Charsets;
-import com.google.common.base.Splitter;
 import com.google.common.io.Files;
 
 public class JoinTest {
@@ -95,26 +90,19 @@ public class JoinTest {
     maughamInput.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("maugham.txt")), maughamInput);
     
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInput.getAbsolutePath());
     PCollection<String> maugham = pipeline.readTextFile(maughamInput.getAbsolutePath());
-    pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), outputPath);
-    pipeline.run();
+    PTable<String, Long> joined = join(shakespeare, maugham, typeFamily);
+    Iterable<Pair<String, Long>> lines = joined.materialize();
     
-    File outputFile = new File(output, "part-r-00000");
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
-    for (String line : lines) {
-      if (line.equals("w\t19263")) {
+    for (Pair<String, Long> line : lines) {
+      if ("w".equals(line.first()) && line.second() == 19263L) {
         passed = true;
         break;
       }
     }
-    assertTrue(passed);
-    
-    output.deleteOnExit();
+    pipeline.done();
+    assertTrue(passed);    
   }
 }

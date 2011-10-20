@@ -29,12 +29,14 @@ import com.cloudera.crunch.impl.mr.collect.DoTableImpl;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.exec.CrunchJob;
+import com.cloudera.crunch.impl.mr.run.CrunchCombiner;
 import com.cloudera.crunch.impl.mr.run.CrunchInputFormat;
 import com.cloudera.crunch.impl.mr.run.CrunchMapper;
 import com.cloudera.crunch.impl.mr.run.CrunchReducer;
 import com.cloudera.crunch.impl.mr.run.NodeContext;
 import com.cloudera.crunch.impl.mr.run.RTNodeSerializer;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -128,19 +130,21 @@ public class JobPrototype {
     if (group != null) {
       job.setReducerClass(CrunchReducer.class);
       List<DoNode> reduceNodes = Lists.newArrayList(outputNodes);
-      reduceNode = reduceNodes.get(0);
       serializer.serialize(reduceNodes, conf, NodeContext.REDUCE);
+      reduceNode = reduceNodes.get(0);
+
+      if (combineFnTable != null) {
+        job.setCombinerClass(CrunchCombiner.class);
+        DoNode combinerInputNode = group.createDoNode();
+        DoNode combineNode = combineFnTable.createDoNode();
+        combineNode.addChild(group.getGroupingNode());
+        combinerInputNode.addChild(combineNode);
+        serializer.serialize(ImmutableList.of(combinerInputNode), conf, NodeContext.COMBINE);
+      }
 
       group.configureShuffle(job);
 
-      DoNode mapOutputNode = group.getGroupingNode();
-      if (reduceNodes.size() == 1 && combineFnTable != null) {
-        // Handle the combiner case
-        DoNode mapSideCombineNode = combineFnTable.createDoNode();
-        mapSideCombineNode.addChild(mapOutputNode);
-        mapOutputNode = mapSideCombineNode;
-      }
-      
+      DoNode mapOutputNode = group.getGroupingNode();      
       Set<DoNode> mapNodes = Sets.newHashSet();
       for (NodePath nodePath : mapNodePaths) {
         // Advance these one step, since we've already configured

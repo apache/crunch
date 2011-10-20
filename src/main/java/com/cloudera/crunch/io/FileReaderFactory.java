@@ -12,19 +12,13 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.impl.mr.run;
+package com.cloudera.crunch.io;
 
-import com.cloudera.crunch.impl.mr.plan.DoNode;
+import java.util.Iterator;
 
-/**
- * Enum that is associated with a serialized {@link DoNode} instance, so we know
- * how to use it within the context of a particular MR job.
- * 
- */
-public enum NodeContext {
-  MAP, REDUCE, COMBINE;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
-  public String getConfigurationKey() {
-    return "crunch.donode." + toString().toLowerCase();
-  }
+public interface FileReaderFactory<T> {
+  Iterator<T> read(FileSystem fs, Path path);
 }

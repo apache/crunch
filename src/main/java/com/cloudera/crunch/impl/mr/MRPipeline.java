@@ -16,7 +16,6 @@
 package com.cloudera.crunch.impl.mr;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -25,8 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
 
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
@@ -41,9 +38,9 @@ import com.cloudera.crunch.impl.mr.collect.InputTable;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
-import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileSourceTarget;
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.materialize.MaterializableIterable;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.collect.Maps;
@@ -56,6 +53,7 @@ public class MRPipeline implements Pipeline {
   
   private final Class<?> jarClass;
   private final Map<PCollectionImpl, Target> outputTargets;
+  private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
   private final Configuration conf;
   private final Path tempDirectory;
   private int tempFileIndex;
@@ -68,6 +66,7 @@ public class MRPipeline implements Pipeline {
   public MRPipeline(Class<?> jarClass, Configuration conf) throws IOException {
     this.jarClass = jarClass;
     this.outputTargets = Maps.newHashMap();
+    this.outputTargetsToMaterialize = Maps.newHashMap();
     this.conf = conf;
     this.tempDirectory = createTempDirectory(conf);
     this.tempFileIndex = 0;
@@ -92,6 +91,12 @@ public class MRPipeline implements Pipeline {
     for (Map.Entry<PCollectionImpl, Target> e : outputTargets.entrySet()) {
       if (e.getValue() instanceof Source) {
         e.getKey().materializeAt((Source) e.getValue());
+      }
+      
+      if (outputTargetsToMaterialize.containsKey(e.getKey())) {
+    	MaterializableIterable c = outputTargetsToMaterialize.get(e.getKey());
+    	c.materialize();
+    	outputTargetsToMaterialize.remove(e.getKey());
       }
     }
     outputTargets.clear();
@@ -124,8 +129,33 @@ public class MRPipeline implements Pipeline {
     outputTargets.put((PCollectionImpl) pcollection, target);
   }
 
-  public <T> SourceTarget<T> createIntermediateOutput(PType<T> ptype) throws IOException {
-    return ptype.getDefaultFileSource(createTempPath());
+  @Override
+  public <T> Iterable<T> materialize(PCollection<T> pcollection) {
+	ReadableSourceTarget<T> srcTarget = null;
+	if (outputTargets.containsKey(pcollection)) {
+	  Target target = outputTargets.get(pcollection);
+	  if (target instanceof ReadableSourceTarget) {
+		srcTarget = (ReadableSourceTarget) target;
+	  }
+	}
+	if (srcTarget == null) {
+	  SourceTarget<T> st = createIntermediateOutput(pcollection.getPType());
+	  if (!(st instanceof ReadableSourceTarget)) {
+		throw new IllegalArgumentException("The PType for the given PCollection is not readable"
+		    + " and cannot be materialized");
+	  } else {
+		srcTarget = (ReadableSourceTarget) st;
+	  }
+	}
+	MaterializableIterable<T> c = new MaterializableIterable<T>(this, srcTarget);
+	PCollectionImpl impl = (PCollectionImpl) pcollection;
+	outputTargets.put(impl, srcTarget);
+	outputTargetsToMaterialize.put(impl, c);
+	return c;
+  }
+
+  public <T> SourceTarget<T> createIntermediateOutput(PType<T> ptype) {
+	return ptype.getDefaultFileSource(createTempPath());
   }
 
   public Path createTempPath() {
@@ -138,15 +168,6 @@ public class MRPipeline implements Pipeline {
     pcollection = pcollection.parallelDo("asText", IdentityFn.<T>getInstance(),
         WritableTypeFamily.getInstance().as(pcollection.getPType()));
     write(pcollection, new TextFileSourceTarget(new Path(pathName)));
-  }
-
-  public <K, V> PTable<K, V> readSequenceFile(String pathName,
-      PTableType<K, V> ptt) {
-    return read(new SeqFileTableSourceTarget<K, V>(new Path(pathName), ptt));
-  }
-
-  public void writeSequenceFile(PTable<?, ?> ptable, String pathName) {
-    write(ptable, new SeqFileTableSourceTarget(new Path(pathName), ptable.getPTableType()));
   }
 
   private void cleanup() {

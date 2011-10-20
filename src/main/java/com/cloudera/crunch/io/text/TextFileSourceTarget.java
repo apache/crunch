@@ -20,16 +20,18 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
-import com.cloudera.crunch.SourceTarget;
+import com.cloudera.crunch.io.CompositePathIterable;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.Writables;
 
-public class TextFileSourceTarget extends TextFileTarget implements SourceTarget<String> {
+public class TextFileSourceTarget extends TextFileTarget implements ReadableSourceTarget<String> {
 
   private static final Log LOG = LogFactory.getLog(TextFileSourceTarget.class);
   
@@ -62,7 +64,7 @@ public class TextFileSourceTarget extends TextFileTarget implements SourceTarget
   
   @Override
   public String toString() {
-    return "TextSourceTarget(" + path + ")";
+    return "TextFileSourceTarget(" + path + ")";
   }
   
   @Override
@@ -80,4 +82,9 @@ public class TextFileSourceTarget extends TextFileTarget implements SourceTarget
     return 1L;
   }
 
+  @Override
+  public Iterable<String> read(Configuration conf) throws IOException {
+	return CompositePathIterable.create(FileSystem.get(conf), path,
+	    new TextFileReaderFactory());
+  }
 }

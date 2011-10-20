@@ -88,6 +88,12 @@ public interface PCollection<S> {
   void write(Target target);
   
   /**
+   * Returns a reference to the data set represented by this PCollection that
+   * may be used by the client to read the data locally.
+   */
+  Iterable<S> materialize();
+  
+  /**
    * Returns the {@code PType} of this {@code PCollection}.
    */
   PType<S> getPType();

@@ -27,29 +27,36 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.List;
 
 import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class CollectionsTest {
   
-  public static class CombineStringListFn extends CombineFn<String, Collection<String>> {
+  public static class AggregateStringListFn implements CombineFn.Aggregator<Collection<String>> {
+    private final Collection<String> rtn = Lists.newArrayList();
+    
     @Override
-    public Collection<String> combine(Iterable<Collection<String>> values) {
-      Collection<String> rtn = Lists.newArrayList();
-      for(Collection<String> list : values) {
-        rtn.addAll(list);
-      }
-      return rtn;
+    public void reset() {
+      rtn.clear();
+    }
+    
+    @Override
+    public void update(Collection<String> values) {
+      rtn.addAll(values);
     }      
+    
+    @Override
+    public Iterable<Collection<String>> results() {
+      return ImmutableList.of(rtn);
+    }
   }
   
   public static PTable<String, Collection<String>> listOfCharcters(PCollection<String> lines, PTypeFamily typeFamily) {
@@ -67,7 +74,7 @@ public class CollectionsTest {
       }
     }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings())))
     .groupByKey()
-    .combineValues(new CombineStringListFn());
+    .combineValues(CombineFn.<String, Collection<String>>aggregator(new AggregateStringListFn()));
   }
   
   @Test
@@ -85,25 +92,17 @@ public class CollectionsTest {
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
     
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
     PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
-    pipeline.writeTextFile(listOfCharcters(shakespeare, typeFamily), outputPath);
-    pipeline.done();
+    Iterable<Pair<String, Collection<String>>> lines = listOfCharcters(shakespeare, typeFamily).materialize();
     
-    File outputFile = new File(output, "part-r-00000");
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
-    for (String line : lines) {
-      if(line.startsWith("yellow")) {
+    for (Pair<String, Collection<String>> line : lines) {
+      if(line.first().startsWith("yellow")) {
         passed = true;
         break;
       }
     }
+    pipeline.done();
     assertTrue(passed);
-
-    output.deleteOnExit();
   }  
 }

@@ -20,14 +20,11 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
 
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
-import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.type.writable.Writables;
 import com.google.common.io.Files;
 
@@ -59,25 +56,19 @@ public class TextPairTest  {
     File input = File.createTempFile("shakes", "txt");
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
-    
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
+        
     PCollection<String> shakespeare = pipeline.read(From.textFile(input.getAbsolutePath()));
-    pipeline.write(wordDuplicate(shakespeare), To.textFile(outputPath));
-    pipeline.done();
-    
-    File outputFile = new File(output, "part-m-00000");
-    outputFile.deleteOnExit();
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
+
+    Iterable<Pair<String, String>> lines = pipeline.materialize(wordDuplicate(shakespeare));    
     boolean passed = false;
-    for (String line : lines) {
-      if (line.contains(CANARY)) {
+    for (Pair<String, String> line : lines) {
+      if (line.first().contains(CANARY)) {
         passed = true;
         break;
       }
     }
+    
+    pipeline.done();
     assertTrue(passed);
   }  
 }
