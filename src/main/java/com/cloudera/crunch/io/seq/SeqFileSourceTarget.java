@@ -25,8 +25,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
-import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;

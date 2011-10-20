@@ -20,16 +20,18 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
-import com.cloudera.crunch.SourceTarget;
+import com.cloudera.crunch.io.CompositePathIterable;
+import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.avro.AvroInputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
 
-public class AvroFileSourceTarget<T> extends AvroFileTarget implements SourceTarget<T> {
+public class AvroFileSourceTarget<T> extends AvroFileTarget implements ReadableSourceTarget<T> {
 
   private static final Log LOG = LogFactory.getLog(AvroFileSourceTarget.class);
   
@@ -89,5 +91,11 @@ public class AvroFileSourceTarget<T> extends AvroFileTarget implements SourceTar
       LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
     }
     return 1L;
+  }
+
+  @Override
+  public Iterable<T> read(Configuration conf) throws IOException {
+	return CompositePathIterable.create(FileSystem.get(conf), path,
+	    new AvroFileReaderFactory<T>(ptype));
   }
 }
