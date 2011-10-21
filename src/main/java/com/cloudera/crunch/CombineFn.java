@@ -16,12 +16,11 @@
 package com.cloudera.crunch;
 
 import java.io.Serializable;
-import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 
-import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 import com.cloudera.crunch.util.Tuples;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -53,6 +52,13 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
      * Returns the current aggregated state of this instance.
      */
     Iterable<T> results();    
+  }
+  
+  /**
+   * Interface for constructing new aggregator instances.
+   */
+  public static interface AggregatorFactory<T> {
+    Aggregator<T> create();
   }
   
   /**
@@ -184,43 +190,53 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     return new AggregatorCombineFn<K, V>(aggregator);
   }
   
+  public static final <K, V> CombineFn<K, V> aggregatorFactory(AggregatorFactory<V> aggregator) {
+    return new AggregatorCombineFn<K, V>(aggregator.create());
+  }
+  
   public static final <K, V1, V2> CombineFn<K, Pair<V1, V2>> pairAggregator(
-      Aggregator<V1> a1, Aggregator<V2> a2) {
-    return aggregator(new PairAggregator<V1, V2>(a1, a2));
+      AggregatorFactory<V1> a1, AggregatorFactory<V2> a2) {
+    return aggregator(new PairAggregator<V1, V2>(a1.create(), a2.create()));
   }
   
   public static final <K, A, B, C> CombineFn<K, Tuple3<A, B, C>> tripAggregator(
-      Aggregator<A> a1, Aggregator<B> a2, Aggregator<C> a3) {
-    return aggregator(new TripAggregator<A, B, C>(a1, a2, a3));
+      AggregatorFactory<A> a1, AggregatorFactory<B> a2, AggregatorFactory<C> a3) {
+    return aggregator(new TripAggregator<A, B, C>(a1.create(), a2.create(), a3.create()));
   }
 
   public static final <K, A, B, C, D> CombineFn<K, Tuple4<A, B, C, D>> quadAggregator(
-      Aggregator<A> a1, Aggregator<B> a2, Aggregator<C> a3, Aggregator<D> a4) {
-    return aggregator(new QuadAggregator<A, B, C, D>(a1, a2, a3, a4));
+      AggregatorFactory<A> a1, AggregatorFactory<B> a2, AggregatorFactory<C> a3,
+      AggregatorFactory<D> a4) {
+    return aggregator(new QuadAggregator<A, B, C, D>(a1.create(), a2.create(), a3.create(),
+        a4.create()));
   }
 
-  public static final <K> CombineFn<K, TupleN> tupleAggregator(Aggregator<?>... aggregators) {
-    return aggregator(new TupleNAggregator(aggregators));
+  public static final <K> CombineFn<K, TupleN> tupleAggregator(AggregatorFactory<?>... factories) {
+    Aggregator[] aggs = new Aggregator[factories.length];
+    for (int i = 0; i < aggs.length; i++) {
+      aggs[i] = factories[i].create();
+    }
+    return aggregator(new TupleNAggregator(aggs));
   }
   
   public static final <K> CombineFn<K, Long> SUM_LONGS() {
-    return aggregator(SUM_LONGS);
+    return aggregatorFactory(SUM_LONGS);
   }
 
   public static final <K> CombineFn<K, Integer> SUM_INTS() {
-    return aggregator(SUM_INTS);
+    return aggregatorFactory(SUM_INTS);
   }
 
   public static final <K> CombineFn<K, Float> SUM_FLOATS() {
-    return aggregator(SUM_FLOATS);
+    return aggregatorFactory(SUM_FLOATS);
   }
 
   public static final <K> CombineFn<K, Double> SUM_DOUBLES() {
-    return aggregator(SUM_DOUBLES);
+    return aggregatorFactory(SUM_DOUBLES);
   }
   
   public static final <K> CombineFn<K, Long> MAX_LONGS() {
-    return aggregator(MAX_LONGS);
+    return aggregatorFactory(MAX_LONGS);
   }
 
   public static final <K> CombineFn<K, Long> MAX_LONGS(int n) {
@@ -228,7 +244,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static final <K> CombineFn<K, Integer> MAX_INTS() {
-    return aggregator(MAX_INTS);
+    return aggregatorFactory(MAX_INTS);
   }
 
   public static final <K> CombineFn<K, Integer> MAX_INTS(int n) {
@@ -236,7 +252,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static final <K> CombineFn<K, Float> MAX_FLOATS() {
-    return aggregator(MAX_FLOATS);
+    return aggregatorFactory(MAX_FLOATS);
   }
 
   public static final <K> CombineFn<K, Float> MAX_FLOATS(int n) {
@@ -244,7 +260,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static final <K> CombineFn<K, Double> MAX_DOUBLES() {
-    return aggregator(MAX_DOUBLES);
+    return aggregatorFactory(MAX_DOUBLES);
   }
   
   public static final <K> CombineFn<K, Double> MAX_DOUBLES(int n) {
@@ -252,7 +268,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static final <K> CombineFn<K, Long> MIN_LONGS() {
-    return aggregator(MIN_LONGS);
+    return aggregatorFactory(MIN_LONGS);
   }
 
   public static final <K> CombineFn<K, Long> MIN_LONGS(int n) {
@@ -260,7 +276,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static final <K> CombineFn<K, Integer> MIN_INTS() {
-    return aggregator(MIN_INTS);
+    return aggregatorFactory(MIN_INTS);
   }
 
   public static final <K> CombineFn<K, Integer> MIN_INTS(int n) {
@@ -268,7 +284,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static final <K> CombineFn<K, Float> MIN_FLOATS() {
-    return aggregator(MIN_FLOATS);
+    return aggregatorFactory(MIN_FLOATS);
   }
 
   public static final <K> CombineFn<K, Float> MIN_FLOATS(int n) {
@@ -276,7 +292,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static final <K> CombineFn<K, Double> MIN_DOUBLES() {
-    return aggregator(MIN_DOUBLES);
+    return aggregatorFactory(MIN_DOUBLES);
   }
 
   public static final <K> CombineFn<K, Double> MIN_DOUBLES(int n) {
@@ -291,7 +307,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     return aggregator(new LastNAggregator<V>(n));
   }
   
-  public static Aggregator<Long> SUM_LONGS = new Aggregator<Long>() {
+  public static class SumLongs implements Aggregator<Long> {
     private long sum = 0;
     
     @Override
@@ -308,9 +324,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Long> results() {
       return ImmutableList.of(sum);
     }
+  }
+  public static AggregatorFactory<Long> SUM_LONGS = new AggregatorFactory<Long>() {
+    public Aggregator<Long> create() { return new SumLongs(); }
   };
   
-  public static Aggregator<Integer> SUM_INTS = new Aggregator<Integer>() {
+  public static class SumInts implements Aggregator<Integer> {
     private int sum = 0;
     
     @Override
@@ -327,9 +346,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Integer> results() {
       return ImmutableList.of(sum);
     }
+  }
+  public static AggregatorFactory<Integer> SUM_INTS = new AggregatorFactory<Integer>() {
+    public Aggregator<Integer> create() { return new SumInts(); }
   };
   
-  public static Aggregator<Float> SUM_FLOATS = new Aggregator<Float>() {
+  public static class SumFloats implements Aggregator<Float> {
     private float sum = 0;
     
     @Override
@@ -346,9 +368,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Float> results() {
       return ImmutableList.of(sum);
     }
+  }
+  public static AggregatorFactory<Float> SUM_FLOATS = new AggregatorFactory<Float>() {
+    public Aggregator<Float> create() { return new SumFloats(); }
   };
   
-  public static Aggregator<Double> SUM_DOUBLES = new Aggregator<Double>() {
+  public static class SumDoubles implements Aggregator<Double> {
     private double sum = 0;
     
     @Override
@@ -365,9 +390,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Double> results() {
       return ImmutableList.of(sum);
     }
+  }
+  public static AggregatorFactory<Double> SUM_DOUBLES = new AggregatorFactory<Double>() {
+    public Aggregator<Double> create() { return new SumDoubles(); }
   };
-
-  public static Aggregator<Long> MAX_LONGS = new Aggregator<Long>() {
+  
+  public static class MaxLongs implements Aggregator<Long> {
     private Long max = null;
     
     @Override
@@ -386,9 +414,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Long> results() {
       return ImmutableList.of(max);
     }
+  }
+  public static AggregatorFactory<Long> MAX_LONGS = new AggregatorFactory<Long>() {
+    public Aggregator<Long> create() { return new MaxLongs(); }
   };
   
-  public static Aggregator<Integer> MAX_INTS = new Aggregator<Integer>() {
+  public static class MaxInts implements Aggregator<Integer> {
     private Integer max = null;
     
     @Override
@@ -407,9 +438,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Integer> results() {
       return ImmutableList.of(max);
     }
+  }
+  public static AggregatorFactory<Integer> MAX_INTS = new AggregatorFactory<Integer>() {
+    public Aggregator<Integer> create() { return new MaxInts(); }
   };
   
-  public static Aggregator<Float> MAX_FLOATS = new Aggregator<Float>() {
+  public static class MaxFloats implements Aggregator<Float> {
     private Float max = null;
     
     @Override
@@ -428,9 +462,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Float> results() {
       return ImmutableList.of(max);
     }
+  }
+  public static AggregatorFactory<Float> MAX_FLOATS = new AggregatorFactory<Float>() {
+    public Aggregator<Float> create() { return new MaxFloats(); }
   };
   
-  public static Aggregator<Double> MAX_DOUBLES = new Aggregator<Double>() {
+  public static class MaxDoubles implements Aggregator<Double> {
     private Double max = null;
     
     @Override
@@ -449,9 +486,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Double> results() {
       return ImmutableList.of(max);
     }
+  }
+  public static AggregatorFactory<Double> MAX_DOUBLES = new AggregatorFactory<Double>() {
+    public Aggregator<Double> create() { return new MaxDoubles(); }
   };
   
-  public static Aggregator<Long> MIN_LONGS = new Aggregator<Long>() {
+  public static class MinLongs implements Aggregator<Long> {
     private Long min = null;
     
     @Override
@@ -470,9 +510,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Long> results() {
       return ImmutableList.of(min);
     }
+  }
+  public static AggregatorFactory<Long> MIN_LONGS = new AggregatorFactory<Long>() {
+    public Aggregator<Long> create() { return new MinLongs(); }
   };
   
-  public static Aggregator<Integer> MIN_INTS = new Aggregator<Integer>() {
+  public static class MinInts implements Aggregator<Integer> {
     private Integer min = null;
     
     @Override
@@ -491,9 +534,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Integer> results() {
       return ImmutableList.of(min);
     }
+  }
+  public static AggregatorFactory<Integer> MIN_INTS = new AggregatorFactory<Integer>() {
+    public Aggregator<Integer> create() { return new MinInts(); }
   };
   
-  public static Aggregator<Float> MIN_FLOATS = new Aggregator<Float>() {
+  public static class MinFloats implements Aggregator<Float> {
     private Float min = null;
     
     @Override
@@ -512,9 +558,12 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Float> results() {
       return ImmutableList.of(min);
     }
+  }
+  public static AggregatorFactory<Float> MIN_FLOATS = new AggregatorFactory<Float>() {
+    public Aggregator<Float> create() { return new MinFloats(); }
   };
   
-  public static Aggregator<Double> MIN_DOUBLES = new Aggregator<Double>() {
+  public static class MinDoubles implements Aggregator<Double> {
     private Double min = null;
     
     @Override
@@ -533,7 +582,11 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Iterable<Double> results() {
       return ImmutableList.of(min);
     }
+  }
+  public static AggregatorFactory<Double> MIN_DOUBLES = new AggregatorFactory<Double>() {
+    public Aggregator<Double> create() { return new MinDoubles(); }
   };
+
 
   public static class MaxNAggregator<V extends Comparable<V>> implements Aggregator<V> {
     private final int arity;
