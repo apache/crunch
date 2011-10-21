@@ -85,7 +85,7 @@ public interface PCollection<S> {
    * 
    * @param target The target to write to
    */
-  void write(Target target);
+  PCollection<S> write(Target target);
   
   /**
    * Returns a reference to the data set represented by this PCollection that

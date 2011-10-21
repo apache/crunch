@@ -86,8 +86,9 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
-  public void write(Target target) {
+  public PCollection<S> write(Target target) {
     getPipeline().write(this, target);
+    return this;
   }
 
   @Override

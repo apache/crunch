@@ -26,6 +26,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 public class CombineFnTest {
+
+  private <T> Iterable<T> applyAggregator(AggregatorFactory<T> a, Iterable<T> values) {
+    return applyAggregator(a.create(), values);
+  }
   
   private <T> Iterable<T> applyAggregator(Aggregator<T> a, Iterable<T> values) {
     a.reset();
@@ -118,8 +122,17 @@ public class CombineFnTest {
   @Test
   public void testPairs() {
     List<Pair<Long, Double>> input = ImmutableList.of(Pair.of(1720L, 17.29), Pair.of(9L, -3.14));
-    Aggregator<Pair<Long, Double>> a = new PairAggregator<Long, Double>(SUM_LONGS, MIN_DOUBLES);
+    Aggregator<Pair<Long, Double>> a = new PairAggregator<Long, Double>(
+        SUM_LONGS.create(), MIN_DOUBLES.create());
     assertEquals(Pair.of(1729L, -3.14), Iterables.getOnlyElement(applyAggregator(a, input)));
+  }
+  
+  @Test
+  public void testPairsTwoLongs() {
+    List<Pair<Long, Long>> input = ImmutableList.of(Pair.of(1720L, 1L), Pair.of(9L, 19L));
+    Aggregator<Pair<Long, Long>> a = new PairAggregator<Long, Long>(
+        SUM_LONGS.create(), SUM_LONGS.create());
+    assertEquals(Pair.of(1729L, 20L), Iterables.getOnlyElement(applyAggregator(a, input)));
   }
   
   @Test
@@ -127,7 +140,7 @@ public class CombineFnTest {
     List<Tuple3<Float, Double, Double>> input = ImmutableList.of(
         Tuple3.of(17.29f, 12.2, 0.1), Tuple3.of(3.0f, 1.2, 3.14), Tuple3.of(-1.0f, 14.5, -0.98));
     Aggregator<Tuple3<Float, Double, Double>> a = new TripAggregator<Float, Double, Double>(
-        MAX_FLOATS, MAX_DOUBLES, MIN_DOUBLES);
+        MAX_FLOATS.create(), MAX_DOUBLES.create(), MIN_DOUBLES.create());
     assertEquals(Tuple3.of(17.29f, 14.5, -0.98),
         Iterables.getOnlyElement(applyAggregator(a, input)));
   }
@@ -138,8 +151,8 @@ public class CombineFnTest {
         Tuple4.of(17.29f, 12.2, 0.1, 1), Tuple4.of(3.0f, 1.2, 3.14, 2),
         Tuple4.of(-1.0f, 14.5, -0.98, 3));
     Aggregator<Tuple4<Float, Double, Double, Integer>> a =
-        new QuadAggregator<Float, Double, Double, Integer>(MAX_FLOATS, MAX_DOUBLES, MIN_DOUBLES,
-            SUM_INTS);
+        new QuadAggregator<Float, Double, Double, Integer>(MAX_FLOATS.create(),
+            MAX_DOUBLES.create(), MIN_DOUBLES.create(), SUM_INTS.create());
     assertEquals(Tuple4.of(17.29f, 14.5, -0.98, 6),
         Iterables.getOnlyElement(applyAggregator(a, input)));
   }
@@ -148,8 +161,8 @@ public class CombineFnTest {
   public void testTupleN() {
     List<TupleN> input = ImmutableList.of(new TupleN(1, 3.0, 1, 2.0, 4L),
         new TupleN(4, 17.0, 1, 9.7, 12L));
-    Aggregator<TupleN> a = new TupleNAggregator(MIN_INTS, SUM_DOUBLES, MAX_INTS,
-        MIN_DOUBLES, MAX_LONGS);
+    Aggregator<TupleN> a = new TupleNAggregator(MIN_INTS.create(), SUM_DOUBLES.create(),
+        MAX_INTS.create(), MIN_DOUBLES.create(), MAX_LONGS.create());
     assertEquals(new TupleN(1, 20.0, 1, 2.0, 12L),
         Iterables.getOnlyElement(applyAggregator(a, input)));
   }
