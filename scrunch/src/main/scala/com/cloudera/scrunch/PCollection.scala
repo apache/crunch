@@ -16,7 +16,6 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
-import com.cloudera.crunch.fn.IdentityFn
 import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
 import com.cloudera.scrunch.Conversions._
 
@@ -40,13 +39,7 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
     parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
   }
 
-  protected def createPTableType[K, V](k: ClassManifest[K], v: ClassManifest[V]) = {
-    getTypeFamily().tableOf(createPType(k), createPType(v))
-  }
-
-  protected def createPType[T](m: ClassManifest[T]): PType[T] = {
-    manifest2PType(m, getTypeFamily()).asInstanceOf[PType[T]]
-  }
+  def count(implicit pt: PTypeH[S]) = map(s => (s, 1L)).groupByKey().combine(v => v.sum)
 
   override def getPipeline() = jcollect.getPipeline()
 

@@ -15,7 +15,7 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.io.{From => from, To => to}
-import com.cloudera.crunch.lib.Aggregate
+import com.cloudera.crunch.lib.Aggregate._
 import com.cloudera.scrunch.Conversions._
 
 import org.scalatest.junit.AssertionsForJUnit
@@ -25,13 +25,12 @@ import org.junit.Test
 class ExampleWordTest extends AssertionsForJUnit {
   @Test def wordCount() = {
     val pipeline = new Pipeline[ExampleWordTest]
-    val input = pipeline.read(from.textFile("/tmp/shakes.txt"))
-    val words = input.flatMap(_.split("\\s+"))
-    val wordCount = Aggregate.count(words)
-    pipeline.writeTextFile(wordCount, "/tmp/wc")
-    val uc = wordCount.map((w, c) => ((w.substring(0, 1), w.length), c.longValue()))
-    val cc = uc.groupByKey().combine(v => v.sum).map((k, v) => (k._1, v))
-    pipeline.write(cc, to.textFile("/tmp/cc"))
+    pipeline.read(from.textFile("/tmp/shakes.txt"))
+        .flatMap(_.split("\\s+")).count
+        .write(to.textFile("/tmp/wc")) // Word counts
+        .map((w, c) => (w.slice(0, 1), c))
+        .groupByKey().combine(v => v.sum)
+        .write(to.textFile("/tmp/cc")) // First char counts
     pipeline.done()
   }
 }

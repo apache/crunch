@@ -29,7 +29,7 @@ trait CanParallelTransform[Col, El, To] {
 }
 
 trait LowPriorityParallelTransforms {
-  implicit def fault[A, B] = new CanParallelTransform[PCollection[A], B, PCollection[B]] {
+  implicit def single[A, B] = new CanParallelTransform[PCollection[A], B, PCollection[B]] {
     def apply(c: PCollection[A], fn: DoFn[_, _], ptype: PType[B]) = {
       c.parallelDo(fn.asInstanceOf[DoFn[A,B]], ptype.asInstanceOf[PType[B]])
     }
@@ -45,7 +45,7 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
     }
   }
 
-  def apply(c: String, fn: DoFn[_, _], ptype: PType[_]) = "WOW"
+  def apply(c: Nothing, fn: DoFn[_, _], ptype: PType[Nothing]) = println("Impossible")
 } 
 
 object Conversions {
