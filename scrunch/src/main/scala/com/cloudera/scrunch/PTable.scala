@@ -79,29 +79,10 @@ trait SDoTableFn[K, V, T] extends DoFn[JPair[K, V], T] with Function2[K, V, Trav
   }
 }
 
-trait SDoTableFn2[K, V, L, W] extends DoFn[JPair[K, V], JPair[L, W]] with Function2[K, V, Traversable[(L, W)]] {
-  override def process(input: JPair[K, V], emitter: Emitter[JPair[L, W]]): Unit = {
-    val k = c2s(input.first()).asInstanceOf[K]
-    val v = c2s(input.second()).asInstanceOf[V]
-    for ((f, s) <- apply(k, v)) {
-      emitter.emit(JPair.of(s2c(f), s2c(s)).asInstanceOf[JPair[L, W]])
-    }
-  }
-}
-
 trait SMapTableFn[K, V, T] extends MapFn[JPair[K, V], T] with Function2[K, V, T] {
   override def map(input: JPair[K, V]): T = {
     val v = apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V])
     s2c(v).asInstanceOf[T]
-  }
-}
-
-trait SMapTableFn2[K, V, L, W] extends MapFn[JPair[K, V], JPair[L, W]] with Function2[K, V, (L, W)] {
-  override def map(input: JPair[K, V]): JPair[L, W] = {
-    val k = c2s(input.first()).asInstanceOf[K]
-    val v = c2s(input.second()).asInstanceOf[V]
-    val (f, s) = apply(k, v)
-    JPair.of(s2c(f), s2c(s)).asInstanceOf[JPair[L, W]]
   }
 }
 
@@ -115,17 +96,7 @@ class DSDoTableFn[K, V, T](fn: (K, V) => Traversable[T]) extends SDoTableFn[K, V
   override def apply(k: K, v: V) = fn(k, v)  
 }
 
-class DSDoTableFn2[K, V, L, W](fn: (K, V) => Traversable[(L, W)]) extends SDoTableFn2[K, V, L, W] {
-  ClosureCleaner.clean(fn)
-  override def apply(k: K, v: V) = fn(k, v)  
-}
-
 class DSMapTableFn[K, V, T](fn: (K, V) => T) extends SMapTableFn[K, V, T] {
   ClosureCleaner.clean(fn)
   override def apply(k: K, v: V) = fn(k, v)  
-}
-
-class DSMapTableFn2[K, V, L, W](fn: (K, V) => (L, W)) extends SMapTableFn2[K, V, L, W] {
-  ClosureCleaner.clean(fn)
-  override def apply(k: K, v: V) = fn(k, v)
 }

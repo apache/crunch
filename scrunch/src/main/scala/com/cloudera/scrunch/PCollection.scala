@@ -108,14 +108,6 @@ trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
   }
 }
 
-trait SDoFn2[S, K, V] extends DoFn[S, JPair[K, V]] with Function1[S, Traversable[(K, V)]] {
-  override def process(input: S, emitter: Emitter[JPair[K, V]]): Unit = {
-    for (v <- apply(c2s(input).asInstanceOf[S])) {
-      emitter.emit(s2c(v).asInstanceOf[JPair[K, V]])
-    }
-  }
-}
-
 trait SFilterFn[T] extends FilterFn[T] with Function1[T, Boolean] {
   override def accept(input: T): Boolean = {
     apply(c2s(input).asInstanceOf[T]);
@@ -128,12 +120,6 @@ trait SMapFn[S, T] extends MapFn[S, T] with Function1[S, T] {
   }
 }
 
-trait SMapFn2[S, K, V] extends MapFn[S, JPair[K, V]] with Function1[S, (K, V)] {
-  override def map(input: S): JPair[K, V] = {
-    s2c(apply(c2s(input).asInstanceOf[S])).asInstanceOf[JPair[K, V]]
-  }
-}
-
 trait SMapKeyFn[S, K] extends MapFn[S, JPair[K, S]] with Function1[S, K] {
   override def map(input: S): JPair[K, S] = {
     val sc = c2s(input).asInstanceOf[S]
@@ -142,11 +128,6 @@ trait SMapKeyFn[S, K] extends MapFn[S, JPair[K, S]] with Function1[S, K] {
 }
 
 class DSDoFn[S, T](fn: S => Traversable[T]) extends SDoFn[S, T] {
-    ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
-}
-
-class DSDoFn2[S, K, V](fn: S => Traversable[(K, V)]) extends SDoFn2[S, K, V] {
   ClosureCleaner.clean(fn)
   override def apply(x: S) = fn(x)
 }
@@ -157,11 +138,6 @@ class DSFilterFn[S](fn: S => Boolean) extends SFilterFn[S] {
 }
 
 class DSMapFn[S, T](fn: S => T) extends SMapFn[S, T] {
-  ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
-}
-
-class DSMapFn2[S, K, V](fn: S => (K, V)) extends SMapFn2[S, K, V] {
   ClosureCleaner.clean(fn)
   override def apply(x: S) = fn(x)
 }

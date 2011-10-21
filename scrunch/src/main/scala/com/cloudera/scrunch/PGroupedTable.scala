@@ -76,25 +76,9 @@ trait SDoGroupedFn[K, V, T] extends DoFn[JPair[K, JIterable[V]], T] with Functio
   }
 }
 
-trait SDoGroupedFn2[K, V, L, W] extends DoFn[JPair[K, JIterable[V]], JPair[L, W]]
-    with Function2[K, Iterable[V], Traversable[(L, W)]] {
-  override def process(input: JPair[K, JIterable[V]], emitter: Emitter[JPair[L, W]]): Unit = {
-    for ((f, s) <- apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
-      emitter.emit(JPair.of(s2c(f).asInstanceOf[L], s2c(s).asInstanceOf[W]))
-    }
-  }
-}
-
 trait SMapGroupedFn[K, V, T] extends MapFn[JPair[K, JIterable[V]], T] with Function2[K, Iterable[V], T] {
   override def map(input: JPair[K, JIterable[V]]): T = {
     s2c(apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))).asInstanceOf[T]
-  }
-}
-
-trait SMapGroupedFn2[K, V, L, W] extends MapFn[JPair[K, JIterable[V]], JPair[L, W]] with Function2[K, Iterable[V], (L, W)]{
-  override def map(input: JPair[K, JIterable[V]]): JPair[L, W] = {
-    val (f, s) = apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
-    JPair.of(s2c(f).asInstanceOf[L], s2c(s).asInstanceOf[W])
   }
 }
 
@@ -108,17 +92,7 @@ class DSDoGroupedFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) extends SDo
   def apply(k: K, v: Iterable[V]) = fn(k, v)    
 }
 
-class DSDoGroupedFn2[K, V, L, W](fn: (K, Iterable[V]) => Traversable[(L, W)]) extends SDoGroupedFn2[K, V, L, W] {
-  ClosureCleaner.clean(fn)
-  def apply(k: K, v: Iterable[V]) = fn(k, v)  
-}
-
 class DSMapGroupedFn[K, V, T](fn: (K, Iterable[V]) => T) extends SMapGroupedFn[K, V, T] {
   ClosureCleaner.clean(fn)
   def apply(k: K, v: Iterable[V]) = fn(k, v)  
-}
-
-class DSMapGroupedFn2[K, V, L, W](fn: (K, Iterable[V]) => (L, W)) extends SMapGroupedFn2[K, V, L, W] {
-  ClosureCleaner.clean(fn)
-  def apply(k: K, v: Iterable[V]) = fn(k, v)
 }
