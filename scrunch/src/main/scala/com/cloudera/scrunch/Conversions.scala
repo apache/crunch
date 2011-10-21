@@ -14,13 +14,83 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable}
+import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable, DoFn}
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Tuple => CTuple, TupleN => CTupleN}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
 import java.nio.ByteBuffer
 
+trait PTypeH[T] {
+  def getPType(ptf: PTypeFamily): PType[T]
+}
+
+trait CanParallelTransform[Col, El, To] {
+  def apply(c: Col, fn: DoFn[_, _], ptype: PType[El]): To
+}
+
+trait LowPriorityParallelTransforms {
+  implicit def fault[A, B] = new CanParallelTransform[PCollection[A], B, PCollection[B]] {
+    def apply(c: PCollection[A], fn: DoFn[_, _], ptype: PType[B]) = {
+      c.parallelDo(fn.asInstanceOf[DoFn[A,B]], ptype.asInstanceOf[PType[B]])
+    }
+  }
+}
+
+object CanParallelTransform extends LowPriorityParallelTransforms {
+  implicit def keyvalue[A, K, V] = new CanParallelTransform[PCollection[A], (K, V), PTable[K,V]] {
+    def apply(c: PCollection[A], fn: DoFn[_, _], ptype: PType[(K, V)]) = {
+      val st = ptype.getSubTypes()
+      val ptt = ptype.getFamily().tableOf(st.get(0).asInstanceOf[PType[K]], st.get(1).asInstanceOf[PType[V]])
+      c.parallelDo(fn.asInstanceOf[DoFn[A, CPair[K, V]]], ptt)
+    }
+  }
+
+  def apply(c: String, fn: DoFn[_, _], ptype: PType[_]) = "WOW"
+} 
+
 object Conversions {
+
+  implicit val longs = new PTypeH[Long] { def getPType(ptf: PTypeFamily) = ptf.longs().asInstanceOf[PType[Long]] }
+  implicit val ints = new PTypeH[Int] { def getPType(ptf: PTypeFamily) = ptf.ints().asInstanceOf[PType[Int]] }
+  implicit val floats = new PTypeH[Float] { def getPType(ptf: PTypeFamily) = ptf.floats().asInstanceOf[PType[Float]] }
+  implicit val doubles = new PTypeH[Double] { def getPType(ptf: PTypeFamily) = ptf.doubles().asInstanceOf[PType[Double]] }
+  implicit val strings = new PTypeH[String] { def getPType(ptf: PTypeFamily) = ptf.strings() }
+  implicit val booleans = new PTypeH[Boolean] { def getPType(ptf: PTypeFamily) = ptf.booleans().asInstanceOf[PType[Boolean]] }
+  implicit val bytes = new PTypeH[ByteBuffer] { def getPType(ptf: PTypeFamily) = ptf.bytes() }
+
+  implicit def collections[T: PTypeH] = {
+    new PTypeH[Iterable[T]] {
+      def getPType(ptf: PTypeFamily) = {
+        ptf.collections(implicitly[PTypeH[T]].getPType(ptf)).asInstanceOf[PType[Iterable[T]]]
+      }
+    }
+  }
+
+  implicit def pairs[A: PTypeH, B: PTypeH] = {
+    new PTypeH[(A, B)] {
+      def getPType(ptf: PTypeFamily) = {
+        ptf.pairs(implicitly[PTypeH[A]].getPType(ptf), implicitly[PTypeH[B]].getPType(ptf)).asInstanceOf[PType[(A, B)]]
+      }
+    }
+  }
+
+  implicit def trips[A: PTypeH, B: PTypeH, C: PTypeH] = {
+    new PTypeH[(A, B, C)] {
+      def getPType(ptf: PTypeFamily) = {
+        ptf.triples(implicitly[PTypeH[A]].getPType(ptf), implicitly[PTypeH[B]].getPType(ptf),
+            implicitly[PTypeH[C]].getPType(ptf)).asInstanceOf[PType[(A, B, C)]]
+      }
+    }
+  }
+
+  implicit def quads[A: PTypeH, B: PTypeH, C: PTypeH, D: PTypeH] = {
+    new PTypeH[(A, B, C, D)] {
+      def getPType(ptf: PTypeFamily) = {
+        ptf.quads(implicitly[PTypeH[A]].getPType(ptf), implicitly[PTypeH[B]].getPType(ptf),
+            implicitly[PTypeH[C]].getPType(ptf), implicitly[PTypeH[D]].getPType(ptf)).asInstanceOf[PType[(A, B, C, D)]]
+      }
+    }
+  }
 
   implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = jtable match {
     case x: PTable[K, V] => x

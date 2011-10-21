@@ -19,7 +19,7 @@ import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable =>
 import com.cloudera.scrunch.Conversions._
 import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
-
+import Conversions._
 
 class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPair[K, JIterable[V]]](grouped) with JGroupedTable[K, V] {
 
@@ -28,24 +28,14 @@ class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPai
     parallelDo(new DSFilterGroupedFn[K, V](f), grouped.getPType())
   }
 
-  def map[T: ClassManifest](f: (K, Iterable[V]) => T) = {
-    ClosureCleaner.clean(f)
-    parallelDo(new DSMapGroupedFn[K, V, T](f), createPType(classManifest[T]))
+  def map[T, To](f: (K, Iterable[V]) => T)
+      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, JIterable[V]]], T, To]): To = {
+    b(this, new DSMapGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
-  def map2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => (L, W)) = {
-    ClosureCleaner.clean(f)
-    parallelDo(new DSMapGroupedFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
-  }
-
-  def flatMap[T: ClassManifest](f: (K, Iterable[V]) => Traversable[T]) = {
-    ClosureCleaner.clean(f)
-    parallelDo(new DSDoGroupedFn[K, V, T](f), createPType(classManifest[T]))
-  }
-
-  def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, Iterable[V]) => Traversable[(L, W)]) = {
-    ClosureCleaner.clean(f)
-    parallelDo(new DSDoGroupedFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
+  def flatMap[T, To](f: (K, Iterable[V]) => Traversable[T])
+      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, JIterable[V]]], T, To]): To = {
+    b(this, new DSDoGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))

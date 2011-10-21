@@ -21,46 +21,23 @@ import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
 import com.cloudera.scrunch.Conversions._
 
 class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
-  
+
   def filter(f: S => Boolean): PCollection[S] = {
     parallelDo(new DSFilterFn[S](f), getPType())
   }
 
-  def map[T: ClassManifest](f: S => T) = {
-    parallelDo(new DSMapFn[S, T](f), createPType(classManifest[T]))
+  def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[S], T, To]): To = {
+    b(this, new DSMapFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
-  def map2[K: ClassManifest, V: ClassManifest](f: S => (K, V)) = {
-    parallelDo(new DSMapFn2[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
+  def flatMap[T, To](f: S => Traversable[T])
+      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[S], T, To]): To = {
+    b(this, new DSDoFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
-  def flatMap[T: ClassManifest](f: S => Traversable[T]) = {
-    parallelDo(new DSDoFn[S, T](f), createPType(classManifest[T]))
-  }
-
-  def flatMap2[K: ClassManifest, V: ClassManifest](f: S => Traversable[(K, V)]) = {
-    parallelDo(new DSDoFn2[S, K, V](f), createPTableType(classManifest[K], classManifest[V]))
-  }
-
-  def groupBy[K: ClassManifest](f: S => K): PGroupedTable[K, S] = {
-    val ptype = getTypeFamily().tableOf(createPType(classManifest[K]), getPType())
+  def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
+    val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), getPType())
     parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
-  }
-
-  def apply[T: ClassManifest](doFn: DoFn[S, T]) = {
-    parallelDo(doFn, createPType(classManifest[T])) 
-  }
-
-  def apply[T: ClassManifest](name: String, doFn: DoFn[S, T]) = {
-    parallelDo(name, doFn, createPType(classManifest[T]))
-  }
-
-  def apply2[K: ClassManifest, V: ClassManifest](doFn: DoFn[S, JPair[K, V]]) = {
-    parallelDo(doFn, createPTableType(classManifest[K], classManifest[V])) 
-  }
-
-  def apply2[K: ClassManifest, V: ClassManifest](name: String, doFn: DoFn[S, JPair[K, V]]) = {
-    parallelDo(name, doFn, createPTableType(classManifest[K], classManifest[V]))
   }
 
   protected def createPTableType[K, V](k: ClassManifest[K], v: ClassManifest[V]) = {
@@ -109,7 +86,10 @@ class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
 
   override def materialize(): java.lang.Iterable[S] = jcollect.materialize()
 
-  override def write(target: Target) { jcollect.write(target) }
+  override def write(target: Target) = {
+    jcollect.write(target)
+    this
+  }
 
   override def getPType() = jcollect.getPType()
 

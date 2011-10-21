@@ -14,7 +14,7 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
+import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
 import com.cloudera.scrunch.Conversions._
 
@@ -24,20 +24,14 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     parallelDo(new DSFilterTableFn[K, V](f), getPTableType())
   }
 
-  def map[T: ClassManifest](f: (K, V) => T) = {
-    parallelDo(new DSMapTableFn[K, V, T](f), createPType(classManifest[T]))
+  def map[T, To](f: (K, V) => T)
+      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, V]], T, To]): To = {
+    b(this, new DSMapTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
-  def map2[L: ClassManifest, W: ClassManifest](f: (K, V) => (L, W)) = {
-    parallelDo(new DSMapTableFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
-  }
-
-  def flatMap[T: ClassManifest](f: (K, V) => Traversable[T]) = {
-    parallelDo(new DSDoTableFn[K, V, T](f), createPType(classManifest[T]))
-  }
-
-  def flatMap2[L: ClassManifest, W: ClassManifest](f: (K, V) => Traversable[(L, W)]) = {
-    parallelDo(new DSDoTableFn2[K, V, L, W](f), createPTableType(classManifest[L], classManifest[W]))
+  def flatMap[T, To](f: (K, V) => Traversable[T])
+      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, V]], T, To]): To = {
+    b(this, new DSDoTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   override def union(tables: JTable[K, V]*) = {
@@ -56,6 +50,11 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
   override def groupByKey(partitions: Int) = new PGroupedTable(jtable.groupByKey(partitions))
 
   override def groupByKey(options: GroupingOptions) = new PGroupedTable(jtable.groupByKey(options))
+
+  override def write(target: Target) = {
+    jtable.write(target)
+    this
+  }
   
   override def getPTableType() = jtable.getPTableType()
 
