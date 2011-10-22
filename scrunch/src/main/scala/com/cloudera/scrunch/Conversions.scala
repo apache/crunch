@@ -44,8 +44,6 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
       c.parallelDo(fn.asInstanceOf[DoFn[A, CPair[K, V]]], ptt)
     }
   }
-
-  def apply(c: Nothing, fn: DoFn[_, _], ptype: PType[Nothing]) = println("Impossible")
 } 
 
 object Conversions {
