@@ -37,6 +37,7 @@ import com.cloudera.crunch.impl.mr.exec.MRExecutor;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MSCRPlanner {
@@ -51,10 +52,10 @@ public class MSCRPlanner {
   };
   
   private final MRPipeline pipeline;
-  private final Map<PCollectionImpl, Target> outputs;
+  private final Map<PCollectionImpl, Set<Target>> outputs;
 
   public MSCRPlanner(MRPipeline pipeline,
-      Map<PCollectionImpl, Target> outputs) {
+      Map<PCollectionImpl, Set<Target>> outputs) {
     this.pipeline = pipeline;
     this.outputs = Maps.newTreeMap(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
@@ -122,7 +123,9 @@ public class MSCRPlanner {
         HashMultimap<Target, NodePath> reduceOutputs = HashMultimap.create();
         for (NodePath nodePath : currentNodePaths) {
           assignments.put(nodePath.tail(), proto);
-          reduceOutputs.put(outputs.get(nodePath.tail()), nodePath);
+          for (Target target : outputs.get(nodePath.tail())) {
+            reduceOutputs.put(target, nodePath);
+          }
         }
         proto.addReducePaths(reduceOutputs);
 
@@ -140,7 +143,9 @@ public class MSCRPlanner {
         if (!assignments.containsKey(collect)) {
           HashMultimap<Target, NodePath> mapOutputs = HashMultimap.create();
           for (NodePath nodePath : entry.getValue()) {
-            mapOutputs.put(outputs.get(nodePath.tail()), nodePath);
+            for (Target target : outputs.get(nodePath.tail())) {
+              mapOutputs.put(target, nodePath);
+            }
           }
           JobPrototype proto = JobPrototype.createMapOnlyJob(mapOutputs,
               pipeline.createTempPath());
@@ -226,16 +231,31 @@ public class MSCRPlanner {
     int splitIndex = getSplitIndex(currentNodePaths);
     PCollectionImpl splitTarget = currentNodePaths.iterator().next()
         .get(splitIndex);
-
-    Target t = outputs.get(splitTarget);
-    SourceTarget srcTarget = null;
-    if (t == null || !(t instanceof Source)) {
-      srcTarget = pipeline.createIntermediateOutput(splitTarget.getPType());
-      outputs.put(splitTarget, srcTarget);
-      splitTarget.materializeAt(srcTarget);
-    } else {
-      srcTarget = (SourceTarget) t;
+    if (!outputs.containsKey(splitTarget)) {
+      outputs.put(splitTarget, Sets.<Target>newHashSet());
     }
+    
+    SourceTarget srcTarget = null;
+    Target targetToReplace = null;
+    for (Target t : outputs.get(splitTarget)) {
+      if (t instanceof SourceTarget) {
+        srcTarget = (SourceTarget) t;
+        break;
+      } else {
+        srcTarget = t.asSourceTarget(splitTarget.getPType());
+        if (srcTarget != null) {
+          targetToReplace = t;
+          break;
+        }
+      }
+    }
+    if (targetToReplace != null) {
+      outputs.get(splitTarget).remove(targetToReplace);
+    } else if (srcTarget == null) {
+      srcTarget = pipeline.createIntermediateOutput(splitTarget.getPType());
+    }
+    outputs.get(splitTarget).add(srcTarget);
+    splitTarget.materializeAt(srcTarget);
 
     PCollectionImpl inputNode = (PCollectionImpl) pipeline.read(srcTarget);
     Set<NodePath> nextNodePaths = Sets.newHashSet();

@@ -44,5 +44,5 @@ public interface Source<T> {
   /**
    * Returns the number of bytes in this {@code Source}.
    */
-  long getSize(Configuration configuration);
+  long getSize(Configuration configuration);  
 }

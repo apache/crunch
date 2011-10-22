@@ -37,12 +37,11 @@ import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
-public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
+public class SeqFileTableSourceTarget<K, V> extends SeqFileTarget implements TableSource<K, V>,
     ReadableSourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableSourceTarget.class);
   
-  private final Path path;
   private final PTableType<K, V> tableType;
   
   public SeqFileTableSourceTarget(String path, PTableType<K, V> tableType) {
@@ -50,7 +49,7 @@ public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
   }
   
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
-    this.path = path;
+    super(path);
     this.tableType = tableType;
   }
   
@@ -101,19 +100,6 @@ public class SeqFileTableSourceTarget<K, V> implements TableSource<K, V>,
       LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
     }
     return 1L;
-  }
-
-  @Override
-  public boolean accept(OutputHandler handler, PType<?> ptype) {
-    handler.configure(this, ptype);
-    return true;
-  }
-
-  @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
-      String name) {
-    SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
-        ptype.getDataBridge(), outputPath, name);
   }
 
   @Override

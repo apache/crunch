@@ -18,10 +18,12 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
+import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
+import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 public class SeqFileTarget implements PathTarget, MapReduceTarget {
@@ -52,5 +54,14 @@ public class SeqFileTarget implements PathTarget, MapReduceTarget {
   @Override
   public Path getPath() {
     return path;
+  }
+
+  @Override
+  public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
+    if (ptype instanceof PTableType) {
+      return new SeqFileTableSourceTarget(path, (PTableType) ptype);
+    } else {
+      return new SeqFileSourceTarget(path, ptype);
+    }
   }
 }

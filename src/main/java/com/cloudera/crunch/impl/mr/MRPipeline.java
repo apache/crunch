@@ -18,6 +18,7 @@ package com.cloudera.crunch.impl.mr;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,7 +44,10 @@ import com.cloudera.crunch.io.text.TextFileSourceTarget;
 import com.cloudera.crunch.materialize.MaterializableIterable;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 public class MRPipeline implements Pipeline {
 
@@ -52,7 +56,7 @@ public class MRPipeline implements Pipeline {
   private static final Random RANDOM = new Random();
   
   private final Class<?> jarClass;
-  private final Map<PCollectionImpl, Target> outputTargets;
+  private final Map<PCollectionImpl, Set<Target>> outputTargets;
   private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
   private final Configuration conf;
   private final Path tempDirectory;
@@ -88,15 +92,20 @@ public class MRPipeline implements Pipeline {
       LOG.error(e);
       return;
     }
-    for (Map.Entry<PCollectionImpl, Target> e : outputTargets.entrySet()) {
-      if (e.getValue() instanceof Source) {
-        e.getKey().materializeAt((Source) e.getValue());
-      }
-      
-      if (outputTargetsToMaterialize.containsKey(e.getKey())) {
-    	MaterializableIterable c = outputTargetsToMaterialize.get(e.getKey());
-    	c.materialize();
-    	outputTargetsToMaterialize.remove(e.getKey());
+    for (PCollectionImpl c : outputTargets.keySet()) {
+      if (outputTargetsToMaterialize.containsKey(c)) {
+        MaterializableIterable iter = outputTargetsToMaterialize.get(c);
+        iter.materialize();
+        c.materializeAt(iter.getSourceTarget());
+        outputTargetsToMaterialize.remove(c);
+      } else {
+        boolean materialized = false;
+        for (Target t : outputTargets.get(c)) {
+          if (!materialized && t instanceof Source) {
+           c.materializeAt((Source) t);
+           materialized = true;
+          }
+        }
       }
     }
     outputTargets.clear();
@@ -126,16 +135,26 @@ public class MRPipeline implements Pipeline {
     if (pcollection instanceof PGroupedTableImpl) {
       pcollection = ((PGroupedTableImpl) pcollection).ungroup();
     }
-    outputTargets.put((PCollectionImpl) pcollection, target);
+    addOutput((PCollectionImpl) pcollection, target);
   }
 
+  private void addOutput(PCollectionImpl impl, Target target) {
+    if (!outputTargets.containsKey(impl)) {
+      outputTargets.put(impl, Sets.<Target>newHashSet());
+    }
+    outputTargets.get(impl).add(target);
+  }
+  
   @Override
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
+    PCollectionImpl impl = (PCollectionImpl) pcollection;
 	ReadableSourceTarget<T> srcTarget = null;
 	if (outputTargets.containsKey(pcollection)) {
-	  Target target = outputTargets.get(pcollection);
-	  if (target instanceof ReadableSourceTarget) {
-		srcTarget = (ReadableSourceTarget) target;
+	  for (Target target : outputTargets.get(impl)) {
+	    if (target instanceof ReadableSourceTarget) {
+		  srcTarget = (ReadableSourceTarget) target;
+		  break;
+	    }
 	  }
 	}
 	if (srcTarget == null) {
@@ -145,11 +164,10 @@ public class MRPipeline implements Pipeline {
 		    + " and cannot be materialized");
 	  } else {
 		srcTarget = (ReadableSourceTarget) st;
+		addOutput(impl, srcTarget);
 	  }
 	}
 	MaterializableIterable<T> c = new MaterializableIterable<T>(this, srcTarget);
-	PCollectionImpl impl = (PCollectionImpl) pcollection;
-	outputTargets.put(impl, srcTarget);
 	outputTargetsToMaterialize.put(impl, c);
 	return c;
   }

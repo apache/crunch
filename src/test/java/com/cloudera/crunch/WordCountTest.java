@@ -24,6 +24,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
@@ -61,27 +62,39 @@ public class WordCountTest {
     }, ptable.getPTableType());
   }
   
+  private boolean runSecond = false;
+  private boolean useToOutput = false;
+  
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance(), false);
+    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testWritablesWithSecond() throws IOException {
-	run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance(), true);
+    runSecond = true;
+	run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
   }
-  
+
+  @Test
+  public void testWritablesWithSecondUseToOutput() throws IOException {
+    runSecond = true;
+    useToOutput = true;
+    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
+  }
+
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance(), false);
+    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
   }
   
   @Test
   public void testAvroWithSecond() throws IOException {
-    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance(), true);
+    runSecond = true;
+    run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
   }
   
-  public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean runSecond) throws IOException {
+  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     File input = File.createTempFile("shakes", "txt");
     input.deleteOnExit();
     Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
@@ -92,7 +105,11 @@ public class WordCountTest {
     
     PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
     PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
-    pipeline.writeTextFile(wordCount, outputPath);
+    if (useToOutput) {
+      wordCount.write(To.textFile(outputPath));
+    } else {
+      pipeline.writeTextFile(wordCount, outputPath);
+    }
     
     if (runSecond) {
       File substrCount = File.createTempFile("substr", "");
