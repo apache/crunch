@@ -37,6 +37,10 @@ public class MaterializableIterable<E> implements Iterable<E> {
 	this.materialized = null;
   }
   
+  public ReadableSourceTarget<E> getSourceTarget() {
+    return sourceTarget;
+  }
+  
   @Override
   public Iterator<E> iterator() {
 	checkMaterialized();

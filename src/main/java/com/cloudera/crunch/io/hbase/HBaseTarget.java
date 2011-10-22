@@ -25,6 +25,7 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 
+import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
@@ -76,5 +77,10 @@ public class HBaseTarget implements MapReduceTarget {
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
     }
+  }
+
+  @Override
+  public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
+    return null;
   }
 }

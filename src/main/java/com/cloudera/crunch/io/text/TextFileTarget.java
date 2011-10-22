@@ -19,6 +19,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
+import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
@@ -71,5 +72,13 @@ public class TextFileTarget implements PathTarget, MapReduceTarget {
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     SourceTargetHelper.configureTarget(job, TextOutputFormat.class,
         ptype.getDataBridge(), outputPath, name);
+  }
+
+  @Override
+  public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
+    if (String.class.equals(ptype.getTypeClass())) {
+      return (SourceTarget<T>) new TextFileSourceTarget(path);
+    }
+    return null;
   }
 }

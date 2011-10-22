@@ -22,5 +22,7 @@ import com.cloudera.crunch.type.PType;
  *
  */
 public interface Target {
-  boolean accept(OutputHandler handler, PType<?> ptype);  
+  boolean accept(OutputHandler handler, PType<?> ptype);
+  
+  <T> SourceTarget<T> asSourceTarget(PType<T> ptype);
 }
