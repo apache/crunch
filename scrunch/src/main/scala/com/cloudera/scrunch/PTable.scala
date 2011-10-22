@@ -16,7 +16,9 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
+import com.cloudera.crunch.lib.Cogroup
 import com.cloudera.scrunch.Conversions._
+import scala.collection.JavaConversions._
 
 class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable) with JTable[K, V] {
 
@@ -38,12 +40,22 @@ class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable
     new PTable[K, V](jtable.union(tables.map(baseCheck): _*))
   }
 
+  override def base: JTable[K, V] = jtable match {
+    case x: PTable[K, V] => x.base
+    case _ => jtable
+  }
+
   private def baseCheck(c: JTable[K, V]): JTable[K, V] = c match {
     case x: PTable[K, V] => x.base.asInstanceOf[PTable[K, V]]
     case _ => c
   }
 
   def ++ (other: JTable[K, V]) = union(other)
+
+  def cogroup[V2](other: PTable[K, V2]) = {
+    val jres = Cogroup.cogroup[K, V, V2](this.base, other.base)
+    new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
+  }
 
   override def groupByKey() = new PGroupedTable(jtable.groupByKey())
 

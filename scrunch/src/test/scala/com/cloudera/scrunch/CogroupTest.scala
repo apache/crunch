@@ -14,23 +14,23 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.io.{From => from, To => to}
-import com.cloudera.crunch.lib.Aggregate._
+import com.cloudera.crunch.io.{From, To}
 import com.cloudera.scrunch.Conversions._
 
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Assert._
 import org.junit.Test
 
-class ExampleWordTest extends AssertionsForJUnit {
-  @Test def wordCount {
-    val pipeline = new Pipeline[ExampleWordTest]
-    pipeline.read(from.textFile("/tmp/shakes.txt"))
-        .flatMap(_.split("\\s+")).count
-        .write(to.textFile("/tmp/wc")) // Word counts
-        .map((w, c) => (w.slice(0, 1), c))
-        .groupByKey().combine(v => v.sum)
-        .write(to.textFile("/tmp/cc")) // First char counts
+class CogroupTest extends AssertionsForJUnit {
+  val pipeline = new Pipeline[CogroupTest]
+
+  def wordCount(fileName: String) = {
+    pipeline.read(From.textFile(fileName)).flatMap(_.split("\\s+")).count
+  }
+
+  @Test def cogroup {
+    wordCount("/tmp/shakes.txt").cogroup(wordCount("/tmp/maugham.txt"))
+        .map((k, v) => (k, (v._1.sum - v._2.sum))).write(To.textFile("/tmp/cogroup"))
     pipeline.done()
   }
 }

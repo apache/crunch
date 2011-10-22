@@ -16,7 +16,6 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => JPair}
-import com.cloudera.scrunch.Conversions._
 import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
 import Conversions._
@@ -51,15 +50,6 @@ class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
     val v = s2c(f(new ConversionIterable[V](input.second()))).asInstanceOf[V]
     emitfn.emit(JPair.of(input.first(), v))
   }
-}
-
-class ConversionIterator[S](iterator: java.util.Iterator[S]) extends Iterator[S] {
-  override def hasNext() = iterator.hasNext()
-  override def next() = c2s(iterator.next()).asInstanceOf[S]
-}
-
-class ConversionIterable[S](iterable: JIterable[S]) extends Iterable[S] {
-  override def iterator() = new ConversionIterator[S](iterable.iterator())
 }
 
 trait SFilterGroupedFn[K, V] extends FilterFn[JPair[K, JIterable[V]]] with Function2[K, Iterable[V], Boolean] {

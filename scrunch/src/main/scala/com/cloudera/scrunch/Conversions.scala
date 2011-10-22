@@ -18,7 +18,9 @@ import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupe
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Tuple => CTuple, TupleN => CTupleN}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
+import java.lang.{Iterable => JIterable}
 import java.nio.ByteBuffer
+import scala.collection.{Iterable, Iterator}
 
 trait PTypeH[T] {
   def getPType(ptf: PTypeFamily): PType[T]
@@ -45,6 +47,15 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
     }
   }
 } 
+
+class ConversionIterator[S](iterator: java.util.Iterator[S]) extends Iterator[S] {
+  override def hasNext() = iterator.hasNext()
+  override def next() = Conversions.c2s(iterator.next()).asInstanceOf[S]
+}
+
+class ConversionIterable[S](iterable: JIterable[S]) extends Iterable[S] {
+  override def iterator() = new ConversionIterator[S](iterable.iterator())
+}
 
 object Conversions {
 
@@ -105,40 +116,6 @@ object Conversions {
     case _ => new PGroupedTable[K, V](jgrouped)
   }
   
-  def manifest2PType[S](m: ClassManifest[S], ptf: PTypeFamily): PType[_] = {
-    def conv(x: OptManifest[_]): PType[_] = manifest2PType(x.asInstanceOf[ClassManifest[_]], ptf)
-    val clazz = m.erasure
-    if (classOf[java.lang.String].equals(clazz)) {
-      ptf.strings()
-    } else if (classOf[Double].equals(clazz) || classOf[JDouble].equals(clazz)) {
-      ptf.doubles()
-    } else if (classOf[Boolean].equals(clazz) || classOf[JBoolean].equals(clazz)) {
-      ptf.booleans()
-    } else if (classOf[Float].equals(clazz) || classOf[JFloat].equals(clazz)) {
-      ptf.floats()
-    } else if (classOf[Int].equals(clazz) || classOf[JInteger].equals(clazz)) {
-      ptf.ints()
-    } else if (classOf[Long].equals(clazz) || classOf[JLong].equals(clazz)) {
-      ptf.longs()
-    } else if (classOf[ByteBuffer].equals(clazz)) {
-      ptf.bytes()
-    } else if (classOf[Iterable[_]].isAssignableFrom(clazz)) {
-      ptf.collections(conv(m.typeArguments(0)))
-    } else if (classOf[Product].isAssignableFrom(clazz)) {
-      val pt = m.typeArguments.map(conv)
-      pt.size match {
-        case 1 => pt(0)
-        case 2 => ptf.pairs(pt(0), pt(1))
-        case 3 => ptf.triples(pt(0), pt(1), pt(2))
-        case 4 => ptf.quads(pt(0), pt(1), pt(2), pt(3))
-        case _ => ptf.tuples(pt : _*)
-      }
-    } else {
-      println("Could not match manifest: " + m + " with class: " + clazz)
-      ptf.records(clazz)
-    }
-  }
-
   def s2c(obj: Any): Any = obj match {
     case x: Tuple2[_, _] =>  CPair.of(s2c(x._1), s2c(x._2))
     case x: Tuple3[_, _, _] => new CTuple3(s2c(x._1), s2c(x._2), s2c(x._3))
@@ -160,9 +137,16 @@ object Conversions {
        case 8 => Tuple8(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7))
        case 9 => Tuple9(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8))
        case 10 => Tuple10(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8), v(9))
+       case 11 => Tuple11(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8), v(9), v(10))
+       case 12 => Tuple12(v(0), v(1), v(2), v(3), v(4), v(5), v(6), v(7), v(8), v(9), v(10), v(11))
        case _ => { println("Seriously? A " + v.length + " tuple?"); obj }
      }
     }
+    case x: java.util.Collection[_] => new ConversionIterable(x)
+    case x: JLong => x.longValue()
+    case x: JInteger => x.intValue()
+    case x: JFloat => x.floatValue()
+    case x: JDouble => x.doubleValue()
     case _ => obj
   }
 }
