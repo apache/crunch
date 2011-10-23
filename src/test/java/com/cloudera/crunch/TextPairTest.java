@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.writable.Writables;
 import com.google.common.io.Files;
 
@@ -53,12 +54,9 @@ public class TextPairTest  {
   }
   
   public void run(Pipeline pipeline) throws IOException {
-    File input = File.createTempFile("shakes", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
+    String input = FileHelper.createTempCopyOf("shakes.txt");
         
-    PCollection<String> shakespeare = pipeline.read(From.textFile(input.getAbsolutePath()));
-
+    PCollection<String> shakespeare = pipeline.read(From.textFile(input));
     Iterable<Pair<String, String>> lines = pipeline.materialize(wordDuplicate(shakespeare));    
     boolean passed = false;
     for (Pair<String, String> line : lines) {

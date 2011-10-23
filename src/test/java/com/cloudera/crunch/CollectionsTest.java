@@ -14,8 +14,6 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
 import com.cloudera.crunch.DoFn;
@@ -24,14 +22,13 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -88,11 +85,9 @@ public class CollectionsTest {
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    File input = File.createTempFile("shakes", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
+	String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     
-    PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
+    PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Iterable<Pair<String, Collection<String>>> lines = listOfCharcters(shakespeare, typeFamily).materialize();
     
     boolean passed = false;

@@ -14,8 +14,6 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -31,6 +29,7 @@ import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
 import com.cloudera.crunch.lib.Cogroup;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
@@ -93,20 +92,13 @@ public class CogroupTest {
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    File shakesInput = File.createTempFile("shakes", "txt");
-    shakesInput.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("shakes.txt")), shakesInput);
-    File maughamInput = File.createTempFile("maugham", "txt");
-    maughamInput.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("maugham.txt")), maughamInput);
+    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    String maughamInputPath = FileHelper.createTempCopyOf("maugham.txt");
+    File output = FileHelper.createOutputPath();
     
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
-    PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInput.getAbsolutePath()));
-    PCollection<String> maugham = pipeline.read(From.textFile(maughamInput.getAbsolutePath()));
-    pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), outputPath);
+    PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInputPath));
+    PCollection<String> maugham = pipeline.read(From.textFile(maughamInputPath));
+    pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), output.getAbsolutePath());
     pipeline.done();
     
     File outputFile = new File(output, "part-r-00000");

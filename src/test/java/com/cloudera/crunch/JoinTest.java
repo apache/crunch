@@ -14,11 +14,8 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
@@ -26,11 +23,11 @@ import org.junit.Test;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Join;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.google.common.io.Files;
 
 public class JoinTest {
   private static class WordSplit extends DoFn<String, String> {
@@ -83,15 +80,11 @@ public class JoinTest {
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    File shakesInput = File.createTempFile("shakes", "txt");
-    shakesInput.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("shakes.txt")), shakesInput);
-    File maughamInput = File.createTempFile("maugham", "txt");
-    maughamInput.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("maugham.txt")), maughamInput);
+    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    String maughamInputPath = FileHelper.createTempCopyOf("maugham.txt");
     
-    PCollection<String> shakespeare = pipeline.readTextFile(shakesInput.getAbsolutePath());
-    PCollection<String> maugham = pipeline.readTextFile(maughamInput.getAbsolutePath());
+    PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
+    PCollection<String> maugham = pipeline.readTextFile(maughamInputPath);
     PTable<String, Long> joined = join(shakespeare, maugham, typeFamily);
     Iterable<Pair<String, Long>> lines = joined.materialize();
     
