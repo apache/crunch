@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
@@ -195,14 +194,62 @@ public class Avros {
     AvroType<T> avroType = (AvroType<T>) ptype;
     Schema collectionSchema = Schema.createArray(avroType.getSchema());
     GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getBaseInputMapFn());
-    input.initialize();
     CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getBaseOutputMapFn());
-    output.initialize();
-    return new AvroType(Collection.class, collectionSchema, 
-        input,
-        output, ptype);
+    return new AvroType(Collection.class, collectionSchema, input, output, ptype);
   }
 
+  private static class AvroMapToMap<T> extends MapFn<Map<Utf8, Object>, Map<String, T>> {
+	private final MapFn<Object, T> mapFn;
+	
+	public AvroMapToMap(MapFn<Object, T> mapFn) {
+	  this.mapFn = mapFn;
+	}
+	
+	@Override
+	public void initialize() {
+	  this.mapFn.initialize();
+	}
+	
+	@Override
+	public Map<String, T> map(Map<Utf8, Object> input) {
+	  Map<String, T> out = Maps.newHashMap();
+	  for (Map.Entry<Utf8, Object> e : input.entrySet()) {
+		out.put(e.getKey().toString(), mapFn.map(e.getValue()));
+	  }
+	  return out;
+	}
+  }
+  
+  private static class MapToAvroMap<T> extends MapFn<Map<String, T>, Map<Utf8, Object>> {
+	private final MapFn<T, Object> mapFn;
+	
+	public MapToAvroMap(MapFn<T, Object> mapFn) {
+	  this.mapFn = mapFn;
+	}
+	
+	@Override
+	public void initialize() {
+	  this.mapFn.initialize();
+	}
+	
+	@Override
+	public Map<Utf8, Object> map(Map<String, T> input) {
+	  Map<Utf8, Object> out = Maps.newHashMap();
+	  for (Map.Entry<String, T> e : input.entrySet()) {
+		out.put(new Utf8(e.getKey()), mapFn.map(e.getValue()));
+	  }
+	  return out;
+	}
+  }
+  
+  public static final <T> AvroType<Map<String, T>> maps(PType<T> ptype) {
+	AvroType<T> avroType = (AvroType<T>) ptype;
+	Schema mapSchema = Schema.createMap(avroType.getSchema());
+	AvroMapToMap<T> inputFn = new AvroMapToMap<T>(avroType.getBaseInputMapFn());
+	MapToAvroMap<T> outputFn = new MapToAvroMap<T>(avroType.getBaseOutputMapFn());
+	return new AvroType(Map.class, mapSchema, inputFn, outputFn, ptype);
+  }
+  
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
     private final TupleType tupleType;
     private final List<MapFn> fns;
@@ -283,9 +330,7 @@ public class Avros {
     input.initialize();
     TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
     output.initialize();
-    return new AvroType(Pair.class, schema,
-        input, output,
-        p1, p2);
+    return new AvroType(Pair.class, schema, input, output, p1, p2);
   }
 
   public static final <V1, V2, V3> AvroType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,

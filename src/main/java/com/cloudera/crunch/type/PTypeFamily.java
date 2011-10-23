@@ -17,6 +17,7 @@ package com.cloudera.crunch.type;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Map;
 
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
@@ -45,17 +46,19 @@ public interface PTypeFamily {
   
   <T> PType<T> records(Class<T> clazz);
 
-  <T> PType<Collection<T>> collections(PType<T> ntype);
+  <T> PType<Collection<T>> collections(PType<T> ptype);
 
-  <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> n1, PType<V2> n2);
+  <T> PType<Map<String, T>> maps(PType<T> ptype);
+  
+  <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2);
 
-  <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> n1, PType<V2> n2,
-      PType<V3> n3);
+  <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1, PType<V2> p2,
+      PType<V3> p3);
 
-  <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> n1,
-      PType<V2> n2, PType<V3> n3, PType<V4> n4);
+  <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
+      PType<V2> p2, PType<V3> p3, PType<V4> p4);
 
-  PType<TupleN> tuples(PType... ntypes);
+  PType<TupleN> tuples(PType... ptypes);
 
   <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value);
   

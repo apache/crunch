@@ -16,6 +16,7 @@ package com.cloudera.crunch.type.avro;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -107,6 +108,11 @@ public class AvroTypeFamily implements PTypeFamily {
     return Avros.collections(ptype);
   }
 
+  @Override
+  public <T> PType<Map<String, T>> maps(PType<T> ptype) {
+	return Avros.maps(ptype);
+  }
+  
   @Override
   public <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     return Avros.pairs(p1, p2);

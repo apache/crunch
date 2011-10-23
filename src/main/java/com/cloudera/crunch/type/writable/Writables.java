@@ -26,6 +26,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -37,7 +38,6 @@ import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.type.DataBridge;
-import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -423,6 +423,61 @@ public class Writables {
             wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
   }
 
+  private static class MapInputMapFn<T> extends MapFn<TextMapWritable<Writable>, Map<String, T>> {
+    private final MapFn<Writable, T> mapFn;
+	
+	public MapInputMapFn(MapFn<Writable, T> mapFn) {
+	  this.mapFn = mapFn;
+	}
+	
+	@Override
+	public void initialize() {
+	  mapFn.initialize();
+	}
+	
+	@Override
+	public Map<String, T> map(TextMapWritable<Writable> input) {
+	  Map<String, T> out = Maps.newHashMap();
+	  for (Map.Entry<Text, Writable> e : input.entrySet()) {
+		out.put(e.getKey().toString(), mapFn.map(e.getValue()));
+	  }
+	  return out;
+	}
+  }
+  
+  private static class MapOutputMapFn<T> extends MapFn<Map<String, T>, TextMapWritable<Writable>> {
+
+	private final Class<Writable> clazz;
+	private final MapFn<T, Writable> mapFn;
+	
+	public MapOutputMapFn(Class<Writable> clazz, MapFn<T, Writable> mapFn) {
+	  this.clazz = clazz;
+	  this.mapFn = mapFn;
+	}
+	
+	@Override
+	public void initialize() {
+	  mapFn.initialize();
+	}
+
+	@Override
+	public TextMapWritable<Writable> map(Map<String, T> input) {
+	  TextMapWritable<Writable> tmw = new TextMapWritable<Writable>(clazz);
+	  for (Map.Entry<String, T> e : input.entrySet()) {
+		tmw.put(new Text(e.getKey()), mapFn.map(e.getValue()));
+	  }
+	  return tmw;
+	}	
+  }
+  
+  public static <T> WritableType<Map<String, T>, MapWritable> maps(PType<T> ptype) {
+	WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
+    DataBridge handler = ptype.getDataBridge();
+    return new WritableType(Map.class, TextMapWritable.class,
+        new MapInputMapFn(handler.getInputMapFn()),
+        new MapOutputMapFn(wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
+  }
+  
   // Not instantiable
   private Writables() {
   }
