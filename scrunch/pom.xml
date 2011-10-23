@@ -81,8 +81,7 @@
         <configuration>
           <useFile>false</useFile>
           <disableXmlReport>true</disableXmlReport>
-          <!-- If you have classpath issue like NoDefClassError,... -->
-          <!-- useManifestOnlyJar>false</useManifestOnlyJar -->
+          <argLine>-Xmx512m</argLine>
           <includes>
             <include>**/*Test.*</include>
             <include>**/*Suite.*</include>

@@ -32,7 +32,7 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   def ++(other: PCollectionLike[S, _, _]) = union(other)
   
   def write(target: Target): FullType = wrap(native.write(target))
-  
+
   def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
     new PCollection[T](native.parallelDo(fn, ptype))
   }

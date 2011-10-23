@@ -14,7 +14,8 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.io.{From, To}
+import com.cloudera.crunch.io.{From => from}
+import com.cloudera.crunch.test.FileHelper
 import com.cloudera.scrunch.Conversions._
 
 import org.scalatest.junit.AssertionsForJUnit
@@ -25,12 +26,16 @@ class CogroupTest extends AssertionsForJUnit {
   val pipeline = new Pipeline[CogroupTest]
 
   def wordCount(fileName: String) = {
-    pipeline.read(From.textFile(fileName)).flatMap(_.split("\\s+")).count
+    pipeline.read(from.textFile(fileName))
+        .flatMap(_.toLowerCase.split("\\W+")).count
   }
 
   @Test def cogroup {
-    wordCount("/tmp/shakes.txt").cogroup(wordCount("/tmp/maugham.txt"))
-        .map((k, v) => (k, (v._1.sum - v._2.sum))).write(To.textFile("/tmp/cogroup"))
-    pipeline.done()
+    val shakespeare = FileHelper.createTempCopyOf("shakes.txt")
+    val maugham = FileHelper.createTempCopyOf("maugham.txt")
+    val diffs = wordCount(shakespeare).cogroup(wordCount(maugham))
+        .map((k, v) => (k, (v._1.sum - v._2.sum))).materialize
+    assertTrue(diffs.exists(_ == ("the", -11390)))
+    pipeline.done
   }
 }

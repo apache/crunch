@@ -15,12 +15,13 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
-import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
+import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
 import com.cloudera.crunch.lib.{Cogroup, Join}
 import com.cloudera.scrunch.Conversions._
+import java.lang.{Iterable => JIterable}
 import scala.collection.JavaConversions._
 
-class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[JPair[K, V], PTable[K, V], JTable[K, V]] {
+class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
   import PTable._
 
   def filter(f: (K, V) => Boolean): PTable[K, V] = {
@@ -47,7 +48,7 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[JPair[K, V]
     new PTable[K, (V, V2)](jres.asInstanceOf[JTable[K, (V, V2)]])
   }
 
-  def groupByKey() = new PGroupedTable(native.groupByKey())
+  def groupByKey = new PGroupedTable(native.groupByKey())
 
   def groupByKey(partitions: Int) = new PGroupedTable(native.groupByKey(partitions))
 
@@ -56,16 +57,20 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[JPair[K, V]
   def wrap(newNative: AnyRef) = {
     new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
+  
+  def materialize: Iterable[(K, V)] = {
+    new ConversionIterable[(K, V)](native.materialize.asInstanceOf[JIterable[(K, V)]])
+  }
 }
 
-trait SFilterTableFn[K, V] extends FilterFn[JPair[K, V]] with Function2[K, V, Boolean] {
-  override def accept(input: JPair[K, V]): Boolean = {
+trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {
+  override def accept(input: CPair[K, V]): Boolean = {
     apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V]);
   }
 }
 
-trait SDoTableFn[K, V, T] extends DoFn[JPair[K, V], T] with Function2[K, V, Traversable[T]] {
-  override def process(input: JPair[K, V], emitter: Emitter[T]): Unit = {
+trait SDoTableFn[K, V, T] extends DoFn[CPair[K, V], T] with Function2[K, V, Traversable[T]] {
+  override def process(input: CPair[K, V], emitter: Emitter[T]): Unit = {
     val k = c2s(input.first()).asInstanceOf[K]
     val v = c2s(input.second()).asInstanceOf[V]
     for (v <- apply(k, v)) {
@@ -74,8 +79,8 @@ trait SDoTableFn[K, V, T] extends DoFn[JPair[K, V], T] with Function2[K, V, Trav
   }
 }
 
-trait SMapTableFn[K, V, T] extends MapFn[JPair[K, V], T] with Function2[K, V, T] {
-  override def map(input: JPair[K, V]): T = {
+trait SMapTableFn[K, V, T] extends MapFn[CPair[K, V], T] with Function2[K, V, T] {
+  override def map(input: CPair[K, V]): T = {
     val v = apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V])
     s2c(v).asInstanceOf[T]
   }

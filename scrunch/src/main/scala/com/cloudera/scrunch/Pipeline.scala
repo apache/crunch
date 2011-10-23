@@ -23,7 +23,7 @@ import Conversions._
 class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
   val jpipeline = new MRPipeline(classManifest[R].erasure, conf)
 
-  def getConfiguration() = jpipeline.getConfiguration()
+  def getConfiguration = jpipeline.getConfiguration()
 
   def read[T](source: Source[T]) = new PCollection[T](jpipeline.read(source))
 
@@ -35,9 +35,9 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
     jpipeline.write(pcollect.native, target)
   }
 
-  def run() { jpipeline.run() }
+  def run { jpipeline.run() }
 
-  def done() { jpipeline.done() }
+  def done { jpipeline.done() }
 
   def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
   

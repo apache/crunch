@@ -16,7 +16,10 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.io.{From => from, To => to}
 import com.cloudera.crunch.lib.Aggregate._
+import com.cloudera.crunch.test.FileHelper
 import com.cloudera.scrunch.Conversions._
+
+import java.io.File
 
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Assert._
@@ -25,12 +28,17 @@ import org.junit.Test
 class ExampleWordTest extends AssertionsForJUnit {
   @Test def wordCount {
     val pipeline = new Pipeline[ExampleWordTest]
-    pipeline.read(from.textFile("/tmp/shakes.txt"))
-        .flatMap(_.split("\\s+")).count
-        .write(to.textFile("/tmp/wc")) // Word counts
+    val input = FileHelper.createTempCopyOf("shakes.txt")
+    val wordCountOut = FileHelper.createOutputPath
+
+    val fcc = pipeline.read(from.textFile(input))
+        .flatMap(_.toLowerCase.split("\\s+")).count
+        .write(to.textFile(wordCountOut.getAbsolutePath)) // Word counts
         .map((w, c) => (w.slice(0, 1), c))
-        .groupByKey().combine(v => v.sum)
-        .write(to.textFile("/tmp/cc")) // First char counts
-    pipeline.done()
+        .groupByKey.combine(v => v.sum).materialize
+    assertTrue(fcc.exists(_ == ("w", 1404)))
+
+    pipeline.done
+    wordCountOut.delete()
   }
 }

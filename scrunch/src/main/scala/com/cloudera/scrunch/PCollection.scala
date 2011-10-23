@@ -38,14 +38,14 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
 
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), native.getPType())
-    parallelDo(mapKeyFn[S, K](f), ptype).groupByKey()
+    parallelDo(mapKeyFn[S, K](f), ptype).groupByKey
   }
+  
+  def materialize = new ConversionIterable[S](native.materialize)
 
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
   
   def count = new PTable[S, Long](Aggregate.count(native).asInstanceOf[JTable[S, Long]])
-  
-  def materialize() = new ConversionIterable[S](native.materialize())
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
