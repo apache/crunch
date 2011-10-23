@@ -26,24 +26,27 @@ trait PTypeH[T] {
   def getPType(ptf: PTypeFamily): PType[T]
 }
 
-trait CanParallelTransform[Col, El, To] {
-  def apply(c: Col, fn: DoFn[_, _], ptype: PType[El]): To
+trait CanParallelTransform[El, To] {
+  def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[El]): To
 }
 
 trait LowPriorityParallelTransforms {
-  implicit def single[A, B] = new CanParallelTransform[PCollection[A], B, PCollection[B]] {
-    def apply(c: PCollection[A], fn: DoFn[_, _], ptype: PType[B]) = {
-      c.parallelDo(fn.asInstanceOf[DoFn[A,B]], ptype.asInstanceOf[PType[B]])
+  implicit def single[B] = new CanParallelTransform[B, PCollection[B]] {
+    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[B]) = {
+      c.parallelDo(fn.asInstanceOf[DoFn[A, B]], ptype)
     }
   }
 }
 
 object CanParallelTransform extends LowPriorityParallelTransforms {
-  implicit def keyvalue[A, K, V] = new CanParallelTransform[PCollection[A], (K, V), PTable[K,V]] {
-    def apply(c: PCollection[A], fn: DoFn[_, _], ptype: PType[(K, V)]) = {
-      val st = ptype.getSubTypes()
-      val ptt = ptype.getFamily().tableOf(st.get(0).asInstanceOf[PType[K]], st.get(1).asInstanceOf[PType[V]])
-      c.parallelDo(fn.asInstanceOf[DoFn[A, CPair[K, V]]], ptt)
+  def tableType[K, V](ptype: PType[(K, V)]) = {
+    val st = ptype.getSubTypes()
+    ptype.getFamily().tableOf(st.get(0).asInstanceOf[PType[K]], st.get(1).asInstanceOf[PType[V]])
+  }
+
+  implicit def keyvalue[K, V] = new CanParallelTransform[(K, V), PTable[K,V]] {
+    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[(K, V)]) = {
+      c.parallelDo(fn.asInstanceOf[DoFn[A, CPair[K, V]]], tableType(ptype))
     }
   }
 } 
@@ -101,21 +104,22 @@ object Conversions {
     }
   }
 
-  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = jtable match {
-    case x: PTable[K, V] => x
-    case _ => new PTable[K, V](jtable)
+  implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = {
+    new PTable[K, V](jtable)
   }
   
-  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = jcollect match {
-    case x: PCollection[S] => x
-    case _ => new PCollection[S](jcollect)
+  implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = {
+    new PCollection[S](jcollect)
   }
   
-  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = jgrouped match {
-    case x: PGroupedTable[K, V] => x
-    case _ => new PGroupedTable[K, V](jgrouped)
+  implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = {
+    new PGroupedTable[K, V](jgrouped)
   }
-  
+
+  implicit def pair2tuple[K, V](p: CPair[K, V]) = (p.first(), p.second())
+
+  implicit def tuple2pair[K, V](t: (K, V)) = CPair.of(t._1, t._2)
+
   def s2c(obj: Any): Any = obj match {
     case x: Tuple2[_, _] =>  CPair.of(s2c(x._1), s2c(x._2))
     case x: Tuple3[_, _, _] => new CTuple3(s2c(x._1), s2c(x._2), s2c(x._3))

@@ -20,59 +20,36 @@ import com.cloudera.crunch.lib.Cogroup
 import com.cloudera.scrunch.Conversions._
 import scala.collection.JavaConversions._
 
-class PTable[K, V](jtable: JTable[K, V]) extends PCollection[JPair[K, V]](jtable) with JTable[K, V] {
+class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[JPair[K, V], PTable[K, V], JTable[K, V]] {
 
   def filter(f: (K, V) => Boolean): PTable[K, V] = {
-    parallelDo(new DSFilterTableFn[K, V](f), getPTableType())
+    parallelDo(new DSFilterTableFn[K, V](f), native.getPTableType())
   }
 
   def map[T, To](f: (K, V) => T)
-      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, V]], T, To]): To = {
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSMapTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, V) => Traversable[T])
-      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, V]], T, To]): To = {
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSDoTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
-  override def union(tables: JTable[K, V]*) = {
-    new PTable[K, V](jtable.union(tables.map(baseCheck): _*))
-  }
-
-  override def base: JTable[K, V] = jtable match {
-    case x: PTable[K, V] => x.base
-    case _ => jtable
-  }
-
-  private def baseCheck(c: JTable[K, V]): JTable[K, V] = c match {
-    case x: PTable[K, V] => x.base.asInstanceOf[PTable[K, V]]
-    case _ => c
-  }
-
-  def ++ (other: JTable[K, V]) = union(other)
-
   def cogroup[V2](other: PTable[K, V2]) = {
-    val jres = Cogroup.cogroup[K, V, V2](this.base, other.base)
+    val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
     new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
   }
 
-  override def groupByKey() = new PGroupedTable(jtable.groupByKey())
+  def groupByKey() = new PGroupedTable(native.groupByKey())
 
-  override def groupByKey(partitions: Int) = new PGroupedTable(jtable.groupByKey(partitions))
+  def groupByKey(partitions: Int) = new PGroupedTable(native.groupByKey(partitions))
 
-  override def groupByKey(options: GroupingOptions) = new PGroupedTable(jtable.groupByKey(options))
+  def groupByKey(options: GroupingOptions) = new PGroupedTable(native.groupByKey(options))
 
-  override def write(target: Target) = {
-    jtable.write(target)
-    this
+  def wrap(newNative: AnyRef) = {
+    new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
-  
-  override def getPTableType() = jtable.getPTableType()
-
-  override def getKeyType() = jtable.getKeyType()
-
-  override def getValueType() = jtable.getValueType()
 }
 
 trait SFilterTableFn[K, V] extends FilterFn[JPair[K, V]] with Function2[K, V, Boolean] {

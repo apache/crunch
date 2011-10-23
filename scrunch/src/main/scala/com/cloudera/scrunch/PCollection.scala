@@ -16,81 +16,35 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
+import com.cloudera.crunch.lib.Aggregate
 import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
-import com.cloudera.scrunch.Conversions._
+import Conversions._
 
-class PCollection[S](jcollect: JCollection[S]) extends JCollection[S] {
+class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
 
   def filter(f: S => Boolean): PCollection[S] = {
-    parallelDo(new DSFilterFn[S](f), getPType())
+    parallelDo(new DSFilterFn[S](f), native.getPType())
   }
 
-  def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[S], T, To]): To = {
+  def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSMapFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: S => Traversable[T])
-      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[S], T, To]): To = {
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSDoFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
-    val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), getPType())
+    val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), native.getPType())
     parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
   }
 
-  def count(implicit pt: PTypeH[S]) = map(s => (s, 1L)).groupByKey().combine(v => v.sum)
-
-  override def getPipeline() = jcollect.getPipeline()
-
-  override def union(others: JCollection[S]*) = {
-    new PCollection[S](jcollect.union(others.map(baseCheck): _*))
-  }
-
-  def base: JCollection[S] = jcollect match {
-    case x: PCollection[S] => x.base
-    case _ => jcollect
-  }
-
-  protected def baseCheck(collect: JCollection[S]) = collect match {
-    case x: PCollection[S] => x.base
-    case _ => collect
-  }
-
-  def ++ (other: JCollection[S]) = union(other)
-
-  override def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
-    new PCollection[T](jcollect.parallelDo(fn, ptype))
-  }
-
-  override def parallelDo[T](name: String, fn: DoFn[S,T], ptype: PType[T]) = {
-    new PCollection[T](jcollect.parallelDo(name, fn, ptype))
-  }
-
-  override def parallelDo[K, V](fn: DoFn[S, JPair[K, V]],
-      ptype: PTableType[K, V]) = {
-    new PTable[K, V](jcollect.parallelDo(fn, ptype))
-  }
-
-  override def parallelDo[K, V](name: String,
-      fn: DoFn[S, JPair[K, V]], ptype: PTableType[K, V]) = {
-    new PTable[K, V](jcollect.parallelDo(name, fn, ptype))
-  }
-
-  override def materialize(): java.lang.Iterable[S] = jcollect.materialize()
-
-  override def write(target: Target) = {
-    jcollect.write(target)
-    this
-  }
-
-  override def getPType() = jcollect.getPType()
-
-  override def getTypeFamily() = jcollect.getTypeFamily()
-
-  override def getSize() = jcollect.getSize()
-
-  override def getName() = jcollect.getName()
+  def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
+  
+  def count = new PTable[S, Long](Aggregate.count(native).asInstanceOf[JTable[S, Long]])
+  
+  def materialize() = new ConversionIterable[S](native.materialize())
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {

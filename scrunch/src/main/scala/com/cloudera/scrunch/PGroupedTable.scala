@@ -20,28 +20,33 @@ import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
 import Conversions._
 
-class PGroupedTable[K, V](grouped: JGroupedTable[K, V]) extends PCollection[JPair[K, JIterable[V]]](grouped) with JGroupedTable[K, V] {
+class PGroupedTable[K, V](val native: JGroupedTable[K, V])
+    extends PCollectionLike[JPair[K, JIterable[V]], PGroupedTable[K, V], JGroupedTable[K, V]] {
 
   def filter(f: (K, Iterable[V]) => Boolean) = {
     ClosureCleaner.clean(f)
-    parallelDo(new DSFilterGroupedFn[K, V](f), grouped.getPType())
+    parallelDo(new DSFilterGroupedFn[K, V](f), native.getPType())
   }
 
   def map[T, To](f: (K, Iterable[V]) => T)
-      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, JIterable[V]]], T, To]): To = {
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSMapGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, Iterable[V]) => Traversable[T])
-      (implicit pt: PTypeH[T], b: CanParallelTransform[PCollection[JPair[K, JIterable[V]]], T, To]): To = {
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, new DSDoGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
 
-  override def combineValues(fn: CombineFn[K, V]) = new PTable[K, V](grouped.combineValues(fn))
+  def combineValues(fn: CombineFn[K, V]) = new PTable[K, V](native.combineValues(fn))
 
-  override def ungroup() = new PTable[K, V](grouped.ungroup())
+  def ungroup() = new PTable[K, V](native.ungroup())
+  
+  def wrap(newNative: AnyRef): PGroupedTable[K, V] = {
+    new PGroupedTable[K, V](newNative.asInstanceOf[JGroupedTable[K, V]])
+  }
 }
 
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {

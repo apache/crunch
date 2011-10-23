@@ -18,6 +18,7 @@ import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
 import com.cloudera.crunch.{Source, TableSource, Target}
 import com.cloudera.crunch.impl.mr.MRPipeline
 import org.apache.hadoop.conf.Configuration
+import Conversions._
 
 class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
   val jpipeline = new MRPipeline(classManifest[R].erasure, conf)
@@ -31,10 +32,8 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
   }
 
   def write(pcollect: PCollection[_], target: Target) {
-    jpipeline.write(pcollect.base, target)
+    jpipeline.write(pcollect.native, target)
   }
-
-  def materialize[T](pcollect: PCollection[T]) = jpipeline.materialize(pcollect)
 
   def run() { jpipeline.run() }
 
@@ -43,6 +42,6 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
   def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
   
   def writeTextFile[T](pcollect: PCollection[T], pathName: String) {
-    jpipeline.writeTextFile(pcollect.base, pathName)
+    jpipeline.writeTextFile(pcollect.native, pathName)
   }
 }
