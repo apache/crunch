@@ -16,29 +16,35 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => JPair}
-import com.cloudera.crunch.lib.Cogroup
+import com.cloudera.crunch.lib.{Cogroup, Join}
 import com.cloudera.scrunch.Conversions._
 import scala.collection.JavaConversions._
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[JPair[K, V], PTable[K, V], JTable[K, V]] {
+  import PTable._
 
   def filter(f: (K, V) => Boolean): PTable[K, V] = {
-    parallelDo(new DSFilterTableFn[K, V](f), native.getPTableType())
+    parallelDo(filterFn[K, V](f), native.getPTableType())
   }
 
   def map[T, To](f: (K, V) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSMapTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, V) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSDoTableFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def cogroup[V2](other: PTable[K, V2]) = {
     val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
     new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
+  }
+
+  def join[V2](other: PTable[K, V2]) = {
+    val jres = Join.join[K, V, V2](this.native, other.native)
+    new PTable[K, (V, V2)](jres.asInstanceOf[JTable[K, (V, V2)]])
   }
 
   def groupByKey() = new PGroupedTable(native.groupByKey())
@@ -75,17 +81,19 @@ trait SMapTableFn[K, V, T] extends MapFn[JPair[K, V], T] with Function2[K, V, T]
   }
 }
 
-class DSFilterTableFn[K, V](fn: (K, V) => Boolean) extends SFilterTableFn[K, V] {
-  ClosureCleaner.clean(fn)
-  override def apply(k: K, v: V) = fn(k, v)  
-}
+object PTable {
+  def filterFn[K, V](fn: (K, V) => Boolean) = {
+    ClosureCleaner.clean(fn)
+    new SFilterTableFn[K, V] { def apply(k: K, v: V) = fn(k, v) }
+  }
 
-class DSDoTableFn[K, V, T](fn: (K, V) => Traversable[T]) extends SDoTableFn[K, V, T] {
-  ClosureCleaner.clean(fn)
-  override def apply(k: K, v: V) = fn(k, v)  
-}
+  def flatMapFn[K, V, T](fn: (K, V) => Traversable[T]) = {
+    ClosureCleaner.clean(fn)
+    new SDoTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
 
-class DSMapTableFn[K, V, T](fn: (K, V) => T) extends SMapTableFn[K, V, T] {
-  ClosureCleaner.clean(fn)
-  override def apply(k: K, v: V) = fn(k, v)  
+  def mapFn[K, V, T](fn: (K, V) => T) = {
+    ClosureCleaner.clean(fn)
+    new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
 }

@@ -21,23 +21,24 @@ import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
 import Conversions._
 
 class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
+  import PCollection._
 
   def filter(f: S => Boolean): PCollection[S] = {
-    parallelDo(new DSFilterFn[S](f), native.getPType())
+    parallelDo(filterFn[S](f), native.getPType())
   }
 
   def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSMapFn[S, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: S => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSDoFn[S, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), native.getPType())
-    parallelDo(new DSMapKeyFn[S, K](f), ptype).groupByKey()
+    parallelDo(mapKeyFn[S, K](f), ptype).groupByKey()
   }
 
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
@@ -74,22 +75,24 @@ trait SMapKeyFn[S, K] extends MapFn[S, JPair[K, S]] with Function1[S, K] {
   }
 }
 
-class DSDoFn[S, T](fn: S => Traversable[T]) extends SDoFn[S, T] {
-  ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
-}
+object PCollection {
+  def flatMapFn[S, T](fn: S => Traversable[T]) = {
+    ClosureCleaner.clean(fn)
+    new SDoFn[S, T] { def apply(x: S) = fn(x) }
+  }
 
-class DSFilterFn[S](fn: S => Boolean) extends SFilterFn[S] {
-  ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
-}
+  def filterFn[S](fn: S => Boolean) = {
+    ClosureCleaner.clean(fn)
+    new SFilterFn[S] { def apply(x: S) = fn(x) }
+  }
 
-class DSMapFn[S, T](fn: S => T) extends SMapFn[S, T] {
-  ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
-}
+  def mapFn[S, T](fn: S => T) = {
+    ClosureCleaner.clean(fn)
+    new SMapFn[S, T] { def apply(x: S) = fn(x) }
+  }
 
-class DSMapKeyFn[S, K](fn: S => K) extends SMapKeyFn[S, K] {
-  ClosureCleaner.clean(fn)
-  override def apply(x: S) = fn(x)
+  def mapKeyFn[S, K](fn: S => K) = {
+    ClosureCleaner.clean(fn)
+    new SMapKeyFn[S, K] { def apply(x: S) = fn(x) }
+  }
 }

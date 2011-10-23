@@ -22,20 +22,21 @@ import Conversions._
 
 class PGroupedTable[K, V](val native: JGroupedTable[K, V])
     extends PCollectionLike[JPair[K, JIterable[V]], PGroupedTable[K, V], JGroupedTable[K, V]] {
+  import PGroupedTable._
 
   def filter(f: (K, Iterable[V]) => Boolean) = {
     ClosureCleaner.clean(f)
-    parallelDo(new DSFilterGroupedFn[K, V](f), native.getPType())
+    parallelDo(filterFn[K, V](f), native.getPType())
   }
 
   def map[T, To](f: (K, Iterable[V]) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSMapGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, Iterable[V]) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, new DSDoGroupedFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
@@ -77,17 +78,19 @@ trait SMapGroupedFn[K, V, T] extends MapFn[JPair[K, JIterable[V]], T] with Funct
   }
 }
 
-class DSFilterGroupedFn[K, V](fn: (K, Iterable[V]) => Boolean) extends SFilterGroupedFn[K, V] {
-  ClosureCleaner.clean(fn)
-  def apply(k: K, v: Iterable[V]) = fn(k, v)    
-}
+object PGroupedTable {
+  def filterFn[K, V](fn: (K, Iterable[V]) => Boolean) = {
+    ClosureCleaner.clean(fn)
+    new SFilterGroupedFn[K, V] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
+  }
 
-class DSDoGroupedFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) extends SDoGroupedFn[K, V, T] {
-  ClosureCleaner.clean(fn)
-  def apply(k: K, v: Iterable[V]) = fn(k, v)    
-}
+  def flatMapFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) = {
+    ClosureCleaner.clean(fn)
+    new SDoGroupedFn[K, V, T] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
+  }
 
-class DSMapGroupedFn[K, V, T](fn: (K, Iterable[V]) => T) extends SMapGroupedFn[K, V, T] {
-  ClosureCleaner.clean(fn)
-  def apply(k: K, v: Iterable[V]) = fn(k, v)  
+  def mapFn[K, V, T](fn: (K, Iterable[V]) => T) = {
+    ClosureCleaner.clean(fn)
+    new SMapGroupedFn[K, V, T] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
+  }
 }
