@@ -22,10 +22,6 @@ import java.lang.{Iterable => JIterable}
 import java.nio.ByteBuffer
 import scala.collection.{Iterable, Iterator}
 
-trait PTypeH[T] {
-  def getPType(ptf: PTypeFamily): PType[T]
-}
-
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[El]): To
 }
@@ -58,6 +54,10 @@ class ConversionIterator[S](iterator: java.util.Iterator[S]) extends Iterator[S]
 
 class ConversionIterable[S](iterable: JIterable[S]) extends Iterable[S] {
   override def iterator() = new ConversionIterator[S](iterable.iterator())
+}
+
+trait PTypeH[T] {
+  def getPType(ptf: PTypeFamily): PType[T]
 }
 
 object Conversions {
