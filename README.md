@@ -288,5 +288,3 @@ delegate all of the work to the reduce stage of the predecessor job. We should t
 expected size of different PCollections to optimize this processing.
 * The Crunch optimizer does not yet merge different groupByKey operations that run over the same input data into a single
 MapReduce job. Implementing this optimization will provide a major performance benefit for a number of problems.
-* We would like to be able to "materialize" a PCollection into an in-memory Collection on the client. This can be done now,
-but it requires work by the client.

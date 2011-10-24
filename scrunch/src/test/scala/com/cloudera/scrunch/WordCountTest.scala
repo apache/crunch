@@ -32,7 +32,8 @@ class ExampleWordTest extends AssertionsForJUnit {
     val wordCountOut = FileHelper.createOutputPath
 
     val fcc = pipeline.read(from.textFile(input))
-        .flatMap(_.toLowerCase.split("\\s+")).count
+        .flatMap(_.toLowerCase.split("\\s+"))
+        .filter(!_.isEmpty()).count
         .write(to.textFile(wordCountOut.getAbsolutePath)) // Word counts
         .map((w, c) => (w.slice(0, 1), c))
         .groupByKey.combine(v => v.sum).materialize
