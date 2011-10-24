@@ -14,8 +14,6 @@
  */
 package com.cloudera.crunch;
 
-import java.util.Collection;
-
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -23,6 +21,11 @@ import org.apache.hadoop.conf.Configuration;
  * 
  */
 public interface Pipeline {
+  
+  /**
+   * Set the {@code Configuration} to use with this pipeline.
+   */
+  void setConfiguration(Configuration conf);
   
   /**
    * Returns the {@code Configuration} instance associated with this pipeline.

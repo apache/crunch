@@ -1,0 +1,110 @@
+/**
+ * Copyright (c) 2011, Cloudera, Inc. All Rights Reserved.
+ *
+ * Cloudera, Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"). You may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for
+ * the specific language governing permissions and limitations under the
+ * License.
+ */
+package com.cloudera.scrunch
+
+import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
+import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
+import com.cloudera.crunch.lib.{Cogroup, Join}
+import com.cloudera.scrunch.Conversions._
+import java.lang.{Iterable => JIterable}
+import scala.collection.JavaConversions._
+
+class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
+  import PTable._
+
+  def filter(f: (K, V) => Boolean): PTable[K, V] = {
+    parallelDo(filterFn[K, V](f), native.getPTableType())
+  }
+
+  def map[T, To](f: (K, V) => T)
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
+    b(this, mapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+  }
+
+  def flatMap[T, To](f: (K, V) => Traversable[T])
+      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
+    b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+  }
+
+  def union(others: PTable[K, V]*) = {
+    new PTable[K, V](native.union(others.map(_.native) : _*))
+  }
+
+  def cogroup[V2](other: PTable[K, V2]) = {
+    val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
+    new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
+  }
+
+  def join[V2](other: PTable[K, V2]) = {
+    val jres = Join.join[K, V, V2](this.native, other.native)
+    new PTable[K, (V, V2)](jres.asInstanceOf[JTable[K, (V, V2)]])
+  }
+
+  def groupByKey = new PGroupedTable(native.groupByKey())
+
+  def groupByKey(partitions: Int) = new PGroupedTable(native.groupByKey(partitions))
+
+  def groupByKey(options: GroupingOptions) = new PGroupedTable(native.groupByKey(options))
+
+  def wrap(newNative: AnyRef) = {
+    new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
+  }
+ 
+  def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
+ 
+  def materialize: Iterable[(K, V)] = {
+    new ConversionIterable[(K, V)](native.materialize.asInstanceOf[JIterable[(K, V)]])
+  }
+}
+
+trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {
+  override def accept(input: CPair[K, V]): Boolean = {
+    apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V]);
+  }
+}
+
+trait SDoTableFn[K, V, T] extends DoFn[CPair[K, V], T] with Function2[K, V, Traversable[T]] {
+  override def process(input: CPair[K, V], emitter: Emitter[T]): Unit = {
+    val k = c2s(input.first()).asInstanceOf[K]
+    val v = c2s(input.second()).asInstanceOf[V]
+    for (v <- apply(k, v)) {
+      emitter.emit(s2c(v).asInstanceOf[T])
+    }
+  }
+}
+
+trait SMapTableFn[K, V, T] extends MapFn[CPair[K, V], T] with Function2[K, V, T] {
+  override def map(input: CPair[K, V]): T = {
+    val v = apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V])
+    s2c(v).asInstanceOf[T]
+  }
+}
+
+object PTable {
+  def filterFn[K, V](fn: (K, V) => Boolean) = {
+    ClosureCleaner.clean(fn)
+    new SFilterTableFn[K, V] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def flatMapFn[K, V, T](fn: (K, V) => Traversable[T]) = {
+    ClosureCleaner.clean(fn)
+    new SDoTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def mapFn[K, V, T](fn: (K, V) => T) = {
+    ClosureCleaner.clean(fn)
+    new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+}

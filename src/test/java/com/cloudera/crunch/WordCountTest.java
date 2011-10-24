@@ -26,6 +26,7 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.lib.Aggregate;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
@@ -95,15 +96,11 @@ public class WordCountTest {
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    File input = File.createTempFile("shakes", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("shakes.txt")), input);
-    
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-    
-    PCollection<String> shakespeare = pipeline.readTextFile(input.getAbsolutePath());
+	String inputPath = FileHelper.createTempCopyOf("shakes.txt");
+	File output = FileHelper.createOutputPath();
+	String outputPath = output.getAbsolutePath();
+	
+    PCollection<String> shakespeare = pipeline.readTextFile(inputPath);
     PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
     if (useToOutput) {
       wordCount.write(To.textFile(outputPath));
@@ -121,7 +118,7 @@ public class WordCountTest {
     }
     pipeline.done();
     
-    File outputFile = new File(output, "part-r-00000");
+    File outputFile = new File(outputPath, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
@@ -131,7 +128,6 @@ public class WordCountTest {
       }
     }
     assertTrue(passed);
-    
-    output.deleteOnExit();
+	output.deleteOnExit();
   }  
 }

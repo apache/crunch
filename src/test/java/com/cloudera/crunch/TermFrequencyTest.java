@@ -31,6 +31,7 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.lib.Aggregate;
+import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.io.Files;
@@ -49,18 +50,12 @@ public class TermFrequencyTest implements Serializable {
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean transformTF) throws IOException {
-    File input = File.createTempFile("docs", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("docs.txt")), input);
+    String input = FileHelper.createTempCopyOf("docs.txt");
     
-    File output = File.createTempFile("output", "");
-    String transformedTFOutputPath1 = output.getAbsolutePath();
-    output.delete();
-    output = File.createTempFile("output", "");
-    String tfOutputPath = output.getAbsolutePath();
-    output.delete();
+    File transformedOutput = FileHelper.createOutputPath();
+    File tfOutput = FileHelper.createOutputPath();
     
-    PCollection<String> docs = pipeline.readTextFile(input.getAbsolutePath());
+    PCollection<String> docs = pipeline.readTextFile(input);
     
     PTypeFamily ptf = docs.getTypeFamily();
     
@@ -104,10 +99,10 @@ public class TermFrequencyTest implements Serializable {
             }
         }, ptf.tableOf(ptf.strings(), ptf.pairs(ptf.strings(), ptf.longs())));
       
-      pipeline.writeTextFile(wordDocumentCountPair, transformedTFOutputPath1);
+      pipeline.writeTextFile(wordDocumentCountPair, transformedOutput.getAbsolutePath());
     }
     
-    SourceTarget<String> st = At.textFile(tfOutputPath);
+    SourceTarget<String> st = At.textFile(tfOutput.getAbsolutePath());
     pipeline.write(tf, st);
     
     pipeline.run();

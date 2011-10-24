@@ -58,16 +58,17 @@ public class MRPipeline implements Pipeline {
   private final Class<?> jarClass;
   private final Map<PCollectionImpl, Set<Target>> outputTargets;
   private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
-  private final Configuration conf;
   private final Path tempDirectory;
   private int tempFileIndex;
   private int nextAnonymousStageId;
-  
+
+  private Configuration conf;
+
   public MRPipeline(Class<?> jarClass) throws IOException {
     this(jarClass, new Configuration());
   }
   
-  public MRPipeline(Class<?> jarClass, Configuration conf) throws IOException {
+  public MRPipeline(Class<?> jarClass, Configuration conf) {
     this.jarClass = jarClass;
     this.outputTargets = Maps.newHashMap();
     this.outputTargetsToMaterialize = Maps.newHashMap();
@@ -77,13 +78,17 @@ public class MRPipeline implements Pipeline {
     this.nextAnonymousStageId = 0;
   }
 
-  private static Path createTempDirectory(Configuration conf) throws IOException {
-    FileSystem fs = FileSystem.get(conf);
-    Path dir = new Path("/tmp/crunch" + RANDOM.nextInt());
-    fs.mkdirs(dir);
-    return dir;
+  @Override
+  public Configuration getConfiguration() {
+    return conf;
+  }
+
+  @Override
+  public void setConfiguration(Configuration conf) {
+	this.conf = conf;
   }
   
+  @Override
   public void run() {
     MSCRPlanner planner = new MSCRPlanner(this, outputTargets);
     try {
@@ -180,6 +185,17 @@ public class MRPipeline implements Pipeline {
     return new Path(tempDirectory, "p" + tempFileIndex++);
   }
   
+  private static Path createTempDirectory(Configuration conf) {
+    Path dir = new Path("/tmp/crunch" + RANDOM.nextInt());
+	try {
+	  FileSystem.get(conf).mkdirs(dir);
+	} catch (IOException e) {
+	  LOG.error("Exception creating job output directory", e);
+	  throw new RuntimeException(e);
+	}
+    return dir;
+  }
+  
   @Override
   public <T> void writeTextFile(PCollection<T> pcollection, String pathName) {
     // Ensure that this is a writable pcollection instance.
@@ -201,11 +217,6 @@ public class MRPipeline implements Pipeline {
     } catch (IOException e) {
       LOG.info("Exception during cleanup", e);
     }
-  }
-
-  @Override
-  public Configuration getConfiguration() {
-    return conf;
   }
   
   public int getNextAnonymousStageId() {

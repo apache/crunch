@@ -16,6 +16,7 @@ package com.cloudera.crunch.type.writable;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.RawComparator;
@@ -123,6 +124,10 @@ public class WritableTypeFamily implements PTypeFamily {
     return Writables.collections(ptype);
   }
 
+  public <T> PType<Map<String, T>> maps(PType<T> ptype) {
+	return Writables.maps(ptype);
+  }
+  
   @Override
   public <T> PType<T> as(PType<T> ptype) {
     if (ptype instanceof WritableType || ptype instanceof WritableTableType ||
