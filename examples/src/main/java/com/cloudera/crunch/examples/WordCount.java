@@ -41,7 +41,7 @@ public class WordCount extends Configured implements Tool, Serializable {
       return 1;
     }
     // Create an object to coordinate pipeline creation and execution.
-    Pipeline pipeline = new MRPipeline(WordCount.class);
+    Pipeline pipeline = new MRPipeline(WordCount.class, getConf());
     // Reference a given text file as a collection of Strings.
     PCollection<String> lines = pipeline.readTextFile(args[0]);
 
