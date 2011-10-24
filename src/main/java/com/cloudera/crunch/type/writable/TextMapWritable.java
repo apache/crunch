@@ -51,6 +51,7 @@ public class TextMapWritable<T extends Writable> implements Writable {
   
   @Override
   public void readFields(DataInput in) throws IOException {
+	instance.clear();
 	try {
 	  this.valueClazz = (Class<T>) Class.forName(Text.readString(in));
 	} catch (ClassNotFoundException e) {
@@ -58,7 +59,6 @@ public class TextMapWritable<T extends Writable> implements Writable {
 	}
 	int entries = WritableUtils.readVInt(in);
 	try {
-
 	  for (int i = 0; i < entries; i++) {
 	    Text txt = new Text();
 	    txt.readFields(in);
