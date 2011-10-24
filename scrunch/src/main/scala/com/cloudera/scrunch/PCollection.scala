@@ -36,6 +36,10 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     b(this, flatMapFn[S, T](f), pt.getPType(getTypeFamily()))
   }
 
+  def union(others: PCollection[S]*) = {
+    new PCollection[S](native.union(others.map(_.native) : _*))
+  }
+
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), native.getPType())
     parallelDo(mapKeyFn[S, K](f), ptype).groupByKey

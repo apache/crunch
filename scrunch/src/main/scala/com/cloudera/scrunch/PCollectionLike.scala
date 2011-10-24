@@ -24,13 +24,6 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   
   def wrap(newNative: AnyRef): FullType
   
-  def union(others: PCollectionLike[S, _, _]*) = {
-    // TODO: fix this
-    wrap(native.union(others.map(_.native.asInstanceOf[NativeType]): _*))
-  }
-  
-  def ++(other: PCollectionLike[S, _, _]) = union(other)
-  
   def write(target: Target): FullType = wrap(native.write(target))
 
   def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {

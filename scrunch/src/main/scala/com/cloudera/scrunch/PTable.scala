@@ -38,6 +38,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
   }
 
+  def union(others: PTable[K, V]*) = {
+    new PTable[K, V](native.union(others.map(_.native) : _*))
+  }
+
   def cogroup[V2](other: PTable[K, V2]) = {
     val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
     new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
@@ -57,7 +61,9 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def wrap(newNative: AnyRef) = {
     new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
-  
+ 
+  def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
+ 
   def materialize: Iterable[(K, V)] = {
     new ConversionIterable[(K, V)](native.materialize.asInstanceOf[JIterable[(K, V)]])
   }
