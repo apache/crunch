@@ -55,6 +55,9 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    */
   PGroupedTable<K, V> groupByKey(GroupingOptions options);
 
+  /**
+   * Writes this {@code PTable} to the given {@code Target}.
+   */
   PTable<K, V> write(Target target);
   
   /**

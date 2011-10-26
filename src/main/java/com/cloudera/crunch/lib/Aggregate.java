@@ -15,6 +15,8 @@
 package com.cloudera.crunch.lib;
 
 import com.cloudera.crunch.CombineFn;
+import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
@@ -42,5 +44,79 @@ public class Aggregate {
     }, tf.tableOf(collect.getPType(), tf.longs()))
     .groupByKey()
     .combineValues(CombineFn.<S> SUM_LONGS());
+  }
+  
+  /**
+   * Returns the largest numerical element from the input collection.
+   */
+  public static <S extends Number> PCollection<S> max(PCollection<S> collect) {
+    PTypeFamily tf = collect.getTypeFamily();
+    return PTables.values(
+        collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
+          private transient S max = null;
+          
+          @Override
+          public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
+            if (max == null || max.doubleValue() < input.doubleValue()) {
+              max = input;
+            }
+          }
+          
+          @Override
+          public void cleanup(Emitter<Pair<Boolean, S>> emitter) {
+            if (max != null) {
+              emitter.emit(Pair.of(true, max));
+            }
+          }
+        }, tf.tableOf(tf.booleans(), collect.getPType()))
+        .groupByKey().combineValues(new CombineFn<Boolean, S>() {
+          @Override
+          public void process(Pair<Boolean, Iterable<S>> input,
+              Emitter<Pair<Boolean, S>> emitter) {
+            S max = null;
+            for (S v : input.second()) {
+              if (max == null || max.doubleValue() < v.doubleValue()) {
+                max = v;
+              }
+            }
+            emitter.emit(Pair.of(input.first(), max));
+          } }));
+  }
+  
+  /**
+   * Returns the smallest numerical element from the input collection.
+   */
+  public static <S extends Number> PCollection<S> min(PCollection<S> collect) {
+    PTypeFamily tf = collect.getTypeFamily();
+    return PTables.values(
+        collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
+          private transient S min = null;
+          
+          @Override
+          public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
+            if (min == null || min.doubleValue() > input.doubleValue()) {
+              min = input;
+            }
+          }
+          
+          @Override
+          public void cleanup(Emitter<Pair<Boolean, S>> emitter) {
+            if (min != null) {
+              emitter.emit(Pair.of(false, min));
+            }
+          }
+        }, tf.tableOf(tf.booleans(), collect.getPType()))
+        .groupByKey().combineValues(new CombineFn<Boolean, S>() {
+          @Override
+          public void process(Pair<Boolean, Iterable<S>> input,
+              Emitter<Pair<Boolean, S>> emitter) {
+            S min = null;
+            for (S v : input.second()) {
+              if (min == null || min.doubleValue() > v.doubleValue()) {
+                min = v;
+              }
+            }
+            emitter.emit(Pair.of(input.first(), min));
+          } }));
   }
 }

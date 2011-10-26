@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch;
+package com.cloudera.crunch.lib;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,6 +20,13 @@ import java.io.IOException;
 
 import org.junit.Test;
 
+import com.cloudera.crunch.CombineFn;
+import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.Emitter;
+import com.cloudera.crunch.PCollection;
+import com.cloudera.crunch.PTable;
+import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Join;
