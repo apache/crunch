@@ -89,7 +89,7 @@ public class PageRankTest {
               }
             }, ptf.tableOf(ptf.strings(), ptf.triples(ptf.floats(), ptf.floats(), ptf.collections(ptf.strings()))));
     
-    float delta = 1.0f;
+    Float delta = 1.0f;
     while (delta > 0.01) {
       scores = pageRank(scores);
       delta = Iterables.getFirst(Aggregate.max(
@@ -99,7 +99,7 @@ public class PageRankTest {
               Tuple3<Float, Float, Collection<String>> t3 = input.second();
               return Math.abs(t3.first() - t3.second());
             }
-          }, ptf.floats())).materialize(), 1.0f);
+          }, ptf.floats())).materialize(), null);
     }
     assertEquals(0.0048, delta, 0.001);
   }

@@ -53,10 +53,18 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 	try {
 	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
 	  return new UnmodifiableIterator<T>() {
-		@Override
+	    boolean nextChecked = false;
+	    boolean hasNext = false;
+
+	    @Override
 		public boolean hasNext() {
+		  if (nextChecked == true) {
+		    return hasNext;
+		  }
 		  try {
-			return reader.next(key, value);
+			hasNext = reader.next(key, value);
+			nextChecked = true;
+			return hasNext;
 		  } catch (IOException e) {
 			LOG.info("Error reading from path: " + path, e);
 			return false;
@@ -65,6 +73,10 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
 		@Override
 		public T next() {
+		  if (!nextChecked && !hasNext()) {
+		    return null;
+		  }
+		  nextChecked = false;
 		  return mapFn.map(value);
 		}
 	  };

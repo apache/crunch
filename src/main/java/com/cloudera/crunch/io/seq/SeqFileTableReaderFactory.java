@@ -58,18 +58,30 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
 	try {
 	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
 	  return new UnmodifiableIterator<Pair<K, V>>() {
+	    boolean nextChecked = false;
+	    boolean hasNext = false;
+
 		@Override
 		public boolean hasNext() {
-		  try {
-			return reader.next(key, value);
-		  } catch (IOException e) {
-			LOG.info("Error reading from path: " + path, e);
-			return false;
-		  }
-		}
+          if (nextChecked == true) {
+            return hasNext;
+          }
+          try {
+            hasNext = reader.next(key, value);
+            nextChecked = true;
+            return hasNext;
+          } catch (IOException e) {
+            LOG.info("Error reading from path: " + path, e);
+            return false;
+          }
+        }
 
 		@Override
 		public Pair<K, V> next() {
+		  if (!nextChecked && !hasNext()) {
+            return null;
+          }
+          nextChecked = false;
 		  return Pair.of(keyMapFn.map(key), valueMapFn.map(value));
 		}
 	  };
