@@ -16,6 +16,8 @@ package com.cloudera.crunch.impl.mr.collect;
 
 import java.util.List;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
@@ -59,5 +61,18 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   @Override
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof InputCollection)) {
+      return false;
+    }
+    return source.equals(((InputCollection) obj).source);
+  }
+  
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().append(source).toHashCode();
   }
 }

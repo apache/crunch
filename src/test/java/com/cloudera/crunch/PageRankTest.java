@@ -19,8 +19,6 @@ import java.util.Collection;
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.io.At;
-import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.test.FileHelper;
