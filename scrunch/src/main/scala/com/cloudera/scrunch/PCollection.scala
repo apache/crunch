@@ -50,6 +50,10 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
   
   def count = new PTable[S, Long](Aggregate.count(native).asInstanceOf[JTable[S, Long]])
+
+  def max = {
+    wrap(Aggregate.max(native.asInstanceOf[JCollection[java.lang.Number]]))
+  }
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {

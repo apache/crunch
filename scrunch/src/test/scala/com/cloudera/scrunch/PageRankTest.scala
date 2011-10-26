@@ -47,17 +47,12 @@ class PageRankTest extends AssertionsForJUnit {
 
   @Test def testPageRank {
     var prev = initialInput(FileHelper.createTempCopyOf("urls.txt"))
-    for (i <- 0 until 10) {
+    var delta = 1.0f
+    while (delta > 0.01f) {
       prev = update(prev, 0.5f)
+      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.materialize.head
     }
-    var passed = false
-    for (scores <- prev.materialize) {
-      val (url, data) = scores
-      if (url == "www.F.com") {
-        passed = (data._1 == 0.5f)
-      }
-    }
-    assertTrue(passed)
+    assertEquals(0.0048, delta, 0.001)
     pipeline.done
   }
 }
