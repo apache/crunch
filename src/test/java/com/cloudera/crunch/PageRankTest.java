@@ -14,9 +14,7 @@
  */
 package com.cloudera.crunch;
 
-import java.util.Collection;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
@@ -25,6 +23,10 @@ import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.cloudera.crunch.util.Collects;
+
+import java.util.Collection;
+
+import org.junit.Test;
 
 public class PageRankTest {
 
@@ -98,7 +100,7 @@ public class PageRankTest {
             }
           }, ptf.floats())).materialize();
       delta = d.iterator().next();
-      System.out.println("Delta = " + delta);
     }
+    assertEquals(0.0048, delta, 0.001);
   }
 }
