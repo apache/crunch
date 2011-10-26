@@ -19,6 +19,9 @@ import java.util.Collection;
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
+import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -85,12 +88,19 @@ public class PageRankTest {
               }
             }, ptf.tableOf(ptf.strings(), ptf.triples(ptf.floats(), ptf.floats(), ptf.collections(ptf.strings()))));
     
-    for (int i = 0; i < 10; i++) {
+    float delta = 1.0f;
+    while (delta > 0.01) {
       scores = pageRank(scores);
-    }
-    
-    for (Pair<String, Tuple3<Float, Float, Collection<String>>> p : scores.materialize()) {
-      System.out.println(p);
+      Iterable<Float> d = Aggregate.max(
+          scores.parallelDo(new MapFn<Pair<String, Tuple3<Float, Float, Collection<String>>>, Float>() {
+            @Override
+            public Float map(Pair<String, Tuple3<Float, Float, Collection<String>>> input) {
+              Tuple3<Float, Float, Collection<String>> t3 = input.second();
+              return Math.abs(t3.first() - t3.second());
+            }
+          }, ptf.floats())).materialize();
+      delta = d.iterator().next();
+      System.out.println("Delta = " + delta);
     }
   }
 }

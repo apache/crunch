@@ -27,16 +27,18 @@ import com.google.common.collect.ImmutableList;
 public class InputTable<K, V> extends PTableBase<K, V> {
 
   private final TableSource<K, V> source;
+  private final InputCollection<Pair<K, V>> asCollection;
   
   public InputTable(TableSource<K, V> source, MRPipeline pipeline) {
     super(source.toString());
     this.source = source;
     this.pipeline = pipeline;
+    this.asCollection = new InputCollection<Pair<K, V>>(source, pipeline);
   }
 
   @Override
   public long getSize() {
-    return source.getSize(pipeline.getConfiguration());
+    return asCollection.getSize();
   }
 
   @Override
@@ -56,8 +58,7 @@ public class InputTable<K, V> extends PTableBase<K, V> {
 
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
-    visitor.visitInputCollection(new InputCollection<Pair<K, V>>(source,
-        pipeline));
+    visitor.visitInputCollection(asCollection);
   }
 
   @Override
