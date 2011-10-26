@@ -30,6 +30,7 @@ import com.cloudera.crunch.type.Converter;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -55,7 +56,7 @@ public class AvroType<T> implements PType<T> {
   public AvroType(Class<T> typeClass, Schema schema,
       MapFn inputMapFn, MapFn outputMapFn, PType...ptypes) {
     this.typeClass = typeClass;
-    this.schema = schema;
+    this.schema = Preconditions.checkNotNull(schema);
     this.baseInputMapFn = inputMapFn;
     this.baseOutputMapFn = outputMapFn;
     InputWrapperMapFn input = new InputWrapperMapFn(inputMapFn);

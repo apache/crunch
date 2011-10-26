@@ -21,7 +21,7 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.util.Collects;
 import com.google.common.collect.Iterables;
 
@@ -32,7 +32,7 @@ import org.junit.Test;
 public class PageRankTest {
 
   @Test public void testPageRank() throws Exception {
-    run(new MRPipeline(PageRankTest.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(PageRankTest.class), AvroTypeFamily.getInstance());
   }
   
   public static PTable<String, Tuple3<Float, Float, Collection<String>>> pageRank(
