@@ -57,11 +57,6 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
   public Iterator<Pair<K, V>> read(FileSystem fs, final Path path) {
 	try {
 	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-      boolean hasNext = reader.next(key, value);
-      if (!hasNext) {
-        return Iterators.emptyIterator();
-      }
-      
 	  return new UnmodifiableIterator<Pair<K, V>>() {
 		@Override
 		public boolean hasNext() {

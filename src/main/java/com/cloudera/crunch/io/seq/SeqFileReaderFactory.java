@@ -52,16 +52,6 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
   public Iterator<T> read(FileSystem fs, final Path path) {
 	try {
 	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-      try {
-        boolean hasNext = reader.next(key, value);
-        if (!hasNext) {
-          return Iterators.emptyIterator();
-        }
-      } catch (IOException e) {
-        LOG.info("Error reading from path: " + path, e);
-        return Iterators.emptyIterator();
-      }
-      
 	  return new UnmodifiableIterator<T>() {
 		@Override
 		public boolean hasNext() {

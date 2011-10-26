@@ -23,6 +23,7 @@ import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.cloudera.crunch.util.Collects;
+import com.google.common.collect.Iterables;
 
 import java.util.Collection;
 
@@ -91,15 +92,14 @@ public class PageRankTest {
     float delta = 1.0f;
     while (delta > 0.01) {
       scores = pageRank(scores);
-      Iterable<Float> d = Aggregate.max(
+      delta = Iterables.getFirst(Aggregate.max(
           scores.parallelDo(new MapFn<Pair<String, Tuple3<Float, Float, Collection<String>>>, Float>() {
             @Override
             public Float map(Pair<String, Tuple3<Float, Float, Collection<String>>> input) {
               Tuple3<Float, Float, Collection<String>> t3 = input.second();
               return Math.abs(t3.first() - t3.second());
             }
-          }, ptf.floats())).materialize();
-      delta = d.iterator().next();
+          }, ptf.floats())).materialize(), 1.0f);
     }
     assertEquals(0.0048, delta, 0.001);
   }
