@@ -20,7 +20,7 @@ import com.cloudera.crunch.`type`.{PType, PTypeFamily};
 import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
 import java.lang.{Iterable => JIterable}
 import java.nio.ByteBuffer
-import scala.collection.{Iterable, Iterator}
+import scala.collection.{Iterable, Iterator, JavaConversions}
 
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[El]): To
@@ -125,6 +125,7 @@ object Conversions {
     case x: Tuple3[_, _, _] => new CTuple3(s2c(x._1), s2c(x._2), s2c(x._3))
     case x: Tuple4[_, _, _, _] => new CTuple4(s2c(x._1), s2c(x._2), s2c(x._3), s2c(x._4))
     case x: Product => new CTupleN(x.productIterator.map(s2c).toList.toArray)
+    case x: Iterable[_] => JavaConversions.asJavaCollection[Any](x.map(s2c))
     case _ => obj
   }
 
