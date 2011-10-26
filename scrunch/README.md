@@ -21,10 +21,10 @@ the Scrunch analogue of the classic WordCount problem:
 	  val pipeline = new Pipeline[WordCountExample]
 
 	  def wordCount(fileName: String) = {
-            pipeline.read(from.textFile(fileName))
-	        .flatMap(_.toLowerCase.split("\\W+"))
-	        .filter(!_.isEmpty())
-	        .count
+	    pipeline.read(from.textFile(fileName))
+	      .flatMap(_.toLowerCase.split("\\W+"))
+	      .filter(!_.isEmpty())
+	      .count
 	  }
 	}
 
@@ -37,9 +37,9 @@ the second:
 
 	class WordCountExample {
 	  def wordGt(firstFile: String, secondFile: String) = {
-            wordCount(firstFile).cogroup(wordCount(secondFile))
-	        .map((k, v) => (k, (v._1.sum - v._2.sum)))
-                .filter((k, v) => v > 0).map((k, v) => k)
+	    wordCount(firstFile).cogroup(wordCount(secondFile))
+	      .map((k, v) => (k, (v._1.sum - v._2.sum)))
+	      .filter((k, v) => v > 0).map((k, v) => k)
 	  }
 	}
 
