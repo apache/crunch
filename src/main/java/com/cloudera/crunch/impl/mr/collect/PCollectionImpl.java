@@ -21,7 +21,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
-import com.cloudera.crunch.Source;
+import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
@@ -34,7 +34,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   private final String name;
   protected MRPipeline pipeline;
-  private Source<S> materializedAt;
+  private SourceTarget<S> materializedAt;
   
   public PCollectionImpl(String name) {
     this.name = name;
@@ -96,8 +96,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 	return getPipeline().materialize(this);
   }
   
-  public void materializeAt(Source<S> source) {
-    this.materializedAt = source;
+  public SourceTarget<S> getMaterializedAt() {
+    return materializedAt;
+  }
+  
+  public void materializeAt(SourceTarget<S> sourceTarget) {
+    this.materializedAt = sourceTarget;
   }
   
   @Override

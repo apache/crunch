@@ -32,11 +32,11 @@ import com.cloudera.crunch.type.avro.AvroType;
  *
  */
 public class At {
-  public static <T> SourceTarget<T> avroFile(String pathName, AvroType<T> avroType) {
+  public static <T> AvroFileSourceTarget<T> avroFile(String pathName, AvroType<T> avroType) {
 	return avroFile(new Path(pathName), avroType);
   }
   
-  public static <T> SourceTarget<T> avroFile(Path path, AvroType<T> avroType) {
+  public static <T> AvroFileSourceTarget<T> avroFile(Path path, AvroType<T> avroType) {
 	return new AvroFileSourceTarget<T>(path, avroType);
   }
   
@@ -48,11 +48,11 @@ public class At {
 	return new HBaseSourceTarget(table, scan);
   }
   
-  public static <T> SourceTarget<T> sequenceFile(String pathName, PType<T> ptype) {
+  public static <T> SeqFileSourceTarget<T> sequenceFile(String pathName, PType<T> ptype) {
 	return sequenceFile(new Path(pathName), ptype);
   }
   
-  public static <T> SourceTarget<T> sequenceFile(Path path, PType<T> ptype) {
+  public static <T> SeqFileSourceTarget<T> sequenceFile(Path path, PType<T> ptype) {
 	return new SeqFileSourceTarget<T>(path, ptype);
   }
   
@@ -67,11 +67,11 @@ public class At {
 	return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
   }
   
-  public static SourceTarget<String> textFile(String pathName) {
+  public static TextFileSourceTarget textFile(String pathName) {
 	return textFile(new Path(pathName));
   }
   
-  public static SourceTarget<String> textFile(Path path) {
+  public static TextFileSourceTarget textFile(Path path) {
 	return new TextFileSourceTarget(path);
   }  
 }

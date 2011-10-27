@@ -107,7 +107,7 @@ public class MRPipeline implements Pipeline {
         boolean materialized = false;
         for (Target t : outputTargets.get(c)) {
           if (!materialized && t instanceof Source) {
-           c.materializeAt((Source) t);
+           c.materializeAt((SourceTarget) t);
            materialized = true;
           }
         }
@@ -153,6 +153,11 @@ public class MRPipeline implements Pipeline {
   @Override
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
     PCollectionImpl impl = (PCollectionImpl) pcollection;
+    SourceTarget<T> matTarget = impl.getMaterializedAt();
+    if (matTarget != null && matTarget instanceof ReadableSourceTarget) {
+      return new MaterializableIterable<T>(this, (ReadableSourceTarget<T>) matTarget);
+    }
+    
 	ReadableSourceTarget<T> srcTarget = null;
 	if (outputTargets.containsKey(pcollection)) {
 	  for (Target target : outputTargets.get(impl)) {
@@ -162,6 +167,7 @@ public class MRPipeline implements Pipeline {
 	    }
 	  }
 	}
+	
 	if (srcTarget == null) {
 	  SourceTarget<T> st = createIntermediateOutput(pcollection.getPType());
 	  if (!(st instanceof ReadableSourceTarget)) {
@@ -172,6 +178,7 @@ public class MRPipeline implements Pipeline {
 		addOutput(impl, srcTarget);
 	  }
 	}
+	
 	MaterializableIterable<T> c = new MaterializableIterable<T>(this, srcTarget);
 	outputTargetsToMaterialize.put(impl, c);
 	return c;
