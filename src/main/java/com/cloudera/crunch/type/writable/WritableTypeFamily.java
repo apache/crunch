@@ -144,4 +144,10 @@ public class WritableTypeFamily implements PTypeFamily {
   public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
     return Writables.tuples(clazz, ptypes);
   }
+
+  @Override
+  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn,
+      MapFn<T, S> outputFn, PType<S> base) {
+    return Writables.derived(clazz, inputFn, outputFn, base);
+  }
 }

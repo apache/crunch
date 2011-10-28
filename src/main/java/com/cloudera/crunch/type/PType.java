@@ -30,7 +30,6 @@ import com.cloudera.crunch.SourceTarget;
  *
  */
 public interface PType<T> {
-
   /**
    * Returns the Java type represented by this {@code PType}.
    */

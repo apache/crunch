@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 
+import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
@@ -149,6 +150,12 @@ public class AvroTypeFamily implements PTypeFamily {
   @Override
   public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
     return Avros.tuples(clazz, ptypes);
+  }
+
+  @Override
+  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn,
+      MapFn<T, S> outputFn, PType<S> base) {
+    return Avros.derived(clazz, inputFn, outputFn, base);
   }
 
 

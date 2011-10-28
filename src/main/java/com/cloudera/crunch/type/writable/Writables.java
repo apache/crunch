@@ -36,6 +36,7 @@ import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
@@ -373,6 +374,14 @@ public class Writables {
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
     output.initialize();
     return new WritableType(clazz, TupleWritable.class, input, output, ptypes);  
+  }
+  
+  public static <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn,
+      PType<S> base) {
+    WritableType<S, ?> wt = (WritableType<S, ?>) base;
+    MapFn input = new CompositeMapFn(wt.getDataBridge().getInputMapFn(), inputFn);
+    MapFn output = new CompositeMapFn(outputFn, wt.getDataBridge().getOutputMapFn());
+    return new WritableType(clazz, wt.getSerializationClass(), input, output);
   }
   
   private static class ArrayCollectionMapFn<T> extends

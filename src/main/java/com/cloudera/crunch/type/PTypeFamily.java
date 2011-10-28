@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
+import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
@@ -62,6 +63,8 @@ public interface PTypeFamily {
   PType<TupleN> tuples(PType... ptypes);
 
   <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes);
+  
+  <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base);
   
   <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value);
   

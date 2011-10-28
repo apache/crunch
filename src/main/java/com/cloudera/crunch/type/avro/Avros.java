@@ -33,6 +33,7 @@ import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
 import com.google.common.collect.ImmutableList;
@@ -383,6 +384,14 @@ public class Avros {
     }
     schema.setFields(fields);
     return schema;
+  }
+  
+  public static final <S, T> AvroType<T> derived(Class<T> clazz, MapFn<S, T> inputFn,
+      MapFn<T, S> outputFn, PType<S> base) {
+    AvroType<S> abase = (AvroType<S>) base;
+    return new AvroType<T>(clazz, abase.getSchema(),
+        new CompositeMapFn(abase.getBaseInputMapFn(), inputFn),
+        new CompositeMapFn(outputFn, abase.getBaseOutputMapFn()));
   }
   
   public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {
