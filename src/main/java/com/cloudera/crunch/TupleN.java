@@ -22,7 +22,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 /**
  * A {@link Tuple} instance for an arbitrary number of values.
  */
-public class TupleN extends Tuple {
+public class TupleN implements Tuple {
 
   private final Object values[];
 

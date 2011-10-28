@@ -20,7 +20,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 /**
  * A convenience class for four-element {@link Tuple}s.
  */
-public class Tuple4<V1, V2, V3, V4> extends Tuple {
+public class Tuple4<V1, V2, V3, V4> implements Tuple {
 
   private final V1 first;
   private final V2 second;

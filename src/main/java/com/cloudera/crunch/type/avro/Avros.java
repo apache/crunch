@@ -34,12 +34,11 @@ import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.type.TupleFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import static com.cloudera.crunch.Tuple.TupleType;
 
 /**
  * Defines static methods that are analogous to the methods defined in
@@ -251,13 +250,13 @@ public class Avros {
   }
   
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
-    private final TupleType tupleType;
+    private final TupleFactory tupleFactory;
     private final List<MapFn> fns;
     
     private transient Object[] values;
     
-    public GenericRecordToTuple(TupleType tupleType, PType... ptypes) {
-      this.tupleType = tupleType;
+    public GenericRecordToTuple(TupleFactory tupleFactory, PType... ptypes) {
+      this.tupleFactory = tupleFactory;
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
@@ -271,6 +270,7 @@ public class Avros {
         fn.initialize();
       }
       this.values = new Object[fns.size()];
+      tupleFactory.initialize();
     }
 
     @Override
@@ -283,7 +283,7 @@ public class Avros {
           values[i] = fns.get(i).map(v);
         }
       }
-      return Tuple.tuplify(tupleType, values);
+      return tupleFactory.makeTuple(values);
     }
   }
   
@@ -326,7 +326,7 @@ public class Avros {
   
   public static final <V1, V2> AvroType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     Schema schema = createTupleSchema(p1, p2);
-    GenericRecordToTuple input = new GenericRecordToTuple(TupleType.PAIR, p1, p2);
+    GenericRecordToTuple input = new GenericRecordToTuple(TupleFactory.PAIR, p1, p2);
     input.initialize();
     TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
     output.initialize();
@@ -337,7 +337,7 @@ public class Avros {
       PType<V2> p2, PType<V3> p3) {
     Schema schema = createTupleSchema(p1, p2, p3);
     return new AvroType(Tuple3.class, schema,
-        new GenericRecordToTuple(TupleType.TUPLE3, p1, p2, p3),
+        new GenericRecordToTuple(TupleFactory.TUPLE3, p1, p2, p3),
         new TupleToGenericRecord(schema, p1, p2, p3),
         p1, p2, p3);
   }
@@ -346,7 +346,7 @@ public class Avros {
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
     Schema schema = createTupleSchema(p1, p2, p3, p4);
     return new AvroType(Tuple4.class, schema,
-        new GenericRecordToTuple(TupleType.TUPLE4, p1, p2, p3, p4),
+        new GenericRecordToTuple(TupleFactory.TUPLE4, p1, p2, p3, p4),
         new TupleToGenericRecord(schema, p1, p2, p3, p4),
         p1, p2, p3, p4);
   }
@@ -354,8 +354,20 @@ public class Avros {
   public static final AvroType<TupleN> tuples(PType... ptypes) {
     Schema schema = createTupleSchema(ptypes);
     return new AvroType(TupleN.class, schema,
-        new GenericRecordToTuple(TupleType.TUPLEN, ptypes), new TupleToGenericRecord(schema, ptypes),
-        ptypes);
+        new GenericRecordToTuple(TupleFactory.TUPLEN, ptypes),
+        new TupleToGenericRecord(schema, ptypes), ptypes);
+  }
+  
+  public static <T extends Tuple> AvroType<T> tuples(Class<T> clazz, PType... ptypes) {
+    Schema schema = createTupleSchema(ptypes);
+    Class[] typeArgs = new Class[ptypes.length];
+    for (int i = 0; i < typeArgs.length; i++) {
+      typeArgs[i] = ptypes[i].getTypeClass();
+    }
+    TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
+    return new AvroType<T>(clazz, schema,
+        new GenericRecordToTuple(factory, ptypes), new TupleToGenericRecord(schema, ptypes),
+        ptypes);  
   }
   
   private static Schema createTupleSchema(PType... ptypes) {

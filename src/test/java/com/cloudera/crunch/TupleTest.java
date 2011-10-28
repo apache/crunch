@@ -19,9 +19,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import static com.cloudera.crunch.Tuple.TupleType;
-
 import org.junit.Test;
+
+import com.cloudera.crunch.type.TupleFactory;
 
 public class TupleTest {
   private String first = "foo";
@@ -117,21 +117,16 @@ public class TupleTest {
   }
 
   @Test
-  public void testTuplify() {
-    checkTuple(Tuple.tuplify("a", "b"), Pair.class, "a", "b");
-    checkTuple(Tuple.tuplify("a", "b", "c"), Tuple3.class, "a", "b", "c");
-    checkTuple(Tuple.tuplify("a", "b", "c", "d"), Tuple4.class, "a", "b", "c", "d");
-    checkTuple(Tuple.tuplify("a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
+  public void testTupleFactory() {
+    checkTuple(TupleFactory.PAIR.makeTuple("a", "b"), Pair.class, "a", "b");
+    checkTuple(TupleFactory.TUPLE3.makeTuple("a", "b", "c"), Tuple3.class, "a", "b", "c");
+    checkTuple(TupleFactory.TUPLE4.makeTuple("a", "b", "c", "d"), Tuple4.class, "a", "b", "c", "d");
+    checkTuple(TupleFactory.TUPLEN.makeTuple("a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
 
-    checkTuple(Tuple.tuplify(TupleType.PAIR, "a", "b"), Pair.class, "a", "b");
-    checkTuple(Tuple.tuplify(TupleType.TUPLE3, "a", "b", "c"), Tuple3.class, "a", "b", "c");
-    checkTuple(Tuple.tuplify(TupleType.TUPLE4, "a", "b", "c", "d"), Tuple4.class, "a", "b", "c", "d");
-    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
-
-    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b"), TupleN.class, "a", "b");
-    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c"), TupleN.class, "a", "b", "c");
-    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d"), TupleN.class, "a", "b", "c", "d");
-    checkTuple(Tuple.tuplify(TupleType.TUPLEN, "a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
+    checkTuple(TupleFactory.TUPLEN.makeTuple("a", "b"), TupleN.class, "a", "b");
+    checkTuple(TupleFactory.TUPLEN.makeTuple("a", "b", "c"), TupleN.class, "a", "b", "c");
+    checkTuple(TupleFactory.TUPLEN.makeTuple("a", "b", "c", "d"), TupleN.class, "a", "b", "c", "d");
+    checkTuple(TupleFactory.TUPLEN.makeTuple("a", "b", "c", "d", "e"), TupleN.class, "a", "b", "c", "d", "e");
   }
 
   private void checkTuple(Tuple t, Class<? extends Tuple> type, Object... values) {

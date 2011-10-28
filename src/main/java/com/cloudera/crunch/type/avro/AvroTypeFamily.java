@@ -20,20 +20,9 @@ import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.IndexedRecord;
-import org.apache.avro.io.BinaryData;
-import org.apache.avro.mapred.AvroJob;
-import org.apache.avro.mapred.AvroKey;
-import org.apache.avro.mapred.AvroValue;
-import org.apache.avro.mapred.AvroWrapper;
-import org.apache.avro.reflect.ReflectData;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.mapreduce.Partitioner;
 
-import com.cloudera.crunch.GroupingOptions.Builder;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
@@ -155,6 +144,11 @@ public class AvroTypeFamily implements PTypeFamily {
       return prim;
     }
     return PTypeUtils.convert(ptype, this);
+  }
+
+  @Override
+  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
+    return Avros.tuples(clazz, ptypes);
   }
 
 

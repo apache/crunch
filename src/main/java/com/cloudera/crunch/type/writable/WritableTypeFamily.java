@@ -18,15 +18,11 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapreduce.Partitioner;
 
-import com.cloudera.crunch.GroupingOptions.Builder;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
@@ -41,7 +37,6 @@ import com.cloudera.crunch.type.PTypeUtils;
  * interface.
  */
 public class WritableTypeFamily implements PTypeFamily {
-
 
   private static final WritableTypeFamily INSTANCE = new WritableTypeFamily();
 
@@ -143,5 +138,10 @@ public class WritableTypeFamily implements PTypeFamily {
       return prim;
     }
     return PTypeUtils.convert(ptype, this);
+  }
+
+  @Override
+  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
+    return Writables.tuples(clazz, ptypes);
   }
 }

@@ -112,7 +112,7 @@ public class AvrosTest {
   @SuppressWarnings("rawtypes")
   public void testTriples() throws Exception {
     AvroType at = Avros.triples(Avros.strings(), Avros.strings(), Avros.strings());
-    Tuple3 j = (Tuple3) Tuple3.tuplify("a", "b", "c");
+    Tuple3 j = Tuple3.of("a", "b", "c");
     GenericData.Record w = new GenericData.Record(at.getSchema());
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));
@@ -124,7 +124,7 @@ public class AvrosTest {
   @SuppressWarnings("rawtypes")
   public void testQuads() throws Exception {
     AvroType at = Avros.quads(Avros.strings(), Avros.strings(), Avros.strings(), Avros.strings());
-    Tuple4 j = (Tuple4) Tuple4.tuplify("a", "b", "c", "d");
+    Tuple4 j = Tuple4.of("a", "b", "c", "d");
     GenericData.Record w = new GenericData.Record(at.getSchema());
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));
@@ -138,7 +138,7 @@ public class AvrosTest {
   public void testTupleN() throws Exception {
     AvroType at = Avros.tuples(Avros.strings(), Avros.strings(), Avros.strings(), Avros.strings(),
         Avros.strings());
-    TupleN j = (TupleN) TupleN.tuplify("a", "b", "c", "d", "e");
+    TupleN j = new TupleN("a", "b", "c", "d", "e");
     GenericData.Record w = new GenericData.Record(at.getSchema());
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));

@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.Tuple;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
@@ -60,6 +61,8 @@ public interface PTypeFamily {
 
   PType<TupleN> tuples(PType... ptypes);
 
+  <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes);
+  
   <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value);
   
   /**

@@ -129,7 +129,7 @@ public class WritablesTest {
   @Test
   @SuppressWarnings("rawtypes")
   public void testTriples() throws Exception {
-    Tuple3 j = (Tuple3) Tuple3.tuplify("a", "b", "c");
+    Tuple3 j = Tuple3.of("a", "b", "c");
     TupleWritable w = new TupleWritable(new Text[] {
         new Text("a"),
         new Text("b"),
@@ -146,7 +146,7 @@ public class WritablesTest {
   @Test
   @SuppressWarnings("rawtypes")
   public void testQuads() throws Exception {
-    Tuple4 j = (Tuple4) Tuple4.tuplify("a", "b", "c", "d");
+    Tuple4 j = Tuple4.of("a", "b", "c", "d");
     TupleWritable w = new TupleWritable(new Text[] {
         new Text("a"),
         new Text("b"),
@@ -164,7 +164,7 @@ public class WritablesTest {
   
   @Test
   public void testTupleN() throws Exception {
-    TupleN j = (TupleN) TupleN.tuplify("a", "b", "c", "d", "e");
+    TupleN j = new TupleN("a", "b", "c", "d", "e");
     TupleWritable w = new TupleWritable(new Text[] {
         new Text("a"),
         new Text("b"),

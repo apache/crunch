@@ -39,11 +39,10 @@ import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.type.TupleFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import static com.cloudera.crunch.Tuple.TupleType;
 
 /**
  * Defines static methods that are analogous to the methods defined in
@@ -244,13 +243,13 @@ public class Writables {
    * 
    */
   private static class TWTupleMapFn extends MapFn<TupleWritable, Tuple> {
-    private final TupleType tupleType;
+    private final TupleFactory tupleFactory;
     private final List<MapFn> fns;
 
     private transient Object[] values;
 
-    public TWTupleMapFn(TupleType tupleType, PType... ptypes) {
-      this.tupleType = tupleType;
+    public TWTupleMapFn(TupleFactory tupleFactory, PType... ptypes) {
+      this.tupleFactory = tupleFactory;
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         fns.add(ptype.getDataBridge().getInputMapFn());
@@ -266,6 +265,7 @@ public class Writables {
       // objects each time. However this one
       // uses Tuple.tuplify which does a copy
       this.values = new Object[fns.size()];
+      tupleFactory.initialize();
     }
 
     @Override
@@ -277,7 +277,7 @@ public class Writables {
           values[i] = null;
         }
       }
-      return Tuple.tuplify(tupleType, values);
+      return tupleFactory.makeTuple(values);
     }
   }
 
@@ -323,7 +323,7 @@ public class Writables {
   }
 
   public static <V1, V2> WritableType<Pair<V1, V2>, TupleWritable> pairs(PType<V1> p1, PType<V2> p2) {
-    TWTupleMapFn input = new TWTupleMapFn(TupleType.PAIR, p1, p2);
+    TWTupleMapFn input = new TWTupleMapFn(TupleFactory.PAIR, p1, p2);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2);
     output.initialize();
@@ -332,7 +332,7 @@ public class Writables {
 
   public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1,
       PType<V2> p2, PType<V3> p3) {
-    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLE3, p1, p2, p3);
+    TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE3, p1, p2, p3);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3);
     output.initialize();
@@ -344,7 +344,7 @@ public class Writables {
 
   public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
-    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLE4, p1, p2, p3, p4);
+    TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE4, p1, p2, p3, p4);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3, p4);
     output.initialize();
@@ -355,14 +355,26 @@ public class Writables {
   }
 
   public static WritableType<TupleN, TupleWritable> tuples(PType... ptypes) {
-    TWTupleMapFn input = new TWTupleMapFn(TupleType.TUPLEN, ptypes);
+    TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLEN, ptypes);
     input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
     output.initialize();
-    return new WritableType(TupleN.class, TupleWritable.class,
-        input, output, ptypes);
+    return new WritableType(TupleN.class, TupleWritable.class, input, output, ptypes);
   }
 
+  public static <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
+    Class[] typeArgs = new Class[ptypes.length];
+    for (int i = 0; i < typeArgs.length; i++) {
+      typeArgs[i] = ptypes[i].getTypeClass();
+    }
+    TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
+    TWTupleMapFn input = new TWTupleMapFn(factory, ptypes);
+    input.initialize();
+    TupleTWMapFn output = new TupleTWMapFn(ptypes);
+    output.initialize();
+    return new WritableType(clazz, TupleWritable.class, input, output, ptypes);  
+  }
+  
   private static class ArrayCollectionMapFn<T> extends
       MapFn<GenericArrayWritable, Collection<T>> {
     private final MapFn<Object, T> mapFn;

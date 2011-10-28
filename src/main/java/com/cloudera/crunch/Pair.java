@@ -20,7 +20,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 /**
  * A convenience class for two-element {@link Tuple}s.
  */
-public class Pair<K, V> extends Tuple {
+public class Pair<K, V> implements Tuple {
 
   private final K first;
   private final V second;
