@@ -25,9 +25,9 @@ import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Assert._
 import org.junit.Test
 
-class ExampleWordTest extends AssertionsForJUnit {
+class WordCountTest extends AssertionsForJUnit {
   @Test def wordCount {
-    val pipeline = new Pipeline[ExampleWordTest]
+    val pipeline = new Pipeline[WordCountTest]
     val input = FileHelper.createTempCopyOf("shakes.txt")
     val wordCountOut = FileHelper.createOutputPath
 
