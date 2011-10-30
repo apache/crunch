@@ -32,6 +32,14 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
     second.initialize();
   }
   
+  public MapFn<R, S> getFirst() {
+    return first;
+  }
+  
+  public MapFn<S, T> getSecond() {
+    return second;
+  }
+  
   @Override
   public T map(R input) {
     return second.map(first.map(input));

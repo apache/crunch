@@ -29,6 +29,7 @@ import com.cloudera.crunch.io.text.TextFileSourceTarget;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.type.writable.Writables;
 
 /**
  * Static factory methods for creating various {@link Source} types.
@@ -76,6 +77,14 @@ public class From {
   }
   
   public static Source<String> textFile(Path path) {
-	return new TextFileSourceTarget(path);
+	return textFile(path, Writables.strings());
+  }
+  
+  public static <T> Source<T> textFile(String pathName, PType<T> ptype) {
+    return textFile(new Path(pathName), ptype);
+  }
+  
+  public static <T> Source<T> textFile(Path path, PType<T> ptype) {
+    return new TextFileSourceTarget<T>(path, ptype);
   }
 }

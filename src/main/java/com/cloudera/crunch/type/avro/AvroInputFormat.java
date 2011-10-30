@@ -32,8 +32,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /** An {@link org.apache.hadoop.mapreduce.InputFormat} for Avro data files. */
-public class AvroInputFormat<T>
-  extends FileInputFormat<AvroWrapper<T>, NullWritable> {
+public class AvroInputFormat<T> extends FileInputFormat<AvroWrapper<T>, NullWritable> {
 
   @Override
   protected List<FileStatus> listStatus(JobContext job) throws IOException {

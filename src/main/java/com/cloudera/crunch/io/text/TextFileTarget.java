@@ -24,6 +24,7 @@ import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
+import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 public class TextFileTarget implements PathTarget, MapReduceTarget {
@@ -76,9 +77,9 @@ public class TextFileTarget implements PathTarget, MapReduceTarget {
 
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
-    if (String.class.equals(ptype.getTypeClass())) {
-      return (SourceTarget<T>) new TextFileSourceTarget(path);
+    if (ptype instanceof PTableType) {
+      return null;
     }
-    return null;
+    return new TextFileSourceTarget<T>(path, ptype);
   }
 }

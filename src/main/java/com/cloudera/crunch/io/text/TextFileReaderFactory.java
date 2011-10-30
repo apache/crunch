@@ -25,16 +25,38 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.cloudera.crunch.MapFn;
+import com.cloudera.crunch.fn.CompositeMapFn;
+import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.io.FileReaderFactory;
+import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class TextFileReaderFactory implements FileReaderFactory<String> {
+public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(TextFileReaderFactory.class);
   
+  private final PType<T> ptype;
+  
+  public TextFileReaderFactory(PType<T> ptype) {
+    this.ptype = ptype;
+  }
+  
   @Override
-  public Iterator<String> read(FileSystem fs, Path path) {
+  public Iterator<T> read(FileSystem fs, Path path) {
+    MapFn mapFn = null;
+    if (String.class.equals(ptype.getTypeClass())) {
+      mapFn = IdentityFn.getInstance();
+    } else {
+      // Check for a composite MapFn for the PType.
+      // Note that this won't work for Avro-- need to solve that.
+      MapFn input = ptype.getDataBridge().getInputMapFn();
+      if (input instanceof CompositeMapFn) {
+        mapFn = ((CompositeMapFn) input).getSecond();
+      }
+    }
+    
 	FSDataInputStream is = null;
 	try {
 	  is = fs.open(path);
@@ -44,7 +66,8 @@ public class TextFileReaderFactory implements FileReaderFactory<String> {
 	}
 	
 	final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-	return new UnmodifiableIterator<String>() {
+	final MapFn<String, T> iterMapFn = mapFn;
+	return new UnmodifiableIterator<T>() {
 	  private String nextLine;
 	  @Override
 	  public boolean hasNext() {
@@ -57,8 +80,8 @@ public class TextFileReaderFactory implements FileReaderFactory<String> {
 	  }
 
 	  @Override
-	  public String next() {
-		return nextLine;
+	  public T next() {
+		return iterMapFn.map(nextLine);
 	  }
 	};
   }

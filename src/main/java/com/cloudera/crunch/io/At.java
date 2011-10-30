@@ -26,6 +26,7 @@ import com.cloudera.crunch.io.text.TextFileSourceTarget;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.type.writable.Writables;
 
 /**
  * Static factory methods for creating various {@link SourceTarget} types.
@@ -67,11 +68,19 @@ public class At {
 	return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
   }
   
-  public static TextFileSourceTarget textFile(String pathName) {
+  public static TextFileSourceTarget<String> textFile(String pathName) {
 	return textFile(new Path(pathName));
   }
   
-  public static TextFileSourceTarget textFile(Path path) {
-	return new TextFileSourceTarget(path);
-  }  
+  public static TextFileSourceTarget<String> textFile(Path path) {
+	return textFile(path, Writables.strings());
+  }
+  
+  public static <T> TextFileSourceTarget<T> textFile(String pathName, PType<T> ptype) {
+    return textFile(new Path(pathName), ptype);
+  }
+  
+  public static <T> TextFileSourceTarget<T> textFile(Path path, PType<T> ptype) {
+    return new TextFileSourceTarget<T>(path, ptype);
+  }
 }

@@ -29,23 +29,25 @@ import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.writable.Writables;
 
-public class TextFileSourceTarget extends TextFileTarget implements ReadableSourceTarget<String> {
+public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableSourceTarget<T> {
 
   private static final Log LOG = LogFactory.getLog(TextFileSourceTarget.class);
   
-  public TextFileSourceTarget(String path) {
-    this(new Path(path));
+  private final PType<T> ptype;
+  
+  public TextFileSourceTarget(String path, PType<T> ptype) {
+    this(new Path(path), ptype);
   }
   
-  public TextFileSourceTarget(Path path) {
+  public TextFileSourceTarget(Path path, PType<T> ptype) {
     super(path);
+    this.ptype = ptype;
   }
   
   @Override
-  public PType<String> getType() {
-    return Writables.strings();
+  public PType<T> getType() {
+    return ptype;
   }
 
   @Override
@@ -54,7 +56,7 @@ public class TextFileSourceTarget extends TextFileTarget implements ReadableSour
       return false;
     }
     TextFileSourceTarget o = (TextFileSourceTarget) other;
-    return path.equals(o.path);
+    return path.equals(o.path) && ptype.equals(o.ptype);
   }
   
   @Override
@@ -83,8 +85,8 @@ public class TextFileSourceTarget extends TextFileTarget implements ReadableSour
   }
 
   @Override
-  public Iterable<String> read(Configuration conf) throws IOException {
+  public Iterable<T> read(Configuration conf) throws IOException {
 	return CompositePathIterable.create(FileSystem.get(conf), path,
-	    new TextFileReaderFactory());
+	    new TextFileReaderFactory<T>(ptype));
   }
 }

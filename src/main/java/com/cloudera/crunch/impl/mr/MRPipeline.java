@@ -39,6 +39,7 @@ import com.cloudera.crunch.impl.mr.collect.InputTable;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
+import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileSourceTarget;
 import com.cloudera.crunch.materialize.MaterializableIterable;
@@ -133,7 +134,7 @@ public class MRPipeline implements Pipeline {
   }
 
   public PCollection<String> readTextFile(String pathName) {
-    return read(new TextFileSourceTarget(new Path(pathName)));
+    return read(At.textFile(pathName));
   }
 
   public void write(PCollection<?> pcollection, Target target) {
@@ -208,7 +209,7 @@ public class MRPipeline implements Pipeline {
     // Ensure that this is a writable pcollection instance.
     pcollection = pcollection.parallelDo("asText", IdentityFn.<T>getInstance(),
         WritableTypeFamily.getInstance().as(pcollection.getPType()));
-    write(pcollection, new TextFileSourceTarget(new Path(pathName)));
+    write(pcollection, At.textFile(pathName));
   }
 
   private void cleanup() {
