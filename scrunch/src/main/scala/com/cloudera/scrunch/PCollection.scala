@@ -15,10 +15,10 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
+import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, Target}
 import com.cloudera.crunch.lib.Aggregate
-import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
 import Conversions._
+import scala.collection.JavaConversions
 
 class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
   import PCollection._
@@ -28,12 +28,12 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn[S, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[S, T](f), pt.get(getTypeFamily()))
   }
 
   def flatMap[T, To](f: S => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn[S, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[S, T](f), pt.get(getTypeFamily()))
   }
 
   def union(others: PCollection[S]*) = {
@@ -41,15 +41,18 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
-    val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].getPType(getTypeFamily()), native.getPType())
+    val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].get(getTypeFamily()), native.getPType())
     parallelDo(mapKeyFn[S, K](f), ptype).groupByKey
   }
   
-  def materialize = new ConversionIterable[S](native.materialize)
+  def materialize = JavaConversions.iterableAsScalaIterable[S](native.materialize)
 
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
   
-  def count = new PTable[S, Long](Aggregate.count(native).asInstanceOf[JTable[S, Long]])
+  def count = {
+    val count = new PTable[S, java.lang.Long](Aggregate.count(native))
+    count.mapValues(_.longValue()) 
+  }
 
   def max = {
     wrap(Aggregate.max(native.asInstanceOf[JCollection[java.lang.Number]]))
@@ -57,29 +60,24 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
-  override def process(input: S, emitter: Emitter[T]): Unit = {
-    for (v <- apply(c2s(input).asInstanceOf[S])) {
-      emitter.emit(s2c(v).asInstanceOf[T])
+  override def process(input: S, emitter: Emitter[T]) {
+    for (v <- apply(input)) {
+      emitter.emit(v)
     }
   }
 }
 
 trait SFilterFn[T] extends FilterFn[T] with Function1[T, Boolean] {
-  override def accept(input: T): Boolean = {
-    apply(c2s(input).asInstanceOf[T]);
-  }
+  override def accept(input: T) = apply(input)
 }
 
 trait SMapFn[S, T] extends MapFn[S, T] with Function1[S, T] {
-  override def map(input: S): T = {
-    s2c(apply(c2s(input).asInstanceOf[S])).asInstanceOf[T]
-  }
+  override def map(input: S) = apply(input)
 }
 
-trait SMapKeyFn[S, K] extends MapFn[S, JPair[K, S]] with Function1[S, K] {
-  override def map(input: S): JPair[K, S] = {
-    val sc = c2s(input).asInstanceOf[S]
-    JPair.of(s2c(apply(sc)).asInstanceOf[K], input)
+trait SMapKeyFn[S, K] extends MapFn[S, CPair[K, S]] with Function1[S, K] {
+  override def map(input: S): CPair[K, S] = {
+    CPair.of(apply(input), input)
   }
 }
 

@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2011, Cloudera, Inc. All Rights Reserved.
+ *
+ * Cloudera, Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"). You may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for
+ * the specific language governing permissions and limitations under the
+ * License.
+ */
+package com.cloudera.scrunch
 
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, TupleN, MapFn}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily => PTF}
@@ -11,11 +26,12 @@ class TMapFn[S, T](f: S => T) extends MapFn[S, T] {
 }
 
 trait PTypeFamily {
-  val ptf: PTF;
 
-  def strings = ptf.strings()
+  def ptf: PTF;
 
-  def bytes = ptf.bytes()
+  val strings = ptf.strings()
+
+  val bytes = ptf.bytes()
 
   def records[T: ClassManifest] = ptf.records(classManifest[T].erasure)
 
@@ -23,7 +39,7 @@ trait PTypeFamily {
     ptf.derived(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
   }
 
-  def longs = {
+  val longs = {
     val in = (x: JLong) => x.longValue()
     val out = (x: Long) => new JLong(x)
     derived(classOf[Long], in, out, ptf.longs())
@@ -35,19 +51,19 @@ trait PTypeFamily {
     derived(classOf[Int], in, out, ptf.ints())
   }
 
-  def floats = {
+  val floats = {
     val in = (x: JFloat) => x.floatValue()
     val out = (x: Float) => new JFloat(x)
     derived(classOf[Float], in, out, ptf.floats())
   }
 
-  def doubles = {
+  val doubles = {
     val in = (x: JDouble) => x.doubleValue()
     val out = (x: Double) => new JDouble(x)
     derived(classOf[Double], in, out, ptf.doubles())
   }
 
-  def booleans = {
+  val booleans = {
     val in = (x: JBoolean) => x.booleanValue()
     val out = (x: Boolean) => new JBoolean(x)
     derived(classOf[Boolean], in, out, ptf.booleans())
@@ -78,12 +94,14 @@ trait PTypeFamily {
     val out = (x: (T1, T2, T3, T4)) => CTuple4.of(x._1, x._2, x._3, x._4)
     derived(classOf[(T1, T2, T3, T4)], in, out, ptf.quads(p1, p2, p3, p4))
   }
+
+  def tableOf[K, V](keyType: PType[K], valueType: PType[V]) = ptf.tableOf(keyType, valueType)
 }
 
 object Writables extends PTypeFamily {
-  val ptf = WritableTypeFamily.getInstance()
+  override def ptf = WritableTypeFamily.getInstance()
 }
 
 object Avros extends PTypeFamily {
-  val ptf = AvroTypeFamily.getInstance()
+  override def ptf = AvroTypeFamily.getInstance()
 }

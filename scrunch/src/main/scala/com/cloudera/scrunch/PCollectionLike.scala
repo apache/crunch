@@ -16,7 +16,9 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
-import com.cloudera.crunch.`type`.{PType, PTableType, PTypeFamily}
+import com.cloudera.crunch.`type`.{PType, PTableType}
+import com.cloudera.crunch.`type`.writable.WritableTypeFamily
+import com.cloudera.crunch.`type`.avro.AvroTypeFamily
 import com.cloudera.scrunch.Conversions._
 
 trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
@@ -42,5 +44,9 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
     new PTable[K, V](native.parallelDo(name, fn, ptype))
   }
   
-  def getTypeFamily() = native.getTypeFamily()
+  def getTypeFamily() = native.getTypeFamily() match {
+    case x: WritableTypeFamily => Writables
+    case x: AvroTypeFamily => Avros
+    case _ => null
+  }
 }

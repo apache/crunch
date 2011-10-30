@@ -15,7 +15,6 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.io.{From => from, To => to}
-import com.cloudera.crunch.lib.Aggregate._
 import com.cloudera.crunch.test.FileHelper
 import com.cloudera.scrunch.Conversions._
 

@@ -19,6 +19,7 @@ import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
 import com.cloudera.crunch.lib.{Cogroup, Join}
 import com.cloudera.scrunch.Conversions._
 import java.lang.{Iterable => JIterable}
+import java.util.{Collection => JCollect}
 import scala.collection.JavaConversions._
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
@@ -30,12 +31,18 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def map[T, To](f: (K, V) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[K, V, T](f), pt.get(getTypeFamily()))
+  }
+
+  def mapValues[T](f: V => T)(implicit pt: PTypeH[T]) = {
+    val ptf = getTypeFamily()
+    val ptype = ptf.tableOf(native.getKeyType(), pt.get(ptf))
+    parallelDo(mapValuesFn[K, V, T](f), ptype)
   }
 
   def flatMap[T, To](f: (K, V) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[K, V, T](f), pt.get(getTypeFamily()))
   }
 
   def union(others: PTable[K, V]*) = {
@@ -44,12 +51,22 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def cogroup[V2](other: PTable[K, V2]) = {
     val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
-    new PTable[K, (Iterable[V], Iterable[V2])](jres.asInstanceOf[JTable[K, (Iterable[V], Iterable[V2])]])
+    val ptf = getTypeFamily()
+    val inter = new PTable[K, CPair[JCollect[V], JCollect[V2]]](jres)
+    inter.parallelDo(new SMapTableValuesFn[K, CPair[JCollect[V], JCollect[V2]], (Iterable[V], Iterable[V2])] {
+      def apply(x: CPair[JCollect[V], JCollect[V2]]) = {
+        (collectionAsScalaIterable[V](x.first()), collectionAsScalaIterable[V2](x.second()))
+      }
+    }, ptf.tableOf(keyType, ptf.tuple2(ptf.collections(valueType), ptf.collections(other.valueType))))
   }
 
   def join[V2](other: PTable[K, V2]) = {
     val jres = Join.join[K, V, V2](this.native, other.native)
-    new PTable[K, (V, V2)](jres.asInstanceOf[JTable[K, (V, V2)]])
+    val ptf = getTypeFamily()
+    val inter = new PTable[K, CPair[V, V2]](jres)
+    inter.parallelDo(new SMapTableValuesFn[K, CPair[V, V2], (V, V2)] {
+      def apply(x: CPair[V, V2]) = (x.first(), x.second())
+    }, ptf.tableOf(keyType, ptf.tuple2(valueType, other.valueType)))
   }
 
   def groupByKey = new PGroupedTable(native.groupByKey())
@@ -65,31 +82,32 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
  
   def materialize: Iterable[(K, V)] = {
-    new ConversionIterable[(K, V)](native.materialize.asInstanceOf[JIterable[(K, V)]])
+    iterableAsScalaIterable[CPair[K, V]](native.materialize).map(x => (x.first(), x.second()))
   }
+
+  def keyType = native.getPTableType().getKeyType()
+
+  def valueType = native.getPTableType().getValueType()
 }
 
 trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {
-  override def accept(input: CPair[K, V]): Boolean = {
-    apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V]);
-  }
+  override def accept(input: CPair[K, V]) = apply(input.first(), input.second())
 }
 
 trait SDoTableFn[K, V, T] extends DoFn[CPair[K, V], T] with Function2[K, V, Traversable[T]] {
-  override def process(input: CPair[K, V], emitter: Emitter[T]): Unit = {
-    val k = c2s(input.first()).asInstanceOf[K]
-    val v = c2s(input.second()).asInstanceOf[V]
-    for (v <- apply(k, v)) {
-      emitter.emit(s2c(v).asInstanceOf[T])
+  override def process(input: CPair[K, V], emitter: Emitter[T]) {
+    for (v <- apply(input.first(), input.second())) {
+      emitter.emit(v)
     }
   }
 }
 
 trait SMapTableFn[K, V, T] extends MapFn[CPair[K, V], T] with Function2[K, V, T] {
-  override def map(input: CPair[K, V]): T = {
-    val v = apply(c2s(input.first()).asInstanceOf[K], c2s(input.second()).asInstanceOf[V])
-    s2c(v).asInstanceOf[T]
-  }
+  override def map(input: CPair[K, V]) = apply(input.first(), input.second())
+}
+
+trait SMapTableValuesFn[K, V, T] extends MapFn[CPair[K, V], CPair[K, T]] with Function1[V, T] {
+  override def map(input: CPair[K, V]) = CPair.of(input.first(), apply(input.second()))
 }
 
 object PTable {
@@ -106,5 +124,10 @@ object PTable {
   def mapFn[K, V, T](fn: (K, V) => T) = {
     ClosureCleaner.clean(fn)
     new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def mapValuesFn[K, V, T](fn: V => T) = {
+    ClosureCleaner.clean(fn)
+    new SMapTableValuesFn[K, V, T] { def apply(v: V) = fn(v) }
   }
 }

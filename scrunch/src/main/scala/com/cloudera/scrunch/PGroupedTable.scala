@@ -15,13 +15,14 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => JPair}
+import com.cloudera.crunch.{CombineFn, PGroupedTable => JGroupedTable, PTable => JTable, Pair => CPair}
 import java.lang.{Iterable => JIterable}
 import scala.collection.{Iterable, Iterator}
+import scala.collection.JavaConversions._
 import Conversions._
 
 class PGroupedTable[K, V](val native: JGroupedTable[K, V])
-    extends PCollectionLike[JPair[K, JIterable[V]], PGroupedTable[K, V], JGroupedTable[K, V]] {
+    extends PCollectionLike[CPair[K, JIterable[V]], PGroupedTable[K, V], JGroupedTable[K, V]] {
   import PGroupedTable._
 
   def filter(f: (K, Iterable[V]) => Boolean) = {
@@ -31,12 +32,12 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
 
   def map[T, To](f: (K, Iterable[V]) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, mapFn[K, V, T](f), pt.get(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, Iterable[V]) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn[K, V, T](f), pt.getPType(getTypeFamily()))
+    b(this, flatMapFn[K, V, T](f), pt.get(getTypeFamily()))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
@@ -52,29 +53,26 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
 
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
   ClosureCleaner.clean(f)
-  override def process(input: JPair[K, JIterable[V]], emitfn: Emitter[JPair[K, V]]) = {
-    val v = s2c(f(new ConversionIterable[V](input.second()))).asInstanceOf[V]
-    emitfn.emit(JPair.of(input.first(), v))
+  override def process(input: CPair[K, JIterable[V]], emitfn: Emitter[CPair[K, V]]) = {
+    emitfn.emit(CPair.of(input.first(), f(iterableAsScalaIterable[V](input.second()))))
   }
 }
 
-trait SFilterGroupedFn[K, V] extends FilterFn[JPair[K, JIterable[V]]] with Function2[K, Iterable[V], Boolean] {
-  override def accept(input: JPair[K, JIterable[V]]): Boolean = {
-    apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))
-  }
+trait SFilterGroupedFn[K, V] extends FilterFn[CPair[K, JIterable[V]]] with Function2[K, Iterable[V], Boolean] {
+  override def accept(input: CPair[K, JIterable[V]]) = apply(input.first(), iterableAsScalaIterable[V](input.second()))
 }
 
-trait SDoGroupedFn[K, V, T] extends DoFn[JPair[K, JIterable[V]], T] with Function2[K, Iterable[V], Traversable[T]] {
-  override def process(input: JPair[K, JIterable[V]], emitter: Emitter[T]): Unit = {
-    for (v <- apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))) {
-      emitter.emit(s2c(v).asInstanceOf[T])
+trait SDoGroupedFn[K, V, T] extends DoFn[CPair[K, JIterable[V]], T] with Function2[K, Iterable[V], Traversable[T]] {
+  override def process(input: CPair[K, JIterable[V]], emitter: Emitter[T]) {
+    for (v <- apply(input.first(), iterableAsScalaIterable[V](input.second()))) {
+      emitter.emit(v)
     }
   }
 }
 
-trait SMapGroupedFn[K, V, T] extends MapFn[JPair[K, JIterable[V]], T] with Function2[K, Iterable[V], T] {
-  override def map(input: JPair[K, JIterable[V]]): T = {
-    s2c(apply(c2s(input.first()).asInstanceOf[K], new ConversionIterable[V](input.second()))).asInstanceOf[T]
+trait SMapGroupedFn[K, V, T] extends MapFn[CPair[K, JIterable[V]], T] with Function2[K, Iterable[V], T] {
+  override def map(input: CPair[K, JIterable[V]]) = {
+    apply(input.first(), iterableAsScalaIterable[V](input.second()))
   }
 }
 
