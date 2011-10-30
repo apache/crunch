@@ -381,7 +381,7 @@ public class Writables {
     WritableType<S, ?> wt = (WritableType<S, ?>) base;
     MapFn input = new CompositeMapFn(wt.getDataBridge().getInputMapFn(), inputFn);
     MapFn output = new CompositeMapFn(outputFn, wt.getDataBridge().getOutputMapFn());
-    return new WritableType(clazz, wt.getSerializationClass(), input, output);
+    return new WritableType(clazz, wt.getSerializationClass(), input, output, base.getSubTypes().toArray(new PType[0]));
   }
   
   private static class ArrayCollectionMapFn<T> extends

@@ -391,7 +391,8 @@ public class Avros {
     AvroType<S> abase = (AvroType<S>) base;
     return new AvroType<T>(clazz, abase.getSchema(),
         new CompositeMapFn(abase.getBaseInputMapFn(), inputFn),
-        new CompositeMapFn(outputFn, abase.getBaseOutputMapFn()));
+        new CompositeMapFn(outputFn, abase.getBaseOutputMapFn()),
+        base.getSubTypes().toArray(new PType[0]));
   }
   
   public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {
