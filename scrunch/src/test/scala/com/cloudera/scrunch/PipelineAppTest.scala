@@ -14,7 +14,6 @@
  */
 
 import com.cloudera.crunch.test.FileHelper
-import com.cloudera.scrunch.Conversions._
 import com.cloudera.scrunch.PipelineApp
 
 import org.junit.Test

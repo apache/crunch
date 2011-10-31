@@ -16,7 +16,6 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.io.{From => from}
 import com.cloudera.crunch.test.FileHelper
-import com.cloudera.scrunch.Conversions._
 
 import org.scalatest.junit.AssertionsForJUnit
 import org.junit.Assert._

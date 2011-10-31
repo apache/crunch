@@ -62,7 +62,7 @@ trait PTypeH[T] {
   def get(ptf: PTypeFamily): PType[T]
 }
 
-object Conversions {
+object PTypeH {
 
   implicit val longs = new PTypeH[Long] { def get(ptf: PTypeFamily) = ptf.longs }
   implicit val ints = new PTypeH[Int] { def get(ptf: PTypeFamily) = ptf.ints }
@@ -105,7 +105,9 @@ object Conversions {
       }
     }
   }
+}
 
+object Conversions {
   implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = {
     new PTable[K, V](jtable)
   }
