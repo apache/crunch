@@ -78,13 +78,18 @@ public class AvroFileTarget implements PathTarget, MapReduceTarget {
       String name) {
     AvroType<?> atype = (AvroType<?>) ptype;
     Configuration conf = job.getConfiguration();
-    String outputSchema = conf.get("avro.output.schema");
+    String schemaParam = null;
+    if (name == null) {
+      schemaParam = "avro.output.schema";
+    } else {
+      schemaParam = "avro.output.schema." + name;
+    }
+    String outputSchema = conf.get(schemaParam);
     if (outputSchema == null) {
-      conf.set("avro.output.schema", atype.getSchema().toString());
+      conf.set(schemaParam, atype.getSchema().toString());
     } else if (!outputSchema.equals(atype.getSchema().toString())) {
       throw new IllegalStateException("Avro targets must use the same output schema");
-    }
-    
+    }  
     SourceTargetHelper.configureTarget(job, AvroOutputFormat.class,
         ptype.getDataBridge(), outputPath, name);
   }

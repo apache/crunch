@@ -280,8 +280,6 @@ The grouping operation will create an `Iterable<Pair<U, V>>` which we can then c
 
 This section contains an almost certainly incomplete list of known limitations of Crunch and plans for future work.
 
-* The Avro-based type system doesn't have robust support for multiple inputs/outputs that use different Avro schemas, so
-joins based on Avro files with different data schemas may not work.
 * We would like to have easy support for reading and writing data from/to HCatalog.
 * The decision of how to split up processing tasks between dependent MapReduce jobs is very naiive right now- we simply
 delegate all of the work to the reduce stage of the predecessor job. We should take advantage of information about the

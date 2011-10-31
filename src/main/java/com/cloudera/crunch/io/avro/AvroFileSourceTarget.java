@@ -73,14 +73,6 @@ public class AvroFileSourceTarget<T> extends AvroFileTarget implements ReadableS
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     SourceTargetHelper.configureSource(job, inputId, AvroInputFormat.class, path);
-    
-    Configuration conf = job.getConfiguration();
-    String inputSchema = conf.get("avro.input.schema");
-    if (inputSchema == null) {
-      conf.set("avro.input.schema", ptype.getSchema().toString());
-    } else if (!inputSchema.equals(ptype.getSchema().toString())) {
-      throw new IllegalStateException("Multiple Avro sources must use the same schema");
-    }
   }
 
   @Override

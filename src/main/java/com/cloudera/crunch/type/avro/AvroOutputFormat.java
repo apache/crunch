@@ -25,6 +25,7 @@ import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -39,8 +40,15 @@ public class AvroOutputFormat<T>
   public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(
       TaskAttemptContext context) throws IOException, InterruptedException {
 
-    Schema schema = AvroJob.getOutputSchema(context.getConfiguration());
-
+    Configuration conf = context.getConfiguration();
+    Schema schema = null;
+    String outputName = conf.get("crunch.namedoutput");
+    if (outputName != null && !outputName.isEmpty()) {
+      schema = (new Schema.Parser()).parse(conf.get("avro.output.schema." + outputName));
+    } else {
+      schema = AvroJob.getOutputSchema(context.getConfiguration());
+    }
+    
     final DataFileWriter<T> WRITER =
       new DataFileWriter<T>(new GenericDatumWriter<T>());
 

@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.io.seq;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
@@ -57,11 +58,30 @@ public class SeqFileTarget implements PathTarget, MapReduceTarget {
   }
 
   @Override
+  public String toString() {
+    return "SeqFileTarget(" + path.toString() + ")";
+  }
+  
+  @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof PTableType) {
       return new SeqFileTableSourceTarget(path, (PTableType) ptype);
     } else {
       return new SeqFileSourceTarget(path, ptype);
     }
+  }
+  
+  @Override
+  public boolean equals(Object other) {
+    if (other == null || !(other instanceof SeqFileTarget)) {
+      return false;
+    }
+    SeqFileTarget o = (SeqFileTarget) other;
+    return path.equals(o.path);
+  }
+  
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder().append(path).toHashCode();
   }
 }

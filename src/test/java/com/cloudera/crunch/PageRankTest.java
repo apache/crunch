@@ -100,6 +100,7 @@ public class PageRankTest {
     Float delta = 1.0f;
     while (delta > 0.01) {
       scores = pageRank(scores);
+      scores.materialize().iterator(); // force the write
       delta = Iterables.getFirst(Aggregate.max(
           scores.parallelDo(new MapFn<Pair<String, PageRankData>, Float>() {
             @Override

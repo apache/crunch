@@ -14,8 +14,6 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
 import com.cloudera.crunch.DoFn;
