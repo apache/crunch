@@ -40,9 +40,13 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     new PCollection[S](native.union(others.map(_.native) : _*))
   }
 
-  def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
+  def by[K: PTypeH](f: S => K): PTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].get(getTypeFamily()), native.getPType())
-    parallelDo(mapKeyFn[S, K](f), ptype).groupByKey
+    parallelDo(mapKeyFn[S, K](f), ptype) 
+  }
+
+  def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
+    by(f).groupByKey
   }
   
   def materialize = JavaConversions.iterableAsScalaIterable[S](native.materialize)

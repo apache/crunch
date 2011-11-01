@@ -30,6 +30,14 @@ trait PipelineApp extends App {
 
   protected def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
 
+  protected def cogroup[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
+    t1.cogroup(t2)
+  }
+
+  protected def join[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
+    t1.join(t2)
+  }
+
   protected def run { pipeline.run }
 
   protected def done { pipeline.done }

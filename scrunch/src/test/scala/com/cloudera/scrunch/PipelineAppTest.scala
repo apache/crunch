@@ -21,17 +21,21 @@ import org.junit.Test
 class PipelineAppTest {
 
   object WordCount extends PipelineApp {
-    read(from.textFile(args(0)))
+    val w1 = read(from.textFile(args(0)))
         .flatMap(_.split("\\W+").filter(!_.isEmpty()))
         .count
-        .write(to.textFile(args(1)))
+    val w2 = read(from.textFile(args(1)))
+        .flatMap(_.split("\\W+").filter(!_.isEmpty()))
+        .count
+    cogroup(w1, w2).write(to.textFile(args(2)))
     done
   }
 
   @Test def run {
-    val args = new Array[String](2)
+    val args = new Array[String](3)
     args(0) = FileHelper.createTempCopyOf("shakes.txt")
-    args(1) = FileHelper.createOutputPath.getAbsolutePath
+    args(1) = FileHelper.createTempCopyOf("maugham.txt")
+    args(2) = FileHelper.createOutputPath.getAbsolutePath
     WordCount.main(args)
   }
 }
