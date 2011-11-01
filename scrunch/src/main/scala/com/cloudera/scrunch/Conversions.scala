@@ -23,13 +23,23 @@ import java.nio.ByteBuffer
 import scala.collection.{Iterable, Iterator, JavaConversions}
 
 trait CanParallelTransform[El, To] {
-  def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[El]): To
+  def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: A => Traversable[El], ptype: PType[El]): To
 }
 
 trait LowPriorityParallelTransforms {
   implicit def single[B] = new CanParallelTransform[B, PCollection[B]] {
-    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[B]) = {
-      c.parallelDo(fn.asInstanceOf[DoFn[A, B]], ptype)
+    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: A => Traversable[B], ptype: PType[B]) = {
+      c.parallelDo(wrapFn(fn), ptype)
+    }
+  }
+
+  def wrapFn[A, B](fn: A => Traversable[B]) = {
+    new DoFn[A, B] {
+      override def process(input: A, emitFn: Emitter[B]) {
+        for (v <- fn(input)) {
+          emitFn.emit(v)
+        }
+      }
     }
   }
 }
@@ -41,18 +51,17 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
   }
 
   implicit def keyvalue[K, V] = new CanParallelTransform[(K, V), PTable[K,V]] {
-    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[_, _], ptype: PType[(K, V)]) = {
-      c.parallelDo(wrapFn(fn.asInstanceOf[DoFn[A, (K, V)]]), tableType(ptype))
+    def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: A => Traversable[(K, V)], ptype: PType[(K, V)]) = {
+      c.parallelDo(kvWrapFn(fn), tableType(ptype))
     }
   }
 
-  def wrapFn[A, K, V](fn: DoFn[A, (K, V)]) = {
+  def kvWrapFn[A, K, V](fn: A => Traversable[(K, V)]) = {
     new DoFn[A, CPair[K, V]] {
       override def process(input: A, emitFn: Emitter[CPair[K, V]]) {
-        fn.process(input, new Emitter[(K, V)] {
-          override def emit(kv: (K, V)) { emitFn.emit(CPair.of(kv._1, kv._2)) }
-          override def flush() { }
-        })
+        for (v <- fn(input)) {
+          emitFn.emit(CPair.of(v._1, v._2))
+        }
       }
     }
   }

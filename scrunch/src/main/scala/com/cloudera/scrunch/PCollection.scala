@@ -28,12 +28,12 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn[S, T](f), pt.get(getTypeFamily()))
+    b(this, (x: S) => List(f(x)), pt.get(getTypeFamily()))
   }
 
   def flatMap[T, To](f: S => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn[S, T](f), pt.get(getTypeFamily()))
+    b(this, f, pt.get(getTypeFamily()))
   }
 
   def union(others: PCollection[S]*) = {
@@ -82,19 +82,9 @@ trait SMapKeyFn[S, K] extends MapFn[S, CPair[K, S]] with Function1[S, K] {
 }
 
 object PCollection {
-  def flatMapFn[S, T](fn: S => Traversable[T]) = {
-    ClosureCleaner.clean(fn)
-    new SDoFn[S, T] { def apply(x: S) = fn(x) }
-  }
-
   def filterFn[S](fn: S => Boolean) = {
     ClosureCleaner.clean(fn)
     new SFilterFn[S] { def apply(x: S) = fn(x) }
-  }
-
-  def mapFn[S, T](fn: S => T) = {
-    ClosureCleaner.clean(fn)
-    new SMapFn[S, T] { def apply(x: S) = fn(x) }
   }
 
   def mapKeyFn[S, K](fn: S => K) = {
