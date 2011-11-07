@@ -36,9 +36,9 @@ public class MSCROutputHandler implements OutputHandler {
   private DoNode workingNode;
   private List<Path> multiPaths;
   
-  public MSCROutputHandler(Job job, Path path, boolean mapOnlyJob) {
+  public MSCROutputHandler(Job job, Path outputPath, boolean mapOnlyJob) {
     this.job = job;
-    this.path = path;
+    this.path = outputPath;
     this.mapOnlyJob = mapOnlyJob;
     this.multiPaths = Lists.newArrayList();
   }

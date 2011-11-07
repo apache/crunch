@@ -15,9 +15,15 @@
 package com.cloudera.crunch.impl.mr.run;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+
+import com.cloudera.crunch.impl.mr.plan.PlanningParameters;
+import com.cloudera.crunch.util.DistCache;
 
 public class CrunchTaskContext {
 
@@ -40,11 +46,18 @@ public class CrunchTaskContext {
     return nodeContext;
   }
 
-  public String getSerializedState() {
-    return taskContext.getConfiguration()
-        .get(nodeContext.getConfigurationKey());
+  public List<RTNode> getNodes() throws IOException {
+    Configuration conf = taskContext.getConfiguration();
+    Path path = new Path(new Path(conf.get(PlanningParameters.CRUNCH_WORKING_DIRECTORY)), nodeContext.toString());
+    List<RTNode> nodes = (List<RTNode>) DistCache.read(conf, path);
+    if (nodes != null) {
+      for (RTNode node : nodes) {
+        node.initialize(this);
+      }
+    }
+    return nodes;
   }
-
+  
   public void cleanup() {
     if (multipleOutputs != null) {
       try {

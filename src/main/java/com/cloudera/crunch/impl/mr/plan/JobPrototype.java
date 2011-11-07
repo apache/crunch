@@ -34,7 +34,8 @@ import com.cloudera.crunch.impl.mr.run.CrunchInputFormat;
 import com.cloudera.crunch.impl.mr.run.CrunchMapper;
 import com.cloudera.crunch.impl.mr.run.CrunchReducer;
 import com.cloudera.crunch.impl.mr.run.NodeContext;
-import com.cloudera.crunch.impl.mr.run.RTNodeSerializer;
+import com.cloudera.crunch.impl.mr.run.RTNode;
+import com.cloudera.crunch.util.DistCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -105,11 +106,13 @@ public class JobPrototype {
   private CrunchJob build(Class<?> jarClass, Configuration conf) throws IOException {
     Job job = new Job(conf);
     conf = job.getConfiguration();
+    conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
     job.setJarByClass(jarClass);
     
     Set<DoNode> outputNodes = Sets.newHashSet();
     Set<Target> targets = targetsToNodePaths.keySet();
-    MSCROutputHandler outputHandler = new MSCROutputHandler(job, workingPath,
+    Path outputPath = new Path(workingPath, "output");
+    MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath,
         group == null);
     for (Target target : targets) {
       DoNode node = null;
@@ -126,11 +129,10 @@ public class JobPrototype {
     job.setMapperClass(CrunchMapper.class);
     List<DoNode> inputNodes;
     DoNode reduceNode = null;
-    RTNodeSerializer serializer = new RTNodeSerializer();
     if (group != null) {
       job.setReducerClass(CrunchReducer.class);
       List<DoNode> reduceNodes = Lists.newArrayList(outputNodes);
-      serializer.serialize(reduceNodes, conf, NodeContext.REDUCE);
+      serialize(reduceNodes, conf, workingPath, NodeContext.REDUCE);
       reduceNode = reduceNodes.get(0);
 
       if (combineFnTable != null) {
@@ -139,7 +141,8 @@ public class JobPrototype {
         DoNode combineNode = combineFnTable.createDoNode();
         combineNode.addChild(group.getGroupingNode());
         combinerInputNode.addChild(combineNode);
-        serializer.serialize(ImmutableList.of(combinerInputNode), conf, NodeContext.COMBINE);
+        serialize(ImmutableList.of(combinerInputNode), conf, workingPath,
+            NodeContext.COMBINE);
       }
 
       group.configureShuffle(job);
@@ -155,12 +158,11 @@ public class JobPrototype {
         mapNodes.add(walkPath(iter, mapOutputNode));
       }
       inputNodes = Lists.newArrayList(mapNodes);
-      serializer.serialize(inputNodes, conf, NodeContext.MAP);
     } else { // No grouping
       job.setNumReduceTasks(0);
       inputNodes = Lists.newArrayList(outputNodes);
-      serializer.serialize(inputNodes, conf, NodeContext.MAP);
     }
+    serialize(inputNodes, conf, workingPath, NodeContext.MAP);
 
     if (inputNodes.size() == 1) {
       DoNode inputNode = inputNodes.get(0);
@@ -174,7 +176,17 @@ public class JobPrototype {
     }
     job.setJobName(createJobName(inputNodes, reduceNode));
     
-    return new CrunchJob(job, workingPath, outputHandler);
+    return new CrunchJob(job, outputPath, outputHandler);
+  }
+
+  private void serialize(List<DoNode> nodes, Configuration conf, Path workingPath,
+      NodeContext context) throws IOException {
+    List<RTNode> rtNodes = Lists.newArrayList();
+    for (DoNode node : nodes) {
+      rtNodes.add(node.toRTNode(true, conf, context));
+    }
+    Path path = new Path(workingPath, context.toString());
+    DistCache.write(conf, path, rtNodes);
   }
 
   private String createJobName(List<DoNode> mapNodes, DoNode reduceNode) {

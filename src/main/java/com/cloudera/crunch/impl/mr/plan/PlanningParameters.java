@@ -18,5 +18,7 @@ public class PlanningParameters {
 
   public static final String MULTI_OUTPUT_PREFIX = "out";
   
+  public static final String CRUNCH_WORKING_DIRECTORY = "crunch.work.dir";
+  
   private PlanningParameters() {}
 }

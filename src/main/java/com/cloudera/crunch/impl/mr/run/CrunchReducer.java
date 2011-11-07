@@ -34,10 +34,9 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   
   @Override
   protected void setup(Reducer<Object, Object, Object, Object>.Context context) {
-    RTNodeSerializer serde = new RTNodeSerializer();
     this.ctxt = new CrunchTaskContext(context, getNodeContext());
     try {
-      List<RTNode> nodes = serde.deserialize(ctxt);
+      List<RTNode> nodes = ctxt.getNodes();
       this.node = nodes.get(0);
     } catch (IOException e) {
       LOG.info("Crunch deserialization error", e);

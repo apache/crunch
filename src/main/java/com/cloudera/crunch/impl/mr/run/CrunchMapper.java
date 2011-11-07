@@ -30,11 +30,10 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
 
   @Override
   protected void setup(Mapper<Object, Object, Object, Object>.Context context) {
-    RTNodeSerializer serde = new RTNodeSerializer();
     List<RTNode> nodes;
     this.ctxt = new CrunchTaskContext(context, NodeContext.MAP);
     try {
-      nodes = serde.deserialize(ctxt);
+      nodes = ctxt.getNodes();
     } catch (IOException e) {
       LOG.info("Crunch deserialization error", e);
       throw new CrunchRuntimeException(e);
