@@ -16,6 +16,7 @@ package com.cloudera.crunch.impl.mr.plan;
 
 import java.io.IOException;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,8 @@ public class MSCRPlanner {
     // Keeps track of the dependencies from collections -> jobs and then
     // between different jobs.
     Map<PCollectionImpl, JobPrototype> assignments = Maps.newHashMap();
-    Map<PCollectionImpl, Set<JobPrototype>> jobDependencies = Maps.newHashMap();
+    Map<PCollectionImpl, Set<JobPrototype>> jobDependencies =
+        new HashMap<PCollectionImpl, Set<JobPrototype>>();
 
     // Find the set of GBKs that DO NOT depend on any other GBK.
     Set<PGroupedTableImpl> workingGroupings = null;
@@ -299,8 +301,8 @@ public class MSCRPlanner {
     private NodePath workingPath;
 
     public NodeVisitor() {
-      this.nodePaths = Maps.newHashMap();
-      this.inputs = Maps.newHashMap();
+      this.nodePaths = new HashMap<PCollectionImpl, Set<NodePath>>();
+      this.inputs = new HashMap<PCollectionImpl, Source>();
     }
 
     public Map<PCollectionImpl, Set<NodePath>> getNodePaths() {
