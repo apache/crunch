@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -57,7 +58,7 @@ public class MSCRPlanner {
   public MSCRPlanner(MRPipeline pipeline,
       Map<PCollectionImpl, Set<Target>> outputs) {
     this.pipeline = pipeline;
-    this.outputs = Maps.newTreeMap(DEPTH_COMPARATOR);
+    this.outputs = new TreeMap<PCollectionImpl, Set<Target>>(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
   }
 
