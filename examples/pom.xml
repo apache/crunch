@@ -14,12 +14,27 @@
       <version>r09</version>
     </dependency>
 
+   <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-core</artifactId>
+      <version>0.20.2-cdh3u1</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>com.cloudera.crunch</groupId>
       <artifactId>crunch</artifactId>
       <version>0.1.0</version>
     </dependency>
- </dependencies>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>maven-hadoop</id>
+      <name>Hadoop Releases</name>
+      <url>https://repository.cloudera.com/content/repositories/releases/</url>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>
@@ -27,14 +42,19 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.2.1</version>
         <configuration>
-          <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
+          <descriptors>
+            <descriptor>src/main/assembly/hadoop-job.xml</descriptor>
+          </descriptors>
+          <archive>
+            <manifest>
+              <mainClass>com.cloudera.crunch.examples.WordCount</mainClass>
+            </manifest>
+          </archive>
         </configuration>
         <executions>
           <execution>
-            <id>make-assembly</id> <!-- this is used for inheritance merges -->
-            <phase>package</phase> <!-- bind to the packaging phase -->
+            <id>make-assembly</id>
+            <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
