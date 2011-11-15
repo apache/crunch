@@ -112,12 +112,10 @@ trait SMapTableValuesFn[K, V, T] extends MapFn[CPair[K, V], CPair[K, T]] with Fu
 
 object PTable {
   def filterFn[K, V](fn: (K, V) => Boolean) = {
-    ClosureCleaner.clean(fn)
     new SFilterTableFn[K, V] { def apply(k: K, v: V) = fn(k, v) }
   }
 
   def mapValuesFn[K, V, T](fn: V => T) = {
-    ClosureCleaner.clean(fn)
     new SMapTableValuesFn[K, V, T] { def apply(v: V) = fn(v) }
   }
 }

@@ -87,12 +87,10 @@ trait SMapKeyFn[S, K] extends MapFn[S, CPair[K, S]] with Function1[S, K] {
 
 object PCollection {
   def filterFn[S](fn: S => Boolean) = {
-    ClosureCleaner.clean(fn)
     new SFilterFn[S] { def apply(x: S) = fn(x) }
   }
 
   def mapKeyFn[S, K](fn: S => K) = {
-    ClosureCleaner.clean(fn)
     new SMapKeyFn[S, K] { def apply(x: S) = fn(x) }
   }
 }

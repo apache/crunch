@@ -26,7 +26,6 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
   import PGroupedTable._
 
   def filter(f: (K, Iterable[V]) => Boolean) = {
-    ClosureCleaner.clean(f)
     parallelDo(filterFn[K, V](f), native.getPType())
   }
 
@@ -52,7 +51,6 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
 }
 
 class IterableCombineFn[K, V](f: Iterable[V] => V) extends CombineFn[K, V] {
-  ClosureCleaner.clean(f)
   override def process(input: CPair[K, JIterable[V]], emitfn: Emitter[CPair[K, V]]) = {
     emitfn.emit(CPair.of(input.first(), f(iterableAsScalaIterable[V](input.second()))))
   }
@@ -78,7 +76,6 @@ trait SMapGroupedFn[K, V, T] extends MapFn[CPair[K, JIterable[V]], T] with Funct
 
 object PGroupedTable {
   def filterFn[K, V](fn: (K, Iterable[V]) => Boolean) = {
-    ClosureCleaner.clean(fn)
     new SFilterGroupedFn[K, V] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
   }
 }
