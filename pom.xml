@@ -202,4 +202,11 @@
     </plugins>
   </reporting>
 
+  <distributionManagement>
+    <repository>
+      <id>cloudera-local</id>
+      <url>https://repository.cloudera.com/artifactory/libs-release-local</url>
+    </repository>
+  </distributionManagement>
+
 </project>
