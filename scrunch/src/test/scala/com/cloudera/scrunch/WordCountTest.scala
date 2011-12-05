@@ -19,11 +19,10 @@ import com.cloudera.crunch.test.FileHelper
 
 import java.io.File
 
-import org.scalatest.junit.AssertionsForJUnit
-import org.junit.Assert._
-import org.junit.Test
+import org.scalatest.junit.JUnitSuite
+import _root_.org.junit.Test
 
-class WordCountTest extends AssertionsForJUnit {
+class WordCountTest extends JUnitSuite {
   @Test def wordCount {
     val pipeline = new Pipeline[WordCountTest]
     val input = FileHelper.createTempCopyOf("shakes.txt")
@@ -35,7 +34,7 @@ class WordCountTest extends AssertionsForJUnit {
         .write(to.textFile(wordCountOut.getAbsolutePath)) // Word counts
         .map((w, c) => (w.slice(0, 1), c))
         .groupByKey.combine(v => v.sum).materialize
-    assertTrue(fcc.exists(_ == ("w", 1404)))
+    assert(fcc.exists(_ == ("w", 1404)))
 
     pipeline.done
     wordCountOut.delete()

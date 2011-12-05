@@ -17,11 +17,10 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.io.{From => from, To => to}
 import com.cloudera.crunch.test.FileHelper
 
-import org.scalatest.junit.AssertionsForJUnit
-import org.junit.Assert._
-import org.junit.Test
+import org.scalatest.junit.JUnitSuite
+import _root_.org.junit.Test
 
-class JoinTest extends AssertionsForJUnit {
+class JoinTest extends JUnitSuite {
   val pipeline = new Pipeline[CogroupTest]
 
   def wordCount(fileName: String) = {
@@ -38,7 +37,7 @@ class JoinTest extends AssertionsForJUnit {
         .map((k, v) => (k, v._1 - v._2))
         .write(to.textFile(output.getAbsolutePath()))
         .filter((k, d) => d > 0).materialize
-    assertTrue(filtered.exists(_ == ("macbeth", 66)))
+    assert(filtered.exists(_ == ("macbeth", 66)))
     pipeline.done
   }
 }

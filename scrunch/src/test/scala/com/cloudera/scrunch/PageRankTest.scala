@@ -17,11 +17,11 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.io.{From => from}
 import com.cloudera.crunch.test.FileHelper
 
-import org.junit.Test
-import org.junit.Assert._
-import org.scalatest.junit.AssertionsForJUnit
+import org.scalatest.junit.JUnitSuite
+import _root_.org.junit.Assert._
+import _root_.org.junit.Test
 
-class PageRankTest extends AssertionsForJUnit {
+class PageRankTest extends JUnitSuite {
   val pipeline = new Pipeline[PageRankTest]
 
   def initialInput(fileName: String) = {

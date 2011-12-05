@@ -17,11 +17,10 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.io.{From => from}
 import com.cloudera.crunch.test.FileHelper
 
-import org.scalatest.junit.AssertionsForJUnit
-import org.junit.Assert._
-import org.junit.Test
+import org.scalatest.junit.JUnitSuite
+import _root_.org.junit.Test
 
-class UnionTest extends AssertionsForJUnit {
+class UnionTest extends JUnitSuite {
   val pipeline = new Pipeline[UnionTest]
   val shakespeare = FileHelper.createTempCopyOf("shakes.txt")
   val maugham = FileHelper.createTempCopyOf("maugham.txt")
@@ -30,19 +29,19 @@ class UnionTest extends AssertionsForJUnit {
     col.flatMap(_.toLowerCase.split("\\W+")).count
   }
 
-  @Test def unionCollection {
+  @Test def testUnionCollection {
     val union = pipeline.read(from.textFile(shakespeare)).union(
         pipeline.read(from.textFile(maugham)))
     val wc = wordCount(union).materialize
-    assertTrue(wc.exists(_ == ("you", 3691)))
+    assert(wc.exists(_ == ("you", 3691)))
     pipeline.done
   }
 
-  @Test def unionTable {
+  @Test def testUnionTable {
     val wcs = wordCount(pipeline.read(from.textFile(shakespeare)))
     val wcm = wordCount(pipeline.read(from.textFile(maugham)))
     val wc = wcs.union(wcm).groupByKey.combine(v => v.sum).materialize
-    assertTrue(wc.exists(_ == ("you", 3691)))
+    assert(wc.exists(_ == ("you", 3691)))
     pipeline.done
   }
 }

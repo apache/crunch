@@ -16,9 +16,10 @@
 import com.cloudera.crunch.test.FileHelper
 import com.cloudera.scrunch.PipelineApp
 
-import org.junit.Test
+import org.scalatest.junit.JUnitSuite
+import _root_.org.junit.Test
 
-class PipelineAppTest {
+class PipelineAppTest extends JUnitSuite {
 
   object WordCount extends PipelineApp {
     val w1 = read(from.textFile(args(0)))
