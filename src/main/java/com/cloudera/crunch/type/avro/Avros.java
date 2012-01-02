@@ -64,6 +64,7 @@ public class Avros {
 
   private static final AvroType<String> strings = new AvroType<String>(
       String.class, Schema.create(Schema.Type.STRING), UTF8_TO_STRING, STRING_TO_UTF8);
+  private static final AvroType<Void> nulls = create(Void.class, Schema.Type.NULL);
   private static final AvroType<Long> longs = create(Long.class, Schema.Type.LONG);
   private static final AvroType<Integer> ints = create(Integer.class, Schema.Type.INT);
   private static final AvroType<Float> floats = create(Float.class, Schema.Type.FLOAT);
@@ -93,6 +94,10 @@ public class Avros {
   
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
     return new AvroType<T>(clazz, Schema.create(schemaType));
+  }
+
+  public static final AvroType<Void> nulls() {
+    return nulls;
   }
 
   public static final AvroType<String> strings() {

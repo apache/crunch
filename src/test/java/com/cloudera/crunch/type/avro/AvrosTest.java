@@ -38,6 +38,12 @@ import com.google.common.collect.Lists;
 public class AvrosTest {
 
   @Test
+  public void testNulls() throws Exception {
+    Void n = null;
+    testInputOutputFn(Avros.nulls(), n, new AvroWrapper<Void>(n));
+  }
+  
+  @Test
   public void testStrings() throws Exception {
     String s = "abc";
     Utf8 w = new Utf8(s);
