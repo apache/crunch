@@ -29,6 +29,7 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.junit.Test;
@@ -43,6 +44,13 @@ import com.cloudera.crunch.type.avro.Avros;
 import com.google.common.collect.Lists;
 
 public class WritablesTest {
+
+  @Test
+  public void testNulls() throws Exception {
+    Void n = null;
+    NullWritable nw = NullWritable.get();
+    testInputOutputFn(Writables.nulls(), n, nw);
+  }
 
   @Test
   public void testStrings() throws Exception {
