@@ -27,6 +27,7 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -51,6 +52,20 @@ import com.google.common.collect.Maps;
  * 
  */
 public class Writables {
+  private static final MapFn<NullWritable, Void> NULL_WRITABLE_TO_VOID = new MapFn<NullWritable, Void>() {
+    @Override
+    public Void map(NullWritable input) {
+      return null;
+    }
+  };
+
+  private static final MapFn<Void, NullWritable> VOID_TO_NULL_WRITABLE = new MapFn<Void, NullWritable>() {
+    @Override
+    public NullWritable map(Void input) {
+      return NullWritable.get();
+    }
+  };
+  
   private static final MapFn<Text, String> TEXT_TO_STRING = new MapFn<Text, String>() {
     @Override
     public String map(Text input) {
@@ -159,6 +174,8 @@ public class Writables {
         outputDoFn);
   }
 
+  private static final WritableType<Void, NullWritable> nulls = create(Void.class, NullWritable.class,
+      NULL_WRITABLE_TO_VOID, VOID_TO_NULL_WRITABLE);
   private static final WritableType<String, Text> strings = create(String.class, Text.class,
       TEXT_TO_STRING, STRING_TO_TEXT);
   private static final WritableType<Long, LongWritable> longs = create(Long.class, LongWritable.class,
@@ -194,6 +211,10 @@ public class Writables {
     EXTENSIONS.put(clazz, ptype);
   }
   
+  public static final WritableType<Void, NullWritable> nulls() {
+    return nulls;
+  }
+
   public static final WritableType<String, Text> strings() {
     return strings;
   }

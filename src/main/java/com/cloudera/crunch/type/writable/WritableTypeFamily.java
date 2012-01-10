@@ -54,6 +54,10 @@ public class WritableTypeFamily implements PTypeFamily {
         outputDoFn);
   }
 
+  public PType<Void> nulls() {
+    return Writables.nulls();
+  }
+
   public PType<String> strings() {
     return Writables.strings();
   }
