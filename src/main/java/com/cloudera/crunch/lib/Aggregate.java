@@ -14,14 +14,19 @@
  */
 package com.cloudera.crunch.lib;
 
+import java.util.Collection;
+
 import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
+import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.type.PTypeFamily;
+import com.google.common.collect.Lists;
 
 /**
  * Methods for performing various types of aggregations over {@link PCollection}
@@ -118,5 +123,16 @@ public class Aggregate {
             }
             emitter.emit(Pair.of(input.first(), min));
           } }));
+  }
+  
+  public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {
+    PTypeFamily tf = collect.getTypeFamily();
+    return collect.groupByKey().parallelDo(new MapValuesFn<K, Iterable<V>, Collection<V>>() {
+      @Override
+      public Collection<V> map(Iterable<V> v) {
+        return Lists.newArrayList(v);
+      }
+    }, tf.tableOf(collect.getKeyType(), tf.collections(collect.getValueType())));
+        
   }
 }
