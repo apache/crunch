@@ -42,6 +42,7 @@ import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
+import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -518,6 +519,10 @@ public class Writables {
     return new WritableType(Map.class, TextMapWritable.class,
         new MapInputMapFn(handler.getInputMapFn()),
         new MapOutputMapFn(wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
+  }
+  
+  public static <T> PType<T> jsons(Class<T> clazz) {
+    return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());  
   }
   
   // Not instantiable
