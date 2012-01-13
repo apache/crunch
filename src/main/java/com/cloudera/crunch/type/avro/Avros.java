@@ -36,6 +36,7 @@ import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
+import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -398,6 +399,10 @@ public class Avros {
         new CompositeMapFn(abase.getBaseInputMapFn(), inputFn),
         new CompositeMapFn(outputFn, abase.getBaseOutputMapFn()),
         base.getSubTypes().toArray(new PType[0]));
+  }
+  
+  public static <T> PType<T> jsons(Class<T> clazz) {
+    return PTypes.jsonString(clazz, AvroTypeFamily.getInstance());  
   }
   
   public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {

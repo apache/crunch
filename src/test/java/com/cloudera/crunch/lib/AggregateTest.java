@@ -14,13 +14,18 @@
  */
 package com.cloudera.crunch.lib;
 
+import static com.cloudera.crunch.type.writable.Writables.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Collection;
 
 import org.junit.Test;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
+import com.cloudera.crunch.PTable;
+import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
@@ -60,5 +65,35 @@ public class AggregateTest {
     assertTrue(minLengths != null);
     assertEquals(maxLengths.intValue(), -minLengths.intValue());
     pipeline.done();
+  }
+  
+  private static class SplitFn extends MapFn<String, Pair<String, String>> {
+
+    @Override
+    public Pair<String, String> map(String input) {
+      String[] p = input.split("\\s+");
+      return Pair.of(p[0], p[1]);
+    }
+    
+  }
+  @Test public void testCollectUrls() throws Exception {
+    Pipeline p = new MRPipeline(AggregateTest.class);
+    String urlsInputPath = FileHelper.createTempCopyOf("urls.txt");
+    PTable<String, Collection<String>> urls = Aggregate.collectValues(
+        p.readTextFile(urlsInputPath)
+        .parallelDo(new SplitFn(), tableOf(strings(), strings())));
+    for (Pair<String, Collection<String>> e : urls.materialize()) {
+      String key = e.first();
+      int expectedSize = 0;
+      if ("www.A.com".equals(key)) {
+        expectedSize = 4;
+      } else if ("www.B.com".equals(key) || "www.F.com".equals(key)) {
+        expectedSize = 2;
+      } else if ("www.C.com".equals(key) || "www.D.com".equals(key) || "www.E.com".equals(key)) {
+        expectedSize = 1;
+      }
+      assertEquals("Checking key = " + key, expectedSize, e.second().size());
+      p.done();
+    }
   }
 }
