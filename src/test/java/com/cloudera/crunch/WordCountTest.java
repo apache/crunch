@@ -22,6 +22,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.test.FileHelper;
@@ -98,7 +99,8 @@ public class WordCountTest {
 	File output = FileHelper.createOutputPath();
 	String outputPath = output.getAbsolutePath();
 	
-    PCollection<String> shakespeare = pipeline.readTextFile(inputPath);
+    PCollection<String> shakespeare = pipeline.read(
+         At.textFile(inputPath, typeFamily.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
     if (useToOutput) {
       wordCount.write(To.textFile(outputPath));
@@ -120,7 +122,7 @@ public class WordCountTest {
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
-      if (line.equals("Macbeth\t28")) {
+      if (line.startsWith("Macbeth\t28")) {
         passed = true;
         break;
       }

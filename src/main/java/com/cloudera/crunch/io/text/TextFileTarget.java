@@ -26,6 +26,7 @@ import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.type.avro.AvroTypeFamily;
 
 public class TextFileTarget implements PathTarget, MapReduceTarget {
 

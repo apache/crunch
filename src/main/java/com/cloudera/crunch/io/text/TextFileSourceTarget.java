@@ -29,6 +29,8 @@ import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
 import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.type.avro.AvroTypeFamily;
+import com.cloudera.crunch.type.avro.AvroUtf8InputFormat;
 
 public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableSourceTarget<T> {
 
@@ -71,7 +73,11 @@ public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableS
   
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
-    SourceTargetHelper.configureSource(job, inputId, TextInputFormat.class, path);
+	if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
+      SourceTargetHelper.configureSource(job, inputId, AvroUtf8InputFormat.class, path);
+	} else {
+      SourceTargetHelper.configureSource(job, inputId, TextInputFormat.class, path);
+	}
   }
 
   @Override
