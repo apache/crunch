@@ -14,7 +14,10 @@
  */
 package com.cloudera.crunch.util;
 
+import java.nio.ByteBuffer;
+
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.smile.SmileFactory;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
@@ -28,15 +31,63 @@ import com.cloudera.crunch.type.PTypeFamily;
 public class PTypes {
 
   public static <T> PType<T> jsonString(Class<T> clazz, PTypeFamily typeFamily) {
-    return typeFamily.derived(clazz, new JSONInputManFn<T>(clazz), new JSONOutputMapFn<T>(), typeFamily.strings());
+    return typeFamily.derived(clazz, new JacksonInputMapFn<T>(clazz),
+        new JacksonOutputMapFn<T>(), typeFamily.strings());
   }
 
-  public static class JSONInputManFn<T> extends MapFn<String, T> {
+  public static <T> PType<T> smile(Class<T> clazz, PTypeFamily typeFamily) {
+	return typeFamily.derived(clazz, new SmileInputMapFn<T>(clazz),
+	    new SmileOutputMapFn<T>(), typeFamily.bytes());
+  }
+  
+  public static class SmileInputMapFn<T> extends MapFn<ByteBuffer, T> {
 
     private final Class<T> clazz;
     private transient ObjectMapper mapper;
     
-    public JSONInputManFn(Class<T> clazz) {
+    public SmileInputMapFn(Class<T> clazz) {
+      this.clazz = clazz;
+    }
+
+    @Override
+    public void initialize() {
+      this.mapper = new ObjectMapper(new SmileFactory());
+    }
+    
+	@Override
+	public T map(ByteBuffer input) {
+      try {
+        return mapper.readValue(input.array(), input.position(), input.limit(), clazz);
+      } catch (Exception e) {
+        throw new CrunchRuntimeException(e);
+      }
+	}
+  }
+  
+  public static class SmileOutputMapFn<T> extends MapFn<T, ByteBuffer> {
+    private transient ObjectMapper mapper;
+    
+    @Override
+    public void initialize() {
+      this.mapper = new ObjectMapper(new SmileFactory());
+    }
+    
+    @Override
+    public ByteBuffer map(T input) {
+      try {
+        return ByteBuffer.wrap(mapper.writeValueAsBytes(input));
+      } catch (Exception e) {
+        throw new CrunchRuntimeException(e);
+      }
+    }
+  }
+
+  public static class JacksonInputMapFn<T> extends MapFn<String, T> {
+
+    private final Class<T> clazz;
+    private transient ObjectMapper mapper;
+    
+    public JacksonInputMapFn(Class<T> clazz) {
       this.clazz = clazz;
     }
     
@@ -55,8 +106,7 @@ public class PTypes {
     } 
   }
   
-  public static class JSONOutputMapFn<T> extends MapFn<T, String> {
-
+  public static class JacksonOutputMapFn<T> extends MapFn<T, String> {
     private transient ObjectMapper mapper;
     
     @Override
