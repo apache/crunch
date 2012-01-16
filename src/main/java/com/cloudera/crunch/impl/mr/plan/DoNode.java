@@ -58,15 +58,14 @@ public class DoNode {
 
   public static <K, V> DoNode createGroupingNode(String name,
       PGroupedTableType<K, V> ptype) {
-    DoFn fn = ptype.getGroupingBridge().getOutputMapFn();
+    DoFn fn = ptype.getOutputMapFn();
     return new DoNode(fn, name, ptype, NO_CHILDREN,
-        ptype.getGroupingBridge().getConverter(), null);
+        ptype.getGroupingConverter(), null);
   }
   
   public static <S> DoNode createOutputNode(String name, PType<S> ptype) {
-    DataBridge dataBridge = ptype.getDataBridge();
-    Converter outputConverter = dataBridge.getConverter();
-    DoFn fn = dataBridge.getOutputMapFn();
+    Converter outputConverter = ptype.getConverter();
+    DoFn fn = ptype.getOutputMapFn();
     return new DoNode(fn, name, ptype, NO_CHILDREN,
         outputConverter, null);
   }
@@ -78,7 +77,7 @@ public class DoNode {
 
   public static <S> DoNode createInputNode(Source<S> source) {
     PType ptype = source.getType();
-    DoFn fn = ptype.getDataBridge().getInputMapFn();
+    DoFn fn = ptype.getInputMapFn();
     return new DoNode(fn, source.toString(), ptype, allowsChildren(), null,
         source);
   }
@@ -129,12 +128,12 @@ public class DoNode {
       childRTNodes.add(child.toRTNode(false, conf, nodeContext));
     }
 
-    Converter<Object, Object, Object> inputConverter = null;
+    Converter inputConverter = null;
     if (inputNode) {
       if (nodeContext == NodeContext.MAP) {
-        inputConverter = ptype.getDataBridge().getConverter();
+        inputConverter = ptype.getConverter();
       } else {
-        inputConverter = ((PGroupedTableType) ptype).getGroupingBridge().getConverter();
+        inputConverter = ((PGroupedTableType) ptype).getGroupingConverter();
       }
     }          
     return new RTNode(fn, name, childRTNodes, inputConverter, outputConverter,

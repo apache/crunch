@@ -37,8 +37,8 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableReaderFactory.class);
   
-  private final MapFn<Writable, K> keyMapFn;
-  private final MapFn<Writable, V> valueMapFn;
+  private final MapFn<Object, K> keyMapFn;
+  private final MapFn<Object, V> valueMapFn;
   private final Writable key;
   private final Writable value;
   private final Configuration conf;

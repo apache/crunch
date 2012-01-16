@@ -49,7 +49,11 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
   @Override
   protected void map(Object k, Object v,
       Mapper<Object, Object, Object, Object>.Context context) {
-    node.process(k, v);
+    try {
+      node.process(k, v);
+    } catch (Exception e) {
+      LOG.error("Mapper exception", e);
+    }
   }
 
   @Override

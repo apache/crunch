@@ -24,12 +24,6 @@ import com.cloudera.crunch.MapFn;
  *
  */
 public class DataBridge {
-  private static final PairConverter PAIR_CONVERTER = new PairConverter();
-  
-  public static DataBridge forPair(Class<?> keyClass, Class<?> valueClass, MapFn input, MapFn output) {
-    return new DataBridge(keyClass, valueClass, PAIR_CONVERTER, input, output);
-  }
-  
   private final Converter converter;
   private final Class<?> keyClass;
   private final Class<?> valueClass;
@@ -56,7 +50,8 @@ public class DataBridge {
   public MapFn getOutputMapFn() {
     return outputMapFn;
   }
-  
+
+  /*
   public Class<?> getKeyClass() {
     return keyClass;
   }
@@ -64,6 +59,7 @@ public class DataBridge {
   public Class<?> getValueClass() {
     return valueClass;
   }
+  */
   
   @Override
   public boolean equals(Object obj) {

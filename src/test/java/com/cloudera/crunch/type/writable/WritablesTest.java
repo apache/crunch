@@ -252,7 +252,7 @@ public class WritablesTest {
     
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected static void testInputOutputFn(PType ptype, Object java, Object writable) {
-    assertEquals(java, ptype.getDataBridge().getInputMapFn().map(writable));
-    assertEquals(writable, ptype.getDataBridge().getOutputMapFn().map(java));
+    assertEquals(java, ptype.getInputMapFn().map(writable));
+    assertEquals(writable, ptype.getOutputMapFn().map(java));
   }
 }

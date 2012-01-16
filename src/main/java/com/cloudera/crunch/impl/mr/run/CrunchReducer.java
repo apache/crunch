@@ -47,7 +47,11 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   @Override
   protected void reduce(Object key, Iterable<Object> values,
       Reducer<Object, Object, Object, Object>.Context context) {
-    node.process(key, values);
+    try {
+      node.processIterable(key, values);
+    } catch (Exception e) {
+      LOG.error("Reducer error", e);
+    }
   }
 
   @Override

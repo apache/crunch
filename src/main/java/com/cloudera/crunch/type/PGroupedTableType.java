@@ -106,14 +106,14 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
     return tableType.getSubTypes();
   }
   
-  public abstract DataBridge getGroupingBridge();
+  @Override
+  public Converter getConverter() {
+    return tableType.getConverter();
+  }
+  
+  public abstract Converter getGroupingConverter();
   
   public abstract void configureShuffle(Job job, GroupingOptions options);
-  
-  @Override
-  public DataBridge getDataBridge() {
-    throw new UnsupportedOperationException("Grouped tables cannot be written out directly");
-  }
   
   @Override
   public SourceTarget<Pair<K, Iterable<V>>> getDefaultFileSource(Path path) {

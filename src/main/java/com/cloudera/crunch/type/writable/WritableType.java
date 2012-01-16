@@ -31,19 +31,20 @@ import com.google.common.collect.ImmutableList;
 
 public class WritableType<T, W> implements PType<T> {
 
-  private static Converter WRITABLE_CONVERTER = new WritableValueConverter();
-  
   private final Class<T> typeClass;
   private final Class<W> writableClass;
-  private final DataBridge handler;
+  private final Converter converter;
+  private final MapFn<W, T> inputFn;
+  private final MapFn<T, W> outputFn;
   private final List<PType> subTypes;
   
   WritableType(Class<T> typeClass, Class<W> writableClass,
       MapFn<W, T> inputDoFn, MapFn<T, W> outputDoFn, PType...subTypes) {
     this.typeClass = typeClass;
     this.writableClass = writableClass;
-    this.handler = new DataBridge(NullWritable.class, writableClass, WRITABLE_CONVERTER,
-        inputDoFn, outputDoFn);
+    this.inputFn = inputDoFn;
+    this.outputFn = outputDoFn;
+    this.converter = new WritableValueConverter(writableClass);
     this.subTypes = ImmutableList.<PType>builder().add(subTypes).build();
   }
 
@@ -58,17 +59,27 @@ public class WritableType<T, W> implements PType<T> {
   }
 
   @Override
+  public Converter getConverter() {
+    return converter;
+  }
+  
+  @Override
+  public MapFn getInputMapFn() {
+    return inputFn;
+  }
+  
+  @Override
+  public MapFn getOutputMapFn() {
+    return outputFn;
+  }
+  
+  @Override
   public List<PType> getSubTypes() {
     return subTypes;
   }
   
   public Class<W> getSerializationClass() {
     return writableClass;
-  }
-
-  @Override
-  public DataBridge getDataBridge() {
-    return handler;
   }
 
   @Override

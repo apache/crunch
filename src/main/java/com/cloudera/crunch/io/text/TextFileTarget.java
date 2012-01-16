@@ -24,6 +24,8 @@ import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
+import com.cloudera.crunch.type.Converter;
+import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
@@ -72,8 +74,9 @@ public class TextFileTarget implements PathTarget, MapReduceTarget {
 
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
+    Converter converter = ptype.getConverter();
     SourceTargetHelper.configureTarget(job, TextOutputFormat.class,
-        ptype.getDataBridge(), outputPath, name);
+        converter.getKeyClass(), converter.getValueClass(), outputPath, name);
   }
 
   @Override

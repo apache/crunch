@@ -43,7 +43,6 @@ public class AvroType<T> implements PType<T> {
   
   private final Class<T> typeClass;
   private final Schema schema;
-  private final DataBridge handler;
   private final MapFn baseInputMapFn;
   private final MapFn baseOutputMapFn;
   private final List<PType> subTypes;
@@ -59,12 +58,6 @@ public class AvroType<T> implements PType<T> {
     this.schema = Preconditions.checkNotNull(schema);
     this.baseInputMapFn = inputMapFn;
     this.baseOutputMapFn = outputMapFn;
-    InputWrapperMapFn input = new InputWrapperMapFn(inputMapFn);
-    //input.initialize();
-    OutputWrapperMapFn output = new OutputWrapperMapFn(outputMapFn);
-    //output.initialize();
-    this.handler = new DataBridge(AvroWrapper.class, NullWritable.class, AVRO_CONVERTER,
-        input, output);
     this.subTypes = ImmutableList.<PType>builder().add(ptypes).build();
   }
   
@@ -87,64 +80,19 @@ public class AvroType<T> implements PType<T> {
     return schema;
   }
 
-  public MapFn getBaseInputMapFn() {
+  public MapFn<Object, T> getInputMapFn() {
     return baseInputMapFn;
   }
   
-  public MapFn getBaseOutputMapFn() {
+  public MapFn<T, Object> getOutputMapFn() {
     return baseOutputMapFn;
   }
   
-  private static class InputWrapperMapFn<V, S> extends MapFn<AvroWrapper<V>, S> {
-    private final MapFn<V, S> map;
-    
-    public InputWrapperMapFn(MapFn<V, S> map) {
-      this.map = map;
-    }
-    
-    @Override
-    public void initialize() {
-      map.initialize();
-    }
-    
-    @Override
-    public S map(AvroWrapper<V> input) {
-      return map.map(input.datum());
-    }
+  @Override
+  public Converter getConverter() {
+    return AVRO_CONVERTER;
   }
   
-  private static class OutputWrapperMapFn<S, V> extends MapFn<S, AvroWrapper<V>> {
-    private final MapFn<S, V> map;
-    private transient AvroWrapper<V> wrapper;
-    
-    public OutputWrapperMapFn(MapFn<S, V> map) {
-      this.map = map;
-    }
-    
-    @Override
-    public void initialize() {
-      this.wrapper = new AvroWrapper<V>();
-      this.map.initialize();
-    }
-    
-    @Override
-    public AvroWrapper<V> map(S input) {
-      wrapper.datum(map.map(input));
-      return wrapper;
-    }
-
-    @Override
-    public String toString() {
-      return "OutputWrapperMapFn [map=" + map + "]";
-    } 
-    
-  }
-
-  @Override
-  public DataBridge getDataBridge() {
-    return handler;
-  }
-
   @Override
   public SourceTarget<T> getDefaultFileSource(Path path) {
     return new AvroFileSourceTarget<T>(path, this);

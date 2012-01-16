@@ -42,7 +42,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   public AvroFileReaderFactory(AvroType<T> atype) {
 	//TODO: fix this to handle specific records as well as generic.
 	this.recordReader = new GenericDatumReader<T>(atype.getSchema());
-	this.mapFn = atype.getBaseInputMapFn();
+	this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
   }
   
   @Override

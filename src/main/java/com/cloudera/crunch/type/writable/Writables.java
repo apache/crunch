@@ -275,7 +275,7 @@ public class Writables {
       this.tupleFactory = tupleFactory;
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
-        fns.add(ptype.getDataBridge().getInputMapFn());
+        fns.add(ptype.getInputMapFn());
       }
     }
 
@@ -318,7 +318,7 @@ public class Writables {
     public TupleTWMapFn(PType... ptypes) {
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
-        fns.add(ptype.getDataBridge().getOutputMapFn());
+        fns.add(ptype.getOutputMapFn());
       }
     }
 
@@ -401,8 +401,8 @@ public class Writables {
   public static <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn,
       PType<S> base) {
     WritableType<S, ?> wt = (WritableType<S, ?>) base;
-    MapFn input = new CompositeMapFn(wt.getDataBridge().getInputMapFn(), inputFn);
-    MapFn output = new CompositeMapFn(outputFn, wt.getDataBridge().getOutputMapFn());
+    MapFn input = new CompositeMapFn(wt.getInputMapFn(), inputFn);
+    MapFn output = new CompositeMapFn(outputFn, wt.getOutputMapFn());
     return new WritableType(clazz, wt.getSerializationClass(), input, output, base.getSubTypes().toArray(new PType[0]));
   }
   
@@ -460,10 +460,9 @@ public class Writables {
 
   public static <T> WritableType<Collection<T>, GenericArrayWritable<T>> collections(PType<T> ptype) {
     WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
-    DataBridge handler = ptype.getDataBridge();
     return new WritableType(Collection.class, GenericArrayWritable.class,
-        new ArrayCollectionMapFn(handler.getInputMapFn()), new CollectionArrayMapFn(
-            wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
+        new ArrayCollectionMapFn(wt.getInputMapFn()), new CollectionArrayMapFn(
+            wt.getSerializationClass(), wt.getOutputMapFn()), ptype);
   }
 
   private static class MapInputMapFn<T> extends MapFn<TextMapWritable<Writable>, Map<String, T>> {
@@ -515,10 +514,9 @@ public class Writables {
   
   public static <T> WritableType<Map<String, T>, MapWritable> maps(PType<T> ptype) {
 	WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
-    DataBridge handler = ptype.getDataBridge();
     return new WritableType(Map.class, TextMapWritable.class,
-        new MapInputMapFn(handler.getInputMapFn()),
-        new MapOutputMapFn(wt.getSerializationClass(), handler.getOutputMapFn()), ptype);
+        new MapInputMapFn(wt.getInputMapFn()),
+        new MapOutputMapFn(wt.getSerializationClass(), wt.getOutputMapFn()), ptype);
   }
   
   public static <T> PType<T> jsons(Class<T> clazz) {

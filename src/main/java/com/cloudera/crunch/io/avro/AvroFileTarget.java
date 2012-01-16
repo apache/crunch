@@ -14,9 +14,11 @@
  */
 package com.cloudera.crunch.io.avro;
 
+import org.apache.avro.mapred.AvroWrapper;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.SourceTarget;
@@ -91,7 +93,7 @@ public class AvroFileTarget implements PathTarget, MapReduceTarget {
       throw new IllegalStateException("Avro targets must use the same output schema");
     }  
     SourceTargetHelper.configureTarget(job, AvroOutputFormat.class,
-        ptype.getDataBridge(), outputPath, name);
+        AvroWrapper.class, NullWritable.class, outputPath, name);
   }
 
   @Override

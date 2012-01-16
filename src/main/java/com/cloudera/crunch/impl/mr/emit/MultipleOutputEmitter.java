@@ -24,11 +24,11 @@ import com.cloudera.crunch.type.Converter;
 
 public class MultipleOutputEmitter<T, K, V> implements Emitter<T> {
 
-  private final Converter<K, V, T> converter;
+  private final Converter converter;
   private final CrunchMultipleOutputs<K, V> outputs;
   private final String outputName;
 
-  public MultipleOutputEmitter(Converter<K, V, T> converter,
+  public MultipleOutputEmitter(Converter converter,
       CrunchMultipleOutputs<K, V> outputs, String outputName) {
     this.converter = converter;
     this.outputs = outputs;

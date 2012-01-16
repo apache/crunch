@@ -24,10 +24,10 @@ import com.cloudera.crunch.type.Converter;
 
 public class OutputEmitter<T, K, V> implements Emitter<T> {
 
-  private final Converter<K, V, T> converter;
+  private final Converter<K, V, Object, Object> converter;
   private final TaskInputOutputContext<?, ?, K, V> context;
 
-  public OutputEmitter(Converter<K, V, T> converter,
+  public OutputEmitter(Converter<K, V, Object, Object> converter,
       TaskInputOutputContext<?, ?, K, V> context) {
     this.converter = converter;
     this.context = context;
