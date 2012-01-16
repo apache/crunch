@@ -60,9 +60,9 @@ public class AvroType<T> implements PType<T> {
     this.baseInputMapFn = inputMapFn;
     this.baseOutputMapFn = outputMapFn;
     InputWrapperMapFn input = new InputWrapperMapFn(inputMapFn);
-    input.initialize();
+    //input.initialize();
     OutputWrapperMapFn output = new OutputWrapperMapFn(outputMapFn);
-    output.initialize();
+    //output.initialize();
     this.handler = new DataBridge(AvroWrapper.class, NullWritable.class, AVRO_CONVERTER,
         input, output);
     this.subTypes = ImmutableList.<PType>builder().add(ptypes).build();

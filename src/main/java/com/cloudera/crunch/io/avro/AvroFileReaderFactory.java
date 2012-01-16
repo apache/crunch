@@ -47,6 +47,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   
   @Override
   public Iterator<T> read(FileSystem fs, final Path path) {
+    this.mapFn.initialize();
 	try {
 	  FsInput fsi = new FsInput(path, fs.getConf());
 	  final DataFileReader<T> reader = new DataFileReader<T>(fsi, recordReader);

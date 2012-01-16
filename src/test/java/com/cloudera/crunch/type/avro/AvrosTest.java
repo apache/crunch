@@ -166,6 +166,7 @@ public class AvrosTest {
     AvroWrapper<org.apache.avro.mapred.Pair> wrapped =
         new AvroWrapper<org.apache.avro.mapred.Pair>(w);
     // TODO update this after resolving the o.a.a.m.Pair.equals issue
+    initialize(at);
     assertEquals(j, at.getDataBridge().getInputMapFn().map(wrapped));
     AvroWrapper<org.apache.avro.mapred.Pair> converted =
         (AvroWrapper) at.getDataBridge().getOutputMapFn().map(j);
@@ -173,8 +174,14 @@ public class AvrosTest {
     assertEquals(w.value(), converted.datum().value());
   }
   
+  private static void initialize(PType ptype) {
+    ptype.getDataBridge().getInputMapFn().initialize();
+    ptype.getDataBridge().getOutputMapFn().initialize();
+  }
+  
   @SuppressWarnings({"unchecked", "rawtypes"})
   protected static void testInputOutputFn(PType ptype, Object java, Object writable) {
+    initialize(ptype);
     assertEquals(java, ptype.getDataBridge().getInputMapFn().map(writable));
     assertEquals(writable, ptype.getDataBridge().getOutputMapFn().map(java));
   }
