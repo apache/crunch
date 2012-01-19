@@ -58,6 +58,11 @@ public class CrunchTaskContext {
     return nodes;
   }
   
+  public boolean isDebugRun() {
+    Configuration conf = taskContext.getConfiguration();
+    return conf.getBoolean(RuntimeParameters.DEBUG, false);
+  }
+  
   public void cleanup() {
     if (multipleOutputs != null) {
       try {

@@ -27,7 +27,8 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   
   private RTNode node;
   private CrunchTaskContext ctxt;
-
+  private boolean debug;
+  
   protected NodeContext getNodeContext() {
     return NodeContext.REDUCE;
   }
@@ -42,15 +43,20 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
       LOG.info("Crunch deserialization error", e);
       throw new CrunchRuntimeException(e);
     }
+    this.debug = ctxt.isDebugRun();
   }
 
   @Override
   protected void reduce(Object key, Iterable<Object> values,
       Reducer<Object, Object, Object, Object>.Context context) {
-    try {
+    if (debug) {
+      try {
+        node.processIterable(key, values);
+      } catch (Exception e) {
+        LOG.error("Reducer exception", e);
+      }
+    } else {
       node.processIterable(key, values);
-    } catch (Exception e) {
-      LOG.error("Reducer error", e);
     }
   }
 

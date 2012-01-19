@@ -24,6 +24,8 @@ public class RuntimeParameters {
   
   public static final String MULTI_INPUTS = "crunch.inputs.dir";
 
+  public static final String DEBUG = "crunch.debug";
+  
   // Not instantiated
   private RuntimeParameters() {}
 }
