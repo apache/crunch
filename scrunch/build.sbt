@@ -15,12 +15,12 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
   ),
-  "org.apache.hadoop" % "hadoop-core" % "0.20.2-cdh3u1" excludeAll(
+  "org.apache.hadoop" % "hadoop-core" % "0.20.2-cdh3u1" % "provided" excludeAll(
     ExclusionRule(organization = "com.sun.jdmk"),
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
   ),
-  "org.apache.hbase" % "hbase" % "0.90.3-cdh3u1" excludeAll(
+  "org.apache.hbase" % "hbase" % "0.90.3-cdh3u1" % "provided" excludeAll(
     ExclusionRule(organization = "org.apache.hadoop"),
     ExclusionRule(organization = "commons-logging"),
     ExclusionRule(organization = "com.google.guava"),
@@ -30,3 +30,5 @@ libraryDependencies ++= Seq(
   "junit" % "junit" % "4.8.1" % "test",
   "org.scalatest" % "scalatest_2.9.0" % "1.6.1" % "test"
 )
+
+parallelExecution in Test := false
