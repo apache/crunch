@@ -16,10 +16,11 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{Source, TableSource}
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.util.GenericOptionsParser
+import scala.collection.mutable.ListBuffer
 
-trait PipelineApp extends App {
+trait PipelineApp extends DelayedInit {
   private val pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
-
   protected val from = From
   protected val to = To
   protected val at = At
@@ -41,4 +42,21 @@ trait PipelineApp extends App {
   protected def run { pipeline.run }
 
   protected def done { pipeline.done }
+
+  private var _args: Array[String] = _
+
+  protected def args: Array[String] = _args
+
+  private val initCode = new ListBuffer[() => Unit]
+
+  override def delayedInit(body: => Unit) {
+    initCode += (() => body)
+  }
+
+  def main(args: Array[String]) = {
+    val parser = new GenericOptionsParser(configuration, args)
+    _args = parser.getRemainingArgs()
+    for (proc <- initCode) proc()
+    done
+  }
 }
