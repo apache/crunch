@@ -66,7 +66,7 @@ public class SeqFileSourceTarget<T> extends SeqFileTarget implements ReadableSou
 
   @Override
   public String toString() {
-    return "SeqSourceTarget(" + path.toString() + ")";
+    return "SeqFile(" + path.toString() + ")";
   }
 
   @Override

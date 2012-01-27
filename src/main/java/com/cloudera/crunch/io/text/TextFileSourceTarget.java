@@ -68,7 +68,7 @@ public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableS
   
   @Override
   public String toString() {
-    return "TextFileSourceTarget(" + path + ")";
+    return "TextFile(" + path + ")";
   }
   
   @Override

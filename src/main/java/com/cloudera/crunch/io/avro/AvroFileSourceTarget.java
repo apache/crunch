@@ -67,7 +67,7 @@ public class AvroFileSourceTarget<T> extends AvroFileTarget implements ReadableS
 
   @Override
   public String toString() {
-    return "AvroSourceTarget(" + path.toString() + ")";
+    return "Avro(" + path.toString() + ")";
   }
 
   @Override

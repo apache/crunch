@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -28,15 +28,15 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.bzip2.CBZip2InputStream;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 @SuppressWarnings("unchecked")
-public class BZip2TextInputFormat extends TextInputFormat {
+public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
 
     /**
      * Treats keys as offset in file and value as line. Since the input file is
@@ -101,22 +101,14 @@ public class BZip2TextInputFormat extends TextInputFormat {
             FSDataInputStream fileIn = fs.open(split.getPath());
             fileIn.seek(start);
 
-            in = new CBZip2InputStream(fileIn);
+            in = new CBZip2InputStream(fileIn, 9, end);
             if (start != 0) {
                 // skip first line and re-establish "start".
                 // LineRecordReader.readLine(this.in, null);
                 readLine(this.in, null);
-                start = in.getProcessedByteCount();
+                start = in.getPos();
             }
-            pos = in.getProcessedByteCount();
-        }
-
-        public LongWritable createKey() {
-            return new LongWritable();
-        }
-
-        public Text createValue() {
-            return new Text();
+            pos = in.getPos();
         }
 
         /*
@@ -180,7 +172,7 @@ public class BZip2TextInputFormat extends TextInputFormat {
             if (bytesRead == 0) {
                 return false;
             }
-            pos = in.getProcessedByteCount();
+            pos = in.getPos();
             // if we have read ahead because we encountered a carriage return
             // char followed by a non line feed char, decrement the pos
             if(CRFollowedByNonLF) {
@@ -202,10 +194,6 @@ public class BZip2TextInputFormat extends TextInputFormat {
             } else {
                 return Math.min(1.0f, (pos - start) / (float) (end - start));
             }
-        }
-
-        public  long getPos() throws IOException {
-            return pos;
         }
 
         @Override
@@ -238,13 +226,18 @@ public class BZip2TextInputFormat extends TextInputFormat {
     }
 
     @Override
+    protected boolean isSplitable(JobContext context, Path file)  {
+      return true;  
+    }
+    
+    @Override
     public RecordReader createRecordReader(InputSplit split,
             TaskAttemptContext context) {
         try {
           return new BZip2LineRecordReader(context.getConfiguration(), 
                   (FileSplit) split);
         } catch (IOException e) {
-          return null;
+          throw new RuntimeException(e);
         }
     }
 

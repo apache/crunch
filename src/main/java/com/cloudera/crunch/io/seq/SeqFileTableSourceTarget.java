@@ -69,7 +69,7 @@ public class SeqFileTableSourceTarget<K, V> extends SeqFileTarget implements Tab
   
   @Override
   public String toString() {
-    return "SeqTableSourceTarget(" + path.toString() + ")";
+    return "SeqTable(" + path.toString() + ")";
   }
 
   @Override
