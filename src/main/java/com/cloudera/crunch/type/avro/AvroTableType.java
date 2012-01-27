@@ -39,9 +39,9 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     private transient Schema pairSchema;
     
     public PairToAvroPair(AvroType keyType, AvroType valueType) {
-      this.keyMapFn = keyType.getBaseOutputMapFn();
+      this.keyMapFn = keyType.getOutputMapFn();
       this.firstJson = keyType.getSchema().toString();
-      this.valueMapFn = valueType.getBaseOutputMapFn();
+      this.valueMapFn = valueType.getOutputMapFn();
       this.secondJson = valueType.getSchema().toString();
     }
     
@@ -94,7 +94,7 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
   public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
     super(pairClass,
         org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(), valueType.getSchema()),
-        new IndexedRecordToPair(keyType.getBaseInputMapFn(), valueType.getBaseInputMapFn()),
+        new IndexedRecordToPair(keyType.getInputMapFn(), valueType.getInputMapFn()),
         new PairToAvroPair(keyType, valueType), keyType, valueType);
     this.keyType = keyType;
     this.valueType = valueType;

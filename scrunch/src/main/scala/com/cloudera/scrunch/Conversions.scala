@@ -15,12 +15,10 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable, DoFn, Emitter}
-import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Tuple => CTuple, TupleN => CTupleN}
+import com.cloudera.crunch.{Pair => CPair}
 import com.cloudera.crunch.`type`.PType
-import java.lang.{Boolean => JBoolean, Double => JDouble, Float => JFloat, Integer => JInteger, Long => JLong}
-import java.lang.{Iterable => JIterable}
 import java.nio.ByteBuffer
-import scala.collection.{Iterable, Iterator, JavaConversions}
+import scala.collection.Iterable
 
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: A => Traversable[El], ptype: PType[El]): To

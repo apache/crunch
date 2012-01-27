@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.apache.hadoop.fs.Path;
 
+import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.SourceTarget;
 
 /**
@@ -40,12 +41,12 @@ public interface PType<T> {
    */
   PTypeFamily getFamily();
 
-  /**
-   * Returns the handler for reading/writing data of this {@code PType} into or
-   * out of a MapReduce.
-   */
-  DataBridge getDataBridge();
-
+  MapFn<Object, T> getInputMapFn();
+  
+  MapFn<T, Object> getOutputMapFn();
+  
+  Converter getConverter();
+  
   /**
    * Returns a {@code SourceTarget} that is able to read/write data using the
    * serialization format specified by this {@code PType}.

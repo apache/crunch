@@ -34,15 +34,14 @@ public class RTNode implements Serializable {
   private final String nodeName;
   private DoFn<Object, Object> fn;
   private final List<RTNode> children;
-  private final Converter<Object, Object, Object> inputConverter;
-  private final Converter<Object, Object, Object> outputConverter;
+  private final Converter inputConverter;
+  private final Converter outputConverter;
   private final String outputName;
 
-  private transient Emitter<Object> emitter;
+  private transient Emitter emitter;
 
   public RTNode(DoFn<Object, Object> fn, String name, List<RTNode> children,
-      Converter<Object, Object, Object> inputConverter,
-      Converter<Object, Object, Object> outputConverter, String outputName) {
+      Converter inputConverter, Converter outputConverter, String outputName) {
     this.fn = fn;
     this.nodeName = name;
     this.children = children;
@@ -64,10 +63,10 @@ public class RTNode implements Serializable {
 
     if (outputConverter != null) {
       if (outputName != null) {
-        this.emitter = new MultipleOutputEmitter<Object, Object, Object>(
+        this.emitter = new MultipleOutputEmitter(
             outputConverter, ctxt.getMultipleOutputs(), outputName);
       } else {
-        this.emitter = new OutputEmitter<Object, Object, Object>(
+        this.emitter = new OutputEmitter(
             outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
@@ -98,6 +97,10 @@ public class RTNode implements Serializable {
     process(inputConverter.convertInput(key, value));
   }
 
+  public void processIterable(Object key, Iterable values) {
+    process(inputConverter.convertIterableInput(key, values));
+  }
+  
   public void cleanup() {
     fn.cleanup(emitter);
     emitter.flush();

@@ -104,7 +104,7 @@ public class PGroupedTableImpl<K, V> extends
   @Override
   public DoNode createDoNode() {
     return DoNode.createFnNode(getName(),
-        ptype.getGroupingBridge().getInputMapFn(), ptype);
+        ptype.getInputMapFn(), ptype);
   }
 
   public DoNode getGroupingNode() {

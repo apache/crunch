@@ -51,11 +51,12 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
     } else {
       // Check for a composite MapFn for the PType.
       // Note that this won't work for Avro-- need to solve that.
-      MapFn input = ptype.getDataBridge().getInputMapFn();
+      MapFn input = ptype.getInputMapFn();
       if (input instanceof CompositeMapFn) {
         mapFn = ((CompositeMapFn) input).getSecond();
       }
     }
+    mapFn.initialize();
     
 	FSDataInputStream is = null;
 	try {

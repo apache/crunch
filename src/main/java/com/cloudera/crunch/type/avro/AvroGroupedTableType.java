@@ -21,14 +21,13 @@ import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
 import org.apache.avro.mapred.AvroSerialization;
 import org.apache.avro.mapred.AvroValue;
-import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.PairMapFn;
-import com.cloudera.crunch.type.DataBridge;
+import com.cloudera.crunch.type.Converter;
 import com.cloudera.crunch.type.PGroupedTableType;
 
 /**
@@ -37,21 +36,18 @@ import com.cloudera.crunch.type.PGroupedTableType;
  */
 public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
-  private final DataBridge handler;
+  private static final AvroPairConverter CONVERTER = new AvroPairConverter();
+  private final MapFn inputFn;
+  private final MapFn outputFn;
   
   public AvroGroupedTableType(AvroTableType<K, V> tableType) {
     super(tableType);
     AvroType keyType = (AvroType) tableType.getKeyType();
     AvroType valueType = (AvroType) tableType.getValueType();
-    DataBridge keyHandler = keyType.getDataBridge();
-    DataBridge valueHandler = valueType.getDataBridge();
-    MapFn inputMapFn =  new PairIterableMapFn(keyHandler.getInputMapFn(),
-        valueHandler.getInputMapFn());
-    MapFn outputMapFn = new PairMapFn(new AvroKeyMapFn(keyType.getBaseOutputMapFn()),
-        new AvroValueMapFn(valueType.getBaseOutputMapFn()));
-    this.handler = DataBridge.forPair(AvroKey.class, AvroValue.class,
-        inputMapFn, outputMapFn);
-
+    this.inputFn =  new PairIterableMapFn(keyType.getInputMapFn(),
+        valueType.getInputMapFn());
+    this.outputFn = new PairMapFn(keyType.getOutputMapFn(),
+        valueType.getOutputMapFn());
   }
 
   @Override
@@ -60,10 +56,20 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   }
 
   @Override
-  public DataBridge getGroupingBridge() {
-    return handler;
+  public Converter getGroupingConverter() {
+    return CONVERTER;
   }
 
+  @Override
+  public MapFn getInputMapFn() {
+    return inputFn;
+  }
+  
+  @Override
+  public MapFn getOutputMapFn() {
+    return outputFn;
+  }
+  
   @Override
   public void configureShuffle(Job job, GroupingOptions options) {
     AvroTableType<K, V> att = (AvroTableType<K, V>) tableType;
@@ -85,45 +91,4 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     }
   }
   
-  private static class AvroKeyMapFn<S, T> extends MapFn<S, AvroWrapper<T>> {
-    private final MapFn<S, T> map;
-    private transient AvroKey<T> wrapper;
-    
-    public AvroKeyMapFn(MapFn<S, T> map) {
-      this.map = map;
-    }
-    
-    @Override
-    public void initialize() {
-      this.wrapper = new AvroKey<T>();
-      this.map.initialize();
-    }
-    
-    @Override
-    public AvroWrapper<T> map(S input) {
-      wrapper.datum(map.map(input));
-      return wrapper;
-    } 
-  }
-
-  private static class AvroValueMapFn<S, T> extends MapFn<S, AvroWrapper<T>> {
-    private final MapFn<S, T> map;
-    private transient AvroValue<T> wrapper;
-    
-    public AvroValueMapFn(MapFn<S, T> map) {
-      this.map = map;
-    }
-    
-    @Override
-    public void initialize() {
-      this.wrapper = new AvroValue<T>();
-      this.map.initialize();
-    }
-    
-    @Override
-    public AvroWrapper<T> map(S input) {
-      wrapper.datum(map.map(input));
-      return wrapper;
-    } 
-  }
 }

@@ -40,6 +40,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-smile</artifactId>
+      <version>1.7.3</version>
+    </dependency>
+
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.8.2</version>
@@ -65,7 +72,7 @@
       <artifactId>commons-logging</artifactId>
       <version>1.1.1</version>
     </dependency>
-    
+   
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
@@ -201,5 +208,12 @@
       </plugin>
     </plugins>
   </reporting>
+
+  <distributionManagement>
+    <repository>
+      <id>cloudera-local</id>
+      <url>https://repository.cloudera.com/artifactory/libs-release-local</url>
+    </repository>
+  </distributionManagement>
 
 </project>

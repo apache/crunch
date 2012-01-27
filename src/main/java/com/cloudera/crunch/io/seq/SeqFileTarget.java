@@ -24,6 +24,7 @@ import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
+import com.cloudera.crunch.type.Converter;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
@@ -48,8 +49,9 @@ public class SeqFileTarget implements PathTarget, MapReduceTarget {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
       String name) {
+    Converter converter = ptype.getConverter();
     SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
-        ptype.getDataBridge(), outputPath, name);
+        converter.getKeyClass(), converter.getValueClass(), outputPath, name);
   }
 
   @Override

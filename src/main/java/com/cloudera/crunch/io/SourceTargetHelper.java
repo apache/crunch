@@ -46,15 +46,15 @@ public class SourceTargetHelper {
   }
   
   public static void configureTarget(Job job, Class<? extends OutputFormat> outputFormatClass,
-      DataBridge handler, Path path, String name) {
+      Class keyClass, Class valueClass, Path path, String name) {
     FileOutputFormat.setOutputPath(job, path);
     if (name == null) {
       job.setOutputFormatClass(outputFormatClass);
-      job.setOutputKeyClass(handler.getKeyClass());
-      job.setOutputValueClass(handler.getValueClass());
+      job.setOutputKeyClass(keyClass);
+      job.setOutputValueClass(valueClass);
     } else {
       CrunchMultipleOutputs.addNamedOutput(job, name, outputFormatClass,
-          handler.getKeyClass(), handler.getValueClass());
+          keyClass, valueClass);
     }
   }
   

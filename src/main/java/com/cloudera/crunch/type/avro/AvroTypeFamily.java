@@ -44,7 +44,13 @@ public class AvroTypeFamily implements PTypeFamily {
   // There can only be one instance.
   private AvroTypeFamily() {
   }
+
   
+  @Override
+  public PType<Void> nulls() {
+    return Avros.nulls();
+  }
+
   @Override
   public PType<String> strings() {
     return Avros.strings();

@@ -24,37 +24,63 @@ import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.cloudera.crunch.util.Collects;
+import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
 
 public class PageRankTest {
 
-  public static class PageRankData extends Tuple3<Float, Float, Collection<String>> {
-    public PageRankData(Float first, Float second, Collection<String> third) {
-      super(first, second, third);
-    }
+  public static class PageRankData {
+	public float score;
+	public float lastScore;
+	public List<String> urls;
+	
+	public PageRankData() { }
+	
+	public PageRankData(float score, float lastScore, Iterable<String> urls) {
+	  this.score = score;
+	  this.lastScore = lastScore;
+	  this.urls = Lists.newArrayList(urls);
+	}
   }
   
-  @Test public void testAvro() throws Exception {
-    run(new MRPipeline(PageRankTest.class), AvroTypeFamily.getInstance());
+  @Test public void testAvroJSON() throws Exception {
+	PTypeFamily tf = AvroTypeFamily.getInstance();
+	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
+    run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  @Test public void testWritables() throws Exception {
-    run(new MRPipeline(PageRankTest.class), WritableTypeFamily.getInstance());
+  @Test public void testAvroBSON() throws Exception {
+	PTypeFamily tf = AvroTypeFamily.getInstance();
+	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
+    run(new MRPipeline(PageRankTest.class), prType, tf);
+  }
+  
+  @Test public void testWritablesJSON() throws Exception {
+	PTypeFamily tf = WritableTypeFamily.getInstance();
+	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
+    run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
+  @Test public void testWritablesBSON() throws Exception {
+	PTypeFamily tf = WritableTypeFamily.getInstance();
+	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
+    run(new MRPipeline(PageRankTest.class), prType, tf);
+  }
+  
   public static PTable<String, PageRankData> pageRank(PTable<String, PageRankData> input) {
     PTypeFamily ptf = input.getTypeFamily();
     PTable<String, Float> outbound = input.parallelDo(
         new DoFn<Pair<String, PageRankData>, Pair<String, Float>>() {
           @Override
           public void process(Pair<String, PageRankData> input, Emitter<Pair<String, Float>> emitter) {
-            float pr = input.second().first() / input.second().third().size();
-            for (String link : input.second().third()) {
+            float pr = input.second().score / input.second().urls.size();
+            for (String link : input.second().urls) {
               emitter.emit(Pair.of(link, pr));
             }
           }
@@ -71,15 +97,13 @@ public class PageRankTest {
                 for (Float s : input.second().second()) {
                   sum += s;
                 }
-                return Pair.of(input.first(), new PageRankData(0.5f + 0.5f*sum, prd.first(), prd.third()));
+                return Pair.of(input.first(), new PageRankData(0.5f + 0.5f*sum, prd.score, prd.urls));
               }
             }, input.getPTableType());
   }
   
-  public static void run(Pipeline pipeline, PTypeFamily ptf) throws Exception {
+  public static void run(Pipeline pipeline, PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
     String urlInput = FileHelper.createTempCopyOf("urls.txt");
-    PType<PageRankData> prType = ptf.tuples(PageRankData.class, ptf.floats(), ptf.floats(),
-        ptf.collections(ptf.strings()));
     PTable<String, PageRankData> scores = pipeline.readTextFile(urlInput)
         .parallelDo(new MapFn<String, Pair<String, String>>() {
           @Override
@@ -93,7 +117,7 @@ public class PageRankTest {
               @Override
               public Pair<String, PageRankData> map(
                   Pair<String, Iterable<String>> input) {
-                return Pair.of(input.first(), new PageRankData(1.0f, 0.0f, Collects.newArrayList(input.second())));
+                return Pair.of(input.first(), new PageRankData(1.0f, 0.0f, input.second()));
               }
             }, ptf.tableOf(ptf.strings(), prType));
     
@@ -106,7 +130,7 @@ public class PageRankTest {
             @Override
             public Float map(Pair<String, PageRankData> input) {
               PageRankData prd = input.second();
-              return Math.abs(prd.first() - prd.second());
+              return Math.abs(prd.score - prd.lastScore);
             }
           }, ptf.floats())).materialize(), null);
     }

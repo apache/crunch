@@ -61,7 +61,7 @@ public class AvroUtf8InputFormat extends FileInputFormat<AvroWrapper<Utf8>, Null
     public AvroWrapper<Utf8> getCurrentKey() throws IOException,
         InterruptedException {
       Text txt = lineRecordReader.getCurrentValue();
-      currentKey.datum(new Utf8(txt.getBytes()));
+      currentKey.datum(new Utf8(txt.toString()));
       return currentKey;
     }
 

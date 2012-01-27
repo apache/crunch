@@ -38,44 +38,50 @@ import com.google.common.collect.Lists;
 public class AvrosTest {
 
   @Test
+  public void testNulls() throws Exception {
+    Void n = null;
+    testInputOutputFn(Avros.nulls(), n, n);
+  }
+  
+  @Test
   public void testStrings() throws Exception {
     String s = "abc";
     Utf8 w = new Utf8(s);
-    testInputOutputFn(Avros.strings(), s, new AvroWrapper<Utf8>(w));
+    testInputOutputFn(Avros.strings(), s, w);
   }
   
   @Test
   public void testInts() throws Exception {
     int j = 55;
-    testInputOutputFn(Avros.ints(), j, new AvroWrapper<Integer>(j));
+    testInputOutputFn(Avros.ints(), j, j);
   }
   @Test
   public void testLongs() throws Exception {
     long j = Long.MAX_VALUE;
-    testInputOutputFn(Avros.longs(), j, new AvroWrapper<Long>(j));
+    testInputOutputFn(Avros.longs(), j, j);
   }
   @Test
   public void testFloats() throws Exception {
     float j = Float.MIN_VALUE;
-    testInputOutputFn(Avros.floats(), j, new AvroWrapper<Float>(j));
+    testInputOutputFn(Avros.floats(), j, j);
   }
   @Test
   public void testDoubles() throws Exception {
     double j = Double.MIN_VALUE;
-    testInputOutputFn(Avros.doubles(), j, new AvroWrapper<Double>(j));
+    testInputOutputFn(Avros.doubles(), j, j);
   }
   
   @Test
   public void testBooleans() throws Exception {
     boolean j = true;
-    testInputOutputFn(Avros.booleans(), j, new AvroWrapper<Boolean>(j));
+    testInputOutputFn(Avros.booleans(), j, j);
   }
   
   @Test
   public void testBytes() throws Exception {
     byte[] bytes = new byte[] { 17, 26, -98 };
     ByteBuffer bb = ByteBuffer.wrap(bytes);
-    testInputOutputFn(Avros.bytes(), bb, new AvroWrapper<ByteBuffer>(bb));
+    testInputOutputFn(Avros.bytes(), bb, bb);
   }
 
   @Test
@@ -87,7 +93,7 @@ public class AvrosTest {
     GenericData.Array<Utf8> w = new GenericData.Array<Utf8>(2, collectionSchema);
     w.add(new Utf8("a"));
     w.add(new Utf8("b"));
-    testInputOutputFn(Avros.collections(Avros.strings()), j, new AvroWrapper<GenericData.Array<Utf8>>(w));
+    testInputOutputFn(Avros.collections(Avros.strings()), j, w);
   }
   
   @Test
@@ -97,7 +103,7 @@ public class AvrosTest {
     GenericData.Record w = new GenericData.Record(at.getSchema());
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));
-    testInputOutputFn(at, j, new AvroWrapper<GenericData.Record>(w));
+    testInputOutputFn(at, j, w);
   }
   
   @Test
@@ -117,7 +123,7 @@ public class AvrosTest {
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));
     w.put(2, new Utf8("c"));
-    testInputOutputFn(at, j, new AvroWrapper<GenericData.Record>(w));
+    testInputOutputFn(at, j, w);
   }
   
   @Test
@@ -130,7 +136,7 @@ public class AvrosTest {
     w.put(1, new Utf8("b"));
     w.put(2, new Utf8("c"));
     w.put(3, new Utf8("d"));
-    testInputOutputFn(at, j, new AvroWrapper<GenericData.Record>(w));
+    testInputOutputFn(at, j, w);
   }
   
   @Test
@@ -145,7 +151,7 @@ public class AvrosTest {
     w.put(2, new Utf8("c"));
     w.put(3, new Utf8("d"));
     w.put(4, new Utf8("e"));
-    testInputOutputFn(at, j, new AvroWrapper<GenericData.Record>(w));
+    testInputOutputFn(at, j, w);
     
   }
    
@@ -157,19 +163,24 @@ public class AvrosTest {
     org.apache.avro.mapred.Pair w = new org.apache.avro.mapred.Pair(at.getSchema());
     w.put(0, new Utf8("a"));
     w.put(1, new Utf8("b"));
-    AvroWrapper<org.apache.avro.mapred.Pair> wrapped =
-        new AvroWrapper<org.apache.avro.mapred.Pair>(w);
     // TODO update this after resolving the o.a.a.m.Pair.equals issue
-    assertEquals(j, at.getDataBridge().getInputMapFn().map(wrapped));
-    AvroWrapper<org.apache.avro.mapred.Pair> converted =
-        (AvroWrapper) at.getDataBridge().getOutputMapFn().map(j);
-    assertEquals(w.key(), converted.datum().key());
-    assertEquals(w.value(), converted.datum().value());
+    initialize(at);
+    assertEquals(j, at.getInputMapFn().map(w));
+    org.apache.avro.mapred.Pair converted =
+        (org.apache.avro.mapred.Pair) at.getOutputMapFn().map(j);
+    assertEquals(w.key(), converted.key());
+    assertEquals(w.value(), converted.value());
+  }
+  
+  private static void initialize(PType ptype) {
+    ptype.getInputMapFn().initialize();
+    ptype.getOutputMapFn().initialize();
   }
   
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected static void testInputOutputFn(PType ptype, Object java, Object writable) {
-    assertEquals(java, ptype.getDataBridge().getInputMapFn().map(writable));
-    assertEquals(writable, ptype.getDataBridge().getOutputMapFn().map(java));
+  protected static void testInputOutputFn(PType ptype, Object java, Object avro) {
+    initialize(ptype);
+    assertEquals(java, ptype.getInputMapFn().map(avro));
+    assertEquals(avro, ptype.getOutputMapFn().map(java));
   }
 }

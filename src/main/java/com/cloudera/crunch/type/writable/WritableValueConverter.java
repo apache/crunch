@@ -19,19 +19,41 @@ import org.apache.hadoop.io.NullWritable;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.type.Converter;
 
-class WritableValueConverter implements Converter<Object, Object, Object> {
+class WritableValueConverter<W> implements Converter<Object, W, W, Iterable<W>> {
+
+  private final Class<W> serializationClass;
+  
+  public WritableValueConverter(Class<W> serializationClass) {
+    this.serializationClass = serializationClass;
+  }
+  
   @Override
-  public Object outputKey(Object input) {
+  public W convertInput(Object key, W value) {
+    return value;
+  }
+
+  @Override
+  public Object outputKey(W value) {
     return NullWritable.get();
   }
 
   @Override
-  public Object outputValue(Object input) {
-    return input;
+  public W outputValue(W value) {
+    return value;
   }
 
   @Override
-  public Object convertInput(Object key, Object value) {
+  public Class<Object> getKeyClass() {
+    return (Class<Object>) (Class<?>) NullWritable.class;
+  }
+
+  @Override
+  public Class<W> getValueClass() {
+    return serializationClass;
+  }
+
+  @Override
+  public Iterable<W> convertIterableInput(Object key, Iterable<W> value) {
     return value;
   }
 }

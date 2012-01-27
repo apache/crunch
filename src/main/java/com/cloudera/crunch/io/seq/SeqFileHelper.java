@@ -28,7 +28,7 @@ public class SeqFileHelper {
 	    ((WritableType) ptype).getSerializationClass(), conf); 
   }
   
-  static <T> MapFn<Writable, T> getInputMapFn(PType<T> ptype) {
-	return ptype.getDataBridge().getInputMapFn();
+  static <T> MapFn<Object, T> getInputMapFn(PType<T> ptype) {
+	return ptype.getInputMapFn();
   }
 }

@@ -25,6 +25,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.fn.PairMapFn;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
+import com.cloudera.crunch.type.Converter;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PGroupedTableType;
 import com.cloudera.crunch.type.PTableType;
@@ -36,20 +37,20 @@ class WritableTableType<K, V> implements PTableType<K, V> {
 
   private final WritableType<K, Writable> keyType;
   private final WritableType<V, Writable> valueType;
-  private final DataBridge handler;
+  private final MapFn inputFn;
+  private final MapFn outputFn;
+  private final Converter converter;
   
   public WritableTableType(WritableType<K, Writable> keyType,
       WritableType<V, Writable> valueType) {
     this.keyType = keyType;
     this.valueType = valueType;
-    DataBridge keyHandler = keyType.getDataBridge();
-    DataBridge valueHandler = valueType.getDataBridge();
-    MapFn inputMapFn = new PairMapFn(keyHandler.getInputMapFn(),
-        valueHandler.getInputMapFn());
-    MapFn outputMapFn = new PairMapFn(keyHandler.getOutputMapFn(),
-        valueHandler.getOutputMapFn());
-    this.handler = DataBridge.forPair(keyType.getSerializationClass(), valueType.getSerializationClass(),
-        inputMapFn, outputMapFn);
+    this.inputFn = new PairMapFn(keyType.getInputMapFn(),
+        valueType.getInputMapFn());
+    this.outputFn = new PairMapFn(keyType.getOutputMapFn(),
+        valueType.getOutputMapFn());
+    this.converter = new WritablePairConverter(keyType.getSerializationClass(),
+        valueType.getSerializationClass());
   }
 
   @Override
@@ -63,6 +64,21 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   }
   
   @Override
+  public MapFn getInputMapFn() {
+    return inputFn;
+  }
+  
+  @Override
+  public MapFn getOutputMapFn() {
+    return outputFn;
+  }
+  
+  @Override
+  public Converter getConverter() {
+    return converter;
+  }
+  
+  @Override
   public PTypeFamily getFamily() {
     return WritableTypeFamily.getInstance();
   }
@@ -73,11 +89,6 @@ class WritableTableType<K, V> implements PTableType<K, V> {
 
   public PType<V> getValueType() {
     return valueType;
-  }
-
-  @Override
-  public DataBridge getDataBridge() {
-    return handler;
   }
 
   @Override

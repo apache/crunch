@@ -19,21 +19,25 @@ import org.apache.hadoop.mapreduce.Job;
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.type.Converter;
 import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PGroupedTableType;
 
 public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
-  private final DataBridge handler;
+  private final MapFn inputFn;
+  private final MapFn outputFn;
+  private final Converter converter;
   
   public WritableGroupedTableType(WritableTableType<K, V> tableType) {
     super(tableType);
     WritableType keyType = (WritableType) tableType.getKeyType();
     WritableType valueType = (WritableType) tableType.getValueType();
-    MapFn mapFn =  new PairIterableMapFn(keyType.getDataBridge().getInputMapFn(),
-        valueType.getDataBridge().getInputMapFn());
-    this.handler = DataBridge.forPair(keyType.getSerializationClass(), valueType.getSerializationClass(),
-        mapFn, tableType.getDataBridge().getOutputMapFn());
+    this.inputFn =  new PairIterableMapFn(keyType.getInputMapFn(),
+        valueType.getInputMapFn());
+    this.outputFn = tableType.getOutputMapFn();
+    this.converter = new WritablePairConverter(keyType.getSerializationClass(),
+        valueType.getSerializationClass());
   }
   
   @Override
@@ -42,16 +46,28 @@ public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   }
   
   @Override
-  public DataBridge getGroupingBridge() {
-    return handler;
+  public Converter getGroupingConverter() {
+    return converter;
   }
 
+  @Override
+  public MapFn getInputMapFn() {
+    return inputFn;
+  }
+  
+  @Override
+  public MapFn getOutputMapFn() {
+    return outputFn;
+  }
+  
   @Override
   public void configureShuffle(Job job, GroupingOptions options) {
     if (options != null) {
       options.configure(job);
     }
-    job.setMapOutputKeyClass(handler.getKeyClass());
-    job.setMapOutputValueClass(handler.getValueClass());
+    WritableType keyType = (WritableType) tableType.getKeyType();
+    WritableType valueType = (WritableType) tableType.getValueType();
+    job.setMapOutputKeyClass(keyType.getSerializationClass());
+    job.setMapOutputValueClass(valueType.getSerializationClass());
   }
 }

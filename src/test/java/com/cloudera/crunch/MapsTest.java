@@ -5,7 +5,6 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;

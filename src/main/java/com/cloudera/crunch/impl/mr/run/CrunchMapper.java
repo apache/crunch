@@ -27,7 +27,8 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
   
   private RTNode node;
   private CrunchTaskContext ctxt;
-
+  private boolean debug;
+  
   @Override
   protected void setup(Mapper<Object, Object, Object, Object>.Context context) {
     List<RTNode> nodes;
@@ -44,12 +45,21 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
       CrunchInputSplit split = (CrunchInputSplit) context.getInputSplit();
       this.node = nodes.get(split.getNodeIndex());
     }
+    this.debug = ctxt.isDebugRun();
   }
 
   @Override
   protected void map(Object k, Object v,
       Mapper<Object, Object, Object, Object>.Context context) {
-    node.process(k, v);
+    if (debug) {
+      try {
+        node.process(k, v);
+      } catch (Exception e) {
+        LOG.error("Mapper exception", e);
+      }
+    } else {
+      node.process(k, v);
+    }
   }
 
   @Override

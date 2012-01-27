@@ -36,6 +36,7 @@ import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
+import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -64,6 +65,7 @@ public class Avros {
 
   private static final AvroType<String> strings = new AvroType<String>(
       String.class, Schema.create(Schema.Type.STRING), UTF8_TO_STRING, STRING_TO_UTF8);
+  private static final AvroType<Void> nulls = create(Void.class, Schema.Type.NULL);
   private static final AvroType<Long> longs = create(Long.class, Schema.Type.LONG);
   private static final AvroType<Integer> ints = create(Integer.class, Schema.Type.INT);
   private static final AvroType<Float> floats = create(Float.class, Schema.Type.FLOAT);
@@ -93,6 +95,10 @@ public class Avros {
   
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
     return new AvroType<T>(clazz, Schema.create(schemaType));
+  }
+
+  public static final AvroType<Void> nulls() {
+    return nulls;
   }
 
   public static final AvroType<String> strings() {
@@ -193,8 +199,8 @@ public class Avros {
   public static final <T> AvroType<Collection<T>> collections(PType<T> ptype) {
     AvroType<T> avroType = (AvroType<T>) ptype;
     Schema collectionSchema = Schema.createArray(avroType.getSchema());
-    GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getBaseInputMapFn());
-    CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getBaseOutputMapFn());
+    GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getInputMapFn());
+    CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getOutputMapFn());
     return new AvroType(Collection.class, collectionSchema, input, output, ptype);
   }
 
@@ -245,8 +251,8 @@ public class Avros {
   public static final <T> AvroType<Map<String, T>> maps(PType<T> ptype) {
 	AvroType<T> avroType = (AvroType<T>) ptype;
 	Schema mapSchema = Schema.createMap(avroType.getSchema());
-	AvroMapToMap<T> inputFn = new AvroMapToMap<T>(avroType.getBaseInputMapFn());
-	MapToAvroMap<T> outputFn = new MapToAvroMap<T>(avroType.getBaseOutputMapFn());
+	AvroMapToMap<T> inputFn = new AvroMapToMap<T>(avroType.getInputMapFn());
+	MapToAvroMap<T> outputFn = new MapToAvroMap<T>(avroType.getOutputMapFn());
 	return new AvroType(Map.class, mapSchema, inputFn, outputFn, ptype);
   }
   
@@ -261,7 +267,7 @@ public class Avros {
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
-        fns.add(atype.getBaseInputMapFn());
+        fns.add(atype.getInputMapFn());
       }
     }
     
@@ -299,7 +305,7 @@ public class Avros {
       this.jsonSchema = schema.toString();
       for (PType ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
-        fns.add(atype.getBaseOutputMapFn());
+        fns.add(atype.getOutputMapFn());
       }
     }
     
@@ -390,9 +396,13 @@ public class Avros {
       MapFn<T, S> outputFn, PType<S> base) {
     AvroType<S> abase = (AvroType<S>) base;
     return new AvroType<T>(clazz, abase.getSchema(),
-        new CompositeMapFn(abase.getBaseInputMapFn(), inputFn),
-        new CompositeMapFn(outputFn, abase.getBaseOutputMapFn()),
+        new CompositeMapFn(abase.getInputMapFn(), inputFn),
+        new CompositeMapFn(outputFn, abase.getOutputMapFn()),
         base.getSubTypes().toArray(new PType[0]));
+  }
+  
+  public static <T> PType<T> jsons(Class<T> clazz) {
+    return PTypes.jsonString(clazz, AvroTypeFamily.getInstance());  
   }
   
   public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {

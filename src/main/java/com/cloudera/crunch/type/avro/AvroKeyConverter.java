@@ -14,28 +14,50 @@
  */
 package com.cloudera.crunch.type.avro;
 
+import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.io.NullWritable;
 
 import com.cloudera.crunch.type.Converter;
 
-/**
- *
- *
- */
-public class AvroKeyConverter<K> implements Converter<K, Object, K> {
+public class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
+  private transient AvroWrapper<K> wrapper = null;
+  
   @Override
-  public K convertInput(K key, Object value) {
-    return key;
+  public K convertInput(AvroWrapper<K> key, NullWritable value) {
+    return key.datum();
   }
 
   @Override
-  public K outputKey(K value) {
-    return value;
+  public AvroWrapper<K> outputKey(K value) {
+    getWrapper().datum(value);
+    return wrapper;
   }
 
   @Override
-  public Object outputValue(K value) {
+  public NullWritable outputValue(K value) {
     return NullWritable.get();
   }
 
+  @Override
+  public Class<AvroWrapper<K>> getKeyClass() {
+    return (Class<AvroWrapper<K>>) getWrapper().getClass();
+  }
+
+  @Override
+  public Class<NullWritable> getValueClass() {
+    return NullWritable.class;
+  }
+
+  private AvroWrapper<K> getWrapper() {
+    if (wrapper == null) {
+      wrapper = new AvroWrapper<K>();
+    }
+    return wrapper;
+  }
+
+  @Override
+  public Iterable<K> convertIterableInput(AvroWrapper<K> key,
+      Iterable<NullWritable> value) {
+    throw new UnsupportedOperationException("Should not be possible");
+  }
 }

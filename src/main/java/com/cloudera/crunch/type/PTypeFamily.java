@@ -32,6 +32,8 @@ import com.cloudera.crunch.TupleN;
  * 
  */
 public interface PTypeFamily {
+  PType<Void> nulls();
+  
   PType<String> strings();
 
   PType<Long> longs();
