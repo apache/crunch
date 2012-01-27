@@ -76,14 +76,22 @@ public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableS
 	if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
       SourceTargetHelper.configureSource(job, inputId, AvroUtf8InputFormat.class, path);
 	} else {
-      SourceTargetHelper.configureSource(job, inputId, TextInputFormat.class, path);
+	  if (path.toString().endsWith(".bz2")) {
+	    SourceTargetHelper.configureSource(job, inputId, BZip2TextInputFormat.class, path);
+	  } else {
+        SourceTargetHelper.configureSource(job, inputId, TextInputFormat.class, path);
+	  }
 	}
   }
 
   @Override
   public long getSize(Configuration conf) {
     try {
-      return SourceTargetHelper.getPathSize(conf, path);
+      long sz = SourceTargetHelper.getPathSize(conf, path);
+      if (path.toString().endsWith(".bz")) {
+        sz *= 10;
+      }
+      return sz;
     } catch (IOException e) {
       LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
     }
