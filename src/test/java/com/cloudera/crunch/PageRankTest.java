@@ -55,7 +55,7 @@ public class PageRankTest {
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  @Test public void testAvroBSON() throws Exception {
+  public void testAvroBSON() throws Exception {
 	PTypeFamily tf = AvroTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);

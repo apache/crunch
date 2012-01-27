@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import org.apache.avro.Schema;
+import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.util.Utf8;
@@ -30,6 +31,7 @@ import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.type.PType;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 /**
@@ -89,7 +91,9 @@ public class AvrosTest {
     Collection<String> j = Lists.newArrayList();
     j.add("a");
     j.add("b");
-    Schema collectionSchema = Schema.createArray(Avros.strings().getSchema());
+    Schema collectionSchema = Schema.createArray(
+        Schema.createUnion(ImmutableList.of(
+            Avros.strings().getSchema(), Schema.create(Type.NULL))));
     GenericData.Array<Utf8> w = new GenericData.Array<Utf8>(2, collectionSchema);
     w.add(new Utf8("a"));
     w.add(new Utf8("b"));

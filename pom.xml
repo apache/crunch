@@ -4,7 +4,7 @@
   <groupId>com.cloudera.crunch</groupId>
   <artifactId>crunch</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>crunch</name>
 
   <dependencies>
@@ -24,27 +24,26 @@
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-mapred</artifactId>
-      <version>1.5.4</version>
+      <version>1.6.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
-      <version>1.7.3</version>
+      <version>1.8.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
-      <version>1.7.3</version>
+      <version>1.8.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-smile</artifactId>
-      <version>1.7.3</version>
+      <version>1.8.6</version>
     </dependency>
-
 
     <dependency>
       <groupId>junit</groupId>

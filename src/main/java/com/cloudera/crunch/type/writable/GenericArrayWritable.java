@@ -23,6 +23,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
+import org.apache.hadoop.io.WritableUtils;
 
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 
@@ -47,8 +48,12 @@ public class GenericArrayWritable<T> implements Writable {
   }
 
   public void readFields(DataInput in) throws IOException {
-    values = new Writable[in.readInt()];          // construct values
+    values = new Writable[WritableUtils.readVInt(in)];          // construct values
     if (values.length > 0) {
+      int nulls = WritableUtils.readVInt(in);
+      if (nulls == values.length) {
+        return;
+      }
       String valueType = Text.readString(in);
       setValueType(valueType);
       for (int i = 0; i < values.length; i++) {
@@ -58,6 +63,7 @@ public class GenericArrayWritable<T> implements Writable {
       }
     }
   }
+  
   protected void setValueType(String valueType) {
     if (valueClass == null) {
       try {
@@ -71,14 +77,23 @@ public class GenericArrayWritable<T> implements Writable {
   }
   
   public void write(DataOutput out) throws IOException {
-    out.writeInt(values.length);                 // write values;
-    if (values.length > 0) {
+    WritableUtils.writeVInt(out, values.length);
+    int nulls = 0;
+    for (int i = 0; i < values.length; i++) {
+      if (values[i] == null) {
+        nulls++;
+      }
+    }
+    WritableUtils.writeVInt(out, nulls);
+    if (values.length - nulls > 0) {
       if (valueClass == null) {
         throw new IllegalStateException("Value class not set by constructor or read");
       }
       Text.writeString(out, valueClass.getName());
       for (int i = 0; i < values.length; i++) {
-        values[i].write(out);
+        if (values[i] != null) {
+          values[i].write(out);
+        }
       }
     }
   }

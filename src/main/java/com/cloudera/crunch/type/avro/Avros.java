@@ -198,7 +198,7 @@ public class Avros {
   
   public static final <T> AvroType<Collection<T>> collections(PType<T> ptype) {
     AvroType<T> avroType = (AvroType<T>) ptype;
-    Schema collectionSchema = Schema.createArray(avroType.getSchema());
+    Schema collectionSchema = Schema.createArray(allowNulls(avroType.getSchema()));
     GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getInputMapFn());
     CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getOutputMapFn());
     return new AvroType(Collection.class, collectionSchema, input, output, ptype);
@@ -250,7 +250,7 @@ public class Avros {
   
   public static final <T> AvroType<Map<String, T>> maps(PType<T> ptype) {
 	AvroType<T> avroType = (AvroType<T>) ptype;
-	Schema mapSchema = Schema.createMap(avroType.getSchema());
+	Schema mapSchema = Schema.createMap(allowNulls(avroType.getSchema()));
 	AvroMapToMap<T> inputFn = new AvroMapToMap<T>(avroType.getInputMapFn());
 	MapToAvroMap<T> outputFn = new MapToAvroMap<T>(avroType.getOutputMapFn());
 	return new AvroType(Map.class, mapSchema, inputFn, outputFn, ptype);
@@ -384,8 +384,7 @@ public class Avros {
     List<Schema.Field> fields = Lists.newArrayList();
     for (int i = 0; i < ptypes.length; i++) {
       AvroType atype = (AvroType) ptypes[i];
-      Schema fieldSchema = Schema.createUnion(
-          ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
+      Schema fieldSchema = allowNulls(atype.getSchema());
       fields.add(new Schema.Field("v" + i, fieldSchema, "", null));
     }
     schema.setFields(fields);
@@ -411,5 +410,13 @@ public class Avros {
     return new AvroTableType(avroKey, avroValue, Pair.class);
   }
 
+  private static final Schema NULL_SCHEMA = Schema.create(Type.NULL);
+  private static Schema allowNulls(Schema base) {
+    if (NULL_SCHEMA.equals(base)) {
+      return base;
+    }
+    return Schema.createUnion(ImmutableList.of(base, NULL_SCHEMA));
+  }
+  
   private Avros() {}
 }

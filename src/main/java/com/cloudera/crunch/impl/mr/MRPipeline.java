@@ -41,13 +41,10 @@ import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
-import com.cloudera.crunch.io.text.TextFileSourceTarget;
 import com.cloudera.crunch.materialize.MaterializableIterable;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MRPipeline implements Pipeline {
@@ -190,7 +187,8 @@ public class MRPipeline implements Pipeline {
   }
 
   public Path createTempPath() {
-    return new Path(tempDirectory, "p" + tempFileIndex++);
+    tempFileIndex++;
+    return new Path(tempDirectory, "p" + tempFileIndex);
   }
   
   private static Path createTempDirectory(Configuration conf) {
