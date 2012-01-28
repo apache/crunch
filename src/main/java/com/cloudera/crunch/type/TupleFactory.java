@@ -16,7 +16,6 @@ package com.cloudera.crunch.type;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple;
@@ -25,10 +24,6 @@ import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 
-/**
- *
- *
- */
 public abstract class TupleFactory<T extends Tuple> implements Serializable {
   
   public void initialize() { }

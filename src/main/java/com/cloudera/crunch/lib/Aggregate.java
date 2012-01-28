@@ -21,7 +21,6 @@ import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
-import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.MapValuesFn;
@@ -74,7 +73,7 @@ public class Aggregate {
             }
           }
         }, tf.tableOf(tf.booleans(), collect.getPType()))
-        .groupByKey().combineValues(new CombineFn<Boolean, S>() {
+        .groupByKey(1).combineValues(new CombineFn<Boolean, S>() {
           @Override
           public void process(Pair<Boolean, Iterable<S>> input,
               Emitter<Pair<Boolean, S>> emitter) {

@@ -15,8 +15,6 @@
 
 package com.cloudera.crunch;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -29,8 +27,6 @@ import org.apache.hadoop.mapreduce.Partitioner;
  */
 public class GroupingOptions {
 
-  private static final Log LOG = LogFactory.getLog(GroupingOptions.class);
-  
   private final Class<? extends Partitioner> partitionerClass;
   private final Class<? extends RawComparator> groupingComparatorClass;
   private final Class<? extends RawComparator> sortComparatorClass;
@@ -61,7 +57,6 @@ public class GroupingOptions {
     }
     if (numReducers > 0) {
       job.setNumReduceTasks(numReducers);
-      LOG.info(String.format("Using %d reduce tasks", numReducers));
     }
   }
 
