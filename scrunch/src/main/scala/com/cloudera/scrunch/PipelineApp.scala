@@ -14,22 +14,35 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{Source, TableSource}
+import com.cloudera.crunch.{Source, TableSource, Target}
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.GenericOptionsParser
 import scala.collection.mutable.ListBuffer
 
 trait PipelineApp extends DelayedInit {
+  implicit def _string2path(str: String) = new Path(str)
+
   private val pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
+
   protected val from = From
   protected val to = To
   protected val at = At
 
   protected def configuration = pipeline.getConfiguration
+  protected def fs: FileSystem = FileSystem.get(configuration)
 
   protected def read[T](source: Source[T]) = pipeline.read(source)
 
   protected def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
+
+  protected def write(data: PCollection[_], target: Target) {
+    pipeline.write(data, target)
+  }
+  
+  protected def write(data: PTable[_, _], target: Target) {
+    pipeline.write(data, target)
+  }
 
   protected def cogroup[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
     t1.cogroup(t2)

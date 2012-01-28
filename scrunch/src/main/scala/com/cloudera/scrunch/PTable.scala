@@ -16,7 +16,7 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
-import com.cloudera.crunch.lib.{Cogroup, Join}
+import com.cloudera.crunch.lib.{Cogroup, Join, PTables}
 import com.cloudera.scrunch.Conversions._
 import java.lang.{Iterable => JIterable}
 import java.util.{Collection => JCollect}
@@ -48,6 +48,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def union(others: PTable[K, V]*) = {
     new PTable[K, V](native.union(others.map(_.native) : _*))
   }
+
+  def keys = new PCollection[K](PTables.keys(native))
+
+  def values = new PCollection[V](PTables.values(native))
 
   def cogroup[V2](other: PTable[K, V2]) = {
     val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)

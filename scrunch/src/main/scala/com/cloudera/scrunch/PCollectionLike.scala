@@ -44,9 +44,5 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
     new PTable[K, V](native.parallelDo(name, fn, ptype))
   }
   
-  def getTypeFamily() = native.getTypeFamily() match {
-    case x: WritableTypeFamily => Writables
-    case x: AvroTypeFamily => Avros
-    case _ => null
-  }
+  def getTypeFamily() = Avros
 }

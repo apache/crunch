@@ -35,6 +35,10 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
     jpipeline.write(pcollect.native, target)
   }
 
+  def write(ptable: PTable[_, _], target: Target) {
+    jpipeline.write(ptable.native, target)
+  }
+
   def run { jpipeline.run() }
 
   def done { jpipeline.done() }
