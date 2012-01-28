@@ -54,18 +54,22 @@ public class PGroupedTableImpl<K, V> extends
 
   public void configureShuffle(Job job) {
     ptype.configureShuffle(job, groupingOptions);
-    if (groupingOptions != null && groupingOptions.getNumReducers() <= 0) {
+    if (groupingOptions == null || groupingOptions.getNumReducers() <= 0) {
       int bytesPerTask = job.getConfiguration().getInt("crunch.bytes.per.reduce.task",
           (1000 * 1000 * 1000));
       int numReduceTasks = 1 + (int) (getSize() / bytesPerTask);
-      job.setNumReduceTasks(numReduceTasks);
-      LOG.info(String.format("Setting num reduce tasks to %d", numReduceTasks));
+      if (numReduceTasks > 0) {
+        job.setNumReduceTasks(numReduceTasks);
+        LOG.info(String.format("Setting num reduce tasks to %d", numReduceTasks));
+      } else {
+        LOG.warn("Attempted to set a negative number of reduce tasks");
+      }
     }
   }
   
   @Override
-  public long getSize() {
-    return parent.getSize();
+  protected long getSizeInternal() {
+    return parent.getSizeInternal();
   }
   
   @Override

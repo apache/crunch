@@ -157,6 +157,19 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
       acceptInternal(visitor);
     }
   }
-  
+
   protected abstract void acceptInternal(Visitor visitor);
+
+  @Override
+  public long getSize() {
+    if (materializedAt != null) {
+      long sz = materializedAt.getSize(getPipeline().getConfiguration());
+      if (sz > 0) {
+        return sz;
+      }
+    }
+    return getSizeInternal();
+  }
+  
+  protected abstract long getSizeInternal();
 }

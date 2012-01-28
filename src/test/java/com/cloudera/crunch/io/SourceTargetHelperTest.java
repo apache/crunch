@@ -1,6 +1,6 @@
 package com.cloudera.crunch.io;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 
@@ -16,11 +16,6 @@ public class SourceTargetHelperTest {
 	Path tmpPath = new Path(tmp.getAbsolutePath());
 	tmp.delete();
 	FileSystem fs = FileSystem.getLocal(new Configuration());
-	try {
-	  SourceTargetHelper.getPathSize(fs, tmpPath);
-	  fail("Path defined");
-	} catch (IllegalArgumentException e) {
-	  // expected
-	}
+	assertEquals(0L, SourceTargetHelper.getPathSize(fs, tmpPath));
   }
 }

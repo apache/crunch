@@ -51,7 +51,7 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
   }
 
   @Override
-  public long getSize() {
+  protected long getSizeInternal() {
     return size;
   }
   

@@ -57,7 +57,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
-  public long getSize() {
+  protected long getSizeInternal() {
     return size;
   }
   

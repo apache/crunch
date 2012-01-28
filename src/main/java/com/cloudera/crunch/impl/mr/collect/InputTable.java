@@ -37,8 +37,8 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
-  public long getSize() {
-    return asCollection.getSize();
+  protected long getSizeInternal() {
+    return asCollection.getSizeInternal();
   }
 
   @Override

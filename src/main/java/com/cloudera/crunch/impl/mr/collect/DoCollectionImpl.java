@@ -36,7 +36,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   }
 
   @Override
-  public long getSize() {
+  protected long getSizeInternal() {
     return (long) fn.scaleFactor() * parent.getSize();
   }
   

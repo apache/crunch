@@ -28,7 +28,6 @@ import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import com.cloudera.crunch.impl.mr.run.CrunchInputs;
-import com.cloudera.crunch.type.DataBridge;
 
 /**
  * Functions for configuring the inputs/outputs of MapReduce jobs.
@@ -65,7 +64,7 @@ public class SourceTargetHelper {
   public static long getPathSize(FileSystem fs, Path path) throws IOException {
     FileStatus[] stati = fs.listStatus(path);
     if (stati.length == 0) {
-      throw new IllegalArgumentException("Path " + path + " does not exist!");
+      return 0L;
     }
     long size = 0;
     for (FileStatus status : stati) {

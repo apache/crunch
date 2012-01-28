@@ -41,7 +41,7 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements
   }
 
   @Override
-  public long getSize() {
+  protected long getSizeInternal() {
     return (long) fn.scaleFactor() * parent.getSize();
   }
 
