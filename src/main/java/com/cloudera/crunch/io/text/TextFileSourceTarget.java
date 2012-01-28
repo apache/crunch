@@ -71,12 +71,17 @@ public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableS
     return "TextFile(" + path + ")";
   }
   
+  private boolean isBZip2() {
+    String strPath = path.toString();
+    return strPath.endsWith(".bz") || strPath.endsWith(".bz2");
+  }
+  
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
 	if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
       SourceTargetHelper.configureSource(job, inputId, AvroUtf8InputFormat.class, path);
 	} else {
-	  if (path.toString().endsWith(".bz2")) {
+	  if (isBZip2()) {
 	    SourceTargetHelper.configureSource(job, inputId, BZip2TextInputFormat.class, path);
 	  } else {
         SourceTargetHelper.configureSource(job, inputId, TextInputFormat.class, path);
@@ -88,8 +93,8 @@ public class TextFileSourceTarget<T> extends TextFileTarget implements ReadableS
   public long getSize(Configuration conf) {
     try {
       long sz = SourceTargetHelper.getPathSize(conf, path);
-      if (path.toString().endsWith(".bz")) {
-        sz *= 10;
+      if (isBZip2()) {
+        sz *= 10; // Arbitrary compression factor
       }
       return sz;
     } catch (IOException e) {
