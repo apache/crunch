@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 
 public class MaterializableIterable<E> implements Iterable<E> {
@@ -43,8 +44,11 @@ public class MaterializableIterable<E> implements Iterable<E> {
   
   @Override
   public Iterator<E> iterator() {
-	checkMaterialized();
-	return materialized.iterator();
+    if (materialized == null) {
+      pipeline.run();
+      materialize();
+    }
+    return materialized.iterator();
   }
 
   public void materialize() {
@@ -52,13 +56,7 @@ public class MaterializableIterable<E> implements Iterable<E> {
 	  materialized = sourceTarget.read(pipeline.getConfiguration());
 	} catch (IOException e) {
 	  LOG.error("Could not materialize: " + sourceTarget, e);
+	  throw new CrunchRuntimeException(e);
 	}	
   }
-
-  private void checkMaterialized() {
-	if (materialized == null) {
-	  pipeline.run();
-	  materialize();
-	}
-  }  
 }
