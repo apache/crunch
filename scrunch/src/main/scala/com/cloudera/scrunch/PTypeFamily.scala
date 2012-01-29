@@ -35,7 +35,7 @@ trait PTypeFamily {
 
   def records[T: ClassManifest] = ptf.records(classManifest[T].erasure)
 
-  private def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
+  def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
     ptf.derived(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
   }
 
