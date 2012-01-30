@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import glob
 import os
 import re
 import shutil
@@ -8,8 +9,16 @@ import sys
 
 # Configuration in script
 ##############################################################
-SCALA_HOME="/Users/josh/scala/scala-2.9.1.final/lib"
-HADOOP_JAR="/Users/josh/cdh/hadoop-0.20.2-cdh3u1/hadoop-core-0.20.2-cdh3u1.jar"
+if not "SCALA_HOME" in os.environ:
+  sys.stderr.write("Environment variable SCALA_HOME must be set\n")
+  sys.exit(1)
+SCALA_LIB = os.path.join(os.environ["SCALA_HOME"], "lib")
+
+if not "HADOOP_HOME" in os.environ:
+  sys.stderr.write("Environment variable HADOOP_HOME must be set\n")
+  sys.exit(1)
+HADOOP_HOME = os.environ["HADOOP_HOME"]
+HADOOP_JARS = ":".join(glob.glob(os.path.join(HADOOP_HOME, "*.jar")))
 
 #Get the absolute path of the original (non-symlink) file.
 if os.path.islink(__file__):
@@ -22,7 +31,7 @@ JARFILE = SCIENCE_ROOT + "/target/scrunch-0.1.0-jar-with-dependencies.jar" #what
 print JARFILE
 TMPDIR = "/tmp"
 BUILDDIR = TMPDIR + "/script-build"
-COMPILE_CMD = "java -cp %s/scala-library.jar:%s/scala-compiler.jar -Dscala.home=%s scala.tools.nsc.Main" % (SCALA_HOME, SCALA_HOME, SCALA_HOME)
+COMPILE_CMD = "java -cp %s/scala-library.jar:%s/scala-compiler.jar -Dscala.home=%s scala.tools.nsc.Main" % (SCALA_LIB, SCALA_LIB, SCALA_LIB)
 ##############################################################
 
 argv = sys.argv[1:]
@@ -84,7 +93,7 @@ def build_job_jar():
   if os.path.exists(BUILDDIR):
     shutil.rmtree(BUILDDIR)
   os.makedirs(BUILDDIR)
-  cmd = "%s -classpath %s:%s -d %s %s" % (COMPILE_CMD, JARPATH, HADOOP_JAR, BUILDDIR, JOBFILE)
+  cmd = "%s -classpath %s:%s -d %s %s" % (COMPILE_CMD, JARPATH, HADOOP_JARS, BUILDDIR, JOBFILE)
   print cmd
   if subprocess.call(cmd, shell=True):
     shutil.rmtree(BUILDDIR)
