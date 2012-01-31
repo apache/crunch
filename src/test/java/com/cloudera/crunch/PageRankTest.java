@@ -23,6 +23,7 @@ import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
+import com.cloudera.crunch.type.avro.Avros;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.Iterables;
@@ -47,6 +48,12 @@ public class PageRankTest {
 	  this.lastScore = lastScore;
 	  this.urls = Lists.newArrayList(urls);
 	}
+  }
+  
+  @Test public void testAvroReflect() throws Exception {
+	PTypeFamily tf = AvroTypeFamily.getInstance();
+	PType<PageRankData> prType = Avros.reflects(PageRankData.class);
+    run(new MRPipeline(PageRankTest.class), prType, tf);	
   }
   
   @Test public void testAvroJSON() throws Exception {

@@ -22,9 +22,9 @@ import java.io.IOException;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -50,7 +50,7 @@ public class AvroOutputFormat<T>
     }
     
     final DataFileWriter<T> WRITER =
-      new DataFileWriter<T>(new GenericDatumWriter<T>());
+      new DataFileWriter<T>(new ReflectDatumWriter<T>());
 
     Path path = getDefaultWorkFile(context,
         org.apache.avro.mapred.AvroOutputFormat.EXT);

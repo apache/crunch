@@ -24,6 +24,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.Utf8;
 
@@ -34,6 +35,7 @@ import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
+import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
 import com.cloudera.crunch.util.PTypes;
@@ -49,9 +51,9 @@ import com.google.common.collect.Maps;
  */
 public class Avros {
 
-  public static MapFn<Utf8, String> UTF8_TO_STRING = new MapFn<Utf8, String>() {
+  public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
-    public String map(Utf8 input) {
+    public String map(CharSequence input) {
       return input.toString();
     }
   };
@@ -63,6 +65,16 @@ public class Avros {
     }
   };
 
+  public static MapFn<Object, ByteBuffer> BYTES_IN = new MapFn<Object, ByteBuffer>() {
+	@Override
+	public ByteBuffer map(Object input) {
+	  if (input instanceof ByteBuffer) {
+		return (ByteBuffer) input;
+	  }
+	  return ByteBuffer.wrap((byte[]) input);
+	}
+  };
+
   private static final AvroType<String> strings = new AvroType<String>(
       String.class, Schema.create(Schema.Type.STRING), UTF8_TO_STRING, STRING_TO_UTF8);
   private static final AvroType<Void> nulls = create(Void.class, Schema.Type.NULL);
@@ -71,7 +83,8 @@ public class Avros {
   private static final AvroType<Float> floats = create(Float.class, Schema.Type.FLOAT);
   private static final AvroType<Double> doubles = create(Double.class, Schema.Type.DOUBLE);
   private static final AvroType<Boolean> booleans = create(Boolean.class, Schema.Type.BOOLEAN);
-  private static final AvroType<ByteBuffer> bytes = create(ByteBuffer.class, Schema.Type.BYTES);
+  private static final AvroType<ByteBuffer> bytes = new AvroType<ByteBuffer>(
+	  ByteBuffer.class, Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance());
   
   private static final Map<Class, PType> PRIMITIVES = ImmutableMap.<Class, PType>builder()
       .put(String.class, strings)
@@ -144,7 +157,11 @@ public class Avros {
     return new AvroType<T>(clazz, SpecificData.get().getSchema(clazz));
   }
   
-  private static class GenericDataArrayToCollection extends MapFn<GenericData.Array, Collection> {
+  public static final <T> AvroType<T> reflects(Class<T> clazz) {
+	return new AvroType<T>(clazz, ReflectData.AllowNull.get().getSchema(clazz));
+  }
+  
+  private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {
     
     private final MapFn mapFn;
     
@@ -158,10 +175,18 @@ public class Avros {
     }
     
     @Override
-    public Collection map(GenericData.Array input) {
+    public Collection map(Object input) {
       Collection ret = Lists.newArrayList();
-      for (Object in : input) {
-        ret.add(mapFn.map(in));
+      if (input instanceof Collection) {
+    	for (Object in : (Collection) input) {
+    	  ret.add(mapFn.map(in));
+    	}
+      } else {
+    	// Assume it is an array
+    	Object[] arr = (Object[]) input;
+    	for (Object in : arr) {
+    	  ret.add(mapFn.map(in));
+    	}
       }
       return ret;
     }
@@ -204,7 +229,7 @@ public class Avros {
     return new AvroType(Collection.class, collectionSchema, input, output, ptype);
   }
 
-  private static class AvroMapToMap<T> extends MapFn<Map<Utf8, Object>, Map<String, T>> {
+  private static class AvroMapToMap<T> extends MapFn<Map<CharSequence, Object>, Map<String, T>> {
 	private final MapFn<Object, T> mapFn;
 	
 	public AvroMapToMap(MapFn<Object, T> mapFn) {
@@ -217,9 +242,9 @@ public class Avros {
 	}
 	
 	@Override
-	public Map<String, T> map(Map<Utf8, Object> input) {
+	public Map<String, T> map(Map<CharSequence, Object> input) {
 	  Map<String, T> out = Maps.newHashMap();
-	  for (Map.Entry<Utf8, Object> e : input.entrySet()) {
+	  for (Map.Entry<CharSequence, Object> e : input.entrySet()) {
 		out.put(e.getKey().toString(), mapFn.map(e.getValue()));
 	  }
 	  return out;

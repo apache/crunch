@@ -21,6 +21,7 @@ import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
 import org.apache.avro.mapred.AvroSerialization;
 import org.apache.avro.mapred.AvroValue;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.GroupingOptions;
@@ -74,7 +75,9 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   public void configureShuffle(Job job, GroupingOptions options) {
     AvroTableType<K, V> att = (AvroTableType<K, V>) tableType;
     String schemaJson = att.getSchema().toString();
-    job.getConfiguration().set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);
+    Configuration conf = job.getConfiguration();
+    conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+    conf.set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);
     job.setSortComparatorClass(AvroKeyComparator.class);
     job.setMapOutputKeyClass(AvroKey.class);
     job.setMapOutputValueClass(AvroValue.class);
