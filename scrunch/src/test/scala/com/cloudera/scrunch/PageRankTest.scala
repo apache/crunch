@@ -28,10 +28,10 @@ class PageRankTest extends JUnitSuite {
     pipeline.read(from.textFile(fileName))
       .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
-      .map((url, links) => (url, (1f, 0f, links.toList.toIterable)))
+      .map((url, links) => (url, (1f, 0f, links.toList)))
   }
 
-  def update(prev: PTable[String, (Float, Float, Iterable[String])], d: Float) = {
+  def update(prev: PTable[String, (Float, Float, List[String])], d: Float) = {
     val outbound = prev.flatMap((url, v) => {
       val (pr, oldpr, links) = v
       links.map(link => (link, pr / links.size))

@@ -6,10 +6,10 @@ object PageRank extends PipelineApp {
     read(from.textFile(file))
       .map(line => { val urls = line.split("\\s+"); (urls(0), urls(2)) })
       .groupByKey
-      .map((url, links) => (url, (1f, 0f, links.toList.toIterable)))
+      .map((url, links) => (url, (1f, 0f, links.toList)))
   }
 
-  def update(prev: PTable[String, (Float, Float, Iterable[String])], d: Float) = {
+  def update(prev: PTable[String, (Float, Float, List[String])], d: Float) = {
     val outbound = prev.flatMap((url, data) => {
       val (pagerank, old_pagerank, links) = data
       links.map(link => (link, pagerank / links.size))
@@ -19,7 +19,7 @@ object PageRank extends PipelineApp {
       val (prev_data, outbound_data) = data
       val new_pagerank = (1 - d) + d * outbound_data.sum
       var cur_pagerank = 0f
-      var links: Iterable[String] = Nil
+      var links: List[String] = Nil
       if (!prev_data.isEmpty) {
         val (cur_pr, old_pr, l) = prev_data.head
         cur_pagerank = cur_pr

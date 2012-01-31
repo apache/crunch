@@ -19,6 +19,7 @@ import com.cloudera.crunch.`type`.{PType, PTypeFamily => PTF}
 import com.cloudera.crunch.`type`.writable.WritableTypeFamily
 import com.cloudera.crunch.`type`.avro.AvroTypeFamily
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
+import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
 
 class TMapFn[S, T](f: S => T) extends MapFn[S, T] {
@@ -75,6 +76,18 @@ trait PTypeFamily {
 
   def maps[T](ptype: PType[T]) = {
     derived(classOf[scala.collection.Map[String, T]], mapAsScalaMap[String, T], mapAsJavaMap[String, T], ptf.maps(ptype))
+  }
+
+  def lists[T](ptype: PType[T]) = {
+    val in = (x: JCollection[T]) => collectionAsScalaIterable[T](x).toList
+    val out = (x: List[T]) => asJavaCollection[T](x)
+    derived(classOf[List[T]], in, out, ptf.collections(ptype))
+  }
+
+  def sets[T](ptype: PType[T]) = {
+    val in = (x: JCollection[T]) => collectionAsScalaIterable[T](x).toSet
+    val out = (x: Set[T]) => asJavaCollection[T](x)
+    derived(classOf[Set[T]], in, out, ptf.collections(ptype))
   }
 
   def tuple2[T1, T2](p1: PType[T1], p2: PType[T2]) = {

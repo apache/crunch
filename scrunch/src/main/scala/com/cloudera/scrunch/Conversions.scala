@@ -87,6 +87,22 @@ object PTypeH {
     }
   }
 
+  implicit def lists[T: PTypeH] = {
+    new PTypeH[List[T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.lists(implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+  }
+
+  implicit def sets[T: PTypeH] = {
+    new PTypeH[Set[T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.sets(implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+   }
+
   implicit def pairs[A: PTypeH, B: PTypeH] = {
     new PTypeH[(A, B)] {
       def get(ptf: PTypeFamily) = {
