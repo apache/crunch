@@ -27,6 +27,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.impl.mem.collect.MemCollection;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -37,16 +38,27 @@ import com.google.common.collect.Iterables;
 public class AggregateTest {
 
   @Test public void testWritables() throws Exception {
-    runMinMax(new MRPipeline(AggregateTest.class), WritableTypeFamily.getInstance());
+    Pipeline pipeline = new MRPipeline(AggregateTest.class);
+    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
+    runMinMax(shakes, WritableTypeFamily.getInstance());
+    pipeline.done();
   }
 
   @Test public void testAvro() throws Exception {
-    runMinMax(new MRPipeline(AggregateTest.class), AvroTypeFamily.getInstance());
-  }
-
-  public static void runMinMax(Pipeline pipeline, PTypeFamily family) throws Exception {
+    Pipeline pipeline = new MRPipeline(AggregateTest.class);
     String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
+    runMinMax(shakes, AvroTypeFamily.getInstance());
+    pipeline.done();
+  }
+
+  @Test public void testInMemoryAvro() throws Exception {
+    PCollection<String> someText = MemCollection.of("first line", "second line", "third line");
+    runMinMax(someText, AvroTypeFamily.getInstance());
+  }
+  
+  public static void runMinMax(PCollection<String> shakes, PTypeFamily family) throws Exception {
     PCollection<Integer> lengths = shakes.parallelDo(new MapFn<String, Integer>() {
       @Override
       public Integer map(String input) {
@@ -64,18 +76,16 @@ public class AggregateTest {
     assertTrue(maxLengths != null);
     assertTrue(minLengths != null);
     assertEquals(maxLengths.intValue(), -minLengths.intValue());
-    pipeline.done();
   }
   
   private static class SplitFn extends MapFn<String, Pair<String, String>> {
-
     @Override
     public Pair<String, String> map(String input) {
       String[] p = input.split("\\s+");
       return Pair.of(p[0], p[1]);
-    }
-    
+    }  
   }
+  
   @Test public void testCollectUrls() throws Exception {
     Pipeline p = new MRPipeline(AggregateTest.class);
     String urlsInputPath = FileHelper.createTempCopyOf("urls.txt");
