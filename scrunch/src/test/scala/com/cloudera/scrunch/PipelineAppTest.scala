@@ -22,12 +22,16 @@ import _root_.org.junit.Test
 class PipelineAppTest extends JUnitSuite {
 
   object WordCount extends PipelineApp {
-    val w1 = read(from.textFile(args(0)))
-        .flatMap(_.split("\\W+").filter(!_.isEmpty()))
-        .count
-    val w2 = read(from.textFile(args(1)))
-        .flatMap(_.split("\\W+").filter(!_.isEmpty()))
-        .count
+
+    def wordSplit(line: String) = line.split("\\W+").filter(!_.isEmpty())
+
+    def countWords(file: String) = {
+      val lines = read(from.textFile(args(0)))
+      val words = lines.flatMap(wordSplit)
+      words.count
+    }
+    val w1 = countWords(args(0))
+    val w2 = countWords(args(1))
     cogroup(w1, w2).write(to.textFile(args(2)))
     done
   }

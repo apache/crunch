@@ -25,36 +25,56 @@ trait PipelineApp extends DelayedInit {
 
   private val pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
 
-  protected val from = From
-  protected val to = To
-  protected val at = At
+  val from = From
+  val to = To
+  val at = At
 
-  protected def configuration = pipeline.getConfiguration
-  protected def fs: FileSystem = FileSystem.get(configuration)
+  def configuration = pipeline.getConfiguration
+  def fs: FileSystem = FileSystem.get(configuration)
 
-  protected def read[T](source: Source[T]) = pipeline.read(source)
+  def read[T](source: Source[T]) = pipeline.read(source)
 
-  protected def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
+  def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
 
-  protected def write(data: PCollection[_], target: Target) {
+  def load[T](source: Source[T]) = read(source)
+
+  def load[K, V](tableSource: TableSource[K, V]) = read(tableSource)
+
+  def write(data: PCollection[_], target: Target) {
     pipeline.write(data, target)
   }
   
-  protected def write(data: PTable[_, _], target: Target) {
+  def write(data: PTable[_, _], target: Target) {
     pipeline.write(data, target)
   }
 
-  protected def cogroup[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
+  def store(data: PCollection[_], target: Target) {
+    pipeline.write(data, target)
+  }
+  
+  def store(data: PTable[_, _], target: Target) {
+    pipeline.write(data, target)
+  }
+
+  def dump(data: PCollection[_]) {
+    data.materialize.foreach { println(_) }
+  }
+
+  def dump(data: PTable[_, _]) {
+    data.materialize.foreach { println(_) }
+  }
+
+  def cogroup[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
     t1.cogroup(t2)
   }
 
-  protected def join[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
+  def join[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
     t1.join(t2)
   }
 
-  protected def run { pipeline.run }
+  def run { pipeline.run }
 
-  protected def done { pipeline.done }
+  def done { pipeline.done }
 
   private var _args: Array[String] = _
 
