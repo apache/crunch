@@ -31,7 +31,7 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def map[T, To](f: (K, V) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, (x: CPair[K, V]) => List(f(x.first(), x.second())), pt.get(getTypeFamily()))
+    b(this, mapFn(f), pt.get(getTypeFamily()))
   }
 
   def mapValues[T](f: V => T)(implicit pt: PTypeH[T]) = {
@@ -42,7 +42,7 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def flatMap[T, To](f: (K, V) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, (x: CPair[K, V]) => f(x.first(), x.second()), pt.get(getTypeFamily()))
+    b(this, flatMapFn(f), pt.get(getTypeFamily()))
   }
 
   def union(others: PTable[K, V]*) = {
@@ -121,5 +121,13 @@ object PTable {
 
   def mapValuesFn[K, V, T](fn: V => T) = {
     new SMapTableValuesFn[K, V, T] { def apply(v: V) = fn(v) }
+  }
+
+  def mapFn[K, V, T](fn: (K, V) => T) = {
+    new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def flatMapFn[K, V, T](fn: (K, V) => Traversable[T]) = {
+    new SDoTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
   }
 }

@@ -28,6 +28,10 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   
   def write(target: Target): FullType = wrap(native.write(target))
 
+  def parallelDo[T, To](fn: DoFn[S, T])(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
+    b(this, fn, pt.get(getTypeFamily()))
+  }
+
   def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
     new PCollection[T](native.parallelDo(fn, ptype))
   }

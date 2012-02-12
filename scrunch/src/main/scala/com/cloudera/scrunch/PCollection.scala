@@ -17,7 +17,7 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, Target}
 import com.cloudera.crunch.lib.Aggregate
-import Conversions._
+import com.cloudera.scrunch.Conversions._
 import scala.collection.JavaConversions
 
 class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
@@ -28,12 +28,12 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, (x: S) => List(f(x)), pt.get(getTypeFamily()))
+    b(this, mapFn(f), pt.get(getTypeFamily()))
   }
 
   def flatMap[T, To](f: S => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, f, pt.get(getTypeFamily()))
+    b(this, flatMapFn(f), pt.get(getTypeFamily()))
   }
 
   def union(others: PCollection[S]*) = {
@@ -92,5 +92,13 @@ object PCollection {
 
   def mapKeyFn[S, K](fn: S => K) = {
     new SMapKeyFn[S, K] { def apply(x: S) = fn(x) }
+  }
+
+  def mapFn[S, T](fn: S => T) = {
+    new SMapFn[S, T] { def apply(s: S) = fn(s) }
+  }
+
+  def flatMapFn[S, T](fn: S => Traversable[T]) = {
+    new SDoFn[S, T] { def apply(s: S) = fn(s) }
   }
 }

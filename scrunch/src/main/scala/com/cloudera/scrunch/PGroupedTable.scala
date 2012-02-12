@@ -31,12 +31,12 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
 
   def map[T, To](f: (K, Iterable[V]) => T)
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, (x: CPair[K, JIterable[V]]) => List(f(x.first(), x.second())), pt.get(getTypeFamily()))
+    b(this, mapFn(f), pt.get(getTypeFamily()))
   }
 
   def flatMap[T, To](f: (K, Iterable[V]) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, (x: CPair[K, JIterable[V]]) => f(x.first(), x.second()), pt.get(getTypeFamily()))
+    b(this, flatMapFn(f), pt.get(getTypeFamily()))
   }
 
   def combine(f: Iterable[V] => V) = combineValues(new IterableCombineFn[K, V](f))
@@ -77,5 +77,13 @@ trait SMapGroupedFn[K, V, T] extends MapFn[CPair[K, JIterable[V]], T] with Funct
 object PGroupedTable {
   def filterFn[K, V](fn: (K, Iterable[V]) => Boolean) = {
     new SFilterGroupedFn[K, V] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
+  }
+
+  def mapFn[K, V, T](fn: (K, Iterable[V]) => T) = {
+    new SMapGroupedFn[K, V, T] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
+  }
+
+  def flatMapFn[K, V, T](fn: (K, Iterable[V]) => Traversable[T]) = {
+    new SDoGroupedFn[K, V, T] { def apply(k: K, v: Iterable[V]) = fn(k, v) }
   }
 }
