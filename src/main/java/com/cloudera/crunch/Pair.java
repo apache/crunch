@@ -78,7 +78,7 @@ public class Pair<K, V> implements Tuple {
 
   @Override
   public String toString() {
-	StringBuilder sb = new StringBuilder("Pair[");
+	StringBuilder sb = new StringBuilder("[");
 	sb.append(first).append(",").append(second).append("]");
 	return sb.toString();
   }

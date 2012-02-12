@@ -14,17 +14,31 @@
  */
 package com.cloudera.crunch.impl.mem.collect;
 
+import java.io.IOException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
+import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.Target;
+import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.io.ReadableSourceTarget;
+import com.cloudera.crunch.io.text.TextFileTarget;
 
 public class MemPipeline implements Pipeline {
 
+  private static final Log LOG = LogFactory.getLog(MemPipeline.class);
+  
   private static final MemPipeline INSTANCE = new MemPipeline();
   
   public static Pipeline getInstance() {
@@ -34,7 +48,6 @@ public class MemPipeline implements Pipeline {
   private Configuration conf = new Configuration();
 
   private MemPipeline() {
-    
   }
   
   @Override
@@ -49,43 +62,71 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public <T> PCollection<T> read(Source<T> source) {
-    // TODO Auto-generated method stub
+    if (source instanceof ReadableSourceTarget) {
+      try {
+        Iterable<T> iterable = ((ReadableSourceTarget) source).read(conf);
+        return new MemCollection<T>(iterable, source.getType(), source.toString());
+      } catch (IOException e) {
+        LOG.error("Exception reading source: " + source.toString(), e);
+        return null;
+      }
+    }
+    LOG.error("Source " + source + " is not readable");
     return null;
   }
 
-  /* (non-Javadoc)
-   * @see com.cloudera.crunch.Pipeline#read(com.cloudera.crunch.TableSource)
-   */
   @Override
-  public <K, V> PTable<K, V> read(TableSource<K, V> tableSource) {
-    // TODO Auto-generated method stub
+  public <K, V> PTable<K, V> read(TableSource<K, V> source) {
+    if (source instanceof ReadableSourceTarget) {
+      try {
+        Iterable<Pair<K, V>> iterable = ((ReadableSourceTarget) source).read(conf);
+        return new MemTable<K, V>(iterable, source.getTableType(), source.toString());
+      } catch (IOException e) {
+        LOG.error("Exception reading source: " + source.toString(), e);
+        return null;
+      }
+    }
+    LOG.error("Source " + source + " is not readable");
     return null;
   }
 
-  /* (non-Javadoc)
-   * @see com.cloudera.crunch.Pipeline#write(com.cloudera.crunch.PCollection, com.cloudera.crunch.Target)
-   */
   @Override
   public void write(PCollection<?> collection, Target target) {
-    // TODO Auto-generated method stub
-
+    if (target instanceof TextFileTarget) {
+      Path path = ((TextFileTarget) target).getPath();
+      try {
+        FileSystem fs = FileSystem.get(conf);
+        FSDataOutputStream os = fs.create(path);
+        if (collection instanceof PTable) {
+          for (Object o : collection.materialize()) {
+            Pair p = (Pair) o;
+            os.writeBytes(p.first().toString());
+            os.writeBytes("\t");
+            os.writeBytes(p.second().toString());
+            os.writeBytes("\r\n");
+          }
+        } else {
+          for (Object o : collection.materialize()) {
+            os.writeBytes(o.toString() + "\r\n");
+          }
+        }
+        os.close();
+      } catch (IOException e) {
+        LOG.error("Exception writing target: " + target, e);
+      }
+    } else {
+      LOG.error("Target " + target + " is not a TextFileTarget instance");
+    }
   }
 
-  /* (non-Javadoc)
-   * @see com.cloudera.crunch.Pipeline#readTextFile(java.lang.String)
-   */
   @Override
   public PCollection<String> readTextFile(String pathName) {
-    // TODO Auto-generated method stub
-    return null;
+    return read(At.textFile(pathName));
   }
 
-  /* (non-Javadoc)
-   * @see com.cloudera.crunch.Pipeline#writeTextFile(com.cloudera.crunch.PCollection, java.lang.String)
-   */
   @Override
   public <T> void writeTextFile(PCollection<T> collection, String pathName) {
-    // TODO Auto-generated method stub
+    write(collection, At.textFile(pathName));
   }
 
   @Override

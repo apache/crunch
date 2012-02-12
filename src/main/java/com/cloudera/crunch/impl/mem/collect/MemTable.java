@@ -14,153 +14,49 @@
  */
 package com.cloudera.crunch.impl.mem.collect;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 
-import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.GroupingOptions;
-import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Lists;
 
-public class MemTable<K, V> implements PTable<K, V> {
+public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<K, V> {
 
-  private final Multimap<K, V> collect;
   private PTableType<K, V> ptype;
-  private String name;
   
-  public MemTable(Multimap<K, V> collect) {
+  public static <S, T> MemTable<S, T> of(S s, T t, Object... more) {
+    List<Pair<S, T>> pairs = Lists.newArrayList();
+    pairs.add(Pair.of(s, t));
+    for (int i = 0; i < more.length; i += 2) {
+      pairs.add(Pair.of((S) more[i], (T) more[i + 1]));
+    }
+    return new MemTable<S, T>(pairs);
+  }
+  
+  public MemTable(Iterable<Pair<K, V>> collect) {
     this(collect, null, null);
   }
   
-  public MemTable(Multimap<K, V> collect, PTableType<K, V> ptype, String name) {
-    this.collect = ImmutableMultimap.copyOf(collect);
+  public MemTable(Iterable<Pair<K, V>> collect, PTableType<K, V> ptype, String name) {
+    super(collect, ptype, name);
     this.ptype = ptype;
-    this.name = name;
   }
   
-  public Multimap<K, V> getMultimap() {
-    return collect;
-  }
-  
-  @Override
-  public Pipeline getPipeline() {
-    return MemPipeline.getInstance();
-  }
-
-  @Override
-  public <T> PCollection<T> parallelDo(DoFn<Pair<K, V>, T> doFn, PType<T> type) {
-    return parallelDo(null, doFn, type);
-  }
-
-  @Override
-  public <T> PCollection<T> parallelDo(String name, DoFn<Pair<K, V>, T> doFn, PType<T> type) {
-    CollectEmitter<T> emitter = new CollectEmitter<T>();
-    doFn.initialize();
-    for (Map.Entry<K, V> kv : collect.entries()) {
-      doFn.process(Pair.of(kv.getKey(), kv.getValue()), emitter);
-    }
-    doFn.cleanup(emitter);
-    return new MemCollection<T>(emitter.getOutput(), type, name);
-  }
-
-  @Override
-  public <S, T> PTable<S, T> parallelDo(DoFn<Pair<K, V>, Pair<S, T>> doFn,
-      PTableType<S, T> type) {
-    return parallelDo(null, doFn, type);
-  }
-
-  @Override
-  public <S, T> PTable<S, T> parallelDo(String name, DoFn<Pair<K, V>, Pair<S, T>> doFn, PTableType<S, T> type) {
-    MultimapEmitter<S, T> emitter = new MultimapEmitter<S, T>();
-    doFn.initialize();
-    for (Map.Entry<K, V> kv : collect.entries()) {
-      doFn.process(Pair.of(kv.getKey(), kv.getValue()), emitter);
-    }
-    doFn.cleanup(emitter);
-    return new MemTable<S, T>(emitter.getOutput(), type, name);
-  }
-
-  @Override
-  public Iterable<Pair<K, V>> materialize() {
-    return new Iterable<Pair<K, V>>() {
-      @Override
-      public Iterator<Pair<K, V>> iterator() {
-        return new Iterator<Pair<K, V>>() {
-          Iterator<Map.Entry<K, V>> iter = collect.entries().iterator();
-          
-          @Override
-          public boolean hasNext() {
-            return iter.hasNext();
-          }
-
-          @Override
-          public Pair<K, V> next() {
-            Map.Entry<K, V> e = iter.next();
-            return Pair.of(e.getKey(), e.getValue());
-          }
-
-          @Override
-          public void remove() {
-            iter.remove();
-          }
-        };
-      }
-    };
-  }
-
-  @Override
-  public PType<Pair<K, V>> getPType() {
-    return ptype;
-  }
-
-  @Override
-  public PTypeFamily getTypeFamily() {
-    if (ptype != null) {
-      return ptype.getFamily();
-    }
-    return null;
-  }
-
-  @Override
-  public long getSize() {
-    return collect.size();
-  }
-
-  @Override
-  public String getName() {
-    return name;
-  }
-
   @Override
   public PTable<K, V> union(PTable<K, V>... others) {
-    Multimap<K, V> values = HashMultimap.create();
+    List<Pair<K, V>> values = Lists.newArrayList();
+    values.addAll(getCollection());
     for (PTable<K, V> ptable : others) {
       for (Pair<K, V> p : ptable.materialize()) {
-        values.put(p.first(), p.second());
+        values.add(p);
       }
     }
-    return new MemTable<K, V>(values);
-  }
-
-  @Override
-  public PCollection<Pair<K, V>> union(PCollection<Pair<K, V>>... collections) {
-    Multimap<K, V> values = HashMultimap.create();
-    for (PCollection<Pair<K, V>> ptable : collections) {
-      for (Pair<K, V> p : ptable.materialize()) {
-        values.put(p.first(), p.second());
-      }
-    }
-    return new MemTable<K, V>(values);
+    return new MemTable<K, V>(values, others[0].getPTableType(), null);
   }
 
   @Override
@@ -181,10 +77,10 @@ public class MemTable<K, V> implements PTable<K, V> {
 
   @Override
   public PTable<K, V> write(Target target) {
-    getPipeline().write(this, target);
+    super.write(target);
     return this;
   }
-
+  
   @Override
   public PTableType<K, V> getPTableType() {
     return ptype;

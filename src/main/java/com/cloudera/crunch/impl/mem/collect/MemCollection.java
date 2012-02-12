@@ -47,6 +47,10 @@ public class MemCollection<S> implements PCollection<S> {
     this(collect, null, null);
   }
   
+  public MemCollection(Iterable<S> collect, PType<S> ptype) {
+    this(collect, ptype, null);
+  }
+  
   public MemCollection(Iterable<S> collect, PType<S> ptype, String name) {
     this.collect = ImmutableList.copyOf(collect);
     this.ptype = ptype;
@@ -61,12 +65,13 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public PCollection<S> union(PCollection<S>... collections) {
     Collection<S> output = Lists.newArrayList();
+    output.addAll(collect);
     for (PCollection<S> pcollect : collections) {
       for (S s : pcollect.materialize()) {
         output.add(s);
       }
     }
-    return new MemCollection<S>(output);
+    return new MemCollection<S>(output, collections[0].getPType());
   }
 
   @Override
@@ -93,7 +98,7 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn,
       PTableType<K, V> type) {
-    MultimapEmitter<K, V> emitter = new MultimapEmitter<K, V>();
+    CollectEmitter<Pair<K, V>> emitter = new CollectEmitter<Pair<K, V>>();
     doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
@@ -113,6 +118,10 @@ public class MemCollection<S> implements PCollection<S> {
     return collect;
   }
 
+  public Collection<S> getCollection() {
+    return collect;
+  }
+  
   @Override
   public PType<S> getPType() {
     return ptype;
@@ -135,4 +144,10 @@ public class MemCollection<S> implements PCollection<S> {
   public String getName() {
     return name;
   }
+  
+  @Override
+  public String toString() {
+    return collect.toString();
+  }
+
 }

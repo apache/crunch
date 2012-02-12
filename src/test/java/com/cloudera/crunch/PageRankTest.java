@@ -16,6 +16,7 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertEquals;
 
+import com.cloudera.crunch.impl.mem.collect.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
@@ -48,6 +49,11 @@ public class PageRankTest {
 	  this.lastScore = lastScore;
 	  this.urls = Lists.newArrayList(urls);
 	}
+	
+	@Override
+	public String toString() {
+	  return score + " " + lastScore + " " + urls;
+	}
   }
   
   @Test public void testAvroReflect() throws Exception {
@@ -56,25 +62,31 @@ public class PageRankTest {
     run(new MRPipeline(PageRankTest.class), prType, tf);	
   }
   
-  @Test public void testAvroJSON() throws Exception {
+  @Test public void testAvroMReflectInMemory() throws Exception {
+    PTypeFamily tf = AvroTypeFamily.getInstance();
+    PType<PageRankData> prType = Avros.reflects(PageRankData.class);
+    run(MemPipeline.getInstance(), prType, tf);        
+  }
+  
+  public void testAvroJSON() throws Exception {
 	PTypeFamily tf = AvroTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  @Test public void testAvroBSON() throws Exception {
+  public void testAvroBSON() throws Exception {
 	PTypeFamily tf = AvroTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
   
-  @Test public void testWritablesJSON() throws Exception {
+  public void testWritablesJSON() throws Exception {
 	PTypeFamily tf = WritableTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  @Test public void testWritablesBSON() throws Exception {
+  public void testWritablesBSON() throws Exception {
 	PTypeFamily tf = WritableTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
@@ -93,13 +105,11 @@ public class PageRankTest {
           }
         }, ptf.tableOf(ptf.strings(), ptf.floats()));
     
-    DoFn<Pair<String, Pair<Collection<Tuple3<Float, Float, Collection<String>>>,
-        Collection<Float>>>, Pair<Object, Object>> doFn;
     return Cogroup.cogroup(input, outbound).parallelDo(
         new MapFn<Pair<String, Pair<Collection<PageRankData>, Collection<Float>>>, Pair<String, PageRankData>>() {
               @Override
               public Pair<String, PageRankData> map(Pair<String, Pair<Collection<PageRankData>, Collection<Float>>> input) {
-                PageRankData prd = input.second().first().iterator().next();
+                PageRankData prd = Iterables.getOnlyElement(input.second().first());
                 float sum = 0.0f;
                 for (Float s : input.second().second()) {
                   sum += s;
@@ -122,8 +132,7 @@ public class PageRankTest {
         .groupByKey()
         .parallelDo(new MapFn<Pair<String, Iterable<String>>, Pair<String, PageRankData>>() {
               @Override
-              public Pair<String, PageRankData> map(
-                  Pair<String, Iterable<String>> input) {
+              public Pair<String, PageRankData> map(Pair<String, Iterable<String>> input) {
                 return Pair.of(input.first(), new PageRankData(1.0f, 0.0f, input.second()));
               }
             }, ptf.tableOf(ptf.strings(), prType));

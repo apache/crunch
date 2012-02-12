@@ -17,6 +17,7 @@ package com.cloudera.crunch.impl.mem.collect;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
@@ -29,17 +30,37 @@ import com.cloudera.crunch.Target;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
 
   private final MemTable<K, V> parent;
   private final Map<K, Collection<V>> values;
   
+  static <S, T> Map<S, Collection<T>> buildMap(MemTable<S, T> parent) {
+    PType<S> keyType = parent.getKeyType();
+    Map<S, Collection<T>> map = null;
+    if (keyType == null || !Comparable.class.isAssignableFrom(keyType.getTypeClass())) {
+      map = Maps.newHashMap();
+    } else {
+      map = new TreeMap<S, Collection<T>>();
+    }
+    
+    for (Pair<S, T> pair : parent.materialize()) {
+      S key = pair.first();
+      if (!map.containsKey(key)) {
+        map.put(key, Lists.<T>newArrayList());
+      }
+      map.get(key).add(pair.second());
+    }
+    
+    return map;
+  }
+  
   public MemGroupedTable(MemTable<K, V> parent) {
     this.parent = parent;
-    this.values = parent.getMultimap().asMap();
+    this.values = buildMap(parent);
   }
   
   @Override
@@ -79,7 +100,7 @@ public class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
   @Override
   public <S, T> PTable<S, T> parallelDo(String name,
       DoFn<Pair<K, Iterable<V>>, Pair<S, T>> doFn, PTableType<S, T> type) {
-    MultimapEmitter<S, T> emitter = new MultimapEmitter<S, T>();
+    CollectEmitter<Pair<S, T>> emitter = new CollectEmitter<Pair<S, T>>();
     doFn.initialize();
     for (Map.Entry<K, Collection<V>> e : values.entrySet()) {
       doFn.process(Pair.of(e.getKey(), (Iterable<V>) e.getValue()), emitter);
@@ -124,7 +145,10 @@ public class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
 
   @Override
   public PType<Pair<K, Iterable<V>>> getPType() {
-    //TODO hrm?
+    PTableType<K, V> parentType = parent.getPTableType();
+    if (parentType != null) {
+      return parentType.getGroupedTableType();
+    }
     return null;
   }
 
@@ -153,4 +177,8 @@ public class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
     return parent;
   }
 
+  @Override
+  public String toString() {
+    return values.toString();
+  }
 }

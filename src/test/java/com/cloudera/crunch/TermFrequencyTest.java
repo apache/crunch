@@ -14,19 +14,16 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.util.List;
 
 import org.junit.Test;
 
+import com.cloudera.crunch.impl.mem.collect.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
@@ -34,7 +31,6 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
-import com.google.common.io.Files;
 
 @SuppressWarnings("serial")
 public class TermFrequencyTest implements Serializable {  
@@ -49,6 +45,17 @@ public class TermFrequencyTest implements Serializable {
     run(new MRPipeline(TermFrequencyTest.class), WritableTypeFamily.getInstance(), true);
   }
   
+  @Test
+  public void testTermFrequencyNoTransformInMemory() throws IOException {
+    run(MemPipeline.getInstance(), WritableTypeFamily.getInstance(), false);  
+  }
+
+  @Test
+  public void testTermFrequencyWithTransformInMemory() throws IOException {
+    run(MemPipeline.getInstance(), WritableTypeFamily.getInstance(), true);
+  }
+  
+
   public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean transformTF) throws IOException {
     String input = FileHelper.createTempCopyOf("docs.txt");
     

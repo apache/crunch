@@ -21,6 +21,7 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.impl.mem.collect.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -82,6 +83,16 @@ public class CollectionsTest {
   @Test
   public void testAvro() throws IOException {
     run(new MRPipeline(CollectionsTest.class), AvroTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testInMemoryWritables() throws IOException {
+    run(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testInMemoryAvro() throws IOException {
+    run(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
