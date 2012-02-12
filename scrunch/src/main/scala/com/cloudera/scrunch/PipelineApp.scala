@@ -15,6 +15,7 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{Source, TableSource, Target}
+import java.io.Serializable
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.GenericOptionsParser
@@ -71,6 +72,10 @@ trait PipelineApp extends DelayedInit {
   def join[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
     t1.join(t2)
   }
+
+  def union[T](first: PCollection[T], others: PCollection[T]*) = first.union(others:_*)
+
+  def union[K, V](first: PTable[K, V], others: PTable[K, V]*) = first.union(others:_*)
 
   def run { pipeline.run }
 

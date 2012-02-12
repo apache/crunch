@@ -19,23 +19,22 @@ import com.cloudera.scrunch.PipelineApp
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class PipelineAppTest extends JUnitSuite {
+object WordCount extends PipelineApp {
 
-  object WordCount extends PipelineApp {
+  def wordSplit(line: String) = line.split("\\W+").filter(!_.isEmpty())
 
-    def wordSplit(line: String) = line.split("\\W+").filter(!_.isEmpty())
-
-    def countWords(file: String) = {
-      val lines = read(from.textFile(args(0)))
-      val words = lines.flatMap(wordSplit)
-      words.count
-    }
-    val w1 = countWords(args(0))
-    val w2 = countWords(args(1))
-    cogroup(w1, w2).write(to.textFile(args(2)))
-    done
+  def countWords(filename: String) = {
+    val lines = read(from.textFile(filename))
+    val words = lines.flatMap(wordSplit)
+    words.count
   }
 
+  val w1 = countWords(args(0))
+  val w2 = countWords(args(1))
+  cogroup(w1, w2).write(to.textFile(args(2)))
+}
+
+class PipelineAppTest extends JUnitSuite {
   @Test def run {
     val args = new Array[String](3)
     args(0) = FileHelper.createTempCopyOf("shakes.txt")
