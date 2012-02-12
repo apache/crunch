@@ -29,15 +29,6 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
 
   private PTableType<K, V> ptype;
   
-  public static <S, T> MemTable<S, T> of(S s, T t, Object... more) {
-    List<Pair<S, T>> pairs = Lists.newArrayList();
-    pairs.add(Pair.of(s, t));
-    for (int i = 0; i < more.length; i += 2) {
-      pairs.add(Pair.of((S) more[i], (T) more[i + 1]));
-    }
-    return new MemTable<S, T>(pairs);
-  }
-  
   public MemTable(Iterable<Pair<K, V>> collect) {
     this(collect, null, null);
   }

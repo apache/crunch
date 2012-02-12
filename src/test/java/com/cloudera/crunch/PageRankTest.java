@@ -16,7 +16,7 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertEquals;
 
-import com.cloudera.crunch.impl.mem.collect.MemPipeline;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;

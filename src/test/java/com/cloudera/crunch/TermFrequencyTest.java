@@ -23,7 +23,7 @@ import java.io.Serializable;
 
 import org.junit.Test;
 
-import com.cloudera.crunch.impl.mem.collect.MemPipeline;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;

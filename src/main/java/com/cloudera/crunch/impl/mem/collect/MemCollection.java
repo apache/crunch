@@ -22,6 +22,7 @@ import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -31,14 +32,6 @@ import com.google.common.collect.Lists;
 
 public class MemCollection<S> implements PCollection<S> {
 
-  public static <T> MemCollection<T> of(T...ts) {
-    return new MemCollection<T>(ImmutableList.copyOf(ts));  
-  }
-  
-  public static <T> MemCollection<T> of(Iterable<T> collect) {
-    return new MemCollection<T>(collect);
-  }
-  
   private final Collection<S> collect;
   private final PType<S> ptype;
   private String name;

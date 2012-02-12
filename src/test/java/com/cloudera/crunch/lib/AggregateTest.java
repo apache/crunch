@@ -27,6 +27,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mem.collect.MemCollection;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
@@ -54,7 +55,8 @@ public class AggregateTest {
   }
 
   @Test public void testInMemoryAvro() throws Exception {
-    PCollection<String> someText = MemCollection.of("first line", "second line", "third line");
+    PCollection<String> someText = MemPipeline.collectionOf(
+        "first line", "second line", "third line");
     runMinMax(someText, AvroTypeFamily.getInstance());
   }
   
