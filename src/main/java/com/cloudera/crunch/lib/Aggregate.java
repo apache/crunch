@@ -15,6 +15,11 @@
 package com.cloudera.crunch.lib;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
@@ -24,8 +29,11 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.MapValuesFn;
+import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * Methods for performing various types of aggregations over {@link PCollection}
@@ -48,6 +56,97 @@ public class Aggregate {
     }, tf.tableOf(collect.getPType(), tf.longs()))
     .groupByKey()
     .combineValues(CombineFn.<S> SUM_LONGS());
+  }
+  
+  public static class PairValueComparator<K, V extends Comparable<V>> implements Comparator<Pair<K, V>> {
+    private final boolean ascending;
+    
+    public PairValueComparator(boolean ascending) {
+      this.ascending = ascending;
+    }
+    
+    @Override
+    public int compare(Pair<K, V> left, Pair<K, V> right) {
+      int cmp = left.second().compareTo(right.second());
+      return ascending ? cmp : -cmp;
+    }
+  }
+  
+  public static class TopKFn<K, V extends Comparable<V>> extends DoFn<Pair<K, V>, Pair<Boolean, Pair<K, V>>> {
+    private final int limit;
+    private final boolean maximize;
+    private transient PriorityQueue<Pair<K, V>> values;
+    
+    public TopKFn(int limit, boolean ascending) {
+      this.limit = limit;
+      this.maximize = ascending;
+    }
+    
+    @Override
+    public void initialize() {
+      this.values = new PriorityQueue<Pair<K, V>>(limit, new PairValueComparator<K, V>(maximize));
+    }
+    
+    @Override
+    public void process(Pair<K, V> input, Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+      values.add(input);
+      if (values.size() > limit) {
+        values.poll();
+      }
+    }
+    
+    @Override
+    public void cleanup(Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+      for (Pair<K, V> p : values) {
+        emitter.emit(Pair.of(true, p));
+      }
+    }
+  }
+  
+  public static class TopKCombineFn<K, V extends Comparable<V>> extends CombineFn<Boolean, Pair<K, V>> {
+
+    private final int limit;
+    private final boolean maximize;
+    
+    public TopKCombineFn(int limit, boolean maximize) {
+      this.limit = limit;
+      this.maximize = maximize;
+    }
+    
+    @Override
+    public void process(Pair<Boolean, Iterable<Pair<K, V>>> input,
+        Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+      PriorityQueue<Pair<K, V>> queue = new PriorityQueue<Pair<K, V>>(limit,
+          new PairValueComparator<K, V>(maximize));
+      for (Pair<K, V> pair : input.second()) {
+        queue.add(pair);
+        if (queue.size() > limit) {
+          queue.poll();
+        }
+      }
+      
+      List<Pair<K, V>> values = Lists.newArrayList(queue);
+      for (int i = values.size() - 1; i >= 0; i--) {
+        emitter.emit(Pair.of(true, values.get(i)));
+      }
+    }
+  }
+  
+  public static <K, V extends Comparable<V>> PTable<K, V> top(PTable<K, V> ptable,
+      int limit, boolean maximize) {
+    PTypeFamily ptf = ptable.getTypeFamily();
+    PTableType<K, V> base = ptable.getPTableType();
+    PTableType<Boolean, Pair<K, V>> inter = ptf.tableOf(ptf.booleans(), base);
+    return ptable.parallelDo("top" + limit, new TopKFn<K, V>(limit, maximize), inter)
+        .groupByKey(1)
+        .combineValues(new TopKCombineFn<K, V>(limit, maximize))
+        .parallelDo(new DoFn<Pair<Boolean, Pair<K, V>>, Pair<K, V>>() {
+          @Override
+          public void process(Pair<Boolean, Pair<K, V>> input,
+              Emitter<Pair<K, V>> emitter) {
+            emitter.emit(input.second()); 
+          }
+        }, base);
   }
   
   /**
@@ -131,7 +230,6 @@ public class Aggregate {
       public Collection<V> map(Iterable<V> v) {
         return Lists.newArrayList(v);
       }
-    }, tf.tableOf(collect.getKeyType(), tf.collections(collect.getValueType())));
-        
+    }, tf.tableOf(collect.getKeyType(), tf.collections(collect.getValueType())));  
   }
 }

@@ -36,6 +36,7 @@ import com.cloudera.crunch.impl.mem.collect.MemTable;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileTarget;
+import com.cloudera.crunch.type.PTableType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -64,6 +65,15 @@ public class MemPipeline implements Pipeline {
       pairs.add(Pair.of((S) more[i], (T) more[i + 1]));
     }
     return new MemTable<S, T>(pairs);
+  }
+  
+  public static <S, T> PTable<S, T> typedTableOf(PTableType<S, T> ptype, S s, T t, Object... more) {
+    List<Pair<S, T>> pairs = Lists.newArrayList();
+    pairs.add(Pair.of(s, t));
+    for (int i = 0; i < more.length; i += 2) {
+      pairs.add(Pair.of((S) more[i], (T) more[i + 1]));
+    }
+    return new MemTable<S, T>(pairs, ptype, null);
   }
   
   public static <S, T> PTable<S, T> tableOf(Iterable<Pair<S, T>> pairs) {

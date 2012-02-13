@@ -31,9 +31,12 @@ import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mem.collect.MemCollection;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
+import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
+import com.cloudera.crunch.type.avro.Avros;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 public class AggregateTest {
@@ -107,5 +110,16 @@ public class AggregateTest {
       assertEquals("Checking key = " + key, expectedSize, e.second().size());
       p.done();
     }
+  }
+  
+  @Test public void testTopN() throws Exception {
+    PTableType<String, Integer> ptype = Avros.tableOf(Avros.strings(), Avros.ints());
+    PTable<String, Integer> counts = MemPipeline.typedTableOf(ptype, "foo", 12, "bar", 17, "baz", 29);
+    
+    PTable<String, Integer> top2 = Aggregate.top(counts, 2, true);
+    assertEquals(ImmutableList.of(Pair.of("baz", 29), Pair.of("bar", 17)), top2.materialize());
+    
+    PTable<String, Integer> bottom2 = Aggregate.top(counts, 2, false);
+    assertEquals(ImmutableList.of(Pair.of("foo", 12), Pair.of("bar", 17)), bottom2.materialize());
   }
 }
