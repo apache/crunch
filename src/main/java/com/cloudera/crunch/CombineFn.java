@@ -16,7 +16,6 @@
 package com.cloudera.crunch;
 
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
