@@ -15,6 +15,7 @@
 package com.cloudera.crunch.lib;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -30,6 +31,7 @@ import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -58,7 +60,7 @@ public class Aggregate {
     .combineValues(CombineFn.<S> SUM_LONGS());
   }
   
-  public static class PairValueComparator<K, V extends Comparable<V>> implements Comparator<Pair<K, V>> {
+  public static class PairValueComparator<K, V> implements Comparator<Pair<K, V>> {
     private final boolean ascending;
     
     public PairValueComparator(boolean ascending) {
@@ -67,12 +69,12 @@ public class Aggregate {
     
     @Override
     public int compare(Pair<K, V> left, Pair<K, V> right) {
-      int cmp = left.second().compareTo(right.second());
+      int cmp = ((Comparable<V>)left.second()).compareTo(right.second());
       return ascending ? cmp : -cmp;
     }
   }
   
-  public static class TopKFn<K, V extends Comparable<V>> extends DoFn<Pair<K, V>, Pair<Boolean, Pair<K, V>>> {
+  public static class TopKFn<K, V> extends DoFn<Pair<K, V>, Pair<Boolean, Pair<K, V>>> {
     private final int limit;
     private final boolean maximize;
     private transient PriorityQueue<Pair<K, V>> values;
@@ -103,7 +105,7 @@ public class Aggregate {
     }
   }
   
-  public static class TopKCombineFn<K, V extends Comparable<V>> extends CombineFn<Boolean, Pair<K, V>> {
+  public static class TopKCombineFn<K, V> extends CombineFn<Boolean, Pair<K, V>> {
 
     private final int limit;
     private final boolean maximize;
@@ -116,8 +118,8 @@ public class Aggregate {
     @Override
     public void process(Pair<Boolean, Iterable<Pair<K, V>>> input,
         Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
-      PriorityQueue<Pair<K, V>> queue = new PriorityQueue<Pair<K, V>>(limit,
-          new PairValueComparator<K, V>(maximize));
+      Comparator<Pair<K, V>> cmp = new PairValueComparator<K, V>(maximize);
+      PriorityQueue<Pair<K, V>> queue = new PriorityQueue<Pair<K, V>>(limit, cmp);
       for (Pair<K, V> pair : input.second()) {
         queue.add(pair);
         if (queue.size() > limit) {
@@ -126,17 +128,18 @@ public class Aggregate {
       }
       
       List<Pair<K, V>> values = Lists.newArrayList(queue);
+      Collections.sort(values, cmp);
       for (int i = values.size() - 1; i >= 0; i--) {
         emitter.emit(Pair.of(true, values.get(i)));
       }
     }
   }
   
-  public static <K, V extends Comparable<V>> PTable<K, V> top(PTable<K, V> ptable,
-      int limit, boolean maximize) {
+  public static <K, V> PTable<K, V> top(PTable<K, V> ptable, int limit, boolean maximize) {
     PTypeFamily ptf = ptable.getTypeFamily();
     PTableType<K, V> base = ptable.getPTableType();
-    PTableType<Boolean, Pair<K, V>> inter = ptf.tableOf(ptf.booleans(), base);
+    PType<Pair<K, V>> pairType = ptf.pairs(base.getKeyType(), base.getValueType());
+    PTableType<Boolean, Pair<K, V>> inter = ptf.tableOf(ptf.booleans(), pairType);
     return ptable.parallelDo("top" + limit, new TopKFn<K, V>(limit, maximize), inter)
         .groupByKey(1)
         .combineValues(new TopKCombineFn<K, V>(limit, maximize))

@@ -26,7 +26,6 @@ import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.fn.PairMapFn;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
 import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PGroupedTableType;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;

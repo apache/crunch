@@ -15,6 +15,7 @@
 package com.cloudera.crunch;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
@@ -29,6 +30,8 @@ import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -92,6 +95,30 @@ public class WordCountTest {
   public void testAvroWithSecond() throws IOException {
     runSecond = true;
     run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
+  }
+  
+  @Test
+  public void testWithTopWritable() throws IOException {
+    runWithTop(WritableTypeFamily.getInstance());
+  }
+  
+  @Test
+  public void testWithTopAvro() throws IOException {
+    runWithTop(AvroTypeFamily.getInstance()); 
+  }
+  
+  public static void runWithTop(PTypeFamily tf) throws IOException {
+    Pipeline pipeline = new MRPipeline(WordCountTest.class);
+    String inputPath = FileHelper.createTempCopyOf("shakes.txt");
+    
+    PCollection<String> shakespeare = pipeline.read(
+         At.textFile(inputPath, tf.strings()));
+    PTable<String, Long> wordCount = wordCount(shakespeare, tf);
+    List<Pair<String, Long>> top5 = Lists.newArrayList(
+        Aggregate.top(wordCount, 5, true).materialize());
+    assertEquals(ImmutableList.of(Pair.of("", 1470L),
+        Pair.of("the", 620L), Pair.of("and", 427L), Pair.of("of", 396L), 
+        Pair.of("to", 367L)), top5);
   }
   
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
