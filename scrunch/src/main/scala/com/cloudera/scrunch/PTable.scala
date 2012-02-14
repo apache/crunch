@@ -16,9 +16,9 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
-import com.cloudera.crunch.lib.{Cogroup, Join, PTables}
+import com.cloudera.crunch.lib.{Aggregate, Cogroup, Join, PTables}
 import com.cloudera.scrunch.Conversions._
-import java.lang.{Iterable => JIterable}
+import java.lang.{Comparable, Iterable => JIterable}
 import java.util.{Collection => JCollect}
 import scala.collection.JavaConversions._
 
@@ -71,6 +71,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     inter.parallelDo(new SMapTableValuesFn[K, CPair[V, V2], (V, V2)] {
       def apply(x: CPair[V, V2]) = (x.first(), x.second())
     }, ptf.tableOf(keyType, ptf.tuple2(valueType, other.valueType)))
+  }
+
+  def top(limit: Int, maximize: Boolean) = {
+    wrap(Aggregate.top(this.native, limit, maximize))
   }
 
   def groupByKey = new PGroupedTable(native.groupByKey())
