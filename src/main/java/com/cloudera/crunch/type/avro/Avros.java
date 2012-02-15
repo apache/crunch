@@ -154,7 +154,7 @@ public class Avros {
   }
   
   public static final <T> AvroType<T> containers(Class<T> clazz) {
-    return new AvroType<T>(clazz, SpecificData.get().getSchema(clazz));
+    return reflects(clazz);
   }
   
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
