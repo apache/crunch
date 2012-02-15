@@ -17,7 +17,7 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, TupleN, MapFn}
 import com.cloudera.crunch.`type`.{PType, PTypeFamily => PTF}
 import com.cloudera.crunch.`type`.writable.WritableTypeFamily
-import com.cloudera.crunch.`type`.avro.AvroTypeFamily
+import com.cloudera.crunch.`type`.avro.{AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
@@ -117,4 +117,6 @@ object Writables extends PTypeFamily {
 
 object Avros extends PTypeFamily {
   override def ptf = AvroTypeFamily.getInstance()
+
+  def reflects[T: ClassManifest] = CAvros.reflects(classManifest[T].erasure)
 }
