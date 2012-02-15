@@ -18,7 +18,6 @@ import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
 import com.cloudera.crunch.`type`.{PType, PTableType}
 import com.cloudera.crunch.`type`.writable.WritableTypeFamily
-import com.cloudera.crunch.`type`.avro.AvroTypeFamily
 import com.cloudera.scrunch.Conversions._
 
 trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
@@ -27,10 +26,6 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   def wrap(newNative: AnyRef): FullType
   
   def write(target: Target): FullType = wrap(native.write(target))
-
-  def parallelDo[T, To](fn: DoFn[S, T])(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, fn, pt.get(getTypeFamily()))
-  }
 
   def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
     new PCollection[T](native.parallelDo(fn, ptype))
