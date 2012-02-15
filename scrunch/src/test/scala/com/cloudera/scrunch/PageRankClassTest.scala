@@ -26,17 +26,23 @@ import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 
-class CachingPageRankFn extends DoFn[P[String, (Float, Float, List[String])], P[String, Float]] {
+case class PageRankData(pr: Float, oldpr: Float, urls: Array[String]) {
+  def this() = this(0f, 0f, null)
+}
+
+class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Float]] {
   val cache = new HashMap[String, Float] {
     override def default(key: String) = 0f
   }
 
-  override def process(input: P[String, (Float, Float, List[String])], emitFn: Emitter[P[String, Float]]) {
-    val (pr, oldpr, urls) = input.second()
-    val newpr = pr / urls.size
-    urls.foreach(url => cache.put(url, cache(url) + newpr))
-    if (cache.size > 5000) {
-      cleanup(emitFn)
+  override def process(input: P[String, PageRankData], emitFn: Emitter[P[String, Float]]) {
+    val prd = input.second()
+    if (prd.urls.length > 0) {
+      val newpr = prd.pr / prd.urls.length
+      prd.urls.foreach(url => cache.put(url, cache(url) + newpr))
+      if (cache.size > 5000) {
+        cleanup(emitFn)
+      }
     }
   }
 
@@ -46,55 +52,56 @@ class CachingPageRankFn extends DoFn[P[String, (Float, Float, List[String])], P[
   }
 }
 
-class PageRankTest extends JUnitSuite {
+class PageRankClassTest extends JUnitSuite {
   val pipeline = new Pipeline[PageRankTest]
 
   def initialInput(fileName: String) = {
     pipeline.read(from.textFile(fileName))
       .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
-      .map((url, links) => (url, (1f, 0f, links.toList)))
+      .map((url, links) => (url, PageRankData(1f, 0f, links.filter(x => x != null).toArray)))
   }
 
-  def update(prev: PTable[String, (Float, Float, List[String])], d: Float) = {
-    val outbound = prev.flatMap((url, v) => {
-      val (pr, oldpr, links) = v
-      links.map(link => (link, pr / links.size))
+  def update(prev: PTable[String, PageRankData], d: Float) = {
+    val outbound = prev.flatMap((url, prd) => {
+      prd.urls.map(link => (link, prd.pr / prd.urls.length))
     })
     cg(prev, outbound, d)
   }
 
-  def cg(prev: PTable[String, (Float, Float, List[String])],
+  def cg(prev: PTable[String, PageRankData],
          out: PTable[String, Float], d: Float) = {
     prev.cogroup(out).map((url, v) => {
       val (p, o) = v
-      val (pr, oldpr, links) = p.head
-      (url, ((1 - d) + d * o.sum, pr, links))
+      val prd = p.head
+      (url, PageRankData((1 - d) + d * o.sum, prd.pr, prd.urls))
     })
   }
 
-  def fastUpdate(prev: PTable[String, (Float, Float, List[String])], d: Float) = {
-    val outbound = prev.parallelDo(new CachingPageRankFn(), tableOf(strings, floats))
+  def fastUpdate(prev: PTable[String, PageRankData], d: Float) = {
+    val outbound = prev.parallelDo(new CachingPageRankClassFn(), tableOf(strings, floats))
     cg(prev, outbound, d)
   }
 
   @Test def testPageRank {
+    pipeline.getConfiguration.set("crunch.debug", "true")
     var prev = initialInput(FileHelper.createTempCopyOf("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = update(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.materialize.head
+      delta = prev.map((k, v) => math.abs(v.pr - v.oldpr)).max.materialize.head
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done
   }
 
-  @Test def testFastPageRank {
+  def testFastPageRank {
+    pipeline.getConfiguration.set("crunch.debug", "true")
     var prev = initialInput(FileHelper.createTempCopyOf("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = fastUpdate(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.materialize.head
+      delta = prev.map((k, v) => math.abs(v.pr - v.oldpr)).max.materialize.head
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done

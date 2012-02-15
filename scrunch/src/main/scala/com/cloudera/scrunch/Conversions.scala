@@ -119,6 +119,10 @@ object PTypeH {
       }
     }
   }
+
+  implicit def records[T <: AnyRef : ClassManifest] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = ptf.records(classManifest[T]).asInstanceOf[PType[T]]
+  }
 }
 
 object Conversions {
