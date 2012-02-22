@@ -21,6 +21,12 @@ import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
 class TopTest extends JUnitSuite {
+
+  @Test def topInMem {
+    val ptable = Mem.tableOf(("foo", 17), ("bar", 29), ("baz", 1729))
+    assert(ptable.top(1, true).materialize.head == ("baz", 1729))
+  }
+
   @Test def top2 {
     val pipeline = new Pipeline[TopTest]
     val input = FileHelper.createTempCopyOf("shakes.txt")
