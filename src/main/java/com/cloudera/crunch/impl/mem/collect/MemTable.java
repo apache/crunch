@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.impl.mem.collect;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.cloudera.crunch.GroupingOptions;
@@ -21,6 +22,9 @@ import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Target;
+import com.cloudera.crunch.lib.Aggregate;
+import com.cloudera.crunch.lib.Cogroup;
+import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Lists;
@@ -91,5 +95,30 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
       return ptype.getValueType();
     }
     return null;
+  }
+
+  @Override
+  public PTable<K, V> top(int count) {
+	return Aggregate.top(this, count, true);
+  }
+
+  @Override
+  public PTable<K, V> bottom(int count) {
+	return Aggregate.top(this, count, false);
+  }
+
+  @Override
+  public PTable<K, Collection<V>> collectValues() {
+	return Aggregate.collectValues(this);
+  }
+
+  @Override
+  public <U> PTable<K, Pair<V, U>> join(PTable<K, U> other) {
+	return Join.join(this, other);
+  }
+  
+  @Override
+  public <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other) {
+	return Cogroup.cogroup(this, other);
   }
 }

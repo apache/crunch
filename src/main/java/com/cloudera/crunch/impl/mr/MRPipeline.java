@@ -39,6 +39,7 @@ import com.cloudera.crunch.impl.mr.collect.InputTable;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
+import com.cloudera.crunch.impl.mr.run.RuntimeParameters;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.materialize.MaterializableIterable;
@@ -227,5 +228,10 @@ public class MRPipeline implements Pipeline {
   
   public int getNextAnonymousStageId() {
     return nextAnonymousStageId++;
+  }
+
+  @Override
+  public void enableDebug() {
+	getConfiguration().setBoolean(RuntimeParameters.DEBUG, true);
   }
 }

@@ -28,7 +28,6 @@ import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mem.MemPipeline;
-import com.cloudera.crunch.impl.mem.collect.MemCollection;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTableType;

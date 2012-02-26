@@ -155,7 +155,7 @@ public class Aggregate {
   /**
    * Returns the largest numerical element from the input collection.
    */
-  public static <S extends Number> PCollection<S> max(PCollection<S> collect) {
+  public static <S extends Comparable<S>> PCollection<S> max(PCollection<S> collect) {
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
         collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
@@ -163,7 +163,7 @@ public class Aggregate {
           
           @Override
           public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
-            if (max == null || max.doubleValue() < input.doubleValue()) {
+            if (max == null || max.compareTo(input) < 0) {
               max = input;
             }
           }
@@ -181,7 +181,7 @@ public class Aggregate {
               Emitter<Pair<Boolean, S>> emitter) {
             S max = null;
             for (S v : input.second()) {
-              if (max == null || max.doubleValue() < v.doubleValue()) {
+              if (max == null || max.compareTo(v) < 0) {
                 max = v;
               }
             }
@@ -192,7 +192,7 @@ public class Aggregate {
   /**
    * Returns the smallest numerical element from the input collection.
    */
-  public static <S extends Number> PCollection<S> min(PCollection<S> collect) {
+  public static <S extends Comparable<S>> PCollection<S> min(PCollection<S> collect) {
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
         collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
@@ -200,7 +200,7 @@ public class Aggregate {
           
           @Override
           public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
-            if (min == null || min.doubleValue() > input.doubleValue()) {
+            if (min == null || min.compareTo(input) > 0) {
               min = input;
             }
           }
@@ -218,7 +218,7 @@ public class Aggregate {
               Emitter<Pair<Boolean, S>> emitter) {
             S min = null;
             for (S v : input.second()) {
-              if (min == null || min.doubleValue() > v.doubleValue()) {
+              if (min == null || min.compareTo(v) > 0) {
                 min = v;
               }
             }

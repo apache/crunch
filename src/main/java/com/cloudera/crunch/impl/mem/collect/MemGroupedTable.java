@@ -16,6 +16,7 @@ package com.cloudera.crunch.impl.mem.collect;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -28,18 +29,18 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mem.MemPipeline;
+import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
+class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implements PGroupedTable<K, V> {
 
   private final MemTable<K, V> parent;
-  private final Map<K, Collection<V>> values;
   
-  static <S, T> Map<S, Collection<T>> buildMap(MemTable<S, T> parent) {
+  static <S, T> Iterable<Pair<S, Iterable<T>>> buildMap(MemTable<S, T> parent) {
     PType<S> keyType = parent.getKeyType();
     Map<S, Collection<T>> map = null;
     if (keyType == null || !Comparable.class.isAssignableFrom(keyType.getTypeClass())) {
@@ -56,17 +57,16 @@ class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
       map.get(key).add(pair.second());
     }
     
-    return map;
+    List<Pair<S, Iterable<T>>> values = Lists.newArrayList();
+    for (Map.Entry<S, Collection<T>> e : map.entrySet()) {
+      values.add(Pair.of(e.getKey(), (Iterable<T>) e.getValue()));
+    }
+    return values;
   }
   
   public MemGroupedTable(MemTable<K, V> parent) {
+	super(buildMap(parent));
     this.parent = parent;
-    this.values = buildMap(parent);
-  }
-  
-  @Override
-  public Pipeline getPipeline() {
-    return MemPipeline.getInstance();
   }
 
   @Override
@@ -76,72 +76,9 @@ class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
   }
 
   @Override
-  public <T> PCollection<T> parallelDo(DoFn<Pair<K, Iterable<V>>, T> doFn,
-      PType<T> type) {
-    return parallelDo(null, doFn, type);
-  }
-
-  @Override
-  public <T> PCollection<T> parallelDo(String name,
-      DoFn<Pair<K, Iterable<V>>, T> doFn, PType<T> type) {
-    CollectEmitter<T> emitter = new CollectEmitter<T>();
-    doFn.initialize();
-    for (Map.Entry<K, Collection<V>> e : values.entrySet()) {
-      doFn.process(Pair.of(e.getKey(), (Iterable<V>) e.getValue()), emitter);
-    }
-    doFn.cleanup(emitter);
-    return new MemCollection<T>(emitter.getOutput(), type, name);
-  }
-
-  @Override
-  public <S, T> PTable<S, T> parallelDo(DoFn<Pair<K, Iterable<V>>, Pair<S, T>> doFn, PTableType<S, T> type) {
-    return parallelDo(null, doFn, type);
-  }
-
-  @Override
-  public <S, T> PTable<S, T> parallelDo(String name,
-      DoFn<Pair<K, Iterable<V>>, Pair<S, T>> doFn, PTableType<S, T> type) {
-    CollectEmitter<Pair<S, T>> emitter = new CollectEmitter<Pair<S, T>>();
-    doFn.initialize();
-    for (Map.Entry<K, Collection<V>> e : values.entrySet()) {
-      doFn.process(Pair.of(e.getKey(), (Iterable<V>) e.getValue()), emitter);
-    }
-    doFn.cleanup(emitter);
-    return new MemTable<S, T>(emitter.getOutput(), type, name);
-  }
-
-  @Override
   public PCollection<Pair<K, Iterable<V>>> write(Target target) {
-    getPipeline().write(this, target);
+    getPipeline().write(this.ungroup(), target);
     return this;
-  }
-
-  @Override
-  public Iterable<Pair<K, Iterable<V>>> materialize() {
-    return new Iterable<Pair<K, Iterable<V>>>() {
-      @Override
-      public Iterator<Pair<K, Iterable<V>>> iterator() {
-        return new Iterator<Pair<K, Iterable<V>>>() {
-          Iterator<Map.Entry<K, Collection<V>>> iter = values.entrySet().iterator();
-          
-          @Override
-          public boolean hasNext() {
-            return iter.hasNext();
-          }
-
-          @Override
-          public Pair<K, Iterable<V>> next() {
-            Map.Entry<K, Collection<V>> e = iter.next();
-            return Pair.of(e.getKey(), (Iterable<V>) e.getValue());
-          }
-
-          @Override
-          public void remove() {
-            iter.remove();
-          }       
-        };
-      }
-    };
   }
 
   @Override
@@ -165,7 +102,7 @@ class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
 
   @Override
   public String getName() {
-    return "MemGrouped";
+    return "MemGrouped(" + parent.getName() + ")";
   }
 
   @Override
@@ -176,10 +113,5 @@ class MemGroupedTable<K, V> implements PGroupedTable<K, V> {
   @Override
   public PTable<K, V> ungroup() {
     return parent;
-  }
-
-  @Override
-  public String toString() {
-    return values.toString();
   }
 }

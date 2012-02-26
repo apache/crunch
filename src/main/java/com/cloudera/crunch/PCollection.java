@@ -110,7 +110,24 @@ public interface PCollection<S> {
 
   /**
    * Returns a shorthand name for this PCollection.
-   * @return
    */
   String getName();
+  
+  /**
+   * Returns a {@code PTable} instance that contains the counts of each unique
+   * element of this PCollection.
+   */
+  PTable<S, Long> count();
+  
+  /**
+   * Randomly sample items from this PCollection instance with the given
+   * probability of an item being accepted.
+   */
+  PCollection<S> sample(double acceptanceProbability);
+  
+  /**
+   * Randomly sample items from this PCollection instance with the given
+   * probability of an item being accepted and using the given seed.
+   */
+  PCollection<S> sample(double acceptanceProbability, long seed);
 }

@@ -45,7 +45,7 @@ public class CrunchJob extends ControlledJob {
     this.mapOnlyJob = handler.isMapOnlyJob();
   }  
   
-  private void handleMultiPaths() throws IOException {
+  private synchronized void handleMultiPaths() throws IOException {
     if (!multiPaths.isEmpty()) {
       // Need to handle moving the data from the output directory of the
       // job to the output locations specified in the paths.
@@ -69,7 +69,7 @@ public class CrunchJob extends ControlledJob {
   private Path getDestFile(Path src, Path dir, int index) {
     String form = "part-%s-%05d";
     if (src.getName().endsWith(org.apache.avro.mapred.AvroOutputFormat.EXT)) {
-      form = form + ".avro";
+      form = form + org.apache.avro.mapred.AvroOutputFormat.EXT;
     }
     return new Path(dir, String.format(form, mapOnlyJob ? "m" : "r", index));
   }

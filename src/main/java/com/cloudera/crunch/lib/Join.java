@@ -28,13 +28,46 @@ import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.Lists;
 
 /**
- * Utilites for joining multiple {@code PTable} instances based on a common
+ * Utilities for joining multiple {@code PTable} instances based on a common
  * key.
  *
  */
 public class Join {
 
-  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
+  private static class Join2Fn<K, U, V> extends DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>> {  
+    private transient K key;
+    private transient List<U> firstValues;
+    
+    @Override
+    public void initialize() {
+      key = null;
+      this.firstValues = Lists.newArrayList();
+    }
+    
+    @Override
+    public void process(Pair<Pair<K, Integer>, Iterable<Pair<U, V>>> input,
+        Emitter<Pair<K, Pair<U, V>>> emitter) {
+      if (!input.first().first().equals(key)) {
+        key = input.first().first();
+        firstValues.clear();
+      }
+      if (input.first().second() == 0) {
+        for (Pair<U, V> pair : input.second()) {
+          if (pair.first() != null)
+            firstValues.add(pair.first());
+        }
+      } else {
+        for (Pair<U, V> pair : input.second()) {
+          for (U u : firstValues) {
+            emitter.emit(Pair.of(key, Pair.of(u, pair.second())));
+          }
+        }
+      }
+    }
+  }
+  
+  private static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(
+      PTable<K, U> left, PTable<K, V> right) {
     PTypeFamily ptf = left.getTypeFamily();
     PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
         ptf.pairs(left.getValueType(), right.getValueType()));
@@ -59,42 +92,22 @@ public class Join {
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
     optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
     
-    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = both.groupByKey(
-        optionsBuilder.build());
-    
+    return (tag1.union(tag2)).groupByKey(optionsBuilder.build());	
+  }
+  
+  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
+    PTypeFamily ptf = left.getTypeFamily();
+    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);    
     PTableType<K, Pair<U, V>> ret = ptf.tableOf(left.getKeyType(),
         ptf.pairs(left.getValueType(), right.getValueType()));
-    return grouped.parallelDo("join" + grouped.getName(),
-        new DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>>() {  
-          private transient K key;
-          private transient List<U> firstValues;
-          
-          @Override
-          public void initialize() {
-            key = null;
-            this.firstValues = Lists.newArrayList();
-          }
-          
-          @Override
-          public void process(Pair<Pair<K, Integer>, Iterable<Pair<U, V>>> input,
-              Emitter<Pair<K, Pair<U, V>>> emitter) {
-            if (!input.first().first().equals(key)) {
-              key = input.first().first();
-              firstValues.clear();
-            }
-            if (input.first().second() == 0) {
-              for (Pair<U, V> pair : input.second()) {
-                if (pair.first() != null)
-                  firstValues.add(pair.first());
-              }
-            } else {
-              for (Pair<U, V> pair : input.second()) {
-                for (U u : firstValues) {
-                  emitter.emit(Pair.of(key, Pair.of(u, pair.second())));
-                }
-              }
-            }
-          }
-        }, ret);
+    return grouped.parallelDo("join" + grouped.getName(), new Join2Fn<K, U, V>(), ret);
+  }
+  
+  public static <K, U, V> PTable<K, Pair<U, V>> innerJoin(PTable<K, U> left, PTable<K, V> right) {
+	return join(left, right);
+  }
+  
+  public static <K, U, V> PTable<K, Pair<U, V>> leftJoin(PTable<K, U> left, PTable<K, V> right) {
+	return null;
   }
 }

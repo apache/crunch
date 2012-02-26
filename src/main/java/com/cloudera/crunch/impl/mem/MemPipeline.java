@@ -36,8 +36,6 @@ import com.cloudera.crunch.impl.mem.collect.MemTable;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.ReadableSource;
-import com.cloudera.crunch.io.ReadableSourceTarget;
-import com.cloudera.crunch.io.text.TextFileTarget;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableList;
@@ -190,5 +188,10 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public void done() {
+  }
+
+  @Override
+  public void enableDebug() {
+	LOG.info("Note: in-memory pipelines do not have debug logging");
   }
 }

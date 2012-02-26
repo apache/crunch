@@ -27,4 +27,9 @@ public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public TextFileSourceTarget(Path path, PType<T> ptype) {
     super(new TextFileSource<T>(path, ptype), new TextFileTarget(path));
   }
+  
+  @Override
+  public String toString() {
+	return "Text(" + ((TextFileTarget) target).getPath() + ")";
+  }
 }

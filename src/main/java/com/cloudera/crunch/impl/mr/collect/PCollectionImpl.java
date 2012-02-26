@@ -25,6 +25,8 @@ import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
+import com.cloudera.crunch.lib.Aggregate;
+import com.cloudera.crunch.lib.Sample;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -102,6 +104,21 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   
   public void materializeAt(SourceTarget<S> sourceTarget) {
     this.materializedAt = sourceTarget;
+  }
+  
+  @Override
+  public PTable<S, Long> count() {
+	return Aggregate.count(this);
+  }
+  
+  @Override
+  public PCollection<S> sample(double acceptanceProbability) {
+	return Sample.sample(this, acceptanceProbability);
+  }
+
+  @Override
+  public PCollection<S> sample(double acceptanceProbability, long seed) {
+	return Sample.sample(this, seed, acceptanceProbability);
   }
   
   @Override

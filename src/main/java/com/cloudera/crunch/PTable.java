@@ -15,6 +15,8 @@
 
 package com.cloudera.crunch;
 
+import java.util.Collection;
+
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
@@ -74,4 +76,35 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    * Returns the {@code PType} of the value.
    */
   PType<V> getValueType();
+  
+  /**
+   * Aggregate all of the values with the same key into a single
+   * key-value pair in the returned PTable.
+   */
+  PTable<K, Collection<V>> collectValues();
+  
+  /**
+   * Returns a PTable made up of the pairs in this PTable with the
+   * largest value field.
+   * @param count The number of pairs to return
+   */
+  PTable<K, V> top(int count);
+  
+  /**
+   * Returns a PTable made up of the pairs in this PTable with the
+   * smallest value field.
+   * @param count The number of pairs to return
+   */
+  PTable<K, V> bottom(int count);
+  
+  /**
+   * Perform an inner join on this table and the one passed in as
+   * an argument on their common keys.
+   */
+  <U> PTable<K, Pair<V, U>> join(PTable<K, U> other);
+  
+  /**
+   * Co-group operation with the given table on common keys.
+   */
+  <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other);
 }

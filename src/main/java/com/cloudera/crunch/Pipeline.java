@@ -89,4 +89,9 @@ public interface Pipeline {
    * A convenience method for writing a text file.
    */
   <T> void writeTextFile(PCollection<T> collection, String pathName);
+  
+  /**
+   * Turn on debug logging for jobs that are run from this pipeline.
+   */
+  void enableDebug();
 }
