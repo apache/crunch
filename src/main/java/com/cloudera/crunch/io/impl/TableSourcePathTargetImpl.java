@@ -12,15 +12,22 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.io;
+package com.cloudera.crunch.io.impl;
 
-import com.cloudera.crunch.SourceTarget;
+import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.TableSource;
+import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.type.PTableType;
 
-/**
- * An interface that indicates that a {@code SourceTarget} instance can be
- * read into the local client.
- *
- * @param <T> The type of data read.
- */
-public interface ReadableSourceTarget<T> extends ReadableSource<T>, SourceTarget<T> {
+public class TableSourcePathTargetImpl<K, V> extends SourcePathTargetImpl<Pair<K, V>>
+	implements TableSource<K, V> {
+
+  public TableSourcePathTargetImpl(TableSource<K, V> source, PathTarget target) {
+	super(source, target);
+  }
+  
+  @Override
+  public PTableType<K, V> getTableType() {
+	return ((TableSource<K, V>) source).getTableType();
+  }
 }

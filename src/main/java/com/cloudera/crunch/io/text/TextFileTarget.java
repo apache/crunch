@@ -14,30 +14,21 @@
  */
 package com.cloudera.crunch.io.text;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import com.cloudera.crunch.SourceTarget;
-import com.cloudera.crunch.io.MapReduceTarget;
-import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.io.SourceTargetHelper;
-import com.cloudera.crunch.type.Converter;
+import com.cloudera.crunch.io.impl.FileTargetImpl;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
-public class TextFileTarget implements PathTarget, MapReduceTarget {
-
-  protected final Path path;
-  
+public class TextFileTarget extends FileTargetImpl {
   public TextFileTarget(String path) {
     this(new Path(path));
   }
   
   public TextFileTarget(Path path) {
-    this.path = path;
+    super(path, TextOutputFormat.class);
   }
   
   @Override
@@ -46,35 +37,8 @@ public class TextFileTarget implements PathTarget, MapReduceTarget {
   }
 
   @Override
-  public boolean equals(Object other) {
-    if (other == null || !(other instanceof TextFileTarget)) {
-      return false;
-    }
-    TextFileTarget o = (TextFileTarget) other;
-    return path.equals(o.path);
-  }
-  
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder().append(path).toHashCode();
-  }
-  
-  @Override
   public String toString() {
     return "TextTarget(" + path + ")";
-  }
-
-  @Override
-  public boolean accept(OutputHandler handler, PType<?> ptype) {
-    handler.configure(this, ptype);
-    return true;
-  }
-
-  @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
-    Converter converter = ptype.getConverter();
-    SourceTargetHelper.configureTarget(job, TextOutputFormat.class,
-        converter.getKeyClass(), converter.getValueClass(), outputPath, name);
   }
 
   @Override

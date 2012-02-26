@@ -23,14 +23,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.TableSource;
+import com.cloudera.crunch.impl.mr.run.CrunchInputs;
 import com.cloudera.crunch.io.CompositePathIterable;
-import com.cloudera.crunch.io.MapReduceTarget;
-import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.SourceTargetHelper;
@@ -38,7 +37,7 @@ import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
 public class SeqFileTableSourceTarget<K, V> extends SeqFileTarget implements TableSource<K, V>,
-    ReadableSourceTarget<Pair<K, V>>, PathTarget, MapReduceTarget {
+    ReadableSourceTarget<Pair<K, V>>, PathTarget {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableSourceTarget.class);
   
@@ -79,7 +78,12 @@ public class SeqFileTableSourceTarget<K, V> extends SeqFileTarget implements Tab
 
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
-    SourceTargetHelper.configureSource(job, inputId, SequenceFileInputFormat.class, path);
+	if (inputId == -1) {
+      FileInputFormat.addInputPath(job, path);
+      job.setInputFormatClass(SequenceFileInputFormat.class);
+    } else {
+      CrunchInputs.addInputPath(job, path, SequenceFileInputFormat.class, inputId);
+    }
   }
 
   @Override

@@ -34,6 +34,8 @@ import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mem.collect.MemCollection;
 import com.cloudera.crunch.impl.mem.collect.MemTable;
 import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.io.PathTarget;
+import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileTarget;
 import com.cloudera.crunch.type.PTableType;
@@ -110,9 +112,9 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public <T> PCollection<T> read(Source<T> source) {
-    if (source instanceof ReadableSourceTarget) {
+    if (source instanceof ReadableSource) {
       try {
-        Iterable<T> iterable = ((ReadableSourceTarget) source).read(conf);
+        Iterable<T> iterable = ((ReadableSource<T>) source).read(conf);
         return new MemCollection<T>(iterable, source.getType(), source.toString());
       } catch (IOException e) {
         LOG.error("Exception reading source: " + source.toString(), e);
@@ -125,9 +127,9 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public <K, V> PTable<K, V> read(TableSource<K, V> source) {
-    if (source instanceof ReadableSourceTarget) {
+    if (source instanceof ReadableSource) {
       try {
-        Iterable<Pair<K, V>> iterable = ((ReadableSourceTarget) source).read(conf);
+        Iterable<Pair<K, V>> iterable = ((ReadableSource<Pair<K, V>>) source).read(conf);
         return new MemTable<K, V>(iterable, source.getTableType(), source.toString());
       } catch (IOException e) {
         LOG.error("Exception reading source: " + source.toString(), e);
@@ -140,8 +142,8 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public void write(PCollection<?> collection, Target target) {
-    if (target instanceof TextFileTarget) {
-      Path path = ((TextFileTarget) target).getPath();
+    if (target instanceof PathTarget) {
+      Path path = ((PathTarget) target).getPath();
       try {
         FileSystem fs = FileSystem.get(conf);
         FSDataOutputStream os = fs.create(path);
@@ -163,7 +165,7 @@ public class MemPipeline implements Pipeline {
         LOG.error("Exception writing target: " + target, e);
       }
     } else {
-      LOG.error("Target " + target + " is not a TextFileTarget instance");
+      LOG.error("Target " + target + " is not a PathTarget instance");
     }
   }
 

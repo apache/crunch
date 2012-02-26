@@ -14,49 +14,21 @@
  */
 package com.cloudera.crunch.io.seq;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 import com.cloudera.crunch.SourceTarget;
-import com.cloudera.crunch.io.MapReduceTarget;
-import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.io.SourceTargetHelper;
-import com.cloudera.crunch.type.Converter;
+import com.cloudera.crunch.io.impl.FileTargetImpl;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 
-public class SeqFileTarget implements PathTarget, MapReduceTarget {
-
-  protected final Path path;
-  
+public class SeqFileTarget extends FileTargetImpl {
   public SeqFileTarget(String path) {
     this(new Path(path));
   }
   
   public SeqFileTarget(Path path) {
-    this.path = path;
-  }
-  
-  @Override
-  public boolean accept(OutputHandler handler, PType<?> ptype) {
-    handler.configure(this, ptype);
-    return true;
-  }
-
-  @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
-      String name) {
-    Converter converter = ptype.getConverter();
-    SourceTargetHelper.configureTarget(job, SequenceFileOutputFormat.class,
-        converter.getKeyClass(), converter.getValueClass(), outputPath, name);
-  }
-
-  @Override
-  public Path getPath() {
-    return path;
+    super(path, SequenceFileOutputFormat.class);
   }
 
   @Override
@@ -71,19 +43,5 @@ public class SeqFileTarget implements PathTarget, MapReduceTarget {
     } else {
       return new SeqFileSourceTarget(path, ptype);
     }
-  }
-  
-  @Override
-  public boolean equals(Object other) {
-    if (other == null || !(other instanceof SeqFileTarget)) {
-      return false;
-    }
-    SeqFileTarget o = (SeqFileTarget) other;
-    return path.equals(o.path);
-  }
-  
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder().append(path).toHashCode();
   }
 }

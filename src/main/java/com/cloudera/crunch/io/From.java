@@ -21,11 +21,11 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.TableSource;
-import com.cloudera.crunch.io.avro.AvroFileSourceTarget;
+import com.cloudera.crunch.io.avro.AvroFileSource;
 import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
-import com.cloudera.crunch.io.seq.SeqFileSourceTarget;
+import com.cloudera.crunch.io.seq.SeqFileSource;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
-import com.cloudera.crunch.io.text.TextFileSourceTarget;
+import com.cloudera.crunch.io.text.TextFileSource;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroType;
@@ -42,7 +42,7 @@ public class From {
   }
   
   public static <T> Source<T> avroFile(Path path, AvroType<T> avroType) {
-	return new AvroFileSourceTarget<T>(path, avroType);
+	return new AvroFileSource<T>(path, avroType);
   }
   
   public static TableSource<ImmutableBytesWritable, Result> hbaseTable(String table) {
@@ -58,7 +58,7 @@ public class From {
   }
   
   public static <T> Source<T> sequenceFile(Path path, PType<T> ptype) {
-	return new SeqFileSourceTarget<T>(path, ptype);
+	return new SeqFileSource<T>(path, ptype);
   }
   
   public static <K, V> TableSource<K, V> sequenceFile(String pathName, PType<K> keyType,
@@ -85,6 +85,6 @@ public class From {
   }
   
   public static <T> Source<T> textFile(Path path, PType<T> ptype) {
-    return new TextFileSourceTarget<T>(path, ptype);
+    return new TextFileSource<T>(path, ptype);
   }
 }

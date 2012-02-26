@@ -15,52 +15,27 @@
 package com.cloudera.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.SourceTarget;
-import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.io.SourceTargetHelper;
+import com.cloudera.crunch.io.impl.FileTargetImpl;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.avro.AvroOutputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
 
-public class AvroFileTarget implements PathTarget, MapReduceTarget {
-
-  protected final Path path;
-  
+public class AvroFileTarget extends FileTargetImpl {
   public AvroFileTarget(String path) {
     this(new Path(path));
   }
   
   public AvroFileTarget(Path path) {
-    this.path = path;
+    super(path, AvroOutputFormat.class);
   }
-  
-  @Override
-  public Path getPath() {
-    return path;
-  }
-  
-  @Override
-  public boolean equals(Object other) {
-    if (other == null || !(other instanceof AvroFileTarget)) {
-      return false;
-    }
-    AvroFileTarget o = (AvroFileTarget) other;
-    return path.equals(o.path);
-  }
-  
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder().append(path).toHashCode();
-  }
-  
+    
   @Override
   public String toString() {
     return "AvroTarget(" + path.toString() + ")";
@@ -92,8 +67,8 @@ public class AvroFileTarget implements PathTarget, MapReduceTarget {
     } else if (!outputSchema.equals(atype.getSchema().toString())) {
       throw new IllegalStateException("Avro targets must use the same output schema");
     }  
-    SourceTargetHelper.configureTarget(job, AvroOutputFormat.class,
-        AvroWrapper.class, NullWritable.class, outputPath, name);
+    configureForMapReduce(job, AvroWrapper.class, NullWritable.class,
+        outputPath, name);
   }
 
   @Override

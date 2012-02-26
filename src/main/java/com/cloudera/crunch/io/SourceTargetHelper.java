@@ -20,43 +20,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.OutputFormat;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-
-import com.cloudera.crunch.impl.mr.run.CrunchInputs;
 
 /**
  * Functions for configuring the inputs/outputs of MapReduce jobs.
  *
  */
-public class SourceTargetHelper {
-  public static void configureSource(Job job, int sourceId,
-      Class<? extends InputFormat> inputFormatClass, Path path) throws IOException {
-    if (sourceId == -1) {
-      FileInputFormat.addInputPath(job, path);
-      job.setInputFormatClass(inputFormatClass);
-    } else {
-      CrunchInputs.addInputPath(job, path, inputFormatClass, sourceId);
-    }
-  }
-  
-  public static void configureTarget(Job job, Class<? extends OutputFormat> outputFormatClass,
-      Class keyClass, Class valueClass, Path path, String name) {
-    FileOutputFormat.setOutputPath(job, path);
-    if (name == null) {
-      job.setOutputFormatClass(outputFormatClass);
-      job.setOutputKeyClass(keyClass);
-      job.setOutputValueClass(valueClass);
-    } else {
-      CrunchMultipleOutputs.addNamedOutput(job, name, outputFormatClass,
-          keyClass, valueClass);
-    }
-  }
-  
+public class SourceTargetHelper {  
   public static long getPathSize(Configuration conf, Path path) throws IOException {
 	return getPathSize(FileSystem.get(conf), path);
   }

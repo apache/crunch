@@ -16,8 +16,6 @@ package com.cloudera.crunch.io;
 
 import org.apache.hadoop.fs.Path;
 
-import com.cloudera.crunch.Target;
-
-public interface PathTarget extends Target {
+public interface PathTarget extends MapReduceTarget {
   Path getPath();
 }

@@ -14,13 +14,12 @@
  */
 package com.cloudera.crunch.io;
 
-import com.cloudera.crunch.SourceTarget;
+import java.io.IOException;
 
-/**
- * An interface that indicates that a {@code SourceTarget} instance can be
- * read into the local client.
- *
- * @param <T> The type of data read.
- */
-public interface ReadableSourceTarget<T> extends ReadableSource<T>, SourceTarget<T> {
+import org.apache.hadoop.conf.Configuration;
+
+import com.cloudera.crunch.Source;
+
+public interface ReadableSource<T> extends Source<T> {
+  Iterable<T> read(Configuration conf) throws IOException;
 }

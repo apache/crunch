@@ -14,80 +14,13 @@
  */
 package com.cloudera.crunch.io.avro;
 
-import java.io.IOException;
-
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 
-import com.cloudera.crunch.io.CompositePathIterable;
-import com.cloudera.crunch.io.ReadableSourceTarget;
-import com.cloudera.crunch.io.SourceTargetHelper;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.avro.AvroInputFormat;
+import com.cloudera.crunch.io.impl.ReadableSourcePathTargetImpl;
 import com.cloudera.crunch.type.avro.AvroType;
 
-public class AvroFileSourceTarget<T> extends AvroFileTarget implements ReadableSourceTarget<T> {
-
-  private static final Log LOG = LogFactory.getLog(AvroFileSourceTarget.class);
-  
-  private final AvroType<T> ptype;
-  
-  public AvroFileSourceTarget(String path, AvroType<T> atype) {
-    this(new Path(path), atype);
-  }
-  
-  public AvroFileSourceTarget(Path path, AvroType<T> ptype) {
-    super(path);
-    this.ptype = ptype;
-  }
-  
-  @Override
-  public boolean equals(Object other) {
-    if (other == null || !(other instanceof AvroFileSourceTarget)) {
-      return false;
-    }
-    AvroFileSourceTarget o = (AvroFileSourceTarget) other;
-    return ptype.equals(o.ptype) && path.equals(o.path);
-  }
-  
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder().append(ptype).append(path).toHashCode();
-  }
-  
-  @Override
-  public PType<T> getType() {
-    return ptype;
-  }
-
-  @Override
-  public String toString() {
-    return "Avro(" + path.toString() + ")";
-  }
-
-  @Override
-  public void configureSource(Job job, int inputId) throws IOException {
-    SourceTargetHelper.configureSource(job, inputId, AvroInputFormat.class, path);
-  }
-
-  @Override
-  public long getSize(Configuration configuration) {
-    try {
-      return SourceTargetHelper.getPathSize(configuration, path);
-    } catch (IOException e) {
-      LOG.info(String.format("Exception thrown looking up size of: %s", path), e);
-    }
-    return 1L;
-  }
-
-  @Override
-  public Iterable<T> read(Configuration conf) throws IOException {
-	return CompositePathIterable.create(FileSystem.get(conf), path,
-	    new AvroFileReaderFactory<T>(ptype));
+public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
+  public AvroFileSourceTarget(Path path, AvroType<T> atype) {
+	super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path));
   }
 }
