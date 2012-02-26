@@ -114,10 +114,28 @@ public interface PCollection<S> {
   String getName();
   
   /**
+   * Returns a {@code PCollection} instance that contains all of the elements
+   * of this instance in sorted order.
+   */
+  PCollection<S> sort(boolean ascending);
+  
+  /**
    * Returns a {@code PTable} instance that contains the counts of each unique
    * element of this PCollection.
    */
   PTable<S, Long> count();
+  
+  /**
+   * Returns a {@code PCollection} made up of only the maximum element of this
+   * instance.
+   */
+  PCollection<S> max();
+  
+  /**
+   * Returns a {@code PCollection} made up of only the minimum element of this
+   * instance.
+   */
+  PCollection<S> min();
   
   /**
    * Randomly sample items from this PCollection instance with the given

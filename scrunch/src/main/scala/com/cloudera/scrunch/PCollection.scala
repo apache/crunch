@@ -58,9 +58,7 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     count.mapValues(_.longValue()) 
   }
 
-  def max = {
-    wrap(Aggregate.max(native.asInstanceOf[JCollection[java.lang.Number]]))
-  }
+  def max = wrap(Aggregate.max(native))
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
