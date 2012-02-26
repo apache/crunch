@@ -18,14 +18,17 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.io.avro.AvroFileSource;
 import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
+import com.cloudera.crunch.io.impl.FileTableSourceImpl;
 import com.cloudera.crunch.io.seq.SeqFileSource;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileSource;
+import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroType;
@@ -36,6 +39,17 @@ import com.cloudera.crunch.type.writable.Writables;
  *
  */
 public class From {
+
+  public static <K, V> TableSource<K, V> formattedFile(String path,
+      Class<? extends FileInputFormat> formatClass, PType<K> keyType, PType<V> valueType) {
+	return formattedFile(new Path(path), formatClass, keyType, valueType);
+  }
+
+  public static <K, V> TableSource<K, V> formattedFile(Path path,
+      Class<? extends FileInputFormat> formatClass, PType<K> keyType, PType<V> valueType) {
+	PTableType<K, V> tableType = keyType.getFamily().tableOf(keyType, valueType);
+    return new FileTableSourceImpl<K, V>(path, tableType, formatClass);                                             	
+  }
 
   public static <T> Source<T> avroFile(String pathName, AvroType<T> avroType) {
 	return avroFile(new Path(pathName), avroType);

@@ -15,10 +15,12 @@
 package com.cloudera.crunch.io;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.io.avro.AvroFileTarget;
 import com.cloudera.crunch.io.hbase.HBaseTarget;
+import com.cloudera.crunch.io.impl.FileTargetImpl;
 import com.cloudera.crunch.io.seq.SeqFileTarget;
 import com.cloudera.crunch.io.text.TextFileTarget;
 
@@ -27,6 +29,15 @@ import com.cloudera.crunch.io.text.TextFileTarget;
  *
  */
 public class To {
+  
+  public static Target formattedFile(String pathName, Class<? extends FileOutputFormat> formatClass) {
+	return formattedFile(new Path(pathName), formatClass);
+  }
+  
+  public static Target formattedFile(Path path, Class<? extends FileOutputFormat> formatClass) {
+	return new FileTargetImpl(path, formatClass);
+  }
+  
   public static Target avroFile(String pathName) {
 	return avroFile(new Path(pathName));
   }
