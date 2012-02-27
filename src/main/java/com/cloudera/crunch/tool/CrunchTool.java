@@ -26,6 +26,7 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.Target;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.From;
@@ -46,7 +47,11 @@ public abstract class CrunchTool extends Configured implements Tool {
   private Pipeline pipeline;
 
   public CrunchTool() throws IOException {
-	this.pipeline = new MRPipeline(getClass());
+	this(false);
+  }
+  
+  public CrunchTool(boolean inMemory) throws IOException {
+    this.pipeline = inMemory ? MemPipeline.getInstance() : new MRPipeline(getClass());  
   }
   
   @Override
@@ -60,31 +65,35 @@ public abstract class CrunchTool extends Configured implements Tool {
 	return pipeline.getConfiguration();
   }
   
-  protected <T> PCollection<T> read(Source<T> source) {
+  public void enableDebug() {
+    pipeline.enableDebug();
+  }
+  
+  public <T> PCollection<T> read(Source<T> source) {
 	return pipeline.read(source);
   }
   
-  protected <K, V> PTable<K, V> read(TableSource<K, V> tableSource) {
+  public <K, V> PTable<K, V> read(TableSource<K, V> tableSource) {
 	return pipeline.read(tableSource);
   }
   
-  protected PCollection<String> readTextFile(String pathName) {
+  public PCollection<String> readTextFile(String pathName) {
 	return pipeline.readTextFile(pathName);
   }
   
-  protected void write(PCollection<?> pcollection, Target target) {
+  public void write(PCollection<?> pcollection, Target target) {
 	pipeline.write(pcollection, target);
   }
   
-  protected void writeTextFile(PCollection<?> pcollection, String pathName) {
+  public void writeTextFile(PCollection<?> pcollection, String pathName) {
 	pipeline.writeTextFile(pcollection, pathName);
   }
   
-  protected void run() {
+  public void run() {
 	pipeline.run();
   }
   
-  protected void done() {
+  public void done() {
 	pipeline.done();
   }
 }
