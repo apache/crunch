@@ -114,6 +114,12 @@ public interface PCollection<S> {
   String getName();
   
   /**
+   * Apply the given filter function to this instance and return the
+   * resulting {@code PCollection}.
+   */
+  PCollection<S> filter(FilterFn<S> filterFn);
+  
+  /**
    * Returns a {@code PCollection} instance that contains all of the elements
    * of this instance in sorted order.
    */

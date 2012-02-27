@@ -17,6 +17,7 @@ package com.cloudera.crunch.impl.mr.collect;
 import java.util.List;
 
 import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.FilterFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
@@ -105,6 +106,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   
   public void materializeAt(SourceTarget<S> sourceTarget) {
     this.materializedAt = sourceTarget;
+  }
+  
+  @Override
+  public PCollection<S> filter(FilterFn<S> filterFn) {
+    return parallelDo(filterFn, getPType());
   }
   
   @Override

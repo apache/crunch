@@ -17,6 +17,7 @@ package com.cloudera.crunch.impl.mem.collect;
 import java.util.Collection;
 
 import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.FilterFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
@@ -174,5 +175,10 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public PCollection<S> sort(boolean ascending) {
 	return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
+  }
+
+  @Override
+  public PCollection<S> filter(FilterFn<S> filterFn) {
+    return parallelDo(filterFn, getPType());
   }
 }
