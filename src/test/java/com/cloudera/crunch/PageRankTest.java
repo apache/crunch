@@ -50,6 +50,14 @@ public class PageRankTest {
 	  this.urls = Lists.newArrayList(urls);
 	}
 	
+	public PageRankData next(float newScore) {
+	  return new PageRankData(newScore, score, urls);
+	}
+	
+	public float propagatedScore() {
+	  return score / urls.size();
+	}
+	
 	@Override
 	public String toString() {
 	  return score + " " + lastScore + " " + urls;
@@ -92,29 +100,30 @@ public class PageRankTest {
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
   
-  public static PTable<String, PageRankData> pageRank(PTable<String, PageRankData> input) {
+  public static PTable<String, PageRankData> pageRank(PTable<String, PageRankData> input, final float d) {
     PTypeFamily ptf = input.getTypeFamily();
     PTable<String, Float> outbound = input.parallelDo(
         new DoFn<Pair<String, PageRankData>, Pair<String, Float>>() {
           @Override
           public void process(Pair<String, PageRankData> input, Emitter<Pair<String, Float>> emitter) {
-            float pr = input.second().score / input.second().urls.size();
-            for (String link : input.second().urls) {
-              emitter.emit(Pair.of(link, pr));
+            PageRankData prd = input.second();
+            for (String link : prd.urls) {
+              emitter.emit(Pair.of(link, prd.propagatedScore()));
             }
           }
         }, ptf.tableOf(ptf.strings(), ptf.floats()));
     
-    return Cogroup.cogroup(input, outbound).parallelDo(
+    return input.cogroup(outbound).parallelDo(
         new MapFn<Pair<String, Pair<Collection<PageRankData>, Collection<Float>>>, Pair<String, PageRankData>>() {
               @Override
               public Pair<String, PageRankData> map(Pair<String, Pair<Collection<PageRankData>, Collection<Float>>> input) {
                 PageRankData prd = Iterables.getOnlyElement(input.second().first());
+                Collection<Float> propagatedScores = input.second().second();
                 float sum = 0.0f;
-                for (Float s : input.second().second()) {
+                for (Float s : propagatedScores) {
                   sum += s;
                 }
-                return Pair.of(input.first(), new PageRankData(0.5f + 0.5f*sum, prd.score, prd.urls));
+                return Pair.of(input.first(), prd.next(d + (1.0f - d)*sum));
               }
             }, input.getPTableType());
   }
@@ -139,7 +148,7 @@ public class PageRankTest {
     
     Float delta = 1.0f;
     while (delta > 0.01) {
-      scores = pageRank(scores);
+      scores = pageRank(scores, 0.5f);
       scores.materialize().iterator(); // force the write
       delta = Iterables.getFirst(Aggregate.max(
           scores.parallelDo(new MapFn<Pair<String, PageRankData>, Float>() {
