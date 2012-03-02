@@ -105,7 +105,7 @@ def build_job_jar():
   shutil.rmtree(BUILDDIR)
 
 def hadoop_command():
-  return "hadoop jar %s %s %s" % (JOBJARPATH, JOB, " ".join(argv))
+  return "%s/bin/hadoop jar %s %s %s" % (HADOOP_HOME, JOBJARPATH, JOB, " ".join(argv))
 
 if is_file() and needs_rebuild():
   build_job_jar()
