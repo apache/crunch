@@ -18,8 +18,6 @@
 package org.apache.hadoop.mapreduce.lib.output;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -120,6 +118,8 @@ public class CrunchMultipleOutputs<KEYOUT, VALUEOUT> {
   private static final String COUNTERS_ENABLED = 
     "mapreduce.multipleoutputs.counters";
 
+  private static final String BASE_OUTPUT_NAME = "mapreduce.output.basename";
+  
   /**
    * Counters group used by the counters of MultipleOutputs.
    */
@@ -397,7 +397,7 @@ public class CrunchMultipleOutputs<KEYOUT, VALUEOUT> {
     // If not in cache, create a new one
     if (writer == null) {
       // get the record writer from context output format
-      FileOutputFormat.setOutputName(taskContext, baseFileName);
+      taskContext.getConfiguration().set(BASE_OUTPUT_NAME, baseFileName);
       try {
         writer = ((OutputFormat) ReflectionUtils.newInstance(
           taskContext.getOutputFormatClass(), taskContext.getConfiguration()))
