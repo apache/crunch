@@ -32,9 +32,8 @@ import java.io.Serializable;
 
 public class WordCount extends Configured implements Tool, Serializable {
   public int run(String[] args) throws Exception {
-    if(args.length != 2) {
+    if(args.length != 3) {
       System.err.println();
-      System.err.println("Two and only two arguments are accepted.");
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
       System.err.println();
       GenericOptionsParser.printGenericCommandUsage(System.err);
@@ -43,7 +42,7 @@ public class WordCount extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(WordCount.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(args[0]);
+    PCollection<String> lines = pipeline.readTextFile(args[1]);
 
     // Define a function that splits each line in a PCollection of Strings into a
     // PCollection made up of the individual words in the file.
@@ -55,14 +54,14 @@ public class WordCount extends Configured implements Tool, Serializable {
       }
     }, Writables.strings()); // Indicates the serialization format
 
-    // The Aggregate.count method applies a series of Crunch primitives and returns
+    // The count method applies a series of Crunch primitives and returns
     // a map of the unique words in the input PCollection to their counts.
     // Best of all, the count() function doesn't need to know anything about
     // the kind of data stored in the input PCollection.
-    PTable<String, Long> counts = Aggregate.count(words);
+    PTable<String, Long> counts = words.count();
 
     // Instruct the pipeline to write the resulting counts to a text file.
-    pipeline.writeTextFile(counts, args[1]);
+    pipeline.writeTextFile(counts, args[2]);
     // Execute the pipeline as a MapReduce.
     pipeline.done();
     return 0;

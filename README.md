@@ -14,7 +14,7 @@ on the top-level crunch libraries. In order to execute the included WordCount ap
 	mvn install
 	cd examples/
 	mvn package
-	hadoop jar target/crunch-examples-0.1.0-jar-with-dependencies.jar com.cloudera.crunch.examples.WordCount <input> <output>
+	hadoop jar target/crunch-examples-0.2.0-job.jar com.cloudera.crunch.examples.WordCount <inputfile> <outputdir>
 
 ## High Level Concepts
 

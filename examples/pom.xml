@@ -4,7 +4,7 @@
   <groupId>com.cloudera.crunch</groupId>
   <artifactId>crunch-examples</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <name>crunch-examples</name>
 
   <dependencies>
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>com.cloudera.crunch</groupId>
       <artifactId>crunch</artifactId>
-      <version>0.1.0</version>
+      <version>0.2.0</version>
     </dependency>
   </dependencies>
 
