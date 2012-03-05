@@ -49,7 +49,13 @@ public class MSCRPlanner {
   private static final Comparator<PCollectionImpl> DEPTH_COMPARATOR = new Comparator<PCollectionImpl>() {
     @Override
     public int compare(PCollectionImpl left, PCollectionImpl right) {
-      return right.getDepth() - left.getDepth();
+      int cmp = right.getDepth() - left.getDepth();   
+      if (cmp == 0){
+          // Ensure we don't throw away two output collections at the same depth.
+          // Using the collection name would be nicer here, but names aren't necessarily unique
+          cmp = new Integer(right.hashCode()).compareTo(left.hashCode());
+      }
+      return cmp;
     }
   };
   
