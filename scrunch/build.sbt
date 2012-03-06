@@ -10,7 +10,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.cloudera.crunch" % "crunch" % "0.1.0" excludeAll(
+  "com.cloudera.crunch" % "crunch" % "0.2.0" excludeAll(
     ExclusionRule(organization = "com.sun.jdmk"),
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
