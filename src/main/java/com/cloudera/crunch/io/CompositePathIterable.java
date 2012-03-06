@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.io;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -38,8 +39,13 @@ public class CompositePathIterable<T> implements Iterable<T> {
   };
   
   public static <S> Iterable<S> create(FileSystem fs, Path path, FileReaderFactory<S> readerFactory) throws IOException {
-	FileStatus[] stati = fs.listStatus(path, FILTER);
-	if (stati.length == 0) {
+	FileStatus[] stati = null;
+	try {
+	  stati = fs.listStatus(path, FILTER);
+	} catch (FileNotFoundException e) {
+	  stati = null;
+	}
+	if (stati == null || stati.length == 0) {
 	  throw new IOException("No files found to materialize at: " + path);
 	}
 	return new CompositePathIterable<S>(stati, fs, readerFactory);

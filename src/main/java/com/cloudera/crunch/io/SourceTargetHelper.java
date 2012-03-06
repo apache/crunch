@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.io;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -25,13 +26,19 @@ import org.apache.hadoop.fs.Path;
  * Functions for configuring the inputs/outputs of MapReduce jobs.
  *
  */
-public class SourceTargetHelper {  
+public class SourceTargetHelper {
   public static long getPathSize(Configuration conf, Path path) throws IOException {
 	return getPathSize(FileSystem.get(conf), path);
   }
   
   public static long getPathSize(FileSystem fs, Path path) throws IOException {
-    FileStatus[] stati = fs.listStatus(path);
+    FileStatus[] stati = null;
+    try {
+      stati = fs.listStatus(path);
+    } catch (FileNotFoundException e) {
+      return 0L;
+    }
+    
     if (stati.length == 0) {
       return 0L;
     }
