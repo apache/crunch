@@ -59,7 +59,7 @@ public class JoinUtils {
   public static class TupleWritablePartitioner extends Partitioner<TupleWritable, Writable> {
     @Override
     public int getPartition(TupleWritable key, Writable value, int numPartitions) {
-      return key.get(0).hashCode() % numPartitions;
+      return (Math.abs(key.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }
   }
   
@@ -94,7 +94,7 @@ public class JoinUtils {
     @Override
     public int getPartition(AvroKey key, AvroValue value, int numPartitions) {
       IndexedRecord record = (IndexedRecord) key.datum();
-      return record.get(0).hashCode() % numPartitions;
+      return (Math.abs(record.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }
   }
   
