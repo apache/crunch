@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.util;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -30,6 +31,10 @@ import com.cloudera.crunch.type.PTypeFamily;
  */
 public class PTypes {
 
+  public static PType<BigInteger> bigInt(PTypeFamily typeFamily) {
+    return typeFamily.derived(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());  
+  }
+  
   public static <T> PType<T> jsonString(Class<T> clazz, PTypeFamily typeFamily) {
     return typeFamily.derived(clazz, new JacksonInputMapFn<T>(clazz),
         new JacksonOutputMapFn<T>(), typeFamily.strings());
@@ -39,6 +44,20 @@ public class PTypes {
 	return typeFamily.derived(clazz, new SmileInputMapFn<T>(clazz),
 	    new SmileOutputMapFn<T>(), typeFamily.bytes());
   }
+  
+  public static MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
+    @Override
+    public BigInteger map(ByteBuffer input) {
+      return input == null ? null : new BigInteger(input.array());
+    }
+  };
+
+  public static MapFn<BigInteger, ByteBuffer> BIGINT_TO_BYTE = new MapFn<BigInteger, ByteBuffer>() {
+    @Override
+    public ByteBuffer map(BigInteger input) {
+      return input == null ? null : ByteBuffer.wrap(input.toByteArray());
+    }
+  };
   
   public static class SmileInputMapFn<T> extends MapFn<ByteBuffer, T> {
 

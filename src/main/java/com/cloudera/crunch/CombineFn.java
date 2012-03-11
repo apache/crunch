@@ -16,6 +16,7 @@
 package com.cloudera.crunch;
 
 import java.io.Serializable;
+import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
@@ -233,6 +234,10 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   public static final <K> CombineFn<K, Double> SUM_DOUBLES() {
     return aggregatorFactory(SUM_DOUBLES);
   }
+ 
+  public static final <K> CombineFn<K, BigInteger> SUM_BIGINTS() {
+    return aggregatorFactory(SUM_BIGINTS);
+  }
   
   public static final <K> CombineFn<K, Long> MAX_LONGS() {
     return aggregatorFactory(MAX_LONGS);
@@ -261,9 +266,17 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   public static final <K> CombineFn<K, Double> MAX_DOUBLES() {
     return aggregatorFactory(MAX_DOUBLES);
   }
-  
+
   public static final <K> CombineFn<K, Double> MAX_DOUBLES(int n) {
     return aggregator(new MaxNAggregator<Double>(n));
+  }
+  
+  public static final <K> CombineFn<K, BigInteger> MAX_BIGINTS() {
+    return aggregatorFactory(MAX_BIGINTS);
+  }
+  
+  public static final <K> CombineFn<K, BigInteger> MAX_BIGINTS(int n) {
+    return aggregator(new MaxNAggregator<BigInteger>(n));
   }
   
   public static final <K> CombineFn<K, Long> MIN_LONGS() {
@@ -296,6 +309,14 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
 
   public static final <K> CombineFn<K, Double> MIN_DOUBLES(int n) {
     return aggregator(new MinNAggregator<Double>(n));
+  }
+  
+  public static final <K> CombineFn<K, BigInteger> MIN_BIGINTS() {
+    return aggregatorFactory(MIN_BIGINTS);
+  }
+  
+  public static final <K> CombineFn<K, BigInteger> MIN_BIGINTS(int n) {
+    return aggregator(new MinNAggregator<BigInteger>(n));
   }
   
   public static final <K, V> CombineFn<K, V> FIRST_N(int n) {
@@ -394,6 +415,28 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Aggregator<Double> create() { return new SumDoubles(); }
   };
   
+  public static class SumBigInts implements Aggregator<BigInteger> {
+    private BigInteger sum = BigInteger.ZERO;
+    
+    @Override
+    public void reset() {
+      sum = BigInteger.ZERO;
+    }
+
+    @Override
+    public void update(BigInteger next) {
+      sum = sum.add(next);
+    }
+    
+    @Override
+    public Iterable<BigInteger> results() {
+      return ImmutableList.of(sum);
+    }
+  }
+  public static AggregatorFactory<BigInteger> SUM_BIGINTS = new AggregatorFactory<BigInteger>() {
+    public Aggregator<BigInteger> create() { return new SumBigInts(); }
+  };
+  
   public static class MaxLongs implements Aggregator<Long> {
     private Long max = null;
     
@@ -488,6 +531,30 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   public static AggregatorFactory<Double> MAX_DOUBLES = new AggregatorFactory<Double>() {
     public Aggregator<Double> create() { return new MaxDoubles(); }
+  };
+  
+  public static class MaxBigInts implements Aggregator<BigInteger> {
+    private BigInteger max = null;
+    
+    @Override
+    public void reset() {
+      max = null;
+    }
+    
+    @Override
+    public void update(BigInteger next) {
+      if (max == null || max.compareTo(next) < 0) {
+        max = next;
+      }
+    }
+    
+    @Override
+    public Iterable<BigInteger> results() {
+      return ImmutableList.of(max);
+    }
+  }
+  public static AggregatorFactory<BigInteger> MAX_BIGINTS = new AggregatorFactory<BigInteger>() {
+    public Aggregator<BigInteger> create() { return new MaxBigInts(); }
   };
   
   public static class MinLongs implements Aggregator<Long> {
@@ -586,7 +653,30 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public Aggregator<Double> create() { return new MinDoubles(); }
   };
 
-
+  public static class MinBigInts implements Aggregator<BigInteger> {
+    private BigInteger min = null;
+    
+    @Override
+    public void reset() {
+      min = null;
+    }
+    
+    @Override
+    public void update(BigInteger next) {
+      if (min == null || min.compareTo(next) > 0) {
+        min = next;
+      }
+    }
+    
+    @Override
+    public Iterable<BigInteger> results() {
+      return ImmutableList.of(min);
+    }
+  }
+  public static AggregatorFactory<BigInteger> MIN_BIGINTS = new AggregatorFactory<BigInteger>() {
+    public Aggregator<BigInteger> create() { return new MinBigInts(); }
+  };
+  
   public static class MaxNAggregator<V extends Comparable<V>> implements Aggregator<V> {
     private final int arity;
     private transient SortedSet<V> elements;

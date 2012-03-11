@@ -16,6 +16,7 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertEquals;
 
+import java.math.BigInteger;
 import java.util.List;
 
 import org.junit.Test;
@@ -55,6 +56,10 @@ public class CombineFnTest {
 
     assertEquals(ImmutableList.of(1775.0),
         applyAggregator(SUM_DOUBLES, ImmutableList.of(29.0, 17.0, 1729.0)));
+    
+    assertEquals(ImmutableList.of(new BigInteger("1775")),
+        applyAggregator(SUM_BIGINTS,
+            ImmutableList.of(new BigInteger("29"), new BigInteger("17"), new BigInteger("1729"))));
   }
   
   @Test
@@ -74,7 +79,9 @@ public class CombineFnTest {
     assertEquals(ImmutableList.of(1745.0f),
         applyAggregator(MAX_FLOATS, ImmutableList.of(29f, 1745f, 17f, 1729f)));
 
-    
+    assertEquals(ImmutableList.of(new BigInteger("1729")),
+        applyAggregator(MAX_BIGINTS,
+            ImmutableList.of(new BigInteger("29"), new BigInteger("17"), new BigInteger("1729"))));
   }
   
   @Test
@@ -93,6 +100,10 @@ public class CombineFnTest {
     
     assertEquals(ImmutableList.of(29),
         applyAggregator(MIN_INTS, ImmutableList.of(29, 170, 1729)));
+    
+    assertEquals(ImmutableList.of(new BigInteger("17")),
+        applyAggregator(MIN_BIGINTS,
+            ImmutableList.of(new BigInteger("29"), new BigInteger("17"), new BigInteger("1729"))));
   }
 
   @Test
