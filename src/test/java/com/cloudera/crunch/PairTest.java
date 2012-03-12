@@ -51,4 +51,13 @@ public class PairTest {
       // expected
     }
   }
+  
+  @Test
+  public void testPairComparisons() {
+    assertEquals(0, Pair.of(null, null).compareTo(Pair.of(null, null)));
+    assertEquals(0, Pair.of(1, 2).compareTo(Pair.of(1, 2)));
+    assertTrue(Pair.of(2, "a").compareTo(Pair.of(1, "a")) > 0);
+    assertTrue(Pair.of("a", 2).compareTo(Pair.of("a", 1)) > 0);
+    assertTrue(Pair.of(null, 17).compareTo(Pair.of(null, 29)) < 0);
+  }
 }
