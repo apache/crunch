@@ -45,6 +45,10 @@ public class GroupingOptions {
     return numReducers;
   }
   
+  public Class<? extends RawComparator> getSortComparatorClass() {
+    return sortComparatorClass;
+  }
+  
   public void configure(Job job) {
     if (partitionerClass != null) {
       job.setPartitionerClass(partitionerClass);

@@ -15,21 +15,21 @@
 package com.cloudera.crunch.impl.mem.collect;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.util.ReflectionUtils;
+
 import com.cloudera.crunch.CombineFn;
-import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
-import com.cloudera.crunch.impl.mem.MemPipeline;
-import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -40,14 +40,20 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
 
   private final MemTable<K, V> parent;
   
-  static <S, T> Iterable<Pair<S, Iterable<T>>> buildMap(MemTable<S, T> parent) {
-    PType<S> keyType = parent.getKeyType();
-    Map<S, Collection<T>> map = null;
-    if (keyType == null || !Comparable.class.isAssignableFrom(keyType.getTypeClass())) {
-      map = Maps.newHashMap();
-    } else {
-      map = new TreeMap<S, Collection<T>>();
+  private static <S, T> Map<S, Collection<T>> createMapFor(PType<S> keyType, GroupingOptions options, Pipeline pipeline) {
+    if (options != null && options.getSortComparatorClass() != null) {
+      RawComparator<S> rc = ReflectionUtils.newInstance(options.getSortComparatorClass(),
+          pipeline.getConfiguration());
+      return new TreeMap<S, Collection<T>>(rc);
+    } else if (keyType != null && Comparable.class.isAssignableFrom(keyType.getTypeClass())) {
+      return new TreeMap<S, Collection<T>>();
     }
+    return Maps.newHashMap();
+  }
+  
+  private static <S, T> Iterable<Pair<S, Iterable<T>>> buildMap(MemTable<S, T> parent, GroupingOptions options) {
+    PType<S> keyType = parent.getKeyType();
+    Map<S, Collection<T>> map = createMapFor(keyType, options, parent.getPipeline());
     
     for (Pair<S, T> pair : parent.materialize()) {
       S key = pair.first();
@@ -64,8 +70,8 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
     return values;
   }
   
-  public MemGroupedTable(MemTable<K, V> parent) {
-	super(buildMap(parent));
+  public MemGroupedTable(MemTable<K, V> parent, GroupingOptions options) {
+	super(buildMap(parent, options));
     this.parent = parent;
   }
 
