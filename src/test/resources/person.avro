@@ -1,0 +1,9 @@
+{
+"namespace": "com.cloudera.crunch.test",
+"name": "Person",
+"type": "record",
+"fields": [
+  {"name": "name", "type": ["string", "null"] },
+  {"name": "age", "type": "int"},
+  {"name": "siblingnames", "type": {"type": "array", "items": "string"}} ]
+} 
