@@ -24,11 +24,15 @@ import scala.collection.mutable.ListBuffer
 trait PipelineApp extends DelayedInit {
   implicit def _string2path(str: String) = new Path(str)
 
-  private val pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
+  private var pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
 
   val from = From
   val to = To
   val at = At
+
+  def local { pipeline = new Pipeline(new Configuration(), true)(ClassManifest.fromClass(getClass())) }
+
+  def debug { pipeline.debug }
 
   def configuration = pipeline.getConfiguration
   def fs: FileSystem = FileSystem.get(configuration)

@@ -16,12 +16,13 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
 import com.cloudera.crunch.{Source, TableSource, Target}
+import com.cloudera.crunch.impl.mem.MemPipeline
 import com.cloudera.crunch.impl.mr.MRPipeline
 import org.apache.hadoop.conf.Configuration
 import Conversions._
 
-class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
-  val jpipeline = new MRPipeline(classManifest[R].erasure, conf)
+class Pipeline[R: ClassManifest](val conf: Configuration = new Configuration(), memory: Boolean = false) {
+  val jpipeline = if (memory) { MemPipeline.getInstance() } else { new MRPipeline(classManifest[R].erasure, conf) }
 
   def getConfiguration = jpipeline.getConfiguration()
 
@@ -42,6 +43,8 @@ class Pipeline[R: ClassManifest](conf: Configuration = new Configuration()) {
   def run { jpipeline.run() }
 
   def done { jpipeline.done() }
+
+  def debug { jpipeline.enableDebug() }
 
   def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
   
