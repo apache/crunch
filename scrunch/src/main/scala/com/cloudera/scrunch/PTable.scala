@@ -90,7 +90,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
  
   def materialize: Iterable[(K, V)] = {
-    iterableAsScalaIterable[CPair[K, V]](native.materialize).map(x => (x.first(), x.second()))
+    new Iterable[(K, V)] {
+      override def iterator =
+        native.materialize.iterator.map(x => (x.first, x.second))
+    }
   }
 
   def keyType = native.getPTableType().getKeyType()
