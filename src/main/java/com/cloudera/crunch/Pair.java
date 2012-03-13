@@ -20,7 +20,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 /**
  * A convenience class for two-element {@link Tuple}s.
  */
-public class Pair<K, V> implements Tuple {
+public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>> {
 
   private final K first;
   private final V second;
@@ -81,5 +81,23 @@ public class Pair<K, V> implements Tuple {
 	StringBuilder sb = new StringBuilder("[");
 	sb.append(first).append(",").append(second).append("]");
 	return sb.toString();
+  }
+
+  private int cmp(Object lhs, Object rhs) {
+    if (lhs == rhs) {
+      return 0;
+    } else if (lhs != null && Comparable.class.isAssignableFrom(lhs.getClass())) {
+      return ((Comparable) lhs).compareTo(rhs);
+    }
+    return (lhs == null ? 0 : lhs.hashCode()) - (rhs == null ? 0 : rhs.hashCode());
+  }
+  
+  @Override  
+  public int compareTo(Pair<K, V> o) {
+    int diff = cmp(first, o.first);
+    if (diff == 0) {
+      diff = cmp(second, o.second);
+    }
+    return diff;
   }
 }

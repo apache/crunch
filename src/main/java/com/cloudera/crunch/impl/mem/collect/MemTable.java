@@ -56,18 +56,17 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
 
   @Override
   public PGroupedTable<K, V> groupByKey() {
-    return new MemGroupedTable<K, V>(this);
+    return groupByKey(null);
   }
 
   @Override
   public PGroupedTable<K, V> groupByKey(int numPartitions) {
-    return groupByKey();
+    return groupByKey(null);
   }
 
   @Override
   public PGroupedTable<K, V> groupByKey(GroupingOptions options) {
-    //TODO: make this work w/the grouping options
-    return groupByKey();
+    return new MemGroupedTable<K, V>(this, options);
   }
 
   @Override

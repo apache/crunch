@@ -17,6 +17,7 @@ package com.cloudera.scrunch
 import com.cloudera.crunch.{Pair => P}
 import com.cloudera.crunch.impl.mem.MemPipeline
 import java.lang.{Iterable => JIterable}
+import org.apache.hadoop.conf.Configuration
 import scala.collection.JavaConversions._
 import Conversions._
 
@@ -26,7 +27,7 @@ import Conversions._
 object Mem {
   private val ptf = Avros
 
-  def pipeline = MemPipeline.getInstance()
+  val pipeline = new Pipeline(new Configuration(), true)(ClassManifest.fromClass(getClass()))
 
   def collectionOf[T](ts: T*)(implicit pt: PTypeH[T]): PCollection[T] = {
     collectionOf(List(ts:_*))

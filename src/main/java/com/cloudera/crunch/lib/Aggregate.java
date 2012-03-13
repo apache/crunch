@@ -140,10 +140,10 @@ public class Aggregate {
     PTableType<K, V> base = ptable.getPTableType();
     PType<Pair<K, V>> pairType = ptf.pairs(base.getKeyType(), base.getValueType());
     PTableType<Boolean, Pair<K, V>> inter = ptf.tableOf(ptf.booleans(), pairType);
-    return ptable.parallelDo("top" + limit, new TopKFn<K, V>(limit, maximize), inter)
+    return ptable.parallelDo("top" + limit + "map", new TopKFn<K, V>(limit, maximize), inter)
         .groupByKey(1)
         .combineValues(new TopKCombineFn<K, V>(limit, maximize))
-        .parallelDo(new DoFn<Pair<Boolean, Pair<K, V>>, Pair<K, V>>() {
+        .parallelDo("top" + limit + "reduce", new DoFn<Pair<Boolean, Pair<K, V>>, Pair<K, V>>() {
           @Override
           public void process(Pair<Boolean, Pair<K, V>> input,
               Emitter<Pair<K, V>> emitter) {
