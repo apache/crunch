@@ -21,6 +21,7 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.FsInput;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
@@ -34,38 +35,45 @@ import com.google.common.collect.UnmodifiableIterator;
 
 public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
-  private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
-  
-  private final DatumReader<T> recordReader;
-  private final MapFn<T, T> mapFn;
-  
-  public AvroFileReaderFactory(AvroType<T> atype) {
-	//TODO: fix this to handle specific records as well as generic.
-	this.recordReader = new GenericDatumReader<T>(atype.getSchema());
-	this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
-  }
-  
-  @Override
-  public Iterator<T> read(FileSystem fs, final Path path) {
-    this.mapFn.initialize();
-	try {
-	  FsInput fsi = new FsInput(path, fs.getConf());
-	  final DataFileReader<T> reader = new DataFileReader<T>(fsi, recordReader);
-	  return new UnmodifiableIterator<T>() {
-		@Override
-		public boolean hasNext() {
-		  return reader.hasNext();
-		}
+	private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
 
-		@Override
-		public T next() {
-		  return mapFn.map(reader.next());
-		}
-	  };
-	} catch (IOException e) {
-	  LOG.info("Could not read avro file at path: " + path, e);
-	  return Iterators.emptyIterator();
+	private final DatumReader<T> recordReader;
+	private final MapFn<T, T> mapFn;
+
+	public AvroFileReaderFactory(AvroType<T> atype) {
+		this.recordReader = createDatumReader(atype);
+		this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
 	}
-  }
+
+	private DatumReader<T> createDatumReader(AvroType<T> avroType) {
+		if (avroType.isSpecific()) {
+			return new SpecificDatumReader<T>(avroType.getSchema());
+		} else {
+			return new GenericDatumReader<T>(avroType.getSchema());
+		}
+	}
+
+	@Override
+	public Iterator<T> read(FileSystem fs, final Path path) {
+		this.mapFn.initialize();
+		try {
+			FsInput fsi = new FsInput(path, fs.getConf());
+			final DataFileReader<T> reader = new DataFileReader<T>(fsi, recordReader);
+			return new UnmodifiableIterator<T>() {
+				@Override
+				public boolean hasNext() {
+					return reader.hasNext();
+				}
+
+				@Override
+				public T next() {
+					return mapFn.map(reader.next());
+				}
+			};
+		} catch (IOException e) {
+			LOG.info("Could not read avro file at path: " + path, e);
+			return Iterators.emptyIterator();
+		}
+	}
 
 }
