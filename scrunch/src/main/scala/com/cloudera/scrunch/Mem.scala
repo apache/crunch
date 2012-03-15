@@ -15,6 +15,7 @@
 package com.cloudera.scrunch
 
 import com.cloudera.crunch.{Pair => P}
+import com.cloudera.crunch.{Source, TableSource, Target}
 import com.cloudera.crunch.impl.mem.MemPipeline
 import java.lang.{Iterable => JIterable}
 import org.apache.hadoop.conf.Configuration
@@ -46,5 +47,42 @@ object Mem {
     val cpairs = pairs.map(kv => P.of(kv._1, kv._2))
     val ptype = ptf.tableOf(pk.get(ptf), pv.get(ptf))
     new PTable[K, V](MemPipeline.typedTableOf(ptype, asJavaIterable(cpairs)))
+  }
+
+
+  val from = From
+  val to = To
+  val at = At
+
+  def read[T](source: Source[T]) = pipeline.read(source)
+
+  def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
+
+  def load[T](source: Source[T]) = read(source)
+
+  def load[K, V](tableSource: TableSource[K, V]) = read(tableSource)
+
+  def write(data: PCollection[_], target: Target) {
+    pipeline.write(data, target)
+  }
+
+  def write(data: PTable[_, _], target: Target) {
+    pipeline.write(data, target)
+  }
+
+  def store(data: PCollection[_], target: Target) {
+    pipeline.write(data, target)
+  }
+
+  def store(data: PTable[_, _], target: Target) {
+    pipeline.write(data, target)
+  }
+
+  def dump(data: PCollection[_]) {
+    data.materialize.foreach { println(_) }
+  }
+
+  def dump(data: PTable[_, _]) {
+    data.materialize.foreach { println(_) }
   }
 }
