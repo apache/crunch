@@ -28,6 +28,12 @@ import _root_.org.junit.Test
 
 case class PageRankData(pr: Float, oldpr: Float, urls: Array[String]) {
   def this() = this(0f, 0f, null)
+
+  def scaledPageRank = pr / urls.length
+
+  def next(newPageRank: Float) = new PageRankData(newPageRank, pr, urls)
+
+  def delta = math.abs(pr - oldpr)
 }
 
 class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Float]] {
@@ -64,7 +70,7 @@ class PageRankClassTest extends JUnitSuite {
 
   def update(prev: PTable[String, PageRankData], d: Float) = {
     val outbound = prev.flatMap((url, prd) => {
-      prd.urls.map(link => (link, prd.pr / prd.urls.length))
+      prd.urls.map(link => (link, prd.scaledPageRank))
     })
     cg(prev, outbound, d)
   }
@@ -74,7 +80,7 @@ class PageRankClassTest extends JUnitSuite {
     prev.cogroup(out).map((url, v) => {
       val (p, o) = v
       val prd = p.head
-      (url, PageRankData((1 - d) + d * o.sum, prd.pr, prd.urls))
+      (url, prd.next((1 - d) + d * o.sum))
     })
   }
 
@@ -89,7 +95,7 @@ class PageRankClassTest extends JUnitSuite {
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = update(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v.pr - v.oldpr)).max.materialize.head
+      delta = prev.values.map(_.delta).max.materialize.head
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done
@@ -101,7 +107,7 @@ class PageRankClassTest extends JUnitSuite {
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = fastUpdate(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v.pr - v.oldpr)).max.materialize.head
+      delta = prev.values.map(_.delta).max.materialize.head
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done
