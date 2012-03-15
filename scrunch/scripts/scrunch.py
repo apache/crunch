@@ -28,7 +28,6 @@ else:
 
 SCIENCE_ROOT = os.path.abspath(os.path.dirname(ORIGINAL_FILE)+"/../")
 JARFILE = SCIENCE_ROOT + "/target/scrunch-0.1.0-jar-with-dependencies.jar" #what jar has all the depencies for this job
-print JARFILE
 TMPDIR = "/tmp"
 BUILDDIR = TMPDIR + "/script-build"
 COMPILE_CMD = "java -cp %s/scala-library.jar:%s/scala-compiler.jar -Dscala.home=%s scala.tools.nsc.Main" % (SCALA_LIB, SCALA_LIB, SCALA_LIB)
@@ -79,6 +78,10 @@ def get_job_name(file):
     return file
 
 JARPATH = os.path.abspath(JARFILE)
+if not os.path.exists(JARPATH):
+  sys.stderr.write("Scrunch assembly jar not found; run mvn assembly:assembly to construct it.\n")
+  sys.exit(1)
+  
 JARBASE = os.path.basename(JARFILE)
 JOBPATH = os.path.abspath(JOBFILE)
 JOB = get_job_name(JOBFILE)
