@@ -24,13 +24,14 @@ import scala.collection.mutable.ListBuffer
 trait PipelineApp extends DelayedInit {
   implicit def _string2path(str: String) = new Path(str)
 
-  private var pipeline = new Pipeline(new Configuration())(ClassManifest.fromClass(getClass()))
+  private val conf = new Configuration()
+  private var pipeline = new Pipeline(conf, true)(ClassManifest.fromClass(getClass()))
 
   val from = From
   val to = To
   val at = At
 
-  def local { pipeline = new Pipeline(new Configuration(), true)(ClassManifest.fromClass(getClass())) }
+  def cluster { pipeline = new Pipeline(conf)(ClassManifest.fromClass(getClass())) }
 
   def debug { pipeline.debug }
 
@@ -96,6 +97,7 @@ trait PipelineApp extends DelayedInit {
   }
 
   def main(args: Array[String]) = {
+    cluster
     val parser = new GenericOptionsParser(configuration, args)
     _args = parser.getRemainingArgs()
     for (proc <- initCode) proc()
