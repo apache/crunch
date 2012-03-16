@@ -24,8 +24,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.reflect.ReflectData;
-import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.Utf8;
 
 import com.cloudera.crunch.MapFn;
@@ -158,7 +156,7 @@ public class Avros {
   }
   
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
-	return new AvroType<T>(clazz, ReflectData.AllowNull.get().getSchema(clazz));
+	return new AvroType<T>(clazz, ScalaSafeReflectData.get().getSchema(clazz));
   }
   
   private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {
