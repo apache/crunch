@@ -47,7 +47,6 @@ public class AvroInputFormat<T> extends FileInputFormat<AvroWrapper<T>, NullWrit
 		return result;
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public RecordReader<AvroWrapper<T>, NullWritable> createRecordReader(InputSplit split,
 			TaskAttemptContext context) throws IOException, InterruptedException {

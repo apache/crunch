@@ -24,6 +24,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.util.Utf8;
 
 import com.cloudera.crunch.MapFn;
@@ -49,6 +50,11 @@ import com.google.common.collect.Maps;
  */
 public class Avros {
 
+  /**
+   * The instance we use for generating reflected schemas. May be modified by clients (e.g., Scrunch.)
+   */
+  public static ReflectData REFLECT_DATA_INSTANCE = ScalaSafeReflectData.get();
+  
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
     public String map(CharSequence input) {
@@ -156,7 +162,7 @@ public class Avros {
   }
   
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
-	return new AvroType<T>(clazz, ScalaSafeReflectData.get().getSchema(clazz));
+	return new AvroType<T>(clazz, REFLECT_DATA_INSTANCE.getSchema(clazz));
   }
   
   private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {

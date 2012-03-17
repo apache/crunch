@@ -14,31 +14,38 @@
  */
 import com.cloudera.scrunch._
 
-object PageRank extends PipelineApp {
+case class PageRankData(pageRank: Float, oldPageRank: Float, links: List[String]) {
+  def this() = this(1.0f, 0.0f, Nil)
+ 
+  def this(links: Iterable[String]) = this(1.0f, 0.0f, links.toList)
+  
+  def delta = math.abs(pageRank - oldPageRank)
+
+  def next(newPageRank: Float) = new PageRankData(newPageRank, pageRank, links)
+
+  def outboundScores = links.map(link => (link, pageRank / links.size))
+}
+
+object ClassyPageRank extends PipelineApp {
+
   def initialize(file: String) = {
     read(from.textFile(file))
       .map(line => { val urls = line.split("\\s+"); (urls(0), urls(2)) })
       .groupByKey
-      .map((url, links) => (url, (1f, 0f, links.toList)))
+      .map((url, links) => (url, new PageRankData(links)))
   }
 
-  def update(prev: PTable[String, (Float, Float, List[String])], d: Float) = {
-    val outbound = prev.flatMap((url, data) => {
-      val (pagerank, old_pagerank, links) = data
-      links.map(link => (link, pagerank / links.size))
-    })
+  def update(prev: PTable[String, PageRankData], d: Float) = {
+    val outbound = prev.values.flatMap(_.outboundScores)
 
     cogroup(prev, outbound).mapValues(data => {
-      val (prev_data, outbound_data) = data
-      val new_pagerank = (1 - d) + d * outbound_data.sum
-      var cur_pagerank = 0f
-      var links: List[String] = Nil
-      if (!prev_data.isEmpty) {
-        val (cur_pr, old_pr, l) = prev_data.head
-        cur_pagerank = cur_pr
-        links = l
+      val (prd, outboundScores) = data
+      val newPageRank = (1 - d) + d * outboundScores.sum
+      if (!prd.isEmpty) {
+        prd.head.next(newPageRank)
+      } else {
+        new PageRankData(newPageRank, 0, Nil)
       }
-      (new_pagerank, cur_pagerank, links)
     })
   }
 
@@ -50,7 +57,7 @@ object PageRank extends PipelineApp {
     index = index + 1
     curr = update(curr, 0.5f)
     write(curr, to.avroFile("prank/" + index))
-    delta = curr.values.map(v => math.abs(v._1 - v._2)).max.materialize.head
+    delta = curr.values.map(_.delta).max.materialize.head
     println("Current delta = " + delta)
   }
   fs.rename("prank/" + index, args(1))

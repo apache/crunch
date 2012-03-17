@@ -24,7 +24,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -33,8 +32,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 /** An {@link org.apache.hadoop.mapreduce.OutputFormat} for Avro data files. */
-public class AvroOutputFormat<T>
-  extends FileOutputFormat<AvroWrapper<T>, NullWritable> {
+public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWritable> {
 
   @Override
   public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(
@@ -50,7 +48,7 @@ public class AvroOutputFormat<T>
     }
     
     final DataFileWriter<T> WRITER =
-      new DataFileWriter<T>(new ReflectDatumWriter<T>());
+      new DataFileWriter<T>(new SafeReflectDatumWriter<T>());
 
     Path path = getDefaultWorkFile(context,
         org.apache.avro.mapred.AvroOutputFormat.EXT);

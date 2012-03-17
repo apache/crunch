@@ -22,7 +22,6 @@ import java.util.Collection;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.util.Utf8;
 import org.junit.Test;
 

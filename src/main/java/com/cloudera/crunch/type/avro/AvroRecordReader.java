@@ -59,7 +59,7 @@ public class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritab
 		SeekableInput in = new FsInput(split.getPath(), conf);
 		DatumReader<T> datumReader = null;
 		if (context.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, true)) {
-			datumReader = new ReflectDatumReader<T>(schema);
+			datumReader = new SafeReflectDatumReader<T>(schema);
 		} else {
 			datumReader = new SpecificDatumReader<T>(schema);
 		}

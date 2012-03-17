@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011, Cloudera, Inc. All Rights Reserved.
+ * Copyright (c) 2012, Cloudera, Inc. All Rights Reserved.
  *
  * Cloudera, Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"). You may not use this file except in
@@ -12,16 +12,13 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-import com.cloudera.scrunch.PipelineApp
+package com.cloudera.crunch.type.avro;
 
-object WordCount extends PipelineApp {
+import org.apache.avro.reflect.ReflectDatumWriter;
 
-  def countWords(file: String) = {
-    read(from.textFile(file))
-      .flatMap(_.split("\\W+").filter(!_.isEmpty()))
-      .count
+
+public class SafeReflectDatumWriter<T> extends ReflectDatumWriter<T> {
+  public SafeReflectDatumWriter() {
+    super(Avros.REFLECT_DATA_INSTANCE);
   }
-
-  val counts = cogroup(countWords(args(0)), countWords(args(1)))
-  write(counts, to.textFile(args(2)))
 }

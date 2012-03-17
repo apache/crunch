@@ -24,7 +24,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.AvroTypeException;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericFixed;
@@ -61,12 +63,12 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
    */
   private String getSimpleName(Class clazz) {
     try {
-      return clazz.getSimpleName();
+      return clean(clazz.getSimpleName());
     } catch (InternalError ie) {
       // This can happen in Scala when we're using the Console. Crazy, right?
       String fullName = clazz.getName();
       String[] pieces = fullName.split("\\.");
-      return pieces[pieces.length - 1];
+      return clean(pieces[pieces.length - 1]);
     }
   }
   
@@ -84,7 +86,7 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
       ParameterizedType ptype = (ParameterizedType)type;
       Class raw = (Class)ptype.getRawType();
       Type[] params = ptype.getActualTypeArguments();
-      if (Map.class.isAssignableFrom(raw)) {                 // Map
+      if (Map.class.isAssignableFrom(raw)) {
         Type key = params[0];
         Type value = params[1];
         if (!(key == String.class))
@@ -96,6 +98,8 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
         Schema schema = Schema.createArray(createSchema(params[0], names));
         schema.addProp(CLASS_PROP, raw.getName());
         return schema;
+      } else {
+        throw new AvroTypeException("Could not convert type: " + type);
       }
     } else if ((type == Short.class) || (type == Short.TYPE)) {
       Schema result = Schema.create(Schema.Type.INT);
@@ -156,7 +160,7 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
                   defaultValue = NullNode.getInstance();
                 }
               }
-              fields.add(new Schema.Field(field.getName(),
+              fields.add(new Schema.Field(clean(field.getName()),
                   fieldSchema, null /* doc */, defaultValue));
             }
           if (error)                              // add Throwable message
@@ -173,6 +177,56 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
   
   private static final Schema THROWABLE_MESSAGE =
       makeNullable(Schema.create(Schema.Type.STRING));
+  
+
+  @Override
+  public Object getField(Object record, String name, int position) {
+    if (record instanceof IndexedRecord)
+      return super.getField(record, name, position);
+    try {
+      return getField(record.getClass(), name).get(record);
+    } catch (IllegalAccessException e) {
+      throw new AvroRuntimeException(e);
+    }
+  }
+  
+  private static final Map<Class,Map<String,Field>> FIELD_CACHE =
+      new ConcurrentHashMap<Class,Map<String,Field>>();
+  
+  private static Field getField(Class c, String name) {
+    Map<String,Field> fields = FIELD_CACHE.get(c);
+    if (fields == null) {
+      fields = new ConcurrentHashMap<String,Field>();
+      FIELD_CACHE.put(c, fields);
+    }
+    Field f = fields.get(name);
+    if (f == null) {
+      f = findField(c, name);
+      fields.put(name, f);
+    }
+    return f;
+  }
+
+  private static Field findField(Class original, String name) {
+    Class c = original;
+    do {
+      try {
+        Field f = c.getDeclaredField(dirty(name));
+        f.setAccessible(true);
+        return f;
+      } catch (NoSuchFieldException e) {}
+      c = c.getSuperclass();
+    } while (c != null);
+    throw new AvroRuntimeException("No field named "+name+" in: "+original);
+  }
+  
+  private static String clean(String dirty) {
+    return dirty.replace('$', '_');
+  }
+  
+  private static String dirty(String clean) {
+    return clean.replace('_', '$');
+  }
   
   // Return of this class and its superclasses to serialize.
   // Not cached, since this is only used to create schemas, which are cached.
