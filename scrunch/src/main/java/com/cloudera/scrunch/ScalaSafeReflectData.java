@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.type.avro;
+package com.cloudera.scrunch;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;

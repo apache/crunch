@@ -53,7 +53,7 @@ public class Avros {
   /**
    * The instance we use for generating reflected schemas. May be modified by clients (e.g., Scrunch.)
    */
-  public static ReflectData REFLECT_DATA_INSTANCE = ScalaSafeReflectData.get();
+  public static ReflectData REFLECT_DATA_INSTANCE = ReflectData.AllowNull.get();
   
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
