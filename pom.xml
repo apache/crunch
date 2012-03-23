@@ -45,6 +45,31 @@
       <version>1.8.6</version>
     </dependency>
 
+    <!-- Both Protobufs and Thrift are supported as
+         derived serialization types, and you can use
+         (almost) any version of them you like, Crunch
+         only relies on the stable public APIs, not the
+         structure of the files themselves.
+
+         Both dependencies are scoped as provided, in
+         order to not expand the size of the assembly jars
+         unnecessarily.
+    -->
+
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>2.4.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>0.8.0</version>
+      <scope>provided</scope>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
