@@ -14,11 +14,23 @@
  */
 package com.cloudera.crunch.type.avro;
 
+import org.apache.avro.Schema;
+import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 
+/**
+ * A Factory class for constructing Avro reflection-related objects.
+ */
+public class ReflectDataFactory {
 
-public class SafeReflectDatumWriter<T> extends ReflectDatumWriter<T> {
-  public SafeReflectDatumWriter() {
-    super(Avros.REFLECT_DATA_INSTANCE);
+  public ReflectData getReflectData() { return ReflectData.AllowNull.get(); }
+  
+  public <T> ReflectDatumReader<T> getReader(Schema schema) {
+    return new ReflectDatumReader<T>(schema);
+  }
+  
+  public <T> ReflectDatumWriter<T> getWriter() {
+    return new ReflectDatumWriter<T>();
   }
 }

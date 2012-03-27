@@ -12,19 +12,27 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.type.avro;
+package com.cloudera.scrunch;
 
 import org.apache.avro.Schema;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.apache.avro.reflect.ReflectDatumWriter;
 
-public class SafeReflectDatumReader<T> extends ReflectDatumReader<T> {
-  /** Construct where the writer's and reader's schemas are the same. */
-  public SafeReflectDatumReader(Schema root) {
-    super(root, root, Avros.REFLECT_DATA_INSTANCE);
+import com.cloudera.crunch.type.avro.ReflectDataFactory;
+
+/**
+ * An implementation of the {@code ReflectDataFactory} class to work with Scala classes.
+ */
+public class ScalaReflectDataFactory extends ReflectDataFactory {
+
+  public ReflectData getReflectData() { return ScalaSafeReflectData.get(); }
+  
+  public <T> ReflectDatumReader<T> getReader(Schema schema) {
+    return new ScalaSafeReflectDatumReader<T>(schema);
   }
-
-  /** Construct given writer's and reader's schema. */
-  public SafeReflectDatumReader(Schema writer, Schema reader) {
-    super(writer, reader, Avros.REFLECT_DATA_INSTANCE);
+  
+  public <T> ReflectDatumWriter<T> getWriter() {
+    return new ScalaSafeReflectDatumWriter<T>();
   }
 }

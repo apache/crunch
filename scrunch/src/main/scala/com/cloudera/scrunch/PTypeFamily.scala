@@ -118,7 +118,7 @@ object Writables extends PTypeFamily {
 object Avros extends PTypeFamily {
   override def ptf = AvroTypeFamily.getInstance()
 
-  CAvros.REFLECT_DATA_INSTANCE = ScalaSafeReflectData.get()
+  CAvros.REFLECT_DATA_FACTORY = new ScalaReflectDataFactory()
 
   def reflects[T: ClassManifest] = CAvros.reflects(classManifest[T].erasure)
 }

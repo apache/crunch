@@ -39,9 +39,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.NullNode;
 
 /**
- * TODO: Delete this thing as soon as Scala supports calling getSimpleName on
- * classes defined in the REPL.
- *
+ * Scala-oriented support class for serialization via reflection.
  */
 public class ScalaSafeReflectData extends ReflectData.AllowNull {
 
@@ -86,13 +84,17 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
       ParameterizedType ptype = (ParameterizedType)type;
       Class raw = (Class)ptype.getRawType();
       Type[] params = ptype.getActualTypeArguments();
-      if (Map.class.isAssignableFrom(raw)) {
+      if (java.util.Map.class.isAssignableFrom(raw) ||
+          scala.collection.Map.class.isAssignableFrom(raw)) {
         Type key = params[0];
         Type value = params[1];
         if (!(key == String.class))
           throw new AvroTypeException("Map key class not String: "+key);
-        return Schema.createMap(createSchema(value, names));
-      } else if (Collection.class.isAssignableFrom(raw)) {   // Collection
+        Schema schema = Schema.createMap(createSchema(value, names));
+        schema.addProp(CLASS_PROP, raw.getName());
+        return schema;
+      } else if (Collection.class.isAssignableFrom(raw) ||
+          scala.collection.Iterable.class.isAssignableFrom(raw)) {   // Collection
         if (params.length != 1)
           throw new AvroTypeException("No array type specified.");
         Schema schema = Schema.createArray(createSchema(params[0], names));

@@ -48,7 +48,7 @@ public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWr
     }
     
     final DataFileWriter<T> WRITER =
-      new DataFileWriter<T>(new SafeReflectDatumWriter<T>());
+        new DataFileWriter<T>(Avros.REFLECT_DATA_FACTORY.<T>getWriter());
 
     Path path = getDefaultWorkFile(context,
         org.apache.avro.mapred.AvroOutputFormat.EXT);

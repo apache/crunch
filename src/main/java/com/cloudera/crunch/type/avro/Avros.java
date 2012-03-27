@@ -53,7 +53,7 @@ public class Avros {
   /**
    * The instance we use for generating reflected schemas. May be modified by clients (e.g., Scrunch.)
    */
-  public static ReflectData REFLECT_DATA_INSTANCE = ReflectData.AllowNull.get();
+  public static ReflectDataFactory REFLECT_DATA_FACTORY = new ReflectDataFactory();
   
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
@@ -162,7 +162,7 @@ public class Avros {
   }
   
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
-	return new AvroType<T>(clazz, REFLECT_DATA_INSTANCE.getSchema(clazz));
+	return new AvroType<T>(clazz, REFLECT_DATA_FACTORY.getReflectData().getSchema(clazz));
   }
   
   private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {
