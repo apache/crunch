@@ -50,6 +50,16 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
   static final String CLASS_PROP = "java-class";
   static final String ELEMENT_PROP = "java-element-class";
   
+  static Class getClassProp(Schema schema, String prop) {
+    String name = schema.getProp(prop);
+    if (name == null) return null;
+    try {
+      return Class.forName(name);
+    } catch (ClassNotFoundException e) {
+      throw new AvroRuntimeException(e);
+    }
+  }
+  
   /**
    * This method is the whole reason for this class to exist, so that I can
    * hack around a problem where calling getSimpleName on a class that is
@@ -263,5 +273,17 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
     for (Class branch : union.value())
       branches.add(createSchema(branch, names));
     return Schema.createUnion(branches);
+  }
+  
+  @Override
+  protected boolean isArray(Object datum) {
+    if (datum == null) return false;
+    return (datum instanceof Collection) || datum.getClass().isArray() ||
+        (datum instanceof scala.collection.Iterable);
+  }
+  
+  @Override
+  protected boolean isMap(Object datum) {
+    return (datum instanceof java.util.Map) || (datum instanceof scala.collection.Map);
   }
 }

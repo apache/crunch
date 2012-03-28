@@ -27,6 +27,8 @@ import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileSourceImpl;
 import com.cloudera.crunch.type.avro.AvroInputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.type.avro.ReflectDataFactory;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
@@ -44,10 +46,11 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
 	@Override
 	public void configureSource(Job job, int inputId) throws IOException {
-		super.configureSource(job, inputId);
-
-		job.getConfiguration().setBoolean(AvroJob.INPUT_IS_REFLECT, !this.avroType.isSpecific());
-		job.getConfiguration().set(AvroJob.INPUT_SCHEMA, avroType.getSchema().toString());
+	  super.configureSource(job, inputId);
+	  Configuration conf = job.getConfiguration();
+	  conf.setBoolean(AvroJob.INPUT_IS_REFLECT, !this.avroType.isSpecific());
+	  conf.set(AvroJob.INPUT_SCHEMA, avroType.getSchema().toString());
+	  Avros.configureReflectDataFactory(conf);
 	}
 
 	@Override

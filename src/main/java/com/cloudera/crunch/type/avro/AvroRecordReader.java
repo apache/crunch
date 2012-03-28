@@ -28,7 +28,6 @@ import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.mapred.FsInput;
-import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
@@ -59,7 +58,8 @@ public class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritab
 		SeekableInput in = new FsInput(split.getPath(), conf);
 		DatumReader<T> datumReader = null;
 		if (context.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, true)) {
-			datumReader = Avros.REFLECT_DATA_FACTORY.getReader(schema);
+		  ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
+			datumReader = factory.getReader(schema);
 		} else {
 			datumReader = new SpecificDatumReader<T>(schema);
 		}

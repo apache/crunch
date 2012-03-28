@@ -85,10 +85,12 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
       options.configure(job);
     }
     
+    Avros.configureReflectDataFactory(conf);
+    
     Collection<String> serializations =
         job.getConfiguration().getStringCollection("io.serializations");
-    if (!serializations.contains(AvroSerialization.class.getName())) {
-      serializations.add(AvroSerialization.class.getName());
+    if (!serializations.contains(SafeAvroSerialization.class.getName())) {
+      serializations.add(SafeAvroSerialization.class.getName());
       job.getConfiguration().setStrings("io.serializations",
           serializations.toArray(new String[0]));
     }

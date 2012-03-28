@@ -24,8 +24,9 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.util.Utf8;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
@@ -54,6 +55,21 @@ public class Avros {
    * The instance we use for generating reflected schemas. May be modified by clients (e.g., Scrunch.)
    */
   public static ReflectDataFactory REFLECT_DATA_FACTORY = new ReflectDataFactory();
+
+  /**
+   * The name of the configuration parameter that tracks which reflection factory to use.
+   */
+  private static final String REFLECT_DATA_FACTORY_CLASS = "crunch.reflectdatafactory";
+  
+  public static void configureReflectDataFactory(Configuration conf) {
+    conf.setClass(REFLECT_DATA_FACTORY_CLASS, REFLECT_DATA_FACTORY.getClass(),
+        ReflectDataFactory.class);
+  }
+  
+  public static ReflectDataFactory getReflectDataFactory(Configuration conf) {
+    return (ReflectDataFactory) ReflectionUtils.newInstance(
+        conf.getClass(REFLECT_DATA_FACTORY_CLASS, ReflectDataFactory.class), conf);  
+  }
   
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override

@@ -26,6 +26,8 @@ import com.cloudera.crunch.io.impl.FileTargetImpl;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.avro.AvroOutputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.type.avro.ReflectDataFactory;
 
 public class AvroFileTarget extends FileTargetImpl {
   public AvroFileTarget(String path) {
@@ -66,7 +68,8 @@ public class AvroFileTarget extends FileTargetImpl {
       conf.set(schemaParam, atype.getSchema().toString());
     } else if (!outputSchema.equals(atype.getSchema().toString())) {
       throw new IllegalStateException("Avro targets must use the same output schema");
-    }  
+    }
+    Avros.configureReflectDataFactory(conf);
     configureForMapReduce(job, AvroWrapper.class, NullWritable.class,
         outputPath, name);
   }
