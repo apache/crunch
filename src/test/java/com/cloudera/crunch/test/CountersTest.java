@@ -16,6 +16,7 @@ package com.cloudera.crunch.test;
 
 import static org.junit.Assert.assertEquals;
 
+import org.junit.After;
 import org.junit.Test;
 
 import com.cloudera.crunch.DoFn;
@@ -28,6 +29,11 @@ public class CountersTest {
 
   public enum CT { ONE, TWO, THREE };
   
+  @After
+  public void after() {
+	  TestCounters.clearCounters();
+  }
+  
   public static class CTFn extends DoFn<String, String> {
     @Override
     public void process(String input, Emitter<String> emitter) {
@@ -38,6 +44,15 @@ public class CountersTest {
   }
   
   @Test public void test() {
+    CTFn fn = new CTFn();
+    fn.process("foo", null);
+    fn.process("bar", null);
+    assertEquals(2L, TestCounters.getCounter(CT.ONE).getValue());
+    assertEquals(8L, TestCounters.getCounter(CT.TWO).getValue());
+    assertEquals(14L, TestCounters.getCounter(CT.THREE).getValue());
+  }
+  
+  @Test public void secondTest() {
     CTFn fn = new CTFn();
     fn.process("foo", null);
     fn.process("bar", null);

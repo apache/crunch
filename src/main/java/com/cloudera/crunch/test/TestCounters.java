@@ -31,4 +31,8 @@ public class TestCounters {
   public static Counter getCounter(String group, String name) {
     return COUNTERS.findCounter(group, name);
   }
+  
+  public static void clearCounters() {
+	  COUNTERS = new Counters();
+  }   
 }
