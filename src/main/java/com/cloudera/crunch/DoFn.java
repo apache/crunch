@@ -19,8 +19,11 @@ import java.io.Serializable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
+import com.cloudera.crunch.test.TestCounters;
 
 /**
  * Base class for all data processing functions in Crunch.
@@ -34,8 +37,10 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
  */
 public abstract class DoFn<S, T> implements Serializable {
 
-  private TaskInputOutputContext<?, ?, ?, ?> context;
-
+  private transient TaskInputOutputContext<?, ?, ?, ?> context;
+  private transient Configuration testConf;
+  private transient String internalStatus;
+  
   /**
    * Called during the job planning phase. Subclasses may override
    * this method in order to modify the configuration of the Job
@@ -82,6 +87,14 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   /**
+   * Sets a {@code Configuration} instance to be used during unit tests.
+   * @param conf The Configuration instance.
+   */
+  public void setConfigurationForTest(Configuration conf) {
+    this.testConf = conf;
+  }
+  
+  /**
    * Returns an estimate of how applying this function to a {@link PCollection}
    * will cause it to change in side. The optimizer uses these estimates to
    * decide where to break up dependent MR jobs into separate Map and Reduce
@@ -96,30 +109,54 @@ public abstract class DoFn<S, T> implements Serializable {
   }
   
   protected Configuration getConfiguration() {
-    return context.getConfiguration();
+    if (context != null) {
+      return context.getConfiguration();
+    } else if (testConf != null) {
+      return testConf;
+    }
+    return null;
   }
   
   protected Counter getCounter(Enum<?> counterName) {
+    if (context == null) {
+      return TestCounters.getCounter(counterName);
+    }
     return context.getCounter(counterName);
   }
   
   protected Counter getCounter(String groupName, String counterName) {
+    if (context == null) {
+      return TestCounters.getCounter(groupName, counterName);
+    }
     return context.getCounter(groupName, counterName);
   }
   
   protected void progress() {
-    context.progress();
+    if (context != null) {
+      context.progress();
+    }
   }
   
   protected TaskAttemptID getTaskAttemptID() {
-    return context.getTaskAttemptID();
+    if (context != null) {
+      return context.getTaskAttemptID();
+    } else {
+      return new TaskAttemptID();
+    }
   }
   
   protected void setStatus(String status) {
-    context.setStatus(status);
+    if (context != null) {
+      context.setStatus(status);
+    }
+    this.internalStatus = status;
   }
   
   protected String getStatus() {
-    return context.getStatus();
+    if (context != null) {
+      return context.getStatus();
+    }
+    return internalStatus;
   }
+  
 }
