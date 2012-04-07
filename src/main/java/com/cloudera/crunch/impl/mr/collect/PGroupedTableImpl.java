@@ -55,7 +55,7 @@ public class PGroupedTableImpl<K, V> extends
   public void configureShuffle(Job job) {
     ptype.configureShuffle(job, groupingOptions);
     if (groupingOptions == null || groupingOptions.getNumReducers() <= 0) {
-      int bytesPerTask = job.getConfiguration().getInt("crunch.bytes.per.reduce.task",
+      long bytesPerTask = job.getConfiguration().getInt("crunch.bytes.per.reduce.task",
           (1000 * 1000 * 1000));
       int numReduceTasks = 1 + (int) (getSize() / bytesPerTask);
       if (numReduceTasks > 0) {
