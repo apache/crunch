@@ -13,15 +13,18 @@
  * License.
  */
 import com.cloudera.scrunch._
+import com.cloudera.scrunch.Mem._
 
-case class PageRankData(pageRank: Float, oldPageRank: Float, links: List[String]) {
+case class UrlData(pageRank: Float, oldPageRank: Float, links: List[String]) {
   def this() = this(1.0f, 0.0f, Nil)
+
+  def this(links: String*) = this(1.0f, 0.0f, List(links:_*))
  
   def this(links: Iterable[String]) = this(1.0f, 0.0f, links.toList)
   
   def delta = math.abs(pageRank - oldPageRank)
 
-  def next(newPageRank: Float) = new PageRankData(newPageRank, pageRank, links)
+  def next(newPageRank: Float) = new UrlData(newPageRank, pageRank, links)
 
   def outboundScores = links.map(link => (link, pageRank / links.size))
 }
@@ -32,10 +35,10 @@ object ClassyPageRank extends PipelineApp {
     read(from.textFile(file))
       .map(line => { val urls = line.split("\\s+"); (urls(0), urls(2)) })
       .groupByKey
-      .map((url, links) => (url, new PageRankData(links)))
+      .map((url, links) => (url, new UrlData(links)))
   }
 
-  def update(prev: PTable[String, PageRankData], d: Float) = {
+  def update(prev: PTable[String, UrlData], d: Float) = {
     val outbound = prev.values.flatMap(_.outboundScores)
 
     cogroup(prev, outbound).mapValues(data => {
@@ -44,7 +47,7 @@ object ClassyPageRank extends PipelineApp {
       if (!prd.isEmpty) {
         prd.head.next(newPageRank)
       } else {
-        new PageRankData(newPageRank, 0, Nil)
+        new UrlData(newPageRank, 0, Nil)
       }
     })
   }
