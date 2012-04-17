@@ -14,6 +14,8 @@
  */
 package com.cloudera.crunch.fn;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.cloudera.crunch.MapFn;
 
 public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
@@ -43,5 +45,11 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
   @Override
   public T map(R input) {
     return second.map(first.map(input));
+  }
+
+  @Override
+  public void configure(Configuration conf) {
+    first.configure(conf);
+    second.configure(conf);
   }
 }
