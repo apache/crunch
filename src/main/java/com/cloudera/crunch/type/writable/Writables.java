@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -285,6 +286,13 @@ public class Writables {
     }
 
     @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+    
+    @Override
     public void initialize() {
       for (MapFn fn : fns) {
         fn.setContext(getContext());
@@ -324,6 +332,13 @@ public class Writables {
       this.fns = Lists.newArrayList();
       for (PType ptype : ptypes) {
         fns.add(ptype.getOutputMapFn());
+      }
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
       }
     }
 
@@ -410,6 +425,11 @@ public class Writables {
     }
 
     @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+    
+    @Override
     public void initialize() {
       mapFn.setContext(getContext());   
     }
@@ -435,6 +455,11 @@ public class Writables {
       this.mapFn = mapFn;
     }
 
+    @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+    
     @Override
     public void initialize() {
       mapFn.setContext(getContext());   
@@ -468,6 +493,11 @@ public class Writables {
 	}
 	
 	@Override
+	public void configure(Configuration conf) {
+	  mapFn.configure(conf);
+	}
+	
+	@Override
 	public void initialize() {
 	  mapFn.setContext(getContext());
 	}
@@ -490,6 +520,11 @@ public class Writables {
 	public MapOutputMapFn(Class<Writable> clazz, MapFn<T, Writable> mapFn) {
 	  this.clazz = clazz;
 	  this.mapFn = mapFn;
+	}
+	
+	@Override
+	public void configure(Configuration conf) {
+	  mapFn.configure(conf);
 	}
 	
 	@Override

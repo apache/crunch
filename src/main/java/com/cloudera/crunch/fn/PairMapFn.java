@@ -14,6 +14,8 @@
  */
 package com.cloudera.crunch.fn;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
@@ -27,6 +29,12 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
     this.values = values;
   }
 
+  @Override
+  public void configure(Configuration conf) {
+    keys.configure(conf);
+    values.configure(conf);
+  }
+  
   @Override
   public void initialize() {
     keys.setContext(getContext());

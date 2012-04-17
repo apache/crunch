@@ -16,6 +16,7 @@ package com.cloudera.crunch.type.avro;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
+import org.apache.hadoop.conf.Configuration;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
@@ -46,6 +47,12 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     }
     
     @Override
+    public void configure(Configuration conf) {
+      keyMapFn.configure(conf);
+      valueMapFn.configure(conf);
+    }
+
+    @Override
     public void initialize() {
       keyMapFn.setContext(getContext());
       valueMapFn.setContext(getContext());
@@ -74,6 +81,12 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     public IndexedRecordToPair(MapFn firstMapFn, MapFn secondMapFn) {
       this.firstMapFn = firstMapFn;
       this.secondMapFn = secondMapFn;
+    }
+    
+    @Override
+    public void configure(Configuration conf) {
+      firstMapFn.configure(conf);
+      secondMapFn.configure(conf);
     }
     
     @Override

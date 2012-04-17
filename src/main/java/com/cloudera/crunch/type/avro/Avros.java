@@ -190,6 +190,11 @@ public class Avros {
     }
     
     @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+    
+    @Override
     public void initialize() {
       this.mapFn.setContext(getContext());
     }
@@ -224,6 +229,11 @@ public class Avros {
     }
     
     @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+
+    @Override
     public void initialize() {
       this.mapFn.setContext(getContext());
     }
@@ -256,6 +266,11 @@ public class Avros {
 	  this.mapFn = mapFn;
 	}
 	
+    @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+
 	@Override
 	public void initialize() {
 	  this.mapFn.setContext(getContext());
@@ -278,6 +293,11 @@ public class Avros {
 	  this.mapFn = mapFn;
 	}
 	
+    @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
+
 	@Override
 	public void initialize() {
 	  this.mapFn.setContext(getContext());
@@ -317,6 +337,13 @@ public class Avros {
     }
     
     @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
     public void initialize() {
       for (MapFn fn : fns) {
         fn.setContext(getContext());
@@ -354,6 +381,13 @@ public class Avros {
       }
     }
     
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
     @Override
     public void initialize() {
       this.record = new GenericData.Record(new Schema.Parser().parse(jsonSchema));
