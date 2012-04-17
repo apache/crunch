@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.fn;
 
+import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 
@@ -26,13 +27,20 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
     this.values = values;
   }
 
+  @Override
   public void initialize() {
-    keys.initialize();
-    values.initialize();
+    keys.setContext(getContext());
+    values.setContext(getContext());
   }
 
   @Override
   public Pair<S, T> map(Pair<K, V> input) {
     return Pair.of(keys.map(input.first()), values.map(input.second()));
+  }
+  
+  @Override
+  public void cleanup(Emitter<Pair<S, T>> emitter) {
+    keys.cleanup(null);
+    values.cleanup(null);
   }
 }

@@ -27,6 +27,7 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Sort.ColumnOrder;
 import com.cloudera.crunch.lib.Sort.Order;

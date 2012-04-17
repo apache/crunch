@@ -20,6 +20,7 @@ import static org.junit.Assert.assertFalse;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Tuple3;
+import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.test.FileHelper;

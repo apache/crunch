@@ -39,7 +39,6 @@ import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.fn.IdentityFn;
-import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.TupleFactory;
 import com.cloudera.crunch.util.PTypes;
@@ -288,7 +287,7 @@ public class Writables {
     @Override
     public void initialize() {
       for (MapFn fn : fns) {
-        fn.initialize();
+        fn.setContext(getContext());
       }
       // The rest of the methods allocate new
       // objects each time. However this one
@@ -333,7 +332,7 @@ public class Writables {
       this.values = new Writable[fns.size()];
       this.writable = new TupleWritable(values);
       for (MapFn fn : fns) {
-        fn.initialize();
+        fn.setContext(getContext());
       }
     }
 
@@ -353,18 +352,14 @@ public class Writables {
 
   public static <V1, V2> WritableType<Pair<V1, V2>, TupleWritable> pairs(PType<V1> p1, PType<V2> p2) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.PAIR, p1, p2);
-    input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2);
-    output.initialize();
     return new WritableType(Pair.class, TupleWritable.class, input, output, p1, p2);
   }
 
   public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1,
       PType<V2> p2, PType<V3> p3) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE3, p1, p2, p3);
-    input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3);
-    output.initialize();
     return new WritableType(Tuple3.class, TupleWritable.class,
         input,
         output,
@@ -374,9 +369,7 @@ public class Writables {
   public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE4, p1, p2, p3, p4);
-    input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3, p4);
-    output.initialize();
     return new WritableType(Tuple4.class, TupleWritable.class,
         input,
         output,
@@ -385,9 +378,7 @@ public class Writables {
 
   public static WritableType<TupleN, TupleWritable> tuples(PType... ptypes) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLEN, ptypes);
-    input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
-    output.initialize();
     return new WritableType(TupleN.class, TupleWritable.class, input, output, ptypes);
   }
 
@@ -398,9 +389,7 @@ public class Writables {
     }
     TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
     TWTupleMapFn input = new TWTupleMapFn(factory, ptypes);
-    input.initialize();
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
-    output.initialize();
     return new WritableType(clazz, TupleWritable.class, input, output, ptypes);  
   }
   
@@ -422,7 +411,7 @@ public class Writables {
 
     @Override
     public void initialize() {
-      mapFn.initialize();      
+      mapFn.setContext(getContext());   
     }
     
     @Override
@@ -448,7 +437,7 @@ public class Writables {
 
     @Override
     public void initialize() {
-      mapFn.initialize();      
+      mapFn.setContext(getContext());   
     }
     
     @Override
@@ -480,7 +469,7 @@ public class Writables {
 	
 	@Override
 	public void initialize() {
-	  mapFn.initialize();
+	  mapFn.setContext(getContext());
 	}
 	
 	@Override
@@ -505,7 +494,7 @@ public class Writables {
 	
 	@Override
 	public void initialize() {
-	  mapFn.initialize();
+	  mapFn.setContext(getContext());
 	}
 
 	@Override

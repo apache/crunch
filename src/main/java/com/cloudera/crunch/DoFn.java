@@ -108,6 +108,10 @@ public abstract class DoFn<S, T> implements Serializable {
     return 1.2f;
   }
   
+  protected TaskInputOutputContext<?, ?, ?, ?> getContext() {
+    return context;
+  }
+  
   protected Configuration getConfiguration() {
     if (context != null) {
       return context.getConfiguration();

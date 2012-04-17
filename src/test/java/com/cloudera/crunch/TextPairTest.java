@@ -14,11 +14,8 @@
  */
 package com.cloudera.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
@@ -27,7 +24,6 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.writable.Writables;
-import com.google.common.io.Files;
 
 public class TextPairTest  {
 

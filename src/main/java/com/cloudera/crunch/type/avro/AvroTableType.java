@@ -47,8 +47,8 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     
     @Override
     public void initialize() {
-      keyMapFn.initialize();
-      valueMapFn.initialize();
+      keyMapFn.setContext(getContext());
+      valueMapFn.setContext(getContext());
       pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
           new Schema.Parser().parse(firstJson),
           new Schema.Parser().parse(secondJson)).toString();
@@ -78,8 +78,8 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     
     @Override
     public void initialize() {
-      firstMapFn.initialize();
-      secondMapFn.initialize();
+      firstMapFn.setContext(getContext());
+      secondMapFn.setContext(getContext());
     }
     
     @Override

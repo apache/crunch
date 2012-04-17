@@ -19,7 +19,6 @@ import java.util.Collection;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
-import org.apache.avro.mapred.AvroSerialization;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;

@@ -191,7 +191,7 @@ public class Avros {
     
     @Override
     public void initialize() {
-      this.mapFn.initialize();
+      this.mapFn.setContext(getContext());
     }
     
     @Override
@@ -225,7 +225,7 @@ public class Avros {
     
     @Override
     public void initialize() {
-      this.mapFn.initialize();
+      this.mapFn.setContext(getContext());
     }
     
     @Override
@@ -258,7 +258,7 @@ public class Avros {
 	
 	@Override
 	public void initialize() {
-	  this.mapFn.initialize();
+	  this.mapFn.setContext(getContext());
 	}
 	
 	@Override
@@ -280,7 +280,7 @@ public class Avros {
 	
 	@Override
 	public void initialize() {
-	  this.mapFn.initialize();
+	  this.mapFn.setContext(getContext());
 	}
 	
 	@Override
@@ -319,7 +319,7 @@ public class Avros {
     @Override
     public void initialize() {
       for (MapFn fn : fns) {
-        fn.initialize();
+        fn.setContext(getContext());
       }
       this.values = new Object[fns.size()];
       tupleFactory.initialize();
@@ -358,7 +358,7 @@ public class Avros {
     public void initialize() {
       this.record = new GenericData.Record(new Schema.Parser().parse(jsonSchema));
       for (MapFn fn : fns) {
-        fn.initialize();
+        fn.setContext(getContext());
       }
     }
 
@@ -379,9 +379,7 @@ public class Avros {
   public static final <V1, V2> AvroType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     Schema schema = createTupleSchema(p1, p2);
     GenericRecordToTuple input = new GenericRecordToTuple(TupleFactory.PAIR, p1, p2);
-    input.initialize();
     TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
-    output.initialize();
     return new AvroType(Pair.class, schema, input, output, p1, p2);
   }
 

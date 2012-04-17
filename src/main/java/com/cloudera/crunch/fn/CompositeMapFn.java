@@ -14,6 +14,7 @@
  */
 package com.cloudera.crunch.fn;
 
+import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 
 public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
@@ -28,8 +29,8 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
   
   @Override
   public void initialize() {
-    first.initialize();
-    second.initialize();
+    first.setContext(getContext());
+    second.setContext(getContext());
   }
   
   public MapFn<R, S> getFirst() {
@@ -43,5 +44,11 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
   @Override
   public T map(R input) {
     return second.map(first.map(input));
+  }
+  
+  @Override
+  public void cleanup(Emitter<T> emitter) {
+    first.cleanup(null);
+    second.cleanup(null);
   }
 }
