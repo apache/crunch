@@ -21,6 +21,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,9 +39,11 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
   private static final Log LOG = LogFactory.getLog(TextFileReaderFactory.class);
   
   private final PType<T> ptype;
+  private final Configuration conf;
   
-  public TextFileReaderFactory(PType<T> ptype) {
+  public TextFileReaderFactory(PType<T> ptype, Configuration conf) {
     this.ptype = ptype;
+    this.conf = conf;
   }
   
   @Override
@@ -56,6 +59,7 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
         mapFn = ((CompositeMapFn) input).getSecond();
       }
     }
+    mapFn.setConfigurationForTest(conf);
     mapFn.initialize();
     
 	FSDataInputStream is = null;

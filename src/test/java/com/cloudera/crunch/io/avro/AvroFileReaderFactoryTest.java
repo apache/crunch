@@ -74,7 +74,7 @@ public class AvroFileReaderFactoryTest {
 		populateGenericFile(Lists.newArrayList(savedRecord));
 
 		AvroFileReaderFactory<GenericData.Record> genericReader = new AvroFileReaderFactory<GenericData.Record>(
-				Avros.generics(schema));
+				Avros.generics(schema), new Configuration());
 		Iterator<GenericData.Record> recordIterator = genericReader.read(
 				FileSystem.getLocal(new Configuration()),
 				new Path(this.avroFile.getAbsolutePath()));
@@ -93,7 +93,7 @@ public class AvroFileReaderFactoryTest {
 		populateGenericFile(Lists.newArrayList(savedRecord));
 
 		AvroFileReaderFactory<Person> genericReader = new AvroFileReaderFactory<Person>(
-				Avros.records(Person.class));
+				Avros.records(Person.class), new Configuration());
 		Iterator<Person> recordIterator = genericReader.read(
 				FileSystem.getLocal(new Configuration()),
 				new Path(this.avroFile.getAbsolutePath()));

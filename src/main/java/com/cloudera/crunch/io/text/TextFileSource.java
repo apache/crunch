@@ -63,6 +63,6 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
 	return CompositePathIterable.create(FileSystem.get(conf), path,
-	    new TextFileReaderFactory<T>(ptype));
+	    new TextFileReaderFactory<T>(ptype, conf));
   }
 }
