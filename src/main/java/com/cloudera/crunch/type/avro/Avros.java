@@ -193,6 +193,11 @@ public class Avros {
     public void configure(Configuration conf) {
       mapFn.configure(conf);
     }
+
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      mapFn.setConfigurationForTest(conf);
+    }
     
     @Override
     public void initialize() {
@@ -234,6 +239,11 @@ public class Avros {
     }
 
     @Override
+    public void setConfigurationForTest(Configuration conf) {
+      mapFn.setConfigurationForTest(conf);
+    }
+
+    @Override
     public void initialize() {
       this.mapFn.setContext(getContext());
     }
@@ -271,6 +281,11 @@ public class Avros {
       mapFn.configure(conf);
     }
 
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      mapFn.setConfigurationForTest(conf);
+    }
+
 	@Override
 	public void initialize() {
 	  this.mapFn.setContext(getContext());
@@ -296,6 +311,11 @@ public class Avros {
     @Override
     public void configure(Configuration conf) {
       mapFn.configure(conf);
+    }
+
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      mapFn.setConfigurationForTest(conf);
     }
 
 	@Override
@@ -344,6 +364,13 @@ public class Avros {
     }
 
     @Override
+    public void setConfigurationForTest(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.setConfigurationForTest(conf);
+      }
+    }
+
+    @Override
     public void initialize() {
       for (MapFn fn : fns) {
         fn.setContext(getContext());
@@ -385,6 +412,13 @@ public class Avros {
     public void configure(Configuration conf) {
       for (MapFn fn : fns) {
         fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.setConfigurationForTest(conf);
       }
     }
 

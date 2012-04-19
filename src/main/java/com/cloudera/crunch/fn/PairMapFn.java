@@ -51,4 +51,10 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
     keys.cleanup(null);
     values.cleanup(null);
   }
+
+  @Override
+  public void setConfigurationForTest(Configuration conf) {
+    keys.setConfigurationForTest(conf);
+    values.setConfigurationForTest(conf);
+  }
 }

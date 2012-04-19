@@ -52,6 +52,13 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
       valueMapFn.configure(conf);
     }
 
+
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      keyMapFn.setConfigurationForTest(conf);
+      valueMapFn.setConfigurationForTest(conf);
+    }
+
     @Override
     public void initialize() {
       keyMapFn.setContext(getContext());
@@ -87,6 +94,12 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     public void configure(Configuration conf) {
       firstMapFn.configure(conf);
       secondMapFn.configure(conf);
+    }
+
+    @Override
+    public void setConfigurationForTest(Configuration conf) {
+      firstMapFn.setConfigurationForTest(conf);
+      secondMapFn.setConfigurationForTest(conf);
     }
     
     @Override
