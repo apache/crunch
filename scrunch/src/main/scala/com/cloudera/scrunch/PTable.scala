@@ -49,9 +49,9 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     new PTable[K, V](native.union(others.map(_.native) : _*))
   }
 
-  def keys = new PCollection[K](PTables.keys(native))
+  def keys() = new PCollection[K](PTables.keys(native))
 
-  def values = new PCollection[V](PTables.values(native))
+  def values() = new PCollection[V](PTables.values(native))
 
   def cogroup[V2](other: PTable[K, V2]) = {
     val jres = Cogroup.cogroup[K, V, V2](this.native, other.native)
@@ -77,7 +77,7 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     wrap(Aggregate.top(this.native, limit, maximize))
   }
 
-  def groupByKey = new PGroupedTable(native.groupByKey())
+  def groupByKey() = new PGroupedTable(native.groupByKey())
 
   def groupByKey(partitions: Int) = new PGroupedTable(native.groupByKey(partitions))
 
@@ -89,13 +89,13 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
  
   def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
  
-  def materialize: Iterable[(K, V)] = {
+  def materialize(): Iterable[(K, V)] = {
     native.materialize.view.map(x => (x.first, x.second))
   }
 
-  def keyType = native.getPTableType().getKeyType()
+  def keyType() = native.getPTableType().getKeyType()
 
-  def valueType = native.getPTableType().getValueType()
+  def valueType() = native.getPTableType().getValueType()
 }
 
 trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {

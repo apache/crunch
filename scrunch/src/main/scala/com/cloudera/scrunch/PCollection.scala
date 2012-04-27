@@ -49,16 +49,16 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     by(f).groupByKey
   }
   
-  def materialize = JavaConversions.iterableAsScalaIterable[S](native.materialize)
+  def materialize() = JavaConversions.iterableAsScalaIterable[S](native.materialize)
 
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
   
-  def count = {
+  def count() = {
     val count = new PTable[S, java.lang.Long](Aggregate.count(native))
     count.mapValues(_.longValue()) 
   }
 
-  def max = wrap(Aggregate.max(native))
+  def max() = wrap(Aggregate.max(native))
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
