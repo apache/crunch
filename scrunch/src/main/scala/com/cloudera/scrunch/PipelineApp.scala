@@ -82,9 +82,9 @@ trait PipelineApp extends DelayedInit {
 
   def union[K, V](first: PTable[K, V], others: PTable[K, V]*) = first.union(others:_*)
 
-  def run { pipeline.run }
+  def run() { pipeline.run }
 
-  def done { pipeline.done }
+  def done() { pipeline.done }
 
   private var _args: Array[String] = _
 

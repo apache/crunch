@@ -40,11 +40,11 @@ class Pipeline[R: ClassManifest](val conf: Configuration = new Configuration(), 
     jpipeline.write(ptable.native, target)
   }
 
-  def run { jpipeline.run() }
+  def run() { jpipeline.run() }
 
-  def done { jpipeline.done() }
+  def done() { jpipeline.done() }
 
-  def debug { jpipeline.enableDebug() }
+  def debug() { jpipeline.enableDebug() }
 
   def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
   

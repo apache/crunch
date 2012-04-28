@@ -5,12 +5,12 @@
   <version>0.1.0</version>
   <name>scrunch</name>
 
+  <properties>
+    <maven.compiler.source>1.6</maven.compiler.source>
+    <maven.compiler.target>1.6</maven.compiler.target>
+  </properties>
+
   <repositories>
-    <repository>
-      <id>scala-tools.org</id>
-      <name>Scala-Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </repository>
     <repository>
       <id>maven-hadoop</id>
       <name>Hadoop Releases</name>
@@ -18,19 +18,11 @@
     </repository>
   </repositories>
 
-  <pluginRepositories>
-    <pluginRepository>
-      <id>scala-tools.org</id>
-      <name>Scala-Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </pluginRepository>
-  </pluginRepositories>
-
   <dependencies>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>2.9.1</version>
+      <version>2.9.2</version>
     </dependency>
     <dependency>
       <groupId>com.cloudera.crunch</groupId>
@@ -78,13 +70,13 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.1</version>
+      <version>4.10</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.9.1</artifactId>
-      <version>1.7.1</version>
+      <artifactId>scalatest_2.9.2</artifactId>
+      <version>1.7.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
