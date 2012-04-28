@@ -23,7 +23,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
-import com.cloudera.crunch.lib.Join;
+import com.cloudera.crunch.lib.join.Join;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.Lists;
 

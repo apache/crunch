@@ -8,7 +8,7 @@ import org.apache.hadoop.io.Writable;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.cloudera.crunch.lib.JoinUtils.TupleWritablePartitioner;
+import com.cloudera.crunch.lib.join.JoinUtils.TupleWritablePartitioner;
 import com.cloudera.crunch.type.writable.TupleWritable;
 
 public class TupleWritablePartitionerTest {

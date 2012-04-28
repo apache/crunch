@@ -12,15 +12,11 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.lib;
-
-import static org.junit.Assert.assertTrue;
+package com.cloudera.crunch.lib.join;
 
 import java.io.IOException;
+import java.io.Serializable;
 
-import org.junit.Test;
-
-import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PCollection;
@@ -29,14 +25,14 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.avro.AvroTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import org.junit.Test;
 
-public class JoinTest {
+public abstract class JoinTester implements Serializable {
   private static class WordSplit extends DoFn<String, String> {
     @Override
     public void process(String input, Emitter<String> emitter) {
@@ -46,63 +42,61 @@ public class JoinTest {
     }
   }
 
-  public static PTable<String, Long> join(PCollection<String> w1,
-      PCollection<String> w2, PTypeFamily ptf) {
+  protected PTable<String, Long> join(PCollection<String> w1, PCollection<String> w2,
+        PTypeFamily ptf) {
     PTableType<String, Long> ntt = ptf.tableOf(ptf.strings(), ptf.longs());
     PTable<String, Long> ws1 = Aggregate.count(w1.parallelDo("ws1", new WordSplit(), ptf.strings()));
     PTable<String, Long> ws2 = Aggregate.count(w2.parallelDo("ws2", new WordSplit(), ptf.strings()));
 
-    PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2);
-   
+    PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2, getJoinFn());
+
     PTable<String, Long> sums = join.parallelDo("cnt",
         new DoFn<Pair<String, Pair<Long, Long>>, Pair<String, Long>>() {
           @Override
           public void process(Pair<String, Pair<Long, Long>> input,
-              Emitter<Pair<String, Long>> emitter) {
+                              Emitter<Pair<String, Long>> emitter) {
             Pair<Long, Long> pair = input.second();
             long sum = (pair.first() != null ? pair.first() : 0) + (pair.second() != null ? pair.second() : 0);
             emitter.emit(Pair.of(input.first(), sum));
-          }      
+          }
         }, ntt);
-    
-    return sums.parallelDo("firstletters", new DoFn<Pair<String, Long>, Pair<String, Long>>() {
-      @Override
-      public void process(Pair<String, Long> input,
-          Emitter<Pair<String, Long>> emitter) {
-        if (input.first().length() > 0) {
-          emitter.emit(Pair.of(input.first().substring(0, 1).toLowerCase(), input.second()));
-        }
-      }
-    }, ntt).groupByKey().combineValues(CombineFn.<String>SUM_LONGS());
+
+    return sums;
   }
 
-  @Test
-  public void testWritableJoin() throws Exception {
-    run(new MRPipeline(JoinTest.class), WritableTypeFamily.getInstance());
-  }
-
-  @Test
-  public void testAvroJoin() throws Exception {
-    run(new MRPipeline(JoinTest.class), AvroTypeFamily.getInstance());
-  }
-  
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  protected void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     String maughamInputPath = FileHelper.createTempCopyOf("maugham.txt");
-    
+
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     PCollection<String> maugham = pipeline.readTextFile(maughamInputPath);
     PTable<String, Long> joined = join(shakespeare, maugham, typeFamily);
     Iterable<Pair<String, Long>> lines = joined.materialize();
-    
-    boolean passed = false;
-    for (Pair<String, Long> line : lines) {
-      if ("w".equals(line.first()) && line.second() == 19263L) {
-        passed = true;
-        break;
-      }
-    }
+
+    assertPassed(lines);
+
     pipeline.done();
-    assertTrue(passed);    
   }
+
+  @Test
+   public void testWritableJoin() throws Exception {
+    run(new MRPipeline(InnerJoinTest.class), WritableTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testAvroJoin() throws Exception {
+    run(new MRPipeline(InnerJoinTest.class), AvroTypeFamily.getInstance());
+  }
+
+  /**
+   * Used to check that the result of the join makes sense.
+   *
+   * @param lines The result of the join.
+   */
+  public abstract void assertPassed(Iterable<Pair<String, Long>> lines);
+
+  /**
+   * @return The JoinFn to use.
+   */
+  protected abstract JoinFn<String, Long, Long> getJoinFn();
 }
