@@ -22,19 +22,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.hadoop.io.serializer.Serialization;
-import org.apache.hadoop.io.serializer.Deserializer;
-import org.apache.hadoop.io.serializer.Serializer;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-
 import org.apache.avro.Schema;
-import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.BinaryDecoder;
-import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DatumWriter;
+import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroKey;
@@ -42,6 +35,12 @@ import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.mapred.Pair;
 import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.io.serializer.Deserializer;
+import org.apache.hadoop.io.serializer.Serialization;
+import org.apache.hadoop.io.serializer.Serializer;
+import org.apache.hadoop.util.ReflectionUtils;
 
 /** The {@link Serialization} used by jobs configured with {@link AvroJob}. */
 public class SafeAvroSerialization<T> extends Configured 

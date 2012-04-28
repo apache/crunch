@@ -19,8 +19,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import com.cloudera.crunch.CombineFn;
 import com.cloudera.crunch.DoFn;
@@ -33,9 +31,7 @@ import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 /**
  * Methods for performing various types of aggregations over {@link PCollection}

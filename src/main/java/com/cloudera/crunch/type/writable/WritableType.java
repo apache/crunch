@@ -18,13 +18,11 @@ import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.seq.SeqFileSourceTarget;
 import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.google.common.collect.ImmutableList;

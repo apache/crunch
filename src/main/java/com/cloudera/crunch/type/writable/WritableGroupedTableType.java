@@ -20,7 +20,6 @@ import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PGroupedTableType;
 
 public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {

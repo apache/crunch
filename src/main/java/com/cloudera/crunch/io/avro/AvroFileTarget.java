@@ -27,7 +27,6 @@ import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.avro.AvroOutputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
 import com.cloudera.crunch.type.avro.Avros;
-import com.cloudera.crunch.type.avro.ReflectDataFactory;
 
 public class AvroFileTarget extends FileTargetImpl {
   public AvroFileTarget(String path) {

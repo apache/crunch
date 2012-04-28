@@ -76,8 +76,9 @@
  */
 package com.cloudera.crunch.io.text;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.io.compress.bzip2.BZip2Constants;
 import org.apache.hadoop.mapreduce.InputSplit;

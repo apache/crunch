@@ -14,9 +14,10 @@
  */
 package com.cloudera.crunch.fn;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
-import org.apache.hadoop.conf.Configuration;
 
 public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
 

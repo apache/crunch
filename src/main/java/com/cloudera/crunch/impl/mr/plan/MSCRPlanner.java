@@ -31,15 +31,14 @@ import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.collect.DoCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.DoTableImpl;
-import com.cloudera.crunch.impl.mr.collect.UnionCollection;
 import com.cloudera.crunch.impl.mr.collect.InputCollection;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
+import com.cloudera.crunch.impl.mr.collect.UnionCollection;
 import com.cloudera.crunch.impl.mr.exec.MRExecutor;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MSCRPlanner {

@@ -14,6 +14,8 @@
  */
 package com.cloudera.crunch.lib;
 
+import java.util.Collection;
+
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PCollection;
@@ -22,8 +24,6 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
-
-import java.util.Collection;
 
 /**
  * Utilities for performing set operations (difference, intersection, etc) on

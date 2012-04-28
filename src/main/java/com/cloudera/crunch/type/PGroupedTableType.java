@@ -23,6 +23,7 @@ import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
+import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.SourceTarget;
 

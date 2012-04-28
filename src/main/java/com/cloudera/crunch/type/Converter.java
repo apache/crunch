@@ -16,6 +16,8 @@ package com.cloudera.crunch.type;
 
 import java.io.Serializable;
 
+import com.cloudera.crunch.DoFn;
+
 /**
  * Converts the input key/value from a MapReduce task into the input to a
  * {@link DoFn}, or takes the output of a {@code DoFn} and write it to

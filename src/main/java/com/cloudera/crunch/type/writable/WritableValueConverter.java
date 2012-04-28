@@ -16,7 +16,6 @@ package com.cloudera.crunch.type.writable;
 
 import org.apache.hadoop.io.NullWritable;
 
-import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.type.Converter;
 
 class WritableValueConverter<W> implements Converter<Object, W, W, Iterable<W>> {

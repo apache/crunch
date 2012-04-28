@@ -15,6 +15,7 @@
 
 package com.cloudera.crunch.type;
 
+import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 
 /**

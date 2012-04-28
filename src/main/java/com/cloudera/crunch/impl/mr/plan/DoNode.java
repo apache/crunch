@@ -24,7 +24,6 @@ import com.cloudera.crunch.Source;
 import com.cloudera.crunch.impl.mr.run.NodeContext;
 import com.cloudera.crunch.impl.mr.run.RTNode;
 import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.DataBridge;
 import com.cloudera.crunch.type.PGroupedTableType;
 import com.cloudera.crunch.type.PType;
 import com.google.common.collect.ImmutableList;

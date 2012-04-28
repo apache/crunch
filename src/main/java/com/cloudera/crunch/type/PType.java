@@ -20,6 +20,7 @@ import java.util.List;
 import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.MapFn;
+import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.SourceTarget;
 
 /**
