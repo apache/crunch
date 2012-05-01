@@ -16,6 +16,7 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn, Target}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
+import com.cloudera.crunch.lib.join.Join
 import com.cloudera.crunch.lib.{Aggregate, Cogroup, Join, PTables}
 import com.cloudera.scrunch.Conversions._
 import java.lang.{Comparable, Iterable => JIterable}

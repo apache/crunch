@@ -12,7 +12,7 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.lib;
+package com.cloudera.crunch.lib.join;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
