@@ -20,6 +20,7 @@ import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
 import org.apache.avro.mapred.AvroValue;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -75,7 +76,12 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     AvroTableType<K, V> att = (AvroTableType<K, V>) tableType;
     String schemaJson = att.getSchema().toString();
     Configuration conf = job.getConfiguration();
-    conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+    
+    boolean isSpecificKey = SpecificRecord.class.isAssignableFrom(att.getKeyType().getTypeClass());
+    boolean isSpecificValue = SpecificRecord.class.isAssignableFrom(att.getValueType().getTypeClass());
+    if (!isSpecificKey && !isSpecificValue) {
+        conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+    }
     conf.set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);
     job.setSortComparatorClass(AvroKeyComparator.class);
     job.setMapOutputKeyClass(AvroKey.class);

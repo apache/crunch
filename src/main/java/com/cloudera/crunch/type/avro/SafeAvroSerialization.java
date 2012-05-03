@@ -35,6 +35,7 @@ import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.mapred.Pair;
 import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.serializer.Deserializer;
@@ -59,9 +60,14 @@ public class SafeAvroSerialization<T> extends Configured
         ? Pair.getKeySchema(AvroJob.getMapOutputSchema(conf))
             : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf));
 
-    ReflectDataFactory factory = (ReflectDataFactory) ReflectionUtils.newInstance(
-        conf.getClass("crunch.reflectdatafactory", ReflectDataFactory.class), conf);
-    DatumReader<T> datumReader = factory.getReader(schema);
+    DatumReader<T> datumReader = null;
+    if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {        
+        ReflectDataFactory factory = (ReflectDataFactory) ReflectionUtils.newInstance(
+            conf.getClass("crunch.reflectdatafactory", ReflectDataFactory.class), conf);
+        datumReader = factory.getReader(schema);
+    } else {
+        datumReader = new SpecificDatumReader<T>(schema);
+    }
     return new AvroWrapperDeserializer(datumReader, isKey);
   }
   
@@ -108,6 +114,7 @@ public class SafeAvroSerialization<T> extends Configured
         : (AvroKey.class.isAssignableFrom(c)
             ? Pair.getKeySchema(AvroJob.getMapOutputSchema(conf))
                 : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
+
     ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
     ReflectDatumWriter<T> writer = factory.getWriter();
     writer.setSchema(schema);
