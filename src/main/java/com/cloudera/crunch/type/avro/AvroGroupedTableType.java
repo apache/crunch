@@ -77,9 +77,7 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     String schemaJson = att.getSchema().toString();
     Configuration conf = job.getConfiguration();
     
-    boolean isSpecificKey = SpecificRecord.class.isAssignableFrom(att.getKeyType().getTypeClass());
-    boolean isSpecificValue = SpecificRecord.class.isAssignableFrom(att.getValueType().getTypeClass());
-    if (!isSpecificKey && !isSpecificValue) {
+    if (!att.isSpecific()) {
         conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
     }
     conf.set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);

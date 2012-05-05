@@ -41,7 +41,7 @@ import com.cloudera.crunch.type.avro.SafeAvroSerialization;
 import com.google.common.collect.Lists;
 
 /**
- * Test of {@link SafeAvroSerialization} for serialization of Special Avro types
+ * Test {@link SafeAvroSerialization} with Specific Avro types
  */
 public class SpecificAvroGroupByTest implements Serializable {
 
@@ -60,11 +60,11 @@ public class SpecificAvroGroupByTest implements Serializable {
 	}
 
 	@Test
-	public void testGrouByOnSpecificAvroType() throws Exception {
+	public void testGrouByWithSpecificAvroType() throws Exception {
 
 		MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByTest.class);
 
-		doTestAvroTest(pipeline);
+		testSpecificAvro(pipeline);
 	}
 
 	@Test(expected = Exception.class)
@@ -81,10 +81,10 @@ public class SpecificAvroGroupByTest implements Serializable {
 		pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT,
 				true);
 
-		doTestAvroTest(pipeline);
+		testSpecificAvro(pipeline);
 	}
 
-	public void doTestAvroTest(MRPipeline pipeline) throws Exception {
+	public void testSpecificAvro(MRPipeline pipeline) throws Exception {
 
 		createPersonAvroFile(avroFile);
 
@@ -107,7 +107,9 @@ public class SpecificAvroGroupByTest implements Serializable {
 				.materialize());
 
 		assertEquals(1, outputPersonList.size());
-
+		assertEquals(String.class, outputPersonList.get(0).first().getClass());
+		assertEquals(Person.class, outputPersonList.get(0).second().getClass());
+		
 		pipeline.done();
 	}
 
