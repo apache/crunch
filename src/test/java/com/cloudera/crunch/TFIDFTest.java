@@ -32,7 +32,7 @@ import com.cloudera.crunch.fn.MapKeysFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.seq.SeqFileSourceTarget;
 import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.lib.join.Join;
+import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.type.PTypeFamily;
 import com.cloudera.crunch.type.writable.WritableTypeFamily;
 import com.google.common.collect.Lists;

@@ -16,8 +16,7 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import com.cloudera.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
-import com.cloudera.crunch.lib.join.Join
-import com.cloudera.crunch.lib.{Aggregate, Cogroup, PTables}
+import com.cloudera.crunch.lib.{Join, Aggregate, Cogroup, PTables}
 import java.util.{Collection => JCollect}
 import scala.collection.JavaConversions._
 

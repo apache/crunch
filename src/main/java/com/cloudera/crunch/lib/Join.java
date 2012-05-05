@@ -12,13 +12,19 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.lib.join;
+package com.cloudera.crunch.lib;
 
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.lib.join.FullOuterJoinFn;
+import com.cloudera.crunch.lib.join.InnerJoinFn;
+import com.cloudera.crunch.lib.join.JoinFn;
+import com.cloudera.crunch.lib.join.JoinUtils;
+import com.cloudera.crunch.lib.join.LeftOuterJoinFn;
+import com.cloudera.crunch.lib.join.RightOuterJoinFn;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
 
