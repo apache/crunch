@@ -25,6 +25,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
+import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
