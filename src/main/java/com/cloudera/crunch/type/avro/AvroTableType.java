@@ -127,6 +127,11 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
   }
   
   @Override
+  public boolean isSpecific() {
+	return keyType.isSpecific() || valueType.isSpecific();
+  }
+  
+  @Override
   public PType<K> getKeyType() {
     return keyType;
   }
