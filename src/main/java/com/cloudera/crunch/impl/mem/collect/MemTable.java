@@ -124,6 +124,11 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
   }
   
   @Override
+  public PCollection<K> keys() {
+	return PTables.keys(this);
+  }
+
+  @Override
   public PCollection<V> values() {
     return PTables.values(this);
   }
