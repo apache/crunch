@@ -73,7 +73,7 @@ public class Protos {
     private transient List<FieldDescriptor> fields;
     private transient Splitter splitter;
     
-    enum ParseErrors { NUMBER_FORMAT };
+    enum ParseErrors { TOTAL, NUMBER_FORMAT };
     
     public TextToProtoFn(String sep, Class<M> msgClass) {
       this.sep = sep;
@@ -92,6 +92,7 @@ public class Protos {
       if (input != null && !input.isEmpty()) {
         Builder b = msgInstance.newBuilderForType();
         Iterator<String> iter = splitter.split(input).iterator();
+        boolean parseError = false;
         for (FieldDescriptor fd : fields) {
           if (iter.hasNext()) {
             String value = iter.next();
@@ -124,11 +125,18 @@ public class Protos {
                 b.setField(fd, parsedValue);
               } catch (NumberFormatException nfe) {
                 increment(ParseErrors.NUMBER_FORMAT);
+                parseError = true;
+                break;
               }
             }
           }
         }
-        emitter.emit((M) b.build());
+        
+        if (parseError) {
+          increment(ParseErrors.TOTAL);
+        } else {
+          emitter.emit((M) b.build());
+        }
       }
     }
   }
