@@ -18,12 +18,14 @@ import java.util.List;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.FilterFn;
+import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.Target;
+import com.cloudera.crunch.fn.ExtractKeyFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
 import com.cloudera.crunch.lib.Aggregate;
@@ -111,6 +113,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public PCollection<S> filter(FilterFn<S> filterFn) {
     return parallelDo(filterFn, getPType());
+  }
+  
+  @Override
+  public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
+    return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
   }
   
   @Override

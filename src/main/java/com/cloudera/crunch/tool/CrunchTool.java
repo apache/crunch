@@ -57,7 +57,9 @@ public abstract class CrunchTool extends Configured implements Tool {
   @Override
   public void setConf(Configuration conf) {
 	super.setConf(conf);
-	pipeline.setConfiguration(conf);
+	if (conf != null && pipeline != null) {
+	  pipeline.setConfiguration(conf);
+	}
   }
   
   @Override
