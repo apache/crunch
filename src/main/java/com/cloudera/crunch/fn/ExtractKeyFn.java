@@ -12,27 +12,30 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.test;
+package com.cloudera.crunch.fn;
 
-import org.apache.hadoop.mapreduce.Counters;
-import org.apache.hadoop.mapreduce.Counter;
+import com.cloudera.crunch.MapFn;
+import com.cloudera.crunch.Pair;
 
 /**
- * A utility class used during unit testing to update and read counters.
+ * Wrapper function for converting a {@code MapFn} into a key-value pair that
+ * is used to convert from a {@code PCollection<V>} to a {@code PTable<K, V>}.
  */
-public class TestCounters {
+public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
 
-  private static Counters COUNTERS = new Counters();
+  private final MapFn<V, K> mapFn;
   
-  public static Counter getCounter(Enum<?> e) {
-    return COUNTERS.findCounter(e);
+  public ExtractKeyFn(MapFn<V, K> mapFn) {
+    this.mapFn = mapFn;
   }
   
-  public static Counter getCounter(String group, String name) {
-    return COUNTERS.findCounter(group, name);
+  @Override
+  public void initialize() {
+    this.mapFn.setContext(getContext());
   }
   
-  public static void clearCounters() {
-	  COUNTERS = new Counters();
-  }   
+  @Override
+  public Pair<K, V> map(V input) {
+    return Pair.of(mapFn.map(input), input);
+  }
 }

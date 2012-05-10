@@ -134,6 +134,14 @@ public abstract class DoFn<S, T> implements Serializable {
     return context.getCounter(groupName, counterName);
   }
   
+  protected void increment(Enum<?> counterName) {
+    increment(counterName, 1);
+  }
+  
+  protected void increment(Enum<?> counterName, long value) {
+    getCounter(counterName).increment(value);
+  }
+  
   protected void progress() {
     if (context != null) {
       context.progress();
