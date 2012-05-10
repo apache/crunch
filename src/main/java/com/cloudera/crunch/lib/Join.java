@@ -14,72 +14,125 @@
  */
 package com.cloudera.crunch.lib;
 
-import java.util.List;
-
-import com.cloudera.crunch.DoFn;
-import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.lib.join.FullOuterJoinFn;
+import com.cloudera.crunch.lib.join.InnerJoinFn;
+import com.cloudera.crunch.lib.join.JoinFn;
+import com.cloudera.crunch.lib.join.JoinUtils;
+import com.cloudera.crunch.lib.join.LeftOuterJoinFn;
+import com.cloudera.crunch.lib.join.RightOuterJoinFn;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PTypeFamily;
-import com.google.common.collect.Lists;
 
 /**
- * Utilities for joining multiple {@code PTable} instances based on a common
- * key.
- *
+ * Utilities for joining multiple {@code PTable} instances based on a common lastKey.
  */
 public class Join {
-
-  private static class Join2Fn<K, U, V> extends DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>> {  
-    private transient K key;
-    private transient List<U> firstValues;
-    
-    @Override
-    public void initialize() {
-      key = null;
-      this.firstValues = Lists.newArrayList();
-    }
-    
-    @Override
-    public void process(Pair<Pair<K, Integer>, Iterable<Pair<U, V>>> input,
-        Emitter<Pair<K, Pair<U, V>>> emitter) {
-      if (!input.first().first().equals(key)) {
-        key = input.first().first();
-        firstValues.clear();
-      }
-      if (input.first().second() == 0) {
-        for (Pair<U, V> pair : input.second()) {
-          if (pair.first() != null)
-            firstValues.add(pair.first());
-        }
-      } else {
-        for (Pair<U, V> pair : input.second()) {
-          for (U u : firstValues) {
-            emitter.emit(Pair.of(key, Pair.of(u, pair.second())));
-          }
-        }
-      }
-    }
+  /**
+   * Performs an inner join on the specified {@link PTable}s.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join">Inner Join</a>
+   * @param left A PTable to perform an inner join on.
+   * @param right A PTable to perform an inner join on.
+   * @param <K> Type of the keys.
+   * @param <U> Type of the first {@link PTable}'s values
+   * @param <V> Type of the second {@link PTable}'s values
+   * @return The joined result.
+   */
+  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
+    return innerJoin(left, right);
   }
-  
+
+  /**
+   * Performs an inner join on the specified {@link PTable}s.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Join_(SQL)#Inner_join">Inner Join</a>
+   * @param left A PTable to perform an inner join on.
+   * @param right A PTable to perform an inner join on.
+   * @param <K> Type of the keys.
+   * @param <U> Type of the first {@link PTable}'s values
+   * @param <V> Type of the second {@link PTable}'s values
+   * @return The joined result.
+   */
+  public static <K, U, V> PTable<K, Pair<U, V>> innerJoin(PTable<K, U> left, PTable<K, V> right) {
+    return join(left, right, new InnerJoinFn<K, U, V>());
+  }
+
+  /**
+   * Performs a left outer join on the specified {@link PTable}s.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Join_(SQL)#Left_outer_join">Left Join</a>
+   * @param left A PTable to perform an left join on. All of this PTable's entries will appear
+   *     in the resulting PTable.
+   * @param right A PTable to perform an left join on.
+   * @param <K> Type of the keys.
+   * @param <U> Type of the first {@link PTable}'s values
+   * @param <V> Type of the second {@link PTable}'s values
+   * @return The joined result.
+   */
+  public static <K, U, V> PTable<K, Pair<U, V>> leftJoin(PTable<K, U> left, PTable<K, V> right) {
+    return join(left, right, new LeftOuterJoinFn<K, U, V>());
+  }
+
+  /**
+   * Performs a right outer join on the specified {@link PTable}s.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Join_(SQL)#Right_outer_join">Right Join</a>
+   * @param left A PTable to perform an right join on.
+   * @param right A PTable to perform an right join on. All of this PTable's entries will appear
+   *     in the resulting PTable.
+   * @param <K> Type of the keys.
+   * @param <U> Type of the first {@link PTable}'s values
+   * @param <V> Type of the second {@link PTable}'s values
+   * @return The joined result.
+   */
+  public static <K, U, V> PTable<K, Pair<U, V>> rightJoin(PTable<K, U> left, PTable<K, V> right) {
+    return join(left, right, new RightOuterJoinFn<K, U, V>());
+  }
+
+  /**
+   * Performs a full outer join on the specified {@link PTable}s.
+   *
+   * @see <a href="http://en.wikipedia.org/wiki/Join_(SQL)#Full_outer_join">Full Join</a>
+   * @param left A PTable to perform an full join on.
+   * @param right A PTable to perform an full join on.
+   * @param <K> Type of the keys.
+   * @param <U> Type of the first {@link PTable}'s values
+   * @param <V> Type of the second {@link PTable}'s values
+   * @return The joined result.
+   */
+  public static <K, U, V> PTable<K, Pair<U, V>> fullJoin(PTable<K, U> left, PTable<K, V> right) {
+    return join(left, right, new FullOuterJoinFn<K, U, V>());
+  }
+
+  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right,
+      JoinFn<K, U, V> joinFn) {
+    PTypeFamily ptf = left.getTypeFamily();
+    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);
+    PTableType<K, Pair<U, V>> ret = ptf.tableOf(left.getKeyType(),
+        ptf.pairs(left.getValueType(), right.getValueType()));
+
+    return grouped.parallelDo(joinFn.getJoinType() + grouped.getName(), joinFn, ret);
+  }
+
   private static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(
       PTable<K, U> left, PTable<K, V> right) {
     PTypeFamily ptf = left.getTypeFamily();
     PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
         ptf.pairs(left.getValueType(), right.getValueType()));
-    
-    PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("joinTag1",
+
+    PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("joinTagLeft",
         new MapFn<Pair<K, U>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
           @Override
           public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, U> input) {
             return Pair.of(Pair.of(input.first(), 0), Pair.of(input.second(), (V) null));
           }
         }, ptt);
-    PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("joinTag2",
+    PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("joinTagRight",
         new MapFn<Pair<K, V>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
           @Override
           public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, V> input) {
@@ -87,27 +140,9 @@ public class Join {
           }
         }, ptt);
     
-    PTable<Pair<K, Integer>, Pair<U, V>> both = tag1.union(tag2);
-    
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
     optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
     
     return (tag1.union(tag2)).groupByKey(optionsBuilder.build());	
-  }
-  
-  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
-    PTypeFamily ptf = left.getTypeFamily();
-    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);    
-    PTableType<K, Pair<U, V>> ret = ptf.tableOf(left.getKeyType(),
-        ptf.pairs(left.getValueType(), right.getValueType()));
-    return grouped.parallelDo("join" + grouped.getName(), new Join2Fn<K, U, V>(), ret);
-  }
-  
-  public static <K, U, V> PTable<K, Pair<U, V>> innerJoin(PTable<K, U> left, PTable<K, V> right) {
-	return join(left, right);
-  }
-  
-  public static <K, U, V> PTable<K, Pair<U, V>> leftJoin(PTable<K, U> left, PTable<K, V> right) {
-	return null;
   }
 }
