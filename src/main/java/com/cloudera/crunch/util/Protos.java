@@ -73,6 +73,8 @@ public class Protos {
     private transient List<FieldDescriptor> fields;
     private transient Splitter splitter;
     
+    enum ParseErrors { NUMBER_FORMAT };
+    
     public TextToProtoFn(String sep, Class<M> msgClass) {
       this.sep = sep;
       this.msgClass = msgClass;
@@ -95,30 +97,34 @@ public class Protos {
             String value = iter.next();
             if (value != null && !value.isEmpty()) {
               Object parsedValue = null;
-              switch (fd.getJavaType()) {
-              case STRING:
-                parsedValue = value;
-                break;
-              case INT:
-                parsedValue = Integer.valueOf(value);
-                break;
-              case LONG:
-                parsedValue = Long.valueOf(value);
-                break;
-              case FLOAT:
-                parsedValue = Float.valueOf(value);
-                break;
-              case DOUBLE:
-                parsedValue = Double.valueOf(value);
-                break;
-              case BOOLEAN:
-                parsedValue = Boolean.valueOf(value);
-                break;
-              case ENUM:
-                parsedValue = fd.getEnumType().findValueByName(value);
-                break;
+              try {
+                switch (fd.getJavaType()) {
+                case STRING:
+                  parsedValue = value;
+                  break;
+                case INT:
+                  parsedValue = Integer.valueOf(value);
+                  break;
+                case LONG:
+                  parsedValue = Long.valueOf(value);
+                  break;
+                case FLOAT:
+                  parsedValue = Float.valueOf(value);
+                  break;
+                case DOUBLE:
+                  parsedValue = Double.valueOf(value);
+                  break;
+                case BOOLEAN:
+                  parsedValue = Boolean.valueOf(value);
+                  break;
+                case ENUM:
+                  parsedValue = fd.getEnumType().findValueByName(value);
+                  break;
+                }
+                b.setField(fd, parsedValue);
+              } catch (NumberFormatException nfe) {
+                increment(ParseErrors.NUMBER_FORMAT);
               }
-              b.setField(fd, parsedValue);
             }
           }
         }
