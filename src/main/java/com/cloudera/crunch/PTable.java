@@ -107,4 +107,10 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    * Co-group operation with the given table on common keys.
    */
   <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other);
+
+  /**
+   * Returns a {@link PCollection} made up of the values in this PTable.
+   */
+  PCollection<V> values();
+  
 }
