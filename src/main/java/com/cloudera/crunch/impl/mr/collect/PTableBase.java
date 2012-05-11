@@ -99,6 +99,11 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
   }
   
   @Override
+  public PCollection<K> keys() {
+	return PTables.keys(this);
+  }
+ 
+  @Override
   public PCollection<V> values() {
     return PTables.values(this);
   }
