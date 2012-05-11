@@ -26,6 +26,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+import com.cloudera.crunch.DoFn;
+import com.cloudera.crunch.Emitter;
+import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
@@ -38,6 +41,7 @@ import com.cloudera.crunch.impl.mr.collect.InputCollection;
 import com.cloudera.crunch.impl.mr.collect.InputTable;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
+import com.cloudera.crunch.impl.mr.collect.UnionCollection;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
 import com.cloudera.crunch.impl.mr.run.RuntimeParameters;
 import com.cloudera.crunch.io.At;
@@ -135,9 +139,13 @@ public class MRPipeline implements Pipeline {
     return read(At.textFile(pathName));
   }
 
+  @SuppressWarnings("unchecked")
   public void write(PCollection<?> pcollection, Target target) {
     if (pcollection instanceof PGroupedTableImpl) {
       pcollection = ((PGroupedTableImpl) pcollection).ungroup();
+    } else if (pcollection instanceof UnionCollection) {
+      pcollection = pcollection.parallelDo("UnionCollectionWrapper",  
+    		  (MapFn)IdentityFn.<Object>getInstance(), pcollection.getPType());	 
     }
     addOutput((PCollectionImpl) pcollection, target);
   }
@@ -151,6 +159,11 @@ public class MRPipeline implements Pipeline {
   
   @Override
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
+	  
+    if (pcollection instanceof UnionCollection) {
+    	pcollection = pcollection.parallelDo("UnionCollectionWrapper",  
+	        (MapFn)IdentityFn.<Object>getInstance(), pcollection.getPType());	 
+	}  
     PCollectionImpl impl = (PCollectionImpl) pcollection;
     SourceTarget<T> matTarget = impl.getMaterializedAt();
     if (matTarget != null && matTarget instanceof ReadableSourceTarget) {

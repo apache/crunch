@@ -63,13 +63,13 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public PCollection<S> union(PCollection<S>... collections) {
-    Collection<S> output = Lists.newArrayList();
-    output.addAll(collect);
+    Collection<S> output = Lists.newArrayList();    
     for (PCollection<S> pcollect : collections) {
       for (S s : pcollect.materialize()) {
         output.add(s);
       }
     }
+    output.addAll(collect);
     return new MemCollection<S>(output, collections[0].getPType());
   }
 
