@@ -15,8 +15,10 @@
 package com.cloudera.crunch.lib.join;
 
 import static com.cloudera.crunch.type.avro.Avros.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
@@ -36,6 +38,7 @@ import com.cloudera.crunch.io.From;
 import com.cloudera.crunch.test.Employee;
 import com.cloudera.crunch.test.Person;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class MultiAvroSchemaJoinTest {
 
@@ -101,6 +104,9 @@ public class MultiAvroSchemaJoinTest {
      
      Iterable<Pair<Person, Employee>> result = people.by(new NameFn<Person>(), strings())
          .join(employees.by(new NameFn<Employee>(), strings())).values().materialize();
-     System.out.println(result.iterator().next());
+     List<Pair<Person, Employee>> v = Lists.newArrayList(result);
+     assertEquals(1, v.size());
+     assertEquals("Kate", v.get(0).first().getName().toString());
+     assertEquals("Kate", v.get(0).second().getName().toString());
   }
 }
