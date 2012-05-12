@@ -68,7 +68,7 @@ public class SpecificAvroGroupByTest implements Serializable {
 	}
 
 	@Test(expected = Exception.class)
-	public void testGrouByOnSpecificAvroButRelectionDatumReader()
+	public void testGrouByOnSpecificAvroButReflectionDatumReader()
 			throws Exception {
 		MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByTest.class);
 

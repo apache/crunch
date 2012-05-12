@@ -23,6 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -35,11 +36,13 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class CrunchInputSplit extends InputSplit implements Configurable,
-    Writable {
+import com.google.common.collect.Maps;
+
+public class CrunchInputSplit extends InputSplit implements Configurable, Writable {
 
   private InputSplit inputSplit;
   private Class<? extends InputFormat> inputFormatClass;
+  private Map<String, String> extraConf;
   private int nodeIndex;
   private Configuration conf;
 
@@ -48,10 +51,11 @@ public class CrunchInputSplit extends InputSplit implements Configurable,
   }
 
   public CrunchInputSplit(InputSplit inputSplit,
-      Class<? extends InputFormat> inputFormatClass, int nodeIndex,
-      Configuration conf) {
+      Class<? extends InputFormat> inputFormatClass, Map<String, String> extraConf,
+      int nodeIndex, Configuration conf) {
     this.inputSplit = inputSplit;
     this.inputFormatClass = inputFormatClass;
+    this.extraConf = extraConf;
     this.nodeIndex = nodeIndex;
     this.conf = conf;
   }
@@ -80,6 +84,12 @@ public class CrunchInputSplit extends InputSplit implements Configurable,
 
   public void readFields(DataInput in) throws IOException {
     nodeIndex = in.readInt();
+    int extraConfSize = in.readInt();
+    if (extraConfSize > 0) {
+      for (int i = 0; i < extraConfSize; i++) {
+        conf.set(in.readUTF(), in.readUTF());
+      }
+    }
     inputFormatClass = (Class<? extends InputFormat>) readClass(in);
     Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
     inputSplit = (InputSplit) ReflectionUtils
@@ -101,6 +111,11 @@ public class CrunchInputSplit extends InputSplit implements Configurable,
 
   public void write(DataOutput out) throws IOException {
     out.writeInt(nodeIndex);
+    out.writeInt(extraConf.size());
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      out.writeUTF(e.getKey());
+      out.writeUTF(e.getValue());
+    }
     Text.writeString(out, inputFormatClass.getName());
     Text.writeString(out, inputSplit.getClass().getName());
     SerializationFactory factory = new SerializationFactory(conf);

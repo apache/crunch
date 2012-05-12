@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
@@ -35,29 +36,36 @@ public abstract class FileSourceImpl<T> implements Source<T> {
   
   protected final Path path;
   protected final PType<T> ptype;
-  protected final Class<? extends FileInputFormat> inputFormatClass;
+  protected final InputBundle inputBundle;
   
-  public FileSourceImpl(Path path, PType<T> ptype, Class<? extends FileInputFormat> inputFormatClass) {
+  public FileSourceImpl(Path path, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
 	this.path = path;
 	this.ptype = ptype;
-	this.inputFormatClass = inputFormatClass;
+	this.inputBundle = new InputBundle(inputFormatClass);
   }
-  
-  @Override
-  public PType<T> getType() {
-	return ptype;
+
+  public FileSourceImpl(Path path, PType<T> ptype, InputBundle inputBundle) {
+    this.path = path;
+    this.ptype = ptype;
+    this.inputBundle = inputBundle;
   }
-  
+
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
 	if (inputId == -1) {
       FileInputFormat.addInputPath(job, path);
-      job.setInputFormatClass(inputFormatClass);
+      job.setInputFormatClass(inputBundle.getInputFormatClass());
+      inputBundle.configure(job.getConfiguration());
     } else {
-      CrunchInputs.addInputPath(job, path, inputFormatClass, inputId);
+      CrunchInputs.addInputPath(job, path, inputBundle, inputId);
     }
   }
 
+  @Override
+  public PType<T> getType() {
+    return ptype;
+  }
+  
   @Override
   public long getSize(Configuration configuration) {
 	try {
@@ -76,18 +84,18 @@ public abstract class FileSourceImpl<T> implements Source<T> {
     }
     FileSourceImpl o = (FileSourceImpl) other;
     return ptype.equals(o.ptype) && path.equals(o.path) &&
-        inputFormatClass.equals(o.inputFormatClass);
+        inputBundle.equals(o.inputBundle);
   }
   
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(ptype).append(path)
-        .append(inputFormatClass).toHashCode();
+        .append(inputBundle).toHashCode();
   }
   
   @Override
   public String toString() {
-	return new StringBuilder().append(inputFormatClass.getSimpleName())
+	return new StringBuilder().append(inputBundle.getName())
 	    .append("(").append(path).append(")").toString();
   }
 }

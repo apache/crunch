@@ -27,6 +27,7 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 
+import com.cloudera.crunch.io.impl.InputBundle;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
@@ -39,41 +40,32 @@ public class CrunchInputs {
   private static final char FIELD_SEP = ';';
   private static final Joiner JOINER = Joiner.on(FIELD_SEP);
   private static final Splitter SPLITTER = Splitter.on(FIELD_SEP);
-
+  
   public static void addInputPath(Job job, Path path,
-      Class<? extends InputFormat> inputFormatClass, int nodeIndex) {
+      InputBundle inputBundle, int nodeIndex) {
     Configuration conf = job.getConfiguration();
-    String inputs = JOINER.join(inputFormatClass.getName(), nodeIndex,
-        path.toString());
+    String inputs = JOINER.join(inputBundle.serialize(), String.valueOf(nodeIndex), path.toString());
     String existing = conf.get(RuntimeParameters.MULTI_INPUTS);
     conf.set(RuntimeParameters.MULTI_INPUTS, existing == null ? inputs : existing + RECORD_SEP
         + inputs);
   }
 
-  public static Map<Class<? extends InputFormat>, Map<Integer, List<Path>>> getFormatNodeMap(
+  public static Map<InputBundle, Map<Integer, List<Path>>> getFormatNodeMap(
       JobContext job) {
-    Map<Class<? extends InputFormat>, Map<Integer, List<Path>>> formatNodeMap = Maps
-        .newHashMap();
+    Map<InputBundle, Map<Integer, List<Path>>> formatNodeMap = Maps.newHashMap();
     Configuration conf = job.getConfiguration();
     for (String input : Splitter.on(RECORD_SEP).split(conf.get(RuntimeParameters.MULTI_INPUTS))) {
-      List<String> fields = ImmutableList.copyOf(SPLITTER.split(input));
-      Class<? extends InputFormat> inputFormatClass;
-      try {
-        inputFormatClass = (Class<? extends InputFormat>) conf
-            .getClassByName(fields.get(0));
-      } catch (ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      }
-      if (!formatNodeMap.containsKey(inputFormatClass)) {
-        formatNodeMap.put(inputFormatClass,
-            Maps.<Integer, List<Path>> newHashMap());
+      List<String> fields = Lists.newArrayList(SPLITTER.split(input));
+      InputBundle inputBundle = InputBundle.fromSerialized(fields.get(0));
+      if (!formatNodeMap.containsKey(inputBundle)) {
+        formatNodeMap.put(inputBundle, Maps.<Integer, List<Path>> newHashMap());
       }
       Integer nodeIndex = Integer.valueOf(fields.get(1));
-      if (!formatNodeMap.get(inputFormatClass).containsKey(nodeIndex)) {
-        formatNodeMap.get(inputFormatClass).put(nodeIndex,
+      if (!formatNodeMap.get(inputBundle).containsKey(nodeIndex)) {
+        formatNodeMap.get(inputBundle).put(nodeIndex,
             Lists.<Path> newLinkedList());
       }
-      formatNodeMap.get(inputFormatClass).get(nodeIndex)
+      formatNodeMap.get(inputBundle).get(nodeIndex)
           .add(new Path(fields.get(2)));
     }
     return formatNodeMap;

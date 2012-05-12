@@ -20,41 +20,32 @@ import org.apache.avro.mapred.AvroJob;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileSourceImpl;
+import com.cloudera.crunch.io.impl.InputBundle;
 import com.cloudera.crunch.type.avro.AvroInputFormat;
 import com.cloudera.crunch.type.avro.AvroType;
 import com.cloudera.crunch.type.avro.Avros;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-	AvroType<T> avroType;
+  public AvroFileSource(Path path, AvroType<T> ptype) {
+    super(path, ptype, new InputBundle(AvroInputFormat.class)
+        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(!ptype.isSpecific()))
+        .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
+        .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName()));
+  }
 
-	public AvroFileSource(Path path, AvroType<T> ptype) {
-		super(path, ptype, AvroInputFormat.class);
-		this.avroType = ptype;
-	}
+  @Override
+  public String toString() {
+    return "Avro(" + path.toString() + ")";
+  }
 
-	@Override
-	public String toString() {
-		return "Avro(" + path.toString() + ")";
-	}
-
-	@Override
-	public void configureSource(Job job, int inputId) throws IOException {
-	  super.configureSource(job, inputId);
-	  Configuration conf = job.getConfiguration();
-	  conf.setBoolean(AvroJob.INPUT_IS_REFLECT, !this.avroType.isSpecific());
-	  conf.set(AvroJob.INPUT_SCHEMA, avroType.getSchema().toString());
-	  Avros.configureReflectDataFactory(conf);
-	}
-
-	@Override
-	public Iterable<T> read(Configuration conf) throws IOException {
-		return CompositePathIterable.create(FileSystem.get(conf), path, new AvroFileReaderFactory<T>(
-				(AvroType<T>) ptype, conf));
-	}
+  @Override
+  public Iterable<T> read(Configuration conf) throws IOException {
+    return CompositePathIterable.create(FileSystem.get(conf), path, new AvroFileReaderFactory<T>(
+        (AvroType<T>) ptype, conf));
+  }
 }

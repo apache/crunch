@@ -41,7 +41,7 @@ public class AvroFileSourceTest {
 		AvroFileSource<Person> personFileSource = new AvroFileSource<Person>(
 				new Path(tempFile.getAbsolutePath()), avroSpecificType);
 
-		personFileSource.configureSource(job, 1);
+		personFileSource.configureSource(job, -1);
 
 		assertFalse(job.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT,
 				true));
@@ -55,7 +55,7 @@ public class AvroFileSourceTest {
 		AvroFileSource<Record> personFileSource = new AvroFileSource<Record>(
 				new Path(tempFile.getAbsolutePath()), avroGenericType);
 
-		personFileSource.configureSource(job, 1);
+		personFileSource.configureSource(job, -1);
 
 		assertTrue(job.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT,
 				false));

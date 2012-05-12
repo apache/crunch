@@ -83,7 +83,7 @@ public abstract class JoinTester implements Serializable {
    public void testWritableJoin() throws Exception {
     run(new MRPipeline(InnerJoinTest.class), WritableTypeFamily.getInstance());
   }
-
+  
   @Test
   public void testAvroJoin() throws Exception {
     run(new MRPipeline(InnerJoinTest.class), AvroTypeFamily.getInstance());

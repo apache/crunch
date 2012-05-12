@@ -33,6 +33,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
 
+import com.cloudera.crunch.io.impl.InputBundle;
 import com.google.common.collect.Lists;
 
 public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
@@ -42,29 +43,26 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
       InterruptedException {
     List<InputSplit> splits = Lists.newArrayList();
     Configuration conf = job.getConfiguration();
-    Job jobCopy = new Job(conf);
-    Map<Class<? extends InputFormat>, Map<Integer, List<Path>>> formatNodeMap = CrunchInputs
-        .getFormatNodeMap(jobCopy);
+    Map<InputBundle, Map<Integer, List<Path>>> formatNodeMap = CrunchInputs.getFormatNodeMap(job);
 
     // First, build a map of InputFormats to Paths
-    for (Map.Entry<Class<? extends InputFormat>, Map<Integer, List<Path>>> entry : formatNodeMap
-        .entrySet()) {
-      Class<? extends InputFormat> formatClass = entry.getKey();
+    for (Map.Entry<InputBundle, Map<Integer, List<Path>>> entry : formatNodeMap.entrySet()) {
+      InputBundle inputBundle = entry.getKey();
+      Job jobCopy = new Job(conf);
       InputFormat format = (InputFormat) ReflectionUtils.newInstance(
-          formatClass, conf);
+          inputBundle.getInputFormatClass(), jobCopy.getConfiguration());
       for (Map.Entry<Integer, List<Path>> nodeEntry : entry.getValue()
           .entrySet()) {
         Integer nodeIndex = nodeEntry.getKey();
         List<Path> paths = nodeEntry.getValue();
-        FileInputFormat.setInputPaths(jobCopy,
-            paths.toArray(new Path[paths.size()]));
+        FileInputFormat.setInputPaths(jobCopy, paths.toArray(new Path[paths.size()]));
 
         // Get splits for each input path and tag with InputFormat
         // and Mapper types by wrapping in a TaggedInputSplit.
         List<InputSplit> pathSplits = format.getSplits(jobCopy);
         for (InputSplit pathSplit : pathSplits) {
-          splits.add(new CrunchInputSplit(pathSplit, formatClass, nodeIndex,
-              conf));
+          splits.add(new CrunchInputSplit(pathSplit, inputBundle.getInputFormatClass(),
+              inputBundle.getExtraConfiguration(), nodeIndex, jobCopy.getConfiguration()));
         }
       }
     }

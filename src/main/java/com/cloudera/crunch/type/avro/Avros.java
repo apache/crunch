@@ -59,7 +59,7 @@ public class Avros {
   /**
    * The name of the configuration parameter that tracks which reflection factory to use.
    */
-  private static final String REFLECT_DATA_FACTORY_CLASS = "crunch.reflectdatafactory";
+  public static final String REFLECT_DATA_FACTORY_CLASS = "crunch.reflectdatafactory";
   
   public static void configureReflectDataFactory(Configuration conf) {
     conf.setClass(REFLECT_DATA_FACTORY_CLASS, REFLECT_DATA_FACTORY.getClass(),

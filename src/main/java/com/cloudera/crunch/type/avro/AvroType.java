@@ -84,7 +84,15 @@ public class AvroType<T> implements PType<T> {
 	 * @return true if the wrapped type is a specific data type
 	 */
 	public boolean isSpecific() {
-		return SpecificRecord.class.isAssignableFrom(typeClass);
+	  if (SpecificRecord.class.isAssignableFrom(typeClass)) {
+	    return true;
+	  }
+	  for (PType ptype : subTypes) {
+	    if (SpecificRecord.class.isAssignableFrom(ptype.getTypeClass())) {
+	      return true;
+	    }
+	  }
+	  return false;
 	}
 
 	public MapFn<Object, T> getInputMapFn() {
