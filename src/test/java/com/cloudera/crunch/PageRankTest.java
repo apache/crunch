@@ -75,25 +75,25 @@ public class PageRankTest {
     run(MemPipeline.getInstance(), prType, tf);        
   }
   
-  public void testAvroJSON() throws Exception {
+  @Test public void testAvroJSON() throws Exception {
 	PTypeFamily tf = AvroTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  public void testAvroBSON() throws Exception {
+  @Test public void testAvroBSON() throws Exception {
 	PTypeFamily tf = AvroTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
   
-  public void testWritablesJSON() throws Exception {
+  @Test public void testWritablesJSON() throws Exception {
 	PTypeFamily tf = WritableTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);
   }
 
-  public void testWritablesBSON() throws Exception {
+  @Test public void testWritablesBSON() throws Exception {
 	PTypeFamily tf = WritableTypeFamily.getInstance();
 	PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankTest.class), prType, tf);

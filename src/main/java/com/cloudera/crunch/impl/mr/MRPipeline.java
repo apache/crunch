@@ -42,6 +42,7 @@ import com.cloudera.crunch.impl.mr.collect.InputTable;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.cloudera.crunch.impl.mr.collect.PGroupedTableImpl;
 import com.cloudera.crunch.impl.mr.collect.UnionCollection;
+import com.cloudera.crunch.impl.mr.collect.UnionTable;
 import com.cloudera.crunch.impl.mr.plan.MSCRPlanner;
 import com.cloudera.crunch.impl.mr.run.RuntimeParameters;
 import com.cloudera.crunch.io.At;
@@ -143,7 +144,7 @@ public class MRPipeline implements Pipeline {
   public void write(PCollection<?> pcollection, Target target) {
     if (pcollection instanceof PGroupedTableImpl) {
       pcollection = ((PGroupedTableImpl) pcollection).ungroup();
-    } else if (pcollection instanceof UnionCollection) {
+    } else if (pcollection instanceof UnionCollection || pcollection instanceof UnionTable) {
       pcollection = pcollection.parallelDo("UnionCollectionWrapper",  
     		  (MapFn)IdentityFn.<Object>getInstance(), pcollection.getPType());	 
     }

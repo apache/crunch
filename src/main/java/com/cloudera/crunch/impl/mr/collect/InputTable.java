@@ -65,4 +65,14 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
   }
+  
+  @Override
+  public int hashCode() {
+    return asCollection.hashCode();
+  }
+  
+  @Override
+  public boolean equals(Object other) {
+    return asCollection.equals(other);
+  }
 }
