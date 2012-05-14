@@ -55,6 +55,10 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
   
   @Override
   public Iterator<Pair<K, V>> read(FileSystem fs, final Path path) {
+    keyMapFn.setConfigurationForTest(conf);
+    keyMapFn.initialize();
+    valueMapFn.setConfigurationForTest(conf);
+    valueMapFn.initialize();
 	try {
 	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
 	  return new UnmodifiableIterator<Pair<K, V>>() {
