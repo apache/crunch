@@ -39,7 +39,7 @@ public class AvroFileTarget extends FileTargetImpl {
     
   @Override
   public String toString() {
-    return "AvroTarget(" + path.toString() + ")";
+    return "Avro(" + path.toString() + ")";
   }
   
   @Override

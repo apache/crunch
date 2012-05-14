@@ -38,7 +38,7 @@ public class TextFileTarget extends FileTargetImpl {
 
   @Override
   public String toString() {
-    return "TextTarget(" + path + ")";
+    return "Text(" + path + ")";
   }
 
   @Override

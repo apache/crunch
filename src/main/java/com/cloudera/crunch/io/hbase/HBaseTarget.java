@@ -58,6 +58,11 @@ public class HBaseTarget implements MapReduceTarget {
   }
   
   @Override
+  public String toString() {
+    return "HBaseTable(" + table + ")";
+  }
+
+  @Override
   public boolean accept(OutputHandler handler, PType<?> ptype) {
     if(Put.class.equals(ptype.getTypeClass())) {
       handler.configure(this, ptype);

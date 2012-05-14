@@ -76,6 +76,11 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   }
   
   @Override
+  public String toString() {
+    return "HBaseTable(" + table + ")";
+  }
+  
+  @Override
   public void configureSource(Job job, int inputId) throws IOException {
     Configuration conf = job.getConfiguration();
     job.setInputFormatClass(TableInputFormat.class);

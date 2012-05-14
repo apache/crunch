@@ -30,6 +30,6 @@ public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   
   @Override
   public String toString() {
-	return "Text(" + ((TextFileTarget) target).getPath() + ")";
+	return target.toString();
   }
 }

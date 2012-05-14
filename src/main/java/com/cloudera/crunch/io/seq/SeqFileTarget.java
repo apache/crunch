@@ -33,7 +33,7 @@ public class SeqFileTarget extends FileTargetImpl {
 
   @Override
   public String toString() {
-    return "SeqFileTarget(" + path.toString() + ")";
+    return "SeqFile(" + path.toString() + ")";
   }
   
   @Override

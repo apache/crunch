@@ -46,6 +46,10 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
     return CompositePathIterable.create(fs, path, 
         new SeqFileTableReaderFactory<K, V>((PTableType<K, V>) ptype, conf));
   }
- 
+
+  @Override
+  public String toString() {
+    return "SeqFile(" + path.toString() + ")";
+  }
 }
  

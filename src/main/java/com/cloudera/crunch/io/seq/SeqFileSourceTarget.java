@@ -27,4 +27,9 @@ public class SeqFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public SeqFileSourceTarget(Path path, PType<T> ptype) {
     super(new SeqFileSource<T>(path, ptype), new SeqFileTarget(path));
   }
+  
+  @Override
+  public String toString() {
+    return target.toString();
+  }
 }

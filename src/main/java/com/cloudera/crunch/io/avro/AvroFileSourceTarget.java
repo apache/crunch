@@ -23,4 +23,9 @@ public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public AvroFileSourceTarget(Path path, AvroType<T> atype) {
 	super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path));
   }
+  
+  @Override
+  public String toString() {
+    return target.toString();
+  }
 }

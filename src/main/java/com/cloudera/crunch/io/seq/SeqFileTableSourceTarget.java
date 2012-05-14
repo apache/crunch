@@ -37,4 +37,9 @@ public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl
   public PTableType<K, V> getTableType() {
     return tableType;
   }
+  
+  @Override
+  public String toString() {
+    return target.toString();
+  }
 }
