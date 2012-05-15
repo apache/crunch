@@ -25,7 +25,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob.State;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -42,8 +42,11 @@ import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob.State;
  * state changes of their depending jobs states. The class provides APIs for
  * suspending/resuming the thread, and for stopping the thread.
  * 
+ * TODO This is mostly a copy of the JobControl class in Hadoop MapReduce core. 
+ * Once the location and interface of the class are more stable in CDH, this class 
+ * should be removed completely and be based on the hadoop-core class.
  */
-public class JobControl implements Runnable {
+public class CrunchJobControl implements Runnable {
 
   // The thread can be in one of the following state
   public static enum ThreadState {
@@ -52,11 +55,11 @@ public class JobControl implements Runnable {
 
   private ThreadState runnerState; // the thread state
 
-  private Map<String, ControlledJob> waitingJobs;
-  private Map<String, ControlledJob> readyJobs;
-  private Map<String, ControlledJob> runningJobs;
-  private Map<String, ControlledJob> successfulJobs;
-  private Map<String, ControlledJob> failedJobs;
+  private Map<String, CrunchControlledJob> waitingJobs;
+  private Map<String, CrunchControlledJob> readyJobs;
+  private Map<String, CrunchControlledJob> runningJobs;
+  private Map<String, CrunchControlledJob> successfulJobs;
+  private Map<String, CrunchControlledJob> failedJobs;
 
   private long nextJobID;
   private String groupName;
@@ -67,21 +70,21 @@ public class JobControl implements Runnable {
    * @param groupName
    *          a name identifying this group
    */
-  public JobControl(String groupName) {
-    this.waitingJobs = new Hashtable<String, ControlledJob>();
-    this.readyJobs = new Hashtable<String, ControlledJob>();
-    this.runningJobs = new Hashtable<String, ControlledJob>();
-    this.successfulJobs = new Hashtable<String, ControlledJob>();
-    this.failedJobs = new Hashtable<String, ControlledJob>();
+  public CrunchJobControl(String groupName) {
+    this.waitingJobs = new Hashtable<String, CrunchControlledJob>();
+    this.readyJobs = new Hashtable<String, CrunchControlledJob>();
+    this.runningJobs = new Hashtable<String, CrunchControlledJob>();
+    this.successfulJobs = new Hashtable<String, CrunchControlledJob>();
+    this.failedJobs = new Hashtable<String, CrunchControlledJob>();
     this.nextJobID = -1;
     this.groupName = groupName;
     this.runnerState = ThreadState.READY;
   }
 
-  private static List<ControlledJob> toList(Map<String, ControlledJob> jobs) {
-    ArrayList<ControlledJob> retv = new ArrayList<ControlledJob>();
+  private static List<CrunchControlledJob> toList(Map<String, CrunchControlledJob> jobs) {
+    ArrayList<CrunchControlledJob> retv = new ArrayList<CrunchControlledJob>();
     synchronized (jobs) {
-      for (ControlledJob job : jobs.values()) {
+      for (CrunchControlledJob job : jobs.values()) {
         retv.add(job);
       }
     }
@@ -91,32 +94,32 @@ public class JobControl implements Runnable {
   /**
    * @return the jobs in the waiting state
    */
-  public List<ControlledJob> getWaitingJobList() {
+  public List<CrunchControlledJob> getWaitingJobList() {
     return toList(this.waitingJobs);
   }
 
   /**
    * @return the jobs in the running state
    */
-  public List<ControlledJob> getRunningJobList() {
+  public List<CrunchControlledJob> getRunningJobList() {
     return toList(this.runningJobs);
   }
 
   /**
    * @return the jobs in the ready state
    */
-  public List<ControlledJob> getReadyJobsList() {
+  public List<CrunchControlledJob> getReadyJobsList() {
     return toList(this.readyJobs);
   }
 
   /**
    * @return the jobs in the success state
    */
-  public List<ControlledJob> getSuccessfulJobList() {
+  public List<CrunchControlledJob> getSuccessfulJobList() {
     return toList(this.successfulJobs);
   }
 
-  public List<ControlledJob> getFailedJobList() {
+  public List<CrunchControlledJob> getFailedJobList() {
     return toList(this.failedJobs);
   }
 
@@ -125,20 +128,20 @@ public class JobControl implements Runnable {
     return this.groupName + this.nextJobID;
   }
 
-  private static void addToQueue(ControlledJob aJob,
-      Map<String, ControlledJob> queue) {
+  private static void addToQueue(CrunchControlledJob aJob,
+      Map<String, CrunchControlledJob> queue) {
     synchronized (queue) {
       queue.put(aJob.getJobID(), aJob);
     }
   }
 
-  private void addToQueue(ControlledJob aJob) {
-    Map<String, ControlledJob> queue = getQueue(aJob.getJobState());
+  private void addToQueue(CrunchControlledJob aJob) {
+    Map<String, CrunchControlledJob> queue = getQueue(aJob.getJobState());
     addToQueue(aJob, queue);
   }
 
-  private Map<String, ControlledJob> getQueue(State state) {
-    Map<String, ControlledJob> retv = null;
+  private Map<String, CrunchControlledJob> getQueue(State state) {
+    Map<String, CrunchControlledJob> retv = null;
     if (state == State.WAITING) {
       retv = this.waitingJobs;
     } else if (state == State.READY) {
@@ -159,7 +162,7 @@ public class JobControl implements Runnable {
    * @param aJob
    *          the new job
    */
-  synchronized public String addJob(ControlledJob aJob) {
+  synchronized public String addJob(CrunchControlledJob aJob) {
     String id = this.getNextJobID();
     aJob.setJobID(id);
     aJob.setJobState(State.WAITING);
@@ -172,8 +175,8 @@ public class JobControl implements Runnable {
    * 
    * @param jobs
    */
-  public void addJobCollection(Collection<ControlledJob> jobs) {
-    for (ControlledJob job : jobs) {
+  public void addJobCollection(Collection<CrunchControlledJob> jobs) {
+    for (CrunchControlledJob job : jobs) {
       addJob(job);
     }
   }
@@ -214,11 +217,11 @@ public class JobControl implements Runnable {
   synchronized private void checkRunningJobs() throws IOException,
       InterruptedException {
 
-    Map<String, ControlledJob> oldJobs = null;
+    Map<String, CrunchControlledJob> oldJobs = null;
     oldJobs = this.runningJobs;
-    this.runningJobs = new Hashtable<String, ControlledJob>();
+    this.runningJobs = new Hashtable<String, CrunchControlledJob>();
 
-    for (ControlledJob nextJob : oldJobs.values()) {
+    for (CrunchControlledJob nextJob : oldJobs.values()) {
       nextJob.checkState();
       this.addToQueue(nextJob);
     }
@@ -226,22 +229,22 @@ public class JobControl implements Runnable {
 
   synchronized private void checkWaitingJobs() throws IOException,
       InterruptedException {
-    Map<String, ControlledJob> oldJobs = null;
+    Map<String, CrunchControlledJob> oldJobs = null;
     oldJobs = this.waitingJobs;
-    this.waitingJobs = new Hashtable<String, ControlledJob>();
+    this.waitingJobs = new Hashtable<String, CrunchControlledJob>();
 
-    for (ControlledJob nextJob : oldJobs.values()) {
+    for (CrunchControlledJob nextJob : oldJobs.values()) {
       nextJob.checkState();
       this.addToQueue(nextJob);
     }
   }
 
   synchronized private void startReadyJobs() {
-    Map<String, ControlledJob> oldJobs = null;
+    Map<String, CrunchControlledJob> oldJobs = null;
     oldJobs = this.readyJobs;
-    this.readyJobs = new Hashtable<String, ControlledJob>();
+    this.readyJobs = new Hashtable<String, CrunchControlledJob>();
 
-    for (ControlledJob nextJob : oldJobs.values()) {
+    for (CrunchControlledJob nextJob : oldJobs.values()) {
       // Submitting Job to Hadoop
       nextJob.submit();
       this.addToQueue(nextJob);

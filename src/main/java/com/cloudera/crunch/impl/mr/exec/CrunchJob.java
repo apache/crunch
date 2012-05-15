@@ -23,14 +23,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.hadoop.util.StringUtils;
 
 import com.cloudera.crunch.impl.mr.plan.MSCROutputHandler;
 import com.cloudera.crunch.impl.mr.plan.PlanningParameters;
 import com.google.common.collect.Lists;
 
-public class CrunchJob extends ControlledJob {
+public class CrunchJob extends CrunchControlledJob {
 
   private final Log log = LogFactory.getLog(CrunchJob.class);
   
@@ -39,7 +39,7 @@ public class CrunchJob extends ControlledJob {
   private final boolean mapOnlyJob;
   
   public CrunchJob(Job job, Path workingPath, MSCROutputHandler handler) throws IOException {
-    super(job, Lists.<ControlledJob>newArrayList());
+    super(job, Lists.<CrunchControlledJob>newArrayList());
     this.workingPath = workingPath;
     this.multiPaths = handler.getMultiPaths();
     this.mapOnlyJob = handler.isMapOnlyJob();

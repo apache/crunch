@@ -18,8 +18,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.ControlledJob;
-import org.apache.hadoop.mapreduce.lib.jobcontrol.JobControl;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
+import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
 
 /**
  *
@@ -29,10 +29,10 @@ public class MRExecutor {
 
   private static final Log LOG = LogFactory.getLog(MRExecutor.class);
   
-  private final JobControl control;
+  private final CrunchJobControl control;
   
   public MRExecutor(Class<?> jarClass) {
-    this.control = new JobControl(jarClass.toString());
+    this.control = new CrunchJobControl(jarClass.toString());
   }
   
   public void addJob(CrunchJob job) {
@@ -50,10 +50,10 @@ public class MRExecutor {
     } catch (InterruptedException e) {
       LOG.info(e);
     }
-    List<ControlledJob> failures = control.getFailedJobList();
+    List<CrunchControlledJob> failures = control.getFailedJobList();
     if (!failures.isEmpty()) {
       System.err.println(failures.size() + " job failure(s) occurred:");
-      for (ControlledJob job : failures) {
+      for (CrunchControlledJob job : failures) {
         System.err.println(job.getJobName() + "(" + job.getJobID() + "): " + job.getMessage());
       }
     }
