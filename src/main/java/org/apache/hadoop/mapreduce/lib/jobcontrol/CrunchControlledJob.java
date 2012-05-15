@@ -40,7 +40,7 @@ import org.apache.hadoop.util.StringUtils;
  * RUNNING state. From RUNNING state, the job can get into SUCCESS or FAILED
  * state, depending the status of the job execution.
  */
-public class ControlledJob {
+public class CrunchControlledJob {
 
   // A job will be in one of the following states
   public static enum State {
@@ -54,7 +54,7 @@ public class ControlledJob {
   protected String message;
   private String controlID; // assigned and used by JobControl class
   // the jobs the current job depends on
-  private List<ControlledJob> dependingJobs;
+  private List<CrunchControlledJob> dependingJobs;
 
   /**
    * Construct a job.
@@ -64,7 +64,7 @@ public class ControlledJob {
    * @param dependingJobs
    *          an array of jobs the current job depends on
    */
-  public ControlledJob(Job job, List<ControlledJob> dependingJobs)
+  public CrunchControlledJob(Job job, List<CrunchControlledJob> dependingJobs)
       throws IOException {
     this.job = job;
     this.dependingJobs = dependingJobs;
@@ -80,7 +80,7 @@ public class ControlledJob {
    *          mapred job configuration representing a job to be executed.
    * @throws IOException
    */
-  public ControlledJob(Configuration conf) throws IOException {
+  public CrunchControlledJob(Configuration conf) throws IOException {
     this(new Job(conf), null);
   }
 
@@ -201,7 +201,7 @@ public class ControlledJob {
   /**
    * @return the depending jobs of this job
    */
-  public List<ControlledJob> getDependentJobs() {
+  public List<CrunchControlledJob> getDependentJobs() {
     return this.dependingJobs;
   }
 
@@ -213,10 +213,10 @@ public class ControlledJob {
    *          Job that this Job depends on.
    * @return <tt>true</tt> if the Job was added.
    */
-  public synchronized boolean addDependingJob(ControlledJob dependingJob) {
+  public synchronized boolean addDependingJob(CrunchControlledJob dependingJob) {
     if (this.state == State.WAITING) { // only allowed to add jobs when waiting
       if (this.dependingJobs == null) {
-        this.dependingJobs = new ArrayList<ControlledJob>();
+        this.dependingJobs = new ArrayList<CrunchControlledJob>();
       }
       return this.dependingJobs.add(dependingJob);
     } else {
@@ -284,7 +284,7 @@ public class ControlledJob {
       this.state = State.READY;
       return this.state;
     }
-    ControlledJob pred = null;
+    CrunchControlledJob pred = null;
     int n = this.dependingJobs.size();
     for (int i = 0; i < n; i++) {
       pred = this.dependingJobs.get(i);
