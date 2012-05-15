@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,8 +42,7 @@ public class UnionCollectionTest {
 	private Pipeline pipeline;
 	private PCollection<String> union;
 
-	private ArrayList<String> EXPECTED = Lists.newArrayList("b", "c", "a", "e",
-			"c", "d", "a");
+	private ArrayList<String> EXPECTED = Lists.newArrayList("a", "a", "b", "c", "c", "d", "e");
 
 	@Before
 	@SuppressWarnings("unchecked")
@@ -49,15 +50,14 @@ public class UnionCollectionTest {
 		String inputFile1 = FileHelper.createTempCopyOf("set1.txt");
 		String inputFile2 = FileHelper.createTempCopyOf("set2.txt");
 
-		PCollection<String> firstCollection = pipeline.read(At.textFile(
-				inputFile1, typeFamily.strings()));
-		PCollection<String> secondCollection = pipeline.read(At.textFile(
-				inputFile2, typeFamily.strings()));
+		PCollection<String> firstCollection = pipeline.read(At.textFile(inputFile1,
+				typeFamily.strings()));
+		PCollection<String> secondCollection = pipeline.read(At.textFile(inputFile2,
+				typeFamily.strings()));
 
-		LOG.info("Test fixture: [" + pipeline.getClass().getSimpleName()
-				+ " : " + typeFamily.getClass().getSimpleName() + "]  First: "
-				+ Lists.newArrayList(firstCollection.materialize().iterator())
-				+ ", Second: "
+		LOG.info("Test fixture: [" + pipeline.getClass().getSimpleName() + " : "
+				+ typeFamily.getClass().getSimpleName() + "]  First: "
+				+ Lists.newArrayList(firstCollection.materialize().iterator()) + ", Second: "
 				+ Lists.newArrayList(secondCollection.materialize().iterator()));
 
 		union = secondCollection.union(firstCollection);
@@ -71,11 +71,9 @@ public class UnionCollectionTest {
 	@Parameters
 	public static Collection<Object[]> data() throws IOException {
 		Object[][] data = new Object[][] {
-				{ WritableTypeFamily.getInstance(),
-						new MRPipeline(PTableKeyValueTest.class) },
+				{ WritableTypeFamily.getInstance(), new MRPipeline(PTableKeyValueTest.class) },
 				{ WritableTypeFamily.getInstance(), MemPipeline.getInstance() },
-				{ AvroTypeFamily.getInstance(),
-						new MRPipeline(PTableKeyValueTest.class) },
+				{ AvroTypeFamily.getInstance(), new MRPipeline(PTableKeyValueTest.class) },
 				{ AvroTypeFamily.getInstance(), MemPipeline.getInstance() } };
 		return Arrays.asList(data);
 	}
@@ -93,10 +91,11 @@ public class UnionCollectionTest {
 
 	private void checkMaterialized(Iterable<String> materialized) {
 
-		ArrayList<String> list = Lists.newArrayList(materialized.iterator());
-		LOG.info("Materialized union: " + list);
+		List<String> materializedValues = Lists.newArrayList(materialized.iterator());
+		Collections.sort(materializedValues);
+		LOG.info("Materialized union: " + materializedValues);
 
-		assertEquals(EXPECTED, list);
+		assertEquals(EXPECTED, materializedValues);
 	}
 
 	@Test
@@ -116,7 +115,7 @@ public class UnionCollectionTest {
 			checkFileContents(outputPath2.getAbsolutePath());
 
 		} else {
-			
+
 			union.write(To.textFile(outputPath1.getAbsolutePath()));
 			pipeline.write(union, To.textFile(outputPath2.getAbsolutePath()));
 			pipeline.writeTextFile(union, outputPath3.getAbsolutePath());
@@ -132,15 +131,14 @@ public class UnionCollectionTest {
 
 	private void checkFileContents(String filePath) throws IOException {
 
-		ArrayList<String> result = (typeFamily != AvroTypeFamily.getInstance() || !(pipeline instanceof MRPipeline)) ? Lists
-				.newArrayList(pipeline
-						.read(At.textFile(filePath, typeFamily.strings()))
-						.materialize().iterator()) : Lists
-				.newArrayList(pipeline
-						.read(At.avroFile(filePath, Avros.strings()))
-						.materialize().iterator());
+		List<String> fileContentValues = (typeFamily != AvroTypeFamily.getInstance() || !(pipeline instanceof MRPipeline)) ? Lists
+				.newArrayList(pipeline.read(At.textFile(filePath, typeFamily.strings())).materialize()
+						.iterator()) : Lists.newArrayList(pipeline.read(At.avroFile(filePath, Avros.strings()))
+				.materialize().iterator());
 
-		LOG.info("Saved Union: " + result);
-		assertEquals(EXPECTED, result);
+		Collections.sort(fileContentValues);
+
+		LOG.info("Saved Union: " + fileContentValues);
+		assertEquals(EXPECTED, fileContentValues);
 	}
 }
