@@ -29,6 +29,7 @@ import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Sample;
 import com.cloudera.crunch.lib.Sort;
+import com.cloudera.crunch.test.InMemoryEmitter;
 import com.cloudera.crunch.type.PTableType;
 import com.cloudera.crunch.type.PType;
 import com.cloudera.crunch.type.PTypeFamily;
@@ -80,7 +81,7 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type) {
-    CollectEmitter<T> emitter = new CollectEmitter<T>();
+    InMemoryEmitter<T> emitter = new InMemoryEmitter<T>();
     doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
@@ -97,7 +98,7 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn,
       PTableType<K, V> type) {
-    CollectEmitter<Pair<K, V>> emitter = new CollectEmitter<Pair<K, V>>();
+    InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
     doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);

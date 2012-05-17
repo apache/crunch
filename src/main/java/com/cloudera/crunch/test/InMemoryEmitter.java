@@ -12,16 +12,29 @@
  * the specific language governing permissions and limitations under the
  * License.
  */
-package com.cloudera.crunch.impl.mem.collect;
+package com.cloudera.crunch.test;
 
-import java.util.Collection;
+import java.util.List;
 
 import com.cloudera.crunch.Emitter;
 import com.google.common.collect.Lists;
 
-class CollectEmitter<T> implements Emitter<T> {
+/**
+ * An {@code Emitter} instance that writes emitted records to a backing {@code List}.
+ *
+ * @param <T>
+ */
+public class InMemoryEmitter<T> implements Emitter<T> {
   
-  private final Collection<T> output = Lists.newArrayList();
+  private final List<T> output;
+  
+  public InMemoryEmitter() {
+    this(Lists.<T>newArrayList());
+  }
+  
+  public InMemoryEmitter(List<T> output) {
+    this.output = output;
+  }
   
   @Override
   public void emit(T emitted) {
@@ -33,7 +46,7 @@ class CollectEmitter<T> implements Emitter<T> {
 
   }
 
-  public Collection<T> getOutput() {
+  public List<T> getOutput() {
     return output;
   }
 }
