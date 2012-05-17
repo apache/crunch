@@ -70,7 +70,7 @@ public class Aggregate {
     }
   }
   
-  public static class TopKFn<K, V> extends DoFn<Pair<K, V>, Pair<Boolean, Pair<K, V>>> {
+  public static class TopKFn<K, V> extends DoFn<Pair<K, V>, Pair<Integer, Pair<K, V>>> {
     private final int limit;
     private final boolean maximize;
     private transient PriorityQueue<Pair<K, V>> values;
@@ -86,7 +86,7 @@ public class Aggregate {
     }
     
     @Override
-    public void process(Pair<K, V> input, Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+    public void process(Pair<K, V> input, Emitter<Pair<Integer, Pair<K, V>>> emitter) {
       values.add(input);
       if (values.size() > limit) {
         values.poll();
@@ -94,14 +94,14 @@ public class Aggregate {
     }
     
     @Override
-    public void cleanup(Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+    public void cleanup(Emitter<Pair<Integer, Pair<K, V>>> emitter) {
       for (Pair<K, V> p : values) {
-        emitter.emit(Pair.of(true, p));
+        emitter.emit(Pair.of(0, p));
       }
     }
   }
   
-  public static class TopKCombineFn<K, V> extends CombineFn<Boolean, Pair<K, V>> {
+  public static class TopKCombineFn<K, V> extends CombineFn<Integer, Pair<K, V>> {
 
     private final int limit;
     private final boolean maximize;
@@ -112,8 +112,8 @@ public class Aggregate {
     }
     
     @Override
-    public void process(Pair<Boolean, Iterable<Pair<K, V>>> input,
-        Emitter<Pair<Boolean, Pair<K, V>>> emitter) {
+    public void process(Pair<Integer, Iterable<Pair<K, V>>> input,
+        Emitter<Pair<Integer, Pair<K, V>>> emitter) {
       Comparator<Pair<K, V>> cmp = new PairValueComparator<K, V>(maximize);
       PriorityQueue<Pair<K, V>> queue = new PriorityQueue<Pair<K, V>>(limit, cmp);
       for (Pair<K, V> pair : input.second()) {
@@ -126,7 +126,7 @@ public class Aggregate {
       List<Pair<K, V>> values = Lists.newArrayList(queue);
       Collections.sort(values, cmp);
       for (int i = values.size() - 1; i >= 0; i--) {
-        emitter.emit(Pair.of(true, values.get(i)));
+        emitter.emit(Pair.of(0, values.get(i)));
       }
     }
   }
@@ -135,13 +135,13 @@ public class Aggregate {
     PTypeFamily ptf = ptable.getTypeFamily();
     PTableType<K, V> base = ptable.getPTableType();
     PType<Pair<K, V>> pairType = ptf.pairs(base.getKeyType(), base.getValueType());
-    PTableType<Boolean, Pair<K, V>> inter = ptf.tableOf(ptf.booleans(), pairType);
+    PTableType<Integer, Pair<K, V>> inter = ptf.tableOf(ptf.ints(), pairType);
     return ptable.parallelDo("top" + limit + "map", new TopKFn<K, V>(limit, maximize), inter)
         .groupByKey(1)
         .combineValues(new TopKCombineFn<K, V>(limit, maximize))
-        .parallelDo("top" + limit + "reduce", new DoFn<Pair<Boolean, Pair<K, V>>, Pair<K, V>>() {
+        .parallelDo("top" + limit + "reduce", new DoFn<Pair<Integer, Pair<K, V>>, Pair<K, V>>() {
           @Override
-          public void process(Pair<Boolean, Pair<K, V>> input,
+          public void process(Pair<Integer, Pair<K, V>> input,
               Emitter<Pair<K, V>> emitter) {
             emitter.emit(input.second()); 
           }
