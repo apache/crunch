@@ -24,7 +24,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileSourceImpl;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class SeqFileSource<T> extends FileSourceImpl<T> implements
 	ReadableSource<T> {

@@ -19,8 +19,8 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.impl.FileTargetImpl;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 
 public class TextFileTarget extends FileTargetImpl {
   public TextFileTarget(String path) {

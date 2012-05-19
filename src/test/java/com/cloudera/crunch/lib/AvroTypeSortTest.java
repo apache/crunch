@@ -14,9 +14,9 @@
  */
 package com.cloudera.crunch.lib;
 
-import static com.cloudera.crunch.type.avro.Avros.ints;
-import static com.cloudera.crunch.type.avro.Avros.records;
-import static com.cloudera.crunch.type.avro.Avros.strings;
+import static com.cloudera.crunch.types.avro.Avros.ints;
+import static com.cloudera.crunch.types.avro.Avros.records;
+import static com.cloudera.crunch.types.avro.Avros.strings;
 import static junit.framework.Assert.assertEquals;
 
 import java.io.File;

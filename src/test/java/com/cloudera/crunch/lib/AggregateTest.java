@@ -14,7 +14,7 @@
  */
 package com.cloudera.crunch.lib;
 
-import static com.cloudera.crunch.type.writable.Writables.*;
+import static com.cloudera.crunch.types.writable.Writables.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -30,11 +30,11 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroTypeFamily;
-import com.cloudera.crunch.type.avro.Avros;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.avro.Avros;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 

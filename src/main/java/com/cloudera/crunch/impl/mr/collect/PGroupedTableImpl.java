@@ -28,8 +28,8 @@ import com.cloudera.crunch.PGroupedTable;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
-import com.cloudera.crunch.type.PGroupedTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PGroupedTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
 
 public class PGroupedTableImpl<K, V> extends

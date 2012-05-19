@@ -30,7 +30,7 @@ import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.io.FileReaderFactory;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 

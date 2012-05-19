@@ -28,7 +28,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.impl.mr.run.CrunchInputs;
 import com.cloudera.crunch.io.SourceTargetHelper;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public abstract class FileSourceImpl<T> implements Source<T> {
 

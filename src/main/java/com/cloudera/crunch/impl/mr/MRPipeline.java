@@ -48,8 +48,8 @@ import com.cloudera.crunch.impl.mr.run.RuntimeParameters;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.materialize.MaterializableIterable;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 

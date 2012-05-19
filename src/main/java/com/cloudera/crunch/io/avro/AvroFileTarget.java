@@ -23,10 +23,10 @@ import org.apache.hadoop.mapreduce.Job;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.impl.FileTargetImpl;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.avro.AvroOutputFormat;
-import com.cloudera.crunch.type.avro.AvroType;
-import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.avro.AvroOutputFormat;
+import com.cloudera.crunch.types.avro.AvroType;
+import com.cloudera.crunch.types.avro.Avros;
 
 public class AvroFileTarget extends FileTargetImpl {
   public AvroFileTarget(String path) {

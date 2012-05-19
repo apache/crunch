@@ -23,7 +23,7 @@ import org.junit.Test;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
 import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.type.writable.Writables;
+import com.cloudera.crunch.types.writable.Writables;
 
 public class TextPairTest  {
 

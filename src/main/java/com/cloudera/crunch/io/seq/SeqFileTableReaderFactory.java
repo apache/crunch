@@ -28,8 +28,8 @@ import org.apache.hadoop.io.Writable;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.io.FileReaderFactory;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 

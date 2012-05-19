@@ -33,9 +33,9 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.impl.mr.run.CrunchMapper;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.writable.Writables;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.writable.Writables;
 
 public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {

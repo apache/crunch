@@ -25,7 +25,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileTableSourceImpl;
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.types.PTableType;
 
 /**
  *

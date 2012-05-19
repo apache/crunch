@@ -21,7 +21,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import com.cloudera.crunch.type.TupleFactory;
+import com.cloudera.crunch.types.TupleFactory;
 
 public class TupleTest {
   private String first = "foo";

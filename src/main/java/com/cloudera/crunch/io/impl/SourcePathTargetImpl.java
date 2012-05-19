@@ -19,7 +19,7 @@ import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements
 	PathTarget {

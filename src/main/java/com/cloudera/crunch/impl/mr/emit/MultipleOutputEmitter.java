@@ -20,7 +20,7 @@ import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
-import com.cloudera.crunch.type.Converter;
+import com.cloudera.crunch.types.Converter;
 
 public class MultipleOutputEmitter<T, K, V> implements Emitter<T> {
 

@@ -15,7 +15,7 @@
 package com.cloudera.crunch.io;
 
 import com.cloudera.crunch.Target;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public interface OutputHandler {
   boolean configure(Target target, PType<?> ptype);

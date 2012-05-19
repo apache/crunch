@@ -23,8 +23,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.Converter;
+import com.cloudera.crunch.types.PType;
 
 public class FileTargetImpl implements PathTarget {
 

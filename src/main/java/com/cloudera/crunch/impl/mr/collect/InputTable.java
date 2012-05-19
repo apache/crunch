@@ -20,8 +20,8 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
 
 public class InputTable<K, V> extends PTableBase<K, V> {
