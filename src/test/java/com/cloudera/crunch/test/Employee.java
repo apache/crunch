@@ -6,7 +6,7 @@
 package com.cloudera.crunch.test;  
 @SuppressWarnings("all")
 public class Employee extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  public static final org.apache.avro.Schema SCHEMA$ = org.apache.avro.Schema.parse("{\"type\":\"record\",\"name\":\"Employee\",\"namespace\":\"com.cloudera.crunch.test\",\"fields\":[{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"salary\",\"type\":\"int\"},{\"name\":\"department\",\"type\":[\"string\",\"null\"]}]}");
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Employee\",\"namespace\":\"com.cloudera.crunch.test\",\"fields\":[{\"name\":\"name\",\"type\":[\"string\",\"null\"]},{\"name\":\"salary\",\"type\":\"int\"},{\"name\":\"department\",\"type\":[\"string\",\"null\"]}]}");
   @Deprecated public java.lang.CharSequence name;
   @Deprecated public int salary;
   @Deprecated public java.lang.CharSequence department;
@@ -114,17 +114,17 @@ public class Employee extends org.apache.avro.specific.SpecificRecordBase implem
     /** Creates a Builder by copying an existing Employee instance */
     private Builder(com.cloudera.crunch.test.Employee other) {
             super(com.cloudera.crunch.test.Employee.SCHEMA$);
-      if (isValidValue(fields[0], other.name)) {
-        name = (java.lang.CharSequence) data.deepCopy(fields[0].schema(), other.name);
-        fieldSetFlags[0] = true;
+      if (isValidValue(fields()[0], other.name)) {
+        this.name = (java.lang.CharSequence) data().deepCopy(fields()[0].schema(), other.name);
+        fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields[1], other.salary)) {
-        salary = (java.lang.Integer) data.deepCopy(fields[1].schema(), other.salary);
-        fieldSetFlags[1] = true;
+      if (isValidValue(fields()[1], other.salary)) {
+        this.salary = (java.lang.Integer) data().deepCopy(fields()[1].schema(), other.salary);
+        fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields[2], other.department)) {
-        department = (java.lang.CharSequence) data.deepCopy(fields[2].schema(), other.department);
-        fieldSetFlags[2] = true;
+      if (isValidValue(fields()[2], other.department)) {
+        this.department = (java.lang.CharSequence) data().deepCopy(fields()[2].schema(), other.department);
+        fieldSetFlags()[2] = true;
       }
     }
 
@@ -135,21 +135,21 @@ public class Employee extends org.apache.avro.specific.SpecificRecordBase implem
     
     /** Sets the value of the 'name' field */
     public com.cloudera.crunch.test.Employee.Builder setName(java.lang.CharSequence value) {
-      validate(fields[0], value);
+      validate(fields()[0], value);
       this.name = value;
-      fieldSetFlags[0] = true;
+      fieldSetFlags()[0] = true;
       return this; 
     }
     
     /** Checks whether the 'name' field has been set */
     public boolean hasName() {
-      return fieldSetFlags[0];
+      return fieldSetFlags()[0];
     }
     
     /** Clears the value of the 'name' field */
     public com.cloudera.crunch.test.Employee.Builder clearName() {
       name = null;
-      fieldSetFlags[0] = false;
+      fieldSetFlags()[0] = false;
       return this;
     }
 
@@ -160,20 +160,20 @@ public class Employee extends org.apache.avro.specific.SpecificRecordBase implem
     
     /** Sets the value of the 'salary' field */
     public com.cloudera.crunch.test.Employee.Builder setSalary(int value) {
-      validate(fields[1], value);
+      validate(fields()[1], value);
       this.salary = value;
-      fieldSetFlags[1] = true;
+      fieldSetFlags()[1] = true;
       return this; 
     }
     
     /** Checks whether the 'salary' field has been set */
     public boolean hasSalary() {
-      return fieldSetFlags[1];
+      return fieldSetFlags()[1];
     }
     
     /** Clears the value of the 'salary' field */
     public com.cloudera.crunch.test.Employee.Builder clearSalary() {
-      fieldSetFlags[1] = false;
+      fieldSetFlags()[1] = false;
       return this;
     }
 
@@ -184,21 +184,21 @@ public class Employee extends org.apache.avro.specific.SpecificRecordBase implem
     
     /** Sets the value of the 'department' field */
     public com.cloudera.crunch.test.Employee.Builder setDepartment(java.lang.CharSequence value) {
-      validate(fields[2], value);
+      validate(fields()[2], value);
       this.department = value;
-      fieldSetFlags[2] = true;
+      fieldSetFlags()[2] = true;
       return this; 
     }
     
     /** Checks whether the 'department' field has been set */
     public boolean hasDepartment() {
-      return fieldSetFlags[2];
+      return fieldSetFlags()[2];
     }
     
     /** Clears the value of the 'department' field */
     public com.cloudera.crunch.test.Employee.Builder clearDepartment() {
       department = null;
-      fieldSetFlags[2] = false;
+      fieldSetFlags()[2] = false;
       return this;
     }
 
@@ -206,9 +206,9 @@ public class Employee extends org.apache.avro.specific.SpecificRecordBase implem
     public Employee build() {
       try {
         Employee record = new Employee();
-        record.name = fieldSetFlags[0] ? this.name : (java.lang.CharSequence) getDefaultValue(fields[0]);
-        record.salary = fieldSetFlags[1] ? this.salary : (java.lang.Integer) getDefaultValue(fields[1]);
-        record.department = fieldSetFlags[2] ? this.department : (java.lang.CharSequence) getDefaultValue(fields[2]);
+        record.name = fieldSetFlags()[0] ? this.name : (java.lang.CharSequence) defaultValue(fields()[0]);
+        record.salary = fieldSetFlags()[1] ? this.salary : (java.lang.Integer) defaultValue(fields()[1]);
+        record.department = fieldSetFlags()[2] ? this.department : (java.lang.CharSequence) defaultValue(fields()[2]);
         return record;
       } catch (Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);
