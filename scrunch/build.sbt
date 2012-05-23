@@ -1,6 +1,6 @@
 name := "scrunch"
 
-version := "0.1.0"
+version := "0.2.0"
 
 scalaVersion := "2.9.1"
 
@@ -10,7 +10,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.cloudera.crunch" % "crunch" % "0.2.4" excludeAll(
+  "com.cloudera.crunch" % "crunch" % "0.3.0" excludeAll(
     ExclusionRule(organization = "com.sun.jdmk"),
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
