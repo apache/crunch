@@ -15,7 +15,7 @@
 package com.cloudera.crunch;
 
 import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 /**
  * A {@code Target} represents the output destination of a Crunch job.

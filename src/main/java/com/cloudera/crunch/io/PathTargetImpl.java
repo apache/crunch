@@ -6,7 +6,7 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public abstract class PathTargetImpl implements PathTarget {
 

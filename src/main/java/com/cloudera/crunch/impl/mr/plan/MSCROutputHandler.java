@@ -23,7 +23,7 @@ import com.cloudera.crunch.Target;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
 import com.cloudera.crunch.io.PathTarget;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Lists;
 
 public class MSCROutputHandler implements OutputHandler {

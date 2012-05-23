@@ -30,9 +30,9 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Sample;
 import com.cloudera.crunch.lib.Sort;
 import com.cloudera.crunch.test.InMemoryEmitter;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

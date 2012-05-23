@@ -29,8 +29,8 @@ import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.ReadableSourceTarget;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 
 @SuppressWarnings("serial")
 public class TermFrequencyTest implements Serializable {  

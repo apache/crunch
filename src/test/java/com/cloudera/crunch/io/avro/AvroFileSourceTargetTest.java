@@ -23,7 +23,7 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.test.Person;
-import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.types.avro.Avros;
 import com.google.common.collect.Lists;
 
 @SuppressWarnings("serial")

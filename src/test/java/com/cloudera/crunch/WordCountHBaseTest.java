@@ -41,7 +41,7 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
 import com.cloudera.crunch.io.hbase.HBaseTarget;
 import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.type.writable.Writables;
+import com.cloudera.crunch.types.writable.Writables;
 
 public class WordCountHBaseTest {
   protected static final Log LOG = LogFactory.getLog(WordCountHBaseTest.class);

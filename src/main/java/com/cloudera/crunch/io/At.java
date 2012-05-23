@@ -23,10 +23,10 @@ import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
 import com.cloudera.crunch.io.seq.SeqFileSourceTarget;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
 import com.cloudera.crunch.io.text.TextFileSourceTarget;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroType;
-import com.cloudera.crunch.type.writable.Writables;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroType;
+import com.cloudera.crunch.types.writable.Writables;
 
 /**
  * Static factory methods for creating various {@link SourceTarget} types.

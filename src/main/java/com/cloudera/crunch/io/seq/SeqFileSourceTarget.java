@@ -17,7 +17,7 @@ package com.cloudera.crunch.io.seq;
 import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.io.impl.ReadableSourcePathTargetImpl;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class SeqFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public SeqFileSourceTarget(String path, PType<T> ptype) {

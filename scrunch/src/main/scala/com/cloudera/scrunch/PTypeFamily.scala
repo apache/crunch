@@ -14,10 +14,10 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, TupleN, MapFn}
-import com.cloudera.crunch.`type`.{PType, PTypeFamily => PTF}
-import com.cloudera.crunch.`type`.writable.WritableTypeFamily
-import com.cloudera.crunch.`type`.avro.{AvroTypeFamily, Avros => CAvros}
+import com.cloudera.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, MapFn}
+import com.cloudera.crunch.types.{PType, PTypeFamily => PTF}
+import com.cloudera.crunch.types.writable.WritableTypeFamily
+import com.cloudera.crunch.types.avro.{AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
@@ -28,7 +28,7 @@ class TMapFn[S, T](f: S => T) extends MapFn[S, T] {
 
 trait PTypeFamily {
 
-  def ptf(): PTF
+  def ptf: PTF
 
   val strings = ptf.strings()
 
@@ -112,11 +112,11 @@ trait PTypeFamily {
 }
 
 object Writables extends PTypeFamily {
-  override def ptf() = WritableTypeFamily.getInstance()
+  override def ptf = WritableTypeFamily.getInstance()
 }
 
 object Avros extends PTypeFamily {
-  override def ptf() = AvroTypeFamily.getInstance()
+  override def ptf = AvroTypeFamily.getInstance()
 
   CAvros.REFLECT_DATA_FACTORY = new ScalaReflectDataFactory()
 

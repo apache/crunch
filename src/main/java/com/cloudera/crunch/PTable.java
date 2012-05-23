@@ -17,8 +17,8 @@ package com.cloudera.crunch;
 
 import java.util.Collection;
 
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 
 /**
  * A sub-interface of {@code PCollection} that represents an immutable,

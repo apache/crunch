@@ -14,10 +14,8 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{Source, SourceTarget, Target}
 import com.cloudera.crunch.io.{From => from, To => to, At => at}
-import com.cloudera.crunch.`type`.PType
-import com.cloudera.crunch.`type`.avro.AvroType
+import com.cloudera.crunch.types.avro.AvroType
 import org.apache.hadoop.fs.Path;
 
 object From {

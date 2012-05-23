@@ -17,7 +17,7 @@ package com.cloudera.crunch.io.impl;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.Target;
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.types.PTableType;
 
 public class TableSourceTargetImpl<K, V> extends SourceTargetImpl<Pair<K, V>>
 	implements TableSource<K, V> {

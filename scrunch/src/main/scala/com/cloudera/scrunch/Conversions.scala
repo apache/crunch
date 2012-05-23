@@ -16,7 +16,7 @@ package com.cloudera.scrunch
 
 import com.cloudera.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable, DoFn, Emitter}
 import com.cloudera.crunch.{Pair => CPair}
-import com.cloudera.crunch.`type`.PType
+import com.cloudera.crunch.types.PType
 import java.nio.ByteBuffer
 import scala.collection.Iterable
 

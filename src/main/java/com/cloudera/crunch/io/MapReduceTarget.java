@@ -18,7 +18,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.Target;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public interface MapReduceTarget extends Target {
   void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name);

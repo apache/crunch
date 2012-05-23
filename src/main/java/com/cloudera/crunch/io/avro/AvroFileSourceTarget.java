@@ -17,7 +17,7 @@ package com.cloudera.crunch.io.avro;
 import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.io.impl.ReadableSourcePathTargetImpl;
-import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.types.avro.AvroType;
 
 public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public AvroFileSourceTarget(Path path, AvroType<T> atype) {

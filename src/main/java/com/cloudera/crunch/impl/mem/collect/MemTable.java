@@ -27,8 +27,8 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.lib.PTables;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Lists;
 
 public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<K, V> {

@@ -18,7 +18,7 @@ import java.util.List;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
 
 public class DoCollectionImpl<S> extends PCollectionImpl<S> {

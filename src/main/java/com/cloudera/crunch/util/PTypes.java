@@ -28,8 +28,8 @@ import org.codehaus.jackson.smile.SmileFactory;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 

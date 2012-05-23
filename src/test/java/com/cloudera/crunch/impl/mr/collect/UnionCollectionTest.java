@@ -27,10 +27,10 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.To;
 import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroTypeFamily;
-import com.cloudera.crunch.type.avro.Avros;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.avro.Avros;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.google.common.collect.Lists;
 
 @RunWith(value = Parameterized.class)
