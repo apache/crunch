@@ -17,6 +17,8 @@ package com.cloudera.crunch.io;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -24,31 +26,39 @@ import org.apache.hadoop.fs.Path;
 
 /**
  * Functions for configuring the inputs/outputs of MapReduce jobs.
- *
+ * 
  */
 public class SourceTargetHelper {
-  public static long getPathSize(Configuration conf, Path path) throws IOException {
-	return getPathSize(FileSystem.get(conf), path);
-  }
-  
-  public static long getPathSize(FileSystem fs, Path path) throws IOException {
-	if (!fs.exists(path)) {
-       return -1L;
-    }
-    FileStatus[] stati = null;
-    try {
-      stati = fs.listStatus(path);
-    } catch (FileNotFoundException e) {
-      return 0L;
-    }
-    
-    if (stati.length == 0) {
-      return 0L;
-    }
-    long size = 0;
-    for (FileStatus status : stati) {
-      size += status.getLen();
-    }
-    return size;
-  }
+
+	private static final Log LOG = LogFactory.getLog(SourceTargetHelper.class);
+
+	public static long getPathSize(Configuration conf, Path path) throws IOException {
+		return getPathSize(FileSystem.get(conf), path);
+	}
+
+	public static long getPathSize(FileSystem fs, Path path) throws IOException {
+		if (!fs.exists(path)) {
+		       return -1L;
+		    }
+		
+		FileStatus[] stati = null;
+		try {
+			stati = fs.listStatus(path);
+			if (stati == null) {
+				throw new FileNotFoundException(path + " doesn't exist");
+			}
+		} catch (FileNotFoundException e) {
+			LOG.warn("Returning 0 for getPathSize on non-existant path '" + path + "'");
+			return 0L;
+		}
+
+		if (stati.length == 0) {
+			return 0L;
+		}
+		long size = 0;
+		for (FileStatus status : stati) {
+			size += status.getLen();
+		}
+		return size;
+	}
 }

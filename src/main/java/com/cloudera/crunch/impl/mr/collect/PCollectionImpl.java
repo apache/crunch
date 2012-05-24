@@ -14,7 +14,11 @@
  */
 package com.cloudera.crunch.impl.mr.collect;
 
+import java.util.Collections;
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.FilterFn;
@@ -38,184 +42,187 @@ import com.google.common.collect.Lists;
 
 public abstract class PCollectionImpl<S> implements PCollection<S> {
 
-  private final String name;
-  protected MRPipeline pipeline;
-  private SourceTarget<S> materializedAt;
-  
-  public PCollectionImpl(String name) {
-    this.name = name;
-  }
+	private static final Log LOG = LogFactory.getLog(PCollectionImpl.class);
 
-  @Override
-  public String getName() {
-    return name;
-  }
+	private final String name;
+	protected MRPipeline pipeline;
+	private SourceTarget<S> materializedAt;
 
-  @Override
-  public String toString() {
-    return getName();
-  }
-  
-  @Override
-  public PCollection<S> union(PCollection<S>... collections) {
-    List<PCollectionImpl<S>> internal = Lists.newArrayList();
-    internal.add(this);
-    for (PCollection<S> collection : collections) {
-      internal.add((PCollectionImpl<S>) collection);
-    }
-    return new UnionCollection<S>(internal);
-  }
+	public PCollectionImpl(String name) {
+		this.name = name;
+	}
 
-  @Override
-  public <T> PCollection<T> parallelDo(DoFn<S, T> fn, PType<T> type) {
-    MRPipeline pipeline = (MRPipeline) getPipeline();
-    return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
-  }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-  @Override
-  public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn,
-      PType<T> type) {
-    return new DoCollectionImpl<T>(name, this, fn, type);
-  }
+	@Override
+	public String toString() {
+		return getName();
+	}
 
-  @Override
-  public <K, V> PTable<K, V> parallelDo(DoFn<S, Pair<K, V>> fn,
-      PTableType<K, V> type) {
-    MRPipeline pipeline = (MRPipeline) getPipeline();
-    return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
-  }
+	@Override
+	public PCollection<S> union(PCollection<S>... collections) {
+		List<PCollectionImpl<S>> internal = Lists.newArrayList();
+		internal.add(this);
+		for (PCollection<S> collection : collections) {
+			internal.add((PCollectionImpl<S>) collection);
+		}
+		return new UnionCollection<S>(internal);
+	}
 
-  @Override
-  public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn,
-      PTableType<K, V> type) {
-    return new DoTableImpl<K, V>(name, this, fn, type);
-  }
+	@Override
+	public <T> PCollection<T> parallelDo(DoFn<S, T> fn, PType<T> type) {
+		MRPipeline pipeline = (MRPipeline) getPipeline();
+		return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
+	}
 
-  @Override
-  public PCollection<S> write(Target target) {
-    getPipeline().write(this, target);
-    return this;
-  }
+	@Override
+	public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type) {
+		return new DoCollectionImpl<T>(name, this, fn, type);
+	}
 
-  @Override
-  public Iterable<S> materialize() {
-	return getPipeline().materialize(this);
-  }
-  
-  public SourceTarget<S> getMaterializedAt() {
-    return materializedAt;
-  }
-  
-  public void materializeAt(SourceTarget<S> sourceTarget) {
-    this.materializedAt = sourceTarget;
-  }
-  
-  @Override
-  public PCollection<S> filter(FilterFn<S> filterFn) {
-    return parallelDo(filterFn, getPType());
-  }
-  
-  @Override
-  public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
-    return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
-  }
-  
-  @Override
-  public PCollection<S> sort(boolean ascending) {
-	return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
-  }
-  
-  @Override
-  public PTable<S, Long> count() {
-	return Aggregate.count(this);
-  }
-  
-  @Override
-  public PCollection<S> max() {
-	return Aggregate.max(this);
-  }
+	@Override
+	public <K, V> PTable<K, V> parallelDo(DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+		MRPipeline pipeline = (MRPipeline) getPipeline();
+		return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
+	}
 
-  @Override
-  public PCollection<S> min() {
-	return Aggregate.min(this);
-  }
-  
-  @Override
-  public PCollection<S> sample(double acceptanceProbability) {
-	return Sample.sample(this, acceptanceProbability);
-  }
+	@Override
+	public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+		return new DoTableImpl<K, V>(name, this, fn, type);
+	}
 
-  @Override
-  public PCollection<S> sample(double acceptanceProbability, long seed) {
-	return Sample.sample(this, seed, acceptanceProbability);
-  }
-  
-  @Override
-  public PTypeFamily getTypeFamily() {
-    return getPType().getFamily();
-  }
+	@Override
+	public PCollection<S> write(Target target) {
+		getPipeline().write(this, target);
+		return this;
+	}
 
-  public abstract DoNode createDoNode();
+	@Override
+	public Iterable<S> materialize() {
+		if (getSize() == 0) {
+			LOG.warn("Materializing an empty PCollection: " + this.getName());
+			return Collections.emptyList();
+		}
+		return getPipeline().materialize(this);
+	}
 
-  public abstract List<PCollectionImpl<?>> getParents();
+	public SourceTarget<S> getMaterializedAt() {
+		return materializedAt;
+	}
 
-  public PCollectionImpl<?> getOnlyParent() {
-    List<PCollectionImpl<?>> parents = getParents();
-    if (parents.size() != 1) {
-      throw new IllegalArgumentException("Expected exactly one parent PCollection");
-    }
-    return parents.get(0);
-  }
+	public void materializeAt(SourceTarget<S> sourceTarget) {
+		this.materializedAt = sourceTarget;
+	}
 
-  @Override
-  public Pipeline getPipeline() {
-    if (pipeline == null) {
-      pipeline = (MRPipeline) getParents().get(0).getPipeline();
-    }
-    return pipeline;
-  }
+	@Override
+	public PCollection<S> filter(FilterFn<S> filterFn) {
+		return parallelDo(filterFn, getPType());
+	}
 
-  public int getDepth() {
-    int parentMax = 0;
-    for (PCollectionImpl parent : getParents()) {
-      parentMax = Math.max(parent.getDepth(), parentMax);
-    }
-    return 1 + parentMax;
-  }
-  
-  public interface Visitor {
-    void visitInputCollection(InputCollection<?> collection);
+	@Override
+	public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
+		return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
+	}
 
-    void visitUnionCollection(UnionCollection<?> collection);
+	@Override
+	public PCollection<S> sort(boolean ascending) {
+		return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
+	}
 
-    void visitDoFnCollection(DoCollectionImpl<?> collection);
+	@Override
+	public PTable<S, Long> count() {
+		return Aggregate.count(this);
+	}
 
-    void visitDoTable(DoTableImpl<?, ?> collection);
+	@Override
+	public PCollection<S> max() {
+		return Aggregate.max(this);
+	}
 
-    void visitGroupedTable(PGroupedTableImpl<?, ?> collection);
-  }
+	@Override
+	public PCollection<S> min() {
+		return Aggregate.min(this);
+	}
 
-  public void accept(Visitor visitor) {
-    if (materializedAt != null) {
-      visitor.visitInputCollection(new InputCollection<S>(materializedAt, 
-          (MRPipeline) getPipeline()));
-    } else {
-      acceptInternal(visitor);
-    }
-  }
+	@Override
+	public PCollection<S> sample(double acceptanceProbability) {
+		return Sample.sample(this, acceptanceProbability);
+	}
 
-  protected abstract void acceptInternal(Visitor visitor);
+	@Override
+	public PCollection<S> sample(double acceptanceProbability, long seed) {
+		return Sample.sample(this, seed, acceptanceProbability);
+	}
 
-  @Override
-  public long getSize() {
-    if (materializedAt != null) {
-      long sz = materializedAt.getSize(getPipeline().getConfiguration());
-      if (sz > 0) {
-        return sz;
-      }
-    }
-    return getSizeInternal();
-  }
-  
-  protected abstract long getSizeInternal();
+	@Override
+	public PTypeFamily getTypeFamily() {
+		return getPType().getFamily();
+	}
+
+	public abstract DoNode createDoNode();
+
+	public abstract List<PCollectionImpl<?>> getParents();
+
+	public PCollectionImpl<?> getOnlyParent() {
+		List<PCollectionImpl<?>> parents = getParents();
+		if (parents.size() != 1) {
+			throw new IllegalArgumentException("Expected exactly one parent PCollection");
+		}
+		return parents.get(0);
+	}
+
+	@Override
+	public Pipeline getPipeline() {
+		if (pipeline == null) {
+			pipeline = (MRPipeline) getParents().get(0).getPipeline();
+		}
+		return pipeline;
+	}
+
+	public int getDepth() {
+		int parentMax = 0;
+		for (PCollectionImpl parent : getParents()) {
+			parentMax = Math.max(parent.getDepth(), parentMax);
+		}
+		return 1 + parentMax;
+	}
+
+	public interface Visitor {
+		void visitInputCollection(InputCollection<?> collection);
+
+		void visitUnionCollection(UnionCollection<?> collection);
+
+		void visitDoFnCollection(DoCollectionImpl<?> collection);
+
+		void visitDoTable(DoTableImpl<?, ?> collection);
+
+		void visitGroupedTable(PGroupedTableImpl<?, ?> collection);
+	}
+
+	public void accept(Visitor visitor) {
+		if (materializedAt != null) {
+			visitor.visitInputCollection(new InputCollection<S>(materializedAt,
+					(MRPipeline) getPipeline()));
+		} else {
+			acceptInternal(visitor);
+		}
+	}
+
+	protected abstract void acceptInternal(Visitor visitor);
+
+	@Override
+	public long getSize() {
+		if (materializedAt != null) {
+			long sz = materializedAt.getSize(getPipeline().getConfiguration());
+			if (sz > 0) {
+				return sz;
+			}
+		}
+		return getSizeInternal();
+	}
+
+	protected abstract long getSizeInternal();
 }
