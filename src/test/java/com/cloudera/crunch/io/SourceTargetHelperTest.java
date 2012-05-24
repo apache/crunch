@@ -16,6 +16,6 @@ public class SourceTargetHelperTest {
 	Path tmpPath = new Path(tmp.getAbsolutePath());
 	tmp.delete();
 	FileSystem fs = FileSystem.getLocal(new Configuration());
-	assertEquals(0L, SourceTargetHelper.getPathSize(fs, tmpPath));
+	assertEquals(-1L, SourceTargetHelper.getPathSize(fs, tmpPath));
   }
 }

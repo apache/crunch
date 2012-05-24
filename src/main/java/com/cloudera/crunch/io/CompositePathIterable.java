@@ -17,6 +17,7 @@ package com.cloudera.crunch.io;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -30,6 +31,18 @@ public class CompositePathIterable<T> implements Iterable<T> {
   private final FileStatus[] stati;
   private final FileSystem fs;
   private final FileReaderFactory<T> readerFactory;
+
+  private final UnmodifiableIterator<T> emptyIterator = new UnmodifiableIterator<T>() {
+	  @Override
+	  public boolean hasNext() {
+		  return false;	  
+	  }
+
+	  @Override
+	  public T next() {
+		throw new NoSuchElementException();
+	  }
+  };
 
   private static final PathFilter FILTER = new PathFilter() {
 	@Override
@@ -45,7 +58,7 @@ public class CompositePathIterable<T> implements Iterable<T> {
 	} catch (FileNotFoundException e) {
 	  stati = null;
 	}
-	if (stati == null || stati.length == 0) {
+	if (stati == null /*|| stati.length == 0*/) {
 	  throw new IOException("No files found to materialize at: " + path);
 	}
 	return new CompositePathIterable<S>(stati, fs, readerFactory);
@@ -56,9 +69,14 @@ public class CompositePathIterable<T> implements Iterable<T> {
 	this.fs = fs;
 	this.readerFactory = readerFactory;
   }
-  
+    
   @Override
   public Iterator<T> iterator() {
+	
+	if (stati.length == 0) {
+      return emptyIterator;
+	}
+	
 	return new UnmodifiableIterator<T>() {
 	  private int index = 0;
 	  private Iterator<T> iter = readerFactory.read(fs, stati[index++].getPath());
