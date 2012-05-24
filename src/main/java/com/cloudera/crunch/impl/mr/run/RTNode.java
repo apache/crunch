@@ -25,7 +25,7 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.impl.mr.emit.IntermediateEmitter;
 import com.cloudera.crunch.impl.mr.emit.MultipleOutputEmitter;
 import com.cloudera.crunch.impl.mr.emit.OutputEmitter;
-import com.cloudera.crunch.type.Converter;
+import com.cloudera.crunch.types.Converter;
 
 public class RTNode implements Serializable {
   

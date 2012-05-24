@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.crunch.test.Person;
-import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.types.avro.Avros;
 import com.google.common.collect.Lists;
 import com.google.common.io.InputSupplier;
 

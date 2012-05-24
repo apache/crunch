@@ -19,8 +19,8 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.cloudera.crunch.MapFn;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.writable.WritableType;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.writable.WritableType;
 
 public class SeqFileHelper {
   static <T> Writable newInstance(PType<T> ptype, Configuration conf) {

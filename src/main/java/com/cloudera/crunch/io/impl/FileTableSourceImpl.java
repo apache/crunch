@@ -19,7 +19,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.TableSource;
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.types.PTableType;
 
 public class FileTableSourceImpl<K, V> extends FileSourceImpl<Pair<K, V>>
 	implements TableSource<K, V> {

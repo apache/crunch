@@ -25,8 +25,8 @@ import com.cloudera.crunch.lib.join.JoinFn;
 import com.cloudera.crunch.lib.join.JoinUtils;
 import com.cloudera.crunch.lib.join.LeftOuterJoinFn;
 import com.cloudera.crunch.lib.join.RightOuterJoinFn;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PTypeFamily;
 
 /**
  * Utilities for joining multiple {@code PTable} instances based on a common lastKey.

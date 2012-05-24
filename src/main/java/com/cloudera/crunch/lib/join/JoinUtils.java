@@ -30,9 +30,9 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Partitioner;
 
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.writable.TupleWritable;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.writable.TupleWritable;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 
 /**
  * Utilities that are useful in joining multiple data sets via a MapReduce.

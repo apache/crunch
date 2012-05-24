@@ -25,9 +25,9 @@ import com.cloudera.crunch.io.CompositePathIterable;
 import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileSourceImpl;
 import com.cloudera.crunch.io.impl.InputBundle;
-import com.cloudera.crunch.type.avro.AvroInputFormat;
-import com.cloudera.crunch.type.avro.AvroType;
-import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.types.avro.AvroInputFormat;
+import com.cloudera.crunch.types.avro.AvroType;
+import com.cloudera.crunch.types.avro.Avros;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 

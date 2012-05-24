@@ -16,8 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.cloudera.crunch.test.Person;
-import com.cloudera.crunch.type.avro.AvroType;
-import com.cloudera.crunch.type.avro.Avros;
+import com.cloudera.crunch.types.avro.AvroType;
+import com.cloudera.crunch.types.avro.Avros;
 
 public class AvroFileSourceTest {
 

@@ -22,8 +22,8 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 
 /**
  * Utilities for performing set operations (difference, intersection, etc) on

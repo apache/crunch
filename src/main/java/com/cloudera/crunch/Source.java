@@ -19,7 +19,7 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 /**
  * A {@code Source} represents an input data set that is an input to one

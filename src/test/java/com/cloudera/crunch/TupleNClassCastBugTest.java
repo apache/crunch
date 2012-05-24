@@ -16,9 +16,9 @@ package com.cloudera.crunch;
 
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroTypeFamily;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.google.common.io.Files;
 import org.junit.Test;
 

@@ -14,7 +14,7 @@
  */
 package com.cloudera.crunch;
 
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.types.PTableType;
 
 /**
  * The interface {@code Source} implementations that return a {@link PTable}.

@@ -19,8 +19,8 @@ import java.util.List;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

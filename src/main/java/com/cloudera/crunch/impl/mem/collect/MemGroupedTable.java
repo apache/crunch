@@ -30,9 +30,9 @@ import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
-import com.cloudera.crunch.type.PTableType;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 

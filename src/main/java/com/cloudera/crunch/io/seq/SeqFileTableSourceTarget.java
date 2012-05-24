@@ -19,7 +19,7 @@ import org.apache.hadoop.fs.Path;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.io.impl.ReadableSourcePathTargetImpl;
-import com.cloudera.crunch.type.PTableType;
+import com.cloudera.crunch.types.PTableType;
 
 public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl<Pair<K,V>> implements TableSource<K, V> {
   private final PTableType<K, V> tableType;

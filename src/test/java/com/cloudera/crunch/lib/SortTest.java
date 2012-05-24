@@ -32,10 +32,10 @@ import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Sort.ColumnOrder;
 import com.cloudera.crunch.lib.Sort.Order;
 import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
-import com.cloudera.crunch.type.avro.AvroTypeFamily;
-import com.cloudera.crunch.type.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
 
 import java.io.IOException;
 import java.io.Serializable;

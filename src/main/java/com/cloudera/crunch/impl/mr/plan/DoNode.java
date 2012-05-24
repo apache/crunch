@@ -23,9 +23,9 @@ import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.impl.mr.run.NodeContext;
 import com.cloudera.crunch.impl.mr.run.RTNode;
-import com.cloudera.crunch.type.Converter;
-import com.cloudera.crunch.type.PGroupedTableType;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.Converter;
+import com.cloudera.crunch.types.PGroupedTableType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

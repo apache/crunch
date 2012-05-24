@@ -26,7 +26,7 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.lib.PTables;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Lists;
 
 public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>

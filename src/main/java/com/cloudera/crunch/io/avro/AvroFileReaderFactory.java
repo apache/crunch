@@ -30,7 +30,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.io.FileReaderFactory;
-import com.cloudera.crunch.type.avro.AvroType;
+import com.cloudera.crunch.types.avro.AvroType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 

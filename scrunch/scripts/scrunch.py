@@ -27,7 +27,7 @@ else:
   ORIGINAL_FILE = __file__
 
 SCIENCE_ROOT = os.path.abspath(os.path.dirname(ORIGINAL_FILE)+"/../")
-JARFILE = SCIENCE_ROOT + "/target/scrunch-0.1.0-jar-with-dependencies.jar" #what jar has all the depencies for this job
+JARFILE = SCIENCE_ROOT + "/target/scrunch-0.2.0-jar-with-dependencies.jar" #what jar has all the depencies for this job
 TMPDIR = "/tmp"
 BUILDDIR = TMPDIR + "/script-build"
 COMPILE_CMD = "java -cp %s/scala-library.jar:%s/scala-compiler.jar -Dscala.home=%s scala.tools.nsc.Main" % (SCALA_LIB, SCALA_LIB, SCALA_LIB)

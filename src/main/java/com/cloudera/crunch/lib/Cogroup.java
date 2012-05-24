@@ -21,8 +21,8 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.MapValuesFn;
-import com.cloudera.crunch.type.PType;
-import com.cloudera.crunch.type.PTypeFamily;
+import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.Lists;
 
 public class Cogroup {

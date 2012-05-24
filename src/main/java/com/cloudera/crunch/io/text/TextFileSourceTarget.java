@@ -17,7 +17,7 @@ package com.cloudera.crunch.io.text;
 import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.io.impl.ReadableSourcePathTargetImpl;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public TextFileSourceTarget(String path, PType<T> ptype) {

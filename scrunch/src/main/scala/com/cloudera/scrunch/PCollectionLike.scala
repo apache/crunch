@@ -14,11 +14,9 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import com.cloudera.crunch.{PCollection => JCollection, PTable => JTable, Pair => JPair, Target}
-import com.cloudera.crunch.`type`.{PType, PTableType}
-import com.cloudera.crunch.`type`.writable.WritableTypeFamily
-import com.cloudera.scrunch.Conversions._
+import com.cloudera.crunch.DoFn
+import com.cloudera.crunch.{PCollection => JCollection, Pair => JPair, Target}
+import com.cloudera.crunch.types.{PType, PTableType}
 
 trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   val native: NativeType

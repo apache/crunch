@@ -4,7 +4,7 @@
   <groupId>com.cloudera.crunch</groupId>
   <artifactId>crunch</artifactId>
   <packaging>jar</packaging>
-  <version>0.2.3</version>
+  <version>0.3.0</version>
   <name>crunch</name>
 
   <properties>

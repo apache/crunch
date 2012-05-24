@@ -19,7 +19,7 @@ import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 
-import com.cloudera.crunch.type.avro.ReflectDataFactory;
+import com.cloudera.crunch.types.avro.ReflectDataFactory;
 
 /**
  * An implementation of the {@code ReflectDataFactory} class to work with Scala classes.

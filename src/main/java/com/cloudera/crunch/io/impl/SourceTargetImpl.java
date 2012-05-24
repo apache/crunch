@@ -24,7 +24,7 @@ import com.cloudera.crunch.Source;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class SourceTargetImpl<T> implements SourceTarget<T> {
 

@@ -29,7 +29,7 @@ import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 import com.cloudera.crunch.io.MapReduceTarget;
 import com.cloudera.crunch.io.OutputHandler;
-import com.cloudera.crunch.type.PType;
+import com.cloudera.crunch.types.PType;
 
 public class HBaseTarget implements MapReduceTarget {
 
