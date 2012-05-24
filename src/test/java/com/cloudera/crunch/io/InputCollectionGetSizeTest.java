@@ -16,8 +16,8 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.type.writable.WritableType;
-import com.cloudera.crunch.type.writable.Writables;
+import com.cloudera.crunch.types.writable.WritableType;
+import com.cloudera.crunch.types.writable.Writables;
 import com.google.common.collect.Lists;
 
 public class InputCollectionGetSizeTest {
