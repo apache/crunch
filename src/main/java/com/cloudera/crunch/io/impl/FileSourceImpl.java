@@ -74,7 +74,6 @@ public abstract class FileSourceImpl<T> implements Source<T> {
 	  LOG.warn(String.format("Exception thrown looking up size of: %s", path), e);
 	  throw new IllegalStateException("Failed to get the file size of:"+ path, e);
 	}
-	//return 1L;
   }
 
 
