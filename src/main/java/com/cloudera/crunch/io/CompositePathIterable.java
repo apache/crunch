@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -60,6 +61,7 @@ public class CompositePathIterable<T> implements Iterable<T> {
     } else {
       return new CompositePathIterable<S>(stati, fs, readerFactory);
     }
+
   }
   
   private CompositePathIterable(FileStatus[] stati, FileSystem fs, FileReaderFactory<T> readerFactory) {
@@ -67,9 +69,10 @@ public class CompositePathIterable<T> implements Iterable<T> {
 	this.fs = fs;
 	this.readerFactory = readerFactory;
   }
-  
+
   @Override
   public Iterator<T> iterator() {
+
 	return new UnmodifiableIterator<T>() {
 	  private int index = 0;
 	  private Iterator<T> iter = readerFactory.read(fs, stati[index++].getPath());

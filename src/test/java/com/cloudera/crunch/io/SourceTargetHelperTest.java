@@ -13,19 +13,20 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Test;
 
 public class SourceTargetHelperTest {
+
 	@Test
 	public void testGetNonexistentPathSize() throws Exception {
 		File tmp = File.createTempFile("pathsize", "");
 		Path tmpPath = new Path(tmp.getAbsolutePath());
 		tmp.delete();
 		FileSystem fs = FileSystem.getLocal(new Configuration());
-		assertEquals(0L, SourceTargetHelper.getPathSize(fs, tmpPath));
+		assertEquals(-1L, SourceTargetHelper.getPathSize(fs, tmpPath));
 	}
 
 	@Test
 	public void testGetNonExistentPathSize_NonExistantPath() throws IOException {
 		FileSystem mockFs = new MockFileSystem();
-		assertEquals(0L, SourceTargetHelper.getPathSize(mockFs, new Path("does/not/exist")));
+		assertEquals(-1L, SourceTargetHelper.getPathSize(mockFs, new Path("does/not/exist")));
 	}
 
 	/**

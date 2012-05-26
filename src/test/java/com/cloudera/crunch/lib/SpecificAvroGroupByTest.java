@@ -36,6 +36,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.test.Person;
+import com.cloudera.crunch.test.Person.Builder;
 import com.cloudera.crunch.types.avro.Avros;
 import com.cloudera.crunch.types.avro.SafeAvroSerialization;
 import com.google.common.collect.Lists;
@@ -115,7 +116,7 @@ public class SpecificAvroGroupByTest implements Serializable {
 
 	private void createPersonAvroFile(File avroFile) throws IOException {
 
-		Person person = new Person();
+		Builder person = Person.newBuilder();
 		person.setAge(40);
 		person.setName("Bob");
 		List<CharSequence> siblingNames = Lists.newArrayList();
@@ -130,7 +131,7 @@ public class SpecificAvroGroupByTest implements Serializable {
 		DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(
 				writer);
 		dataFileWriter.create(Person.SCHEMA$, outputStream);
-		dataFileWriter.append(person);
+		dataFileWriter.append(person.build());
 		dataFileWriter.close();
 		outputStream.close();
 	}
