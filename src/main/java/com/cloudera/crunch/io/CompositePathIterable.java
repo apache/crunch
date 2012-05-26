@@ -16,6 +16,7 @@ package com.cloudera.crunch.io;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -32,18 +33,6 @@ public class CompositePathIterable<T> implements Iterable<T> {
   private final FileSystem fs;
   private final FileReaderFactory<T> readerFactory;
 
-  private final UnmodifiableIterator<T> emptyIterator = new UnmodifiableIterator<T>() {
-	  @Override
-	  public boolean hasNext() {
-		  return false;
-	  }
-
-	  @Override
-	  public T next() {
-		throw new NoSuchElementException();
-	  }
-  };
-
   private static final PathFilter FILTER = new PathFilter() {
 	@Override
 	public boolean accept(Path path) {
@@ -52,21 +41,27 @@ public class CompositePathIterable<T> implements Iterable<T> {
   };
   
   public static <S> Iterable<S> create(FileSystem fs, Path path, FileReaderFactory<S> readerFactory) throws IOException {
+    
+    if (!fs.exists(path)){
+      throw new IOException("No files found to materialize at: " + path);
+    }
+    
+    FileStatus[] stati = null;
+    try {
+      stati = fs.listStatus(path, FILTER);
+    } catch (FileNotFoundException e) {
+      stati = null;
+    }
+    if (stati == null) {
+      throw new IOException("No files found to materialize at: " + path);
+    }
 
-	if (!fs.exists(path)) {
-	  throw new IOException("No files found to materialize at: " + path);
-	}
+    if (stati.length == 0) {
+      return Collections.emptyList();
+    } else {
+      return new CompositePathIterable<S>(stati, fs, readerFactory);
+    }
 
-	FileStatus[] stati = null;
-	try {
-	  stati = fs.listStatus(path, FILTER);
-	} catch (FileNotFoundException e) {
-	  stati = null;
-	}
-	if (stati == null) {
-	  throw new IOException("No files found to materialize at: " + path);
-	}
-	return new CompositePathIterable<S>(stati, fs, readerFactory);
   }
   
   private CompositePathIterable(FileStatus[] stati, FileSystem fs, FileReaderFactory<T> readerFactory) {
@@ -77,10 +72,6 @@ public class CompositePathIterable<T> implements Iterable<T> {
 
   @Override
   public Iterator<T> iterator() {
-
-	if (stati.length == 0) {
-	  return emptyIterator;
-	}
 
 	return new UnmodifiableIterator<T>() {
 	  private int index = 0;
