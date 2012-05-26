@@ -81,6 +81,7 @@ public class PCollectionGetSizeTest {
     }
 
     @Test
+    @Ignore("GetSize of a DoCollection is only an estimate based on scale factor, so we can't count on it being reported as 0")
     public void testGetSizeOfEmptyIntermediatePCollection_NoSave_MRPipeline() throws IOException {
 
         PCollection<String> data = new MRPipeline(this.getClass()).readTextFile(nonEmptyInputPath);
@@ -91,7 +92,7 @@ public class PCollectionGetSizeTest {
     }
 
     @Test
-    @Ignore("MemPipelien impelmentation is inconsistent with the MRPipelien")
+    @Ignore("MemPipeline implementation is inconsistent with the MRPipeline")
     public void testGetSizeOfEmptyIntermediatePCollection_MemPipeline() {
 
         PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(MemPipeline.getInstance());
