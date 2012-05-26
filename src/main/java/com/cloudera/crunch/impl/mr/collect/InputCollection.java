@@ -46,8 +46,8 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   @Override
   protected long getSizeInternal() {
     long sz = source.getSize(pipeline.getConfiguration());
-    if (sz == 0) {
-      throw new IllegalStateException("Input source " + source + " is empty");
+    if (sz < 0) {
+      throw new IllegalStateException("Input source " + source + " does not exist!");
     }
     return sz;
   }

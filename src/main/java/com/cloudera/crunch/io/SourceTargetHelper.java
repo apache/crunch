@@ -37,6 +37,11 @@ public class SourceTargetHelper {
 	}
 
 	public static long getPathSize(FileSystem fs, Path path) throws IOException {
+
+		if (!fs.exists(path)) {
+			return -1L;
+		}
+
 		FileStatus[] stati = null;
 		try {
 			stati = fs.listStatus(path);
