@@ -43,12 +43,17 @@ import org.junit.Test;
 
 public class WordCountTest {
   
+  enum WordCountStats { ANDS };
+  
   public static PTable<String, Long> wordCount(PCollection<String> words, PTypeFamily typeFamily) {
     return Aggregate.count(words.parallelDo(new DoFn<String, String>() {
       @Override
       public void process(String line, Emitter<String> emitter) {
         for (String word : line.split("\\s+")) {
           emitter.emit(word);
+          if ("and".equals(word)) {
+            increment(WordCountStats.ANDS);
+          }
         }
       }
     }, typeFamily.strings()));
@@ -143,7 +148,15 @@ public class WordCountTest {
           CombineFn.<String>SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
-    pipeline.done();
+    PipelineResult res = pipeline.done();
+    assertTrue(res.succeeded());
+    List<PipelineResult.StageResult> stageResults = res.getStageResults();
+    if (runSecond) {
+      assertEquals(2, stageResults.size());
+    } else {
+      assertEquals(1, stageResults.size());
+      assertEquals(427, stageResults.get(0).getCounterValue(WordCountStats.ANDS));
+    }
     
     File outputFile = new File(outputPath, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());

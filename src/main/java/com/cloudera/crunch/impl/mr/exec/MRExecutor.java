@@ -14,12 +14,16 @@
  */
 package com.cloudera.crunch.impl.mr.exec;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
+
+import com.cloudera.crunch.PipelineResult;
+import com.google.common.collect.Lists;
 
 /**
  *
@@ -39,7 +43,7 @@ public class MRExecutor {
     this.control.addJob(job);
   }
   
-  public void execute() {
+  public PipelineResult execute() {
     try {
       Thread controlThread = new Thread(control);
       controlThread.start();
@@ -57,5 +61,14 @@ public class MRExecutor {
         System.err.println(job.getJobName() + "(" + job.getJobID() + "): " + job.getMessage());
       }
     }
+    List<PipelineResult.StageResult> stages = Lists.newArrayList();
+    for (CrunchControlledJob job : control.getSuccessfulJobList()) {
+      try {
+        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
+      } catch (IOException e) {
+        LOG.error("Exception thrown fetching job counters for stage: " + job.getJobName(), e);
+      }
+    }
+    return new PipelineResult(stages);
   }
 }

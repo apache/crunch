@@ -28,6 +28,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.PipelineResult;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.TableSource;
 import com.cloudera.crunch.Target;
@@ -183,11 +184,13 @@ public class MemPipeline implements Pipeline {
   }
 
   @Override
-  public void run() {
+  public PipelineResult run() {
+    return PipelineResult.EMPTY;
   }
 
   @Override
-  public void done() {
+  public PipelineResult done() {
+    return PipelineResult.EMPTY;
   }
 
   @Override

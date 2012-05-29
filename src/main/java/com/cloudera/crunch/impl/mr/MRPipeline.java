@@ -32,6 +32,7 @@ import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
 import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.PipelineResult;
 import com.cloudera.crunch.Source;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.TableSource;
@@ -93,13 +94,14 @@ public class MRPipeline implements Pipeline {
   }
   
   @Override
-  public void run() {
+  public PipelineResult run() {
     MSCRPlanner planner = new MSCRPlanner(this, outputTargets);
+    PipelineResult res = null;
     try {
-      planner.plan(jarClass, conf).execute();
+      res = planner.plan(jarClass, conf).execute();
     } catch (IOException e) {
       LOG.error(e);
-      return;
+      return PipelineResult.EMPTY;
     }
     for (PCollectionImpl c : outputTargets.keySet()) {
       if (outputTargetsToMaterialize.containsKey(c)) {
@@ -118,14 +120,17 @@ public class MRPipeline implements Pipeline {
       }
     }
     outputTargets.clear();
+    return res;
   }
 
   @Override
-  public void done() {
+  public PipelineResult done() {
+    PipelineResult res = null;
     if (!outputTargets.isEmpty()) {
-      run();
+      res = run();
     }
     cleanup();
+    return res;
   }
   
   public <S> PCollection<S> read(Source<S> source) {

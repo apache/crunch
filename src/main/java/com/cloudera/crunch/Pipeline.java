@@ -71,14 +71,14 @@ public interface Pipeline {
    * Constructs and executes a series of MapReduce jobs in order
    * to write data to the output targets.
    */
-  void run();
+  PipelineResult run();
 
   /**
    * Run any remaining jobs required to generate outputs and then
    * clean up any intermediate data files that were created in
    * this run or previous calls to {@code run}.
    */
-  void done();
+  PipelineResult done();
 
   /**
    * A convenience method for reading a text file.
