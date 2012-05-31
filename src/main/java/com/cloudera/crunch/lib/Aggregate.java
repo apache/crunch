@@ -159,7 +159,7 @@ public class Aggregate {
 	}
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
-        collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
+        collect.parallelDo("max", new DoFn<S, Pair<Boolean, S>>() {
           private transient S max = null;
           
           @Override
@@ -201,7 +201,7 @@ public class Aggregate {
 	}
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
-        collect.parallelDo(new DoFn<S, Pair<Boolean, S>>() {
+        collect.parallelDo("min", new DoFn<S, Pair<Boolean, S>>() {
           private transient S min = null;
           
           @Override
@@ -234,7 +234,7 @@ public class Aggregate {
   
   public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {
     PTypeFamily tf = collect.getTypeFamily();
-    return collect.groupByKey().parallelDo(new MapValuesFn<K, Iterable<V>, Collection<V>>() {
+    return collect.groupByKey().parallelDo("collect", new MapValuesFn<K, Iterable<V>, Collection<V>>() {
       @Override
       public Collection<V> map(Iterable<V> v) {
         return Lists.newArrayList(v);

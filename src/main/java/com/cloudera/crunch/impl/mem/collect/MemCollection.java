@@ -186,7 +186,17 @@ public class MemCollection<S> implements PCollection<S> {
   }
   
   @Override
+  public PCollection<S> filter(String name, FilterFn<S> filterFn) {
+    return parallelDo(name, filterFn, getPType());
+  }
+  
+  @Override
   public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
     return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
+  }
+
+  @Override
+  public <K> PTable<K, S> by(String name, MapFn<S, K> mapFn, PType<K> keyType) {
+    return parallelDo(name, new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
   }
 }

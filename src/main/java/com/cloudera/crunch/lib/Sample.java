@@ -53,6 +53,7 @@ public class Sample {
   }
   
   public static <S> PCollection<S> sample(PCollection<S> input, long seed, double probability) {
-	return input.parallelDo(new SamplerFn<S>(seed, probability), input.getPType());
+    String stageName = String.format("sample(%.2f)", probability);
+	return input.parallelDo(stageName, new SamplerFn<S>(seed, probability), input.getPType());
   }
 }

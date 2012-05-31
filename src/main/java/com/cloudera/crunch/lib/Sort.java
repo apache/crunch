@@ -110,7 +110,7 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf,
         collection.getPType(), order);
     PTable<T, Void> pt =
-      collection.parallelDo(new DoFn<T, Pair<T, Void>>() {
+      collection.parallelDo("sort-pre", new DoFn<T, Pair<T, Void>>() {
         @Override
         public void process(T input,
             Emitter<Pair<T, Void>> emitter) {
@@ -118,7 +118,7 @@ public class Sort {
         }
       }, type);
     PTable<T, Void> sortedPt = pt.groupByKey(options).ungroup();
-    return sortedPt.parallelDo(new DoFn<Pair<T, Void>, T>() {
+    return sortedPt.parallelDo("sort-post", new DoFn<Pair<T, Void>, T>() {
       @Override
       public void process(Pair<T, Void> input, Emitter<T> emitter) {
         emitter.emit(input.first());

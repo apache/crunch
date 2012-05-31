@@ -120,10 +120,28 @@ public interface PCollection<S> {
   PCollection<S> filter(FilterFn<S> filterFn);
   
   /**
+   * Apply the given filter function to this instance and return the
+   * resulting {@code PCollection}.
+   * 
+   * @param name An identifier for this processing step
+   * @param filterFn The {@code FilterFn} to apply
+   */
+  PCollection<S> filter(String name, FilterFn<S> filterFn);
+  
+  /**
    * Apply the given map function to each element of this instance in order
    * to create a {@code PTable}.
    */
   <K> PTable<K, S> by(MapFn<S, K> extractKeyFn, PType<K> keyType);
+ 
+  /**
+   * Apply the given map function to each element of this instance in order
+   * to create a {@code PTable}.
+   *   
+   * @param name An identifier for this processing step
+   * @param extractKeyFn The {@code MapFn} to apply
+   */
+  <K> PTable<K, S> by(String name, MapFn<S, K> extractKeyFn, PType<K> keyType);
   
   /**
    * Returns a {@code PCollection} instance that contains all of the elements
