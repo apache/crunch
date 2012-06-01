@@ -14,6 +14,11 @@
  */
 package com.cloudera.crunch.types.avro;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -25,7 +30,10 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.cloudera.crunch.MapFn;
@@ -179,6 +187,49 @@ public class Avros {
   
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
 	return new AvroType<T>(clazz, REFLECT_DATA_FACTORY.getReflectData().getSchema(clazz));
+  }
+  
+  private static class BytesToWritableMapFn<T extends Writable> extends MapFn<ByteBuffer, T> {
+    private static final Log LOG = LogFactory.getLog(BytesToWritableMapFn.class);
+    
+    private final Class<T> writableClazz;
+    
+    public BytesToWritableMapFn(Class<T> writableClazz) {
+      this.writableClazz = writableClazz;
+    }
+    
+    @Override
+    public T map(ByteBuffer input) {
+      T instance = ReflectionUtils.newInstance(writableClazz, getConfiguration());
+      try {
+        instance.readFields(new DataInputStream(new ByteArrayInputStream(
+            input.array(), input.arrayOffset(), input.limit())));
+      } catch (IOException e) {
+        LOG.error("Exception thrown reading instance of: " + writableClazz, e);
+      }
+      return instance;
+    } 
+  }
+  
+  private static class WritableToBytesMapFn<T extends Writable> extends MapFn<T, ByteBuffer> {
+    private static final Log LOG = LogFactory.getLog(WritableToBytesMapFn.class);
+    
+    @Override
+    public ByteBuffer map(T input) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      DataOutputStream das = new DataOutputStream(baos);
+      try {
+        input.write(das);
+      } catch (IOException e) {
+        LOG.error("Exception thrown converting Writable to bytes", e);
+      }
+      return ByteBuffer.wrap(baos.toByteArray());
+    }
+  }
+  
+  public static final <T extends Writable> AvroType<T> writables(Class<T> clazz) {
+    return new AvroType<T>(clazz, Schema.create(Schema.Type.BYTES), new BytesToWritableMapFn<T>(clazz),
+        new WritableToBytesMapFn<T>());
   }
   
   private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {

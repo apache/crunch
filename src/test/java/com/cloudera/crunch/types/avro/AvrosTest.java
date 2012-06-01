@@ -24,6 +24,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
+import org.apache.hadoop.io.LongWritable;
 import org.junit.Test;
 
 import com.cloudera.crunch.Pair;
@@ -159,6 +160,14 @@ public class AvrosTest {
     
   }
    
+  @Test
+  @SuppressWarnings("rawtypes")
+  public void testWritables() throws Exception {
+    AvroType at = Avros.writables(LongWritable.class);
+    LongWritable lw = new LongWritable(1729L);
+    assertEquals(lw, at.getInputMapFn().map(at.getOutputMapFn().map(lw)));
+  }
+  
   @Test
   @SuppressWarnings("rawtypes")
   public void testTableOf() throws Exception {
