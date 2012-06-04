@@ -28,11 +28,6 @@ public class CartesianTest {
       	PCollection<Integer> X = MemPipeline.typedCollectionOf(Writables.ints(), testCase1);
       	PCollection<Integer> Y = MemPipeline.typedCollectionOf(Writables.ints(), testCase2);
       	
-      	PTypeFamily xtf = X.getTypeFamily();
-      	
-      	if (xtf == null)
-      	  throw new Error();
-    	
       	PCollection<Pair<Integer,Integer>> cross = Cartesian.cross(X, Y);
       	HashSet<Pair<Integer, Integer>> crossSet = new HashSet<Pair<Integer, Integer>>();
       	for (Iterator<Pair<Integer, Integer>> i = cross.materialize().iterator(); i.hasNext(); )
