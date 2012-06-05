@@ -26,7 +26,7 @@ import com.cloudera.crunch.types.PTypeFamily;
 import com.cloudera.crunch.types.PTableType;
 
 /**
- * Utilities for products of multiple {@code PTable} instances.
+ * Utilities for Cartesian products of two {@code PTable} or {@code PCollection} instances.
  */
 @SuppressWarnings("serial")
 public class Cartesian {
@@ -35,30 +35,33 @@ public class Cartesian {
    * Helper for building the artificial cross keys. This technique was taken from Pig's CROSS.
    */
   private static class GFCross<V> extends DoFn<V, Pair<Pair<Integer, Integer>, V>>{
-    
-    int constantField;
-    int parallelism;
-    Random r;
-    
+
+    private final int constantField;
+    private final int parallelism;
+    private final Random r;
+
     public GFCross(int constantField, int parallelism) {
       this.constantField = constantField;
       this.parallelism = parallelism;
       this.r = new Random();
     }
-    
+
     public void process(V input, Emitter<Pair<Pair<Integer, Integer>, V>> emitter) {
       int c = r.nextInt(parallelism);
-      if (constantField == 0)
-        for (int i = 0; i < parallelism; i++)
-            emitter.emit(Pair.of(Pair.of(c, i), input));
-      else
-        for (int i = 0; i < parallelism; i++)
-            emitter.emit(Pair.of(Pair.of(i, c), input));
+      if (constantField == 0) {
+        for (int i = 0; i < parallelism; i++) {
+          emitter.emit(Pair.of(Pair.of(c, i), input));
+        }
+      } else {
+        for (int i = 0; i < parallelism; i++) {
+          emitter.emit(Pair.of(Pair.of(i, c), input));
+        }
+      }
     }
   }
-  
+
   static final int DEFAULT_PARALLELISM = 6;
-  
+
   /**
    * Performs a full cross join on the specified {@link PTable}s (using the same strategy as Pig's CROSS operator).
    *
@@ -76,7 +79,7 @@ public class Cartesian {
       PTable<K2, V> right) {
     return cross(left, right, DEFAULT_PARALLELISM);
   }
-  
+
   /**
    * Performs a full cross join on the specified {@link PTable}s (using the same strategy as Pig's CROSS operator).
    *
@@ -94,51 +97,54 @@ public class Cartesian {
       PTable<K1, U> left,
       PTable<K2, V> right,
       int parallelism) {
-    
+
     /* The strategy here is to simply emulate the following PigLatin:
      *   A  = foreach table1 generate flatten(GFCross(0, 2)), flatten(*); 
      *   B  = foreach table2 generate flatten(GFCross(1, 2)), flatten(*); 
      *   C = cogroup A by ($0, $1), B by ($0, $1);
      *   result = foreach C generate flatten(A), flatten(B);
      */
-    
+
     PTypeFamily ltf = left.getTypeFamily();
     PTypeFamily rtf = right.getTypeFamily();
-    
-    PTable<Pair<Integer, Integer>, Pair<K1,U>> A =
-      left.parallelDo(
-        new GFCross<Pair<K1,U>>(0, parallelism), 
-        ltf.tableOf(
-          ltf.pairs(ltf.ints(), ltf.ints()), 
-          ltf.pairs(left.getKeyType(), left.getValueType())));
-    PTable<Pair<Integer, Integer>, Pair<K2,V>> B =
-      right.parallelDo(
-        new GFCross<Pair<K2,V>>(1, parallelism), 
-        rtf.tableOf(
-          rtf.pairs(rtf.ints(), rtf.ints()), 
-          rtf.pairs(right.getKeyType(), right.getValueType())));
-    
-    PTable<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> C = A.cogroup(B);
-    
-    PTypeFamily ctf = C.getTypeFamily();
-    
-    return C.parallelDo(
-      new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>>, Pair<Pair<K1,K2>, Pair<U,V>>>() {
-        @Override
-        public void process(
-            Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> input,
-            Emitter<Pair<Pair<K1, K2>, Pair<U,V>>> emitter) {
-          for (Pair<K1,U> l: input.second().first())
-            for (Pair<K2,V> r: input.second().second())
-              emitter.emit(Pair.of(Pair.of(l.first(), r.first()), Pair.of(l.second(), r.second())));
-        }
-      },
-      ctf.tableOf(
-        ctf.pairs(left.getKeyType(), right.getKeyType()), 
-        ctf.pairs(left.getValueType(), right.getValueType()))
-    );
+
+    PTable<Pair<Integer, Integer>, Pair<K1,U>> leftCross =
+        left.parallelDo(
+            new GFCross<Pair<K1,U>>(0, parallelism), 
+            ltf.tableOf(
+                ltf.pairs(ltf.ints(), ltf.ints()), 
+                ltf.pairs(left.getKeyType(), left.getValueType())));
+    PTable<Pair<Integer, Integer>, Pair<K2,V>> rightCross =
+        right.parallelDo(
+            new GFCross<Pair<K2,V>>(1, parallelism), 
+            rtf.tableOf(
+                rtf.pairs(rtf.ints(), rtf.ints()), 
+                rtf.pairs(right.getKeyType(), right.getValueType())));
+
+    PTable<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> cg =
+        leftCross.cogroup(rightCross);
+
+    PTypeFamily ctf = cg.getTypeFamily();
+
+    return cg.parallelDo(
+        new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>>, Pair<Pair<K1, K2>, Pair<U, V>>>() {
+          @Override
+          public void process(
+              Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> input,
+              Emitter<Pair<Pair<K1, K2>, Pair<U, V>>> emitter) {
+            for (Pair<K1, U> l: input.second().first()) {
+              for (Pair<K2, V> r: input.second().second()) {
+                emitter.emit(Pair.of(Pair.of(l.first(), r.first()), Pair.of(l.second(), r.second())));
+              }
+            }
+          }
+        },
+        ctf.tableOf(
+            ctf.pairs(left.getKeyType(), right.getKeyType()), 
+            ctf.pairs(left.getValueType(), right.getValueType()))
+        );
   }
-  
+
   /**
    * Performs a full cross join on the specified {@link PCollection}s (using the same strategy as Pig's CROSS operator).
    *
@@ -154,7 +160,7 @@ public class Cartesian {
       PCollection<V> right) {
     return cross(left, right, DEFAULT_PARALLELISM);
   }
-  
+
   /**
    * Performs a full cross join on the specified {@link PCollection}s (using the same strategy as Pig's CROSS operator).
    *
@@ -169,47 +175,48 @@ public class Cartesian {
       PCollection<U> left,
       PCollection<V> right,
       int parallelism) {
-    
+
     PTypeFamily ltf = left.getTypeFamily();
     PTypeFamily rtf = right.getTypeFamily();
-    
-    PTableType ptt = ltf.tableOf(
-                        ltf.pairs(ltf.ints(), ltf.ints()), 
-                        left.getPType());
-    
+
+    PTableType<Pair<Integer, Integer>, U> ptt = ltf.tableOf(
+        ltf.pairs(ltf.ints(), ltf.ints()), 
+        left.getPType());
+
     if (ptt == null)
       throw new Error();
-    
-    PTable<Pair<Integer, Integer>, U> A =
-      left.parallelDo(
-        new GFCross<U>(0, parallelism), 
-        ltf.tableOf(
-          ltf.pairs(ltf.ints(), ltf.ints()), 
-          left.getPType()));
-    PTable<Pair<Integer, Integer>, V> B =
-      right.parallelDo(
-        new GFCross<V>(1, parallelism), 
-        rtf.tableOf(
-          rtf.pairs(rtf.ints(), rtf.ints()), 
-          right.getPType()));
-    
-    PTable<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> C = A.cogroup(B);
-    
-    PTypeFamily ctf = C.getTypeFamily();
-    
-    return C.parallelDo(
-      new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>>, Pair<U,V>>() {
-        @Override
-        public void process(
-            Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> input,
-            Emitter<Pair<U,V>> emitter) {
-          for (U l: input.second().first())
-            for (V r: input.second().second())
-              emitter.emit(Pair.of(l, r));
-        }
-      },
-      ctf.pairs(left.getPType(), right.getPType())
-    );
+
+    PTable<Pair<Integer, Integer>, U> leftCross =
+        left.parallelDo(
+            new GFCross<U>(0, parallelism), 
+            ltf.tableOf(
+                ltf.pairs(ltf.ints(), ltf.ints()), 
+                left.getPType()));
+    PTable<Pair<Integer, Integer>, V> rightCross =
+        right.parallelDo(
+            new GFCross<V>(1, parallelism), 
+            rtf.tableOf(
+                rtf.pairs(rtf.ints(), rtf.ints()), 
+                right.getPType()));
+
+    PTable<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> cg =
+        leftCross.cogroup(rightCross);
+
+    PTypeFamily ctf = cg.getTypeFamily();
+
+    return cg.parallelDo(
+        new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>>, Pair<U,V>>() {
+          @Override
+          public void process(
+              Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> input,
+              Emitter<Pair<U,V>> emitter) {
+            for (U l: input.second().first()) {
+              for (V r: input.second().second()) {
+                emitter.emit(Pair.of(l, r));
+              }
+            }
+          }
+        }, ctf.pairs(left.getPType(), right.getPType()));
   }
   
 }
