@@ -30,13 +30,14 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
 
   private final RecordReader<K, V> delegate;
 
-  public CrunchRecordReader(InputSplit inputSplit, TaskAttemptContext context)
+  public CrunchRecordReader(InputSplit inputSplit, final TaskAttemptContext context)
       throws IOException, InterruptedException {
     CrunchInputSplit crunchSplit = (CrunchInputSplit) inputSplit;
     InputFormat<K, V> inputFormat = (InputFormat<K, V>) ReflectionUtils
         .newInstance(crunchSplit.getInputFormatClass(), crunchSplit.getConf());
     this.delegate = inputFormat.createRecordReader(
-        crunchSplit.getInputSplit(), new TaskAttemptContext(crunchSplit.getConf(), context.getTaskAttemptID()));
+        crunchSplit.getInputSplit(), TaskAttemptContextFactory.create(
+            crunchSplit.getConf(), context.getTaskAttemptID()));
   }
 
   @Override
@@ -64,8 +65,8 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
       throws IOException, InterruptedException {
     CrunchInputSplit crunchSplit = (CrunchInputSplit) inputSplit;
     InputSplit delegateSplit = crunchSplit.getInputSplit();
-    delegate.initialize(delegateSplit,
-        new TaskAttemptContext(crunchSplit.getConf(), context.getTaskAttemptID()));
+    delegate.initialize(delegateSplit, TaskAttemptContextFactory.create(
+        crunchSplit.getConf(), context.getTaskAttemptID()));
   }
 
   @Override

@@ -36,6 +36,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.ReflectionUtils;
 
+import com.cloudera.crunch.impl.mr.run.TaskAttemptContextFactory;
+
 /**
  * The MultipleOutputs class simplifies writing output data 
  * to multiple outputs
@@ -391,7 +393,7 @@ public class CrunchMultipleOutputs<KEYOUT, VALUEOUT> {
   public void write(KEYOUT key, VALUEOUT value, String baseOutputPath) 
       throws IOException, InterruptedException {
     checkBaseOutputPath(baseOutputPath);
-    TaskAttemptContext taskContext = new TaskAttemptContext(
+    TaskAttemptContext taskContext = TaskAttemptContextFactory.create(
       context.getConfiguration(), context.getTaskAttemptID());
     getRecordWriter(taskContext, baseOutputPath).write(key, value);
   }
@@ -447,7 +449,7 @@ public class CrunchMultipleOutputs<KEYOUT, VALUEOUT> {
     job.setOutputFormatClass(getNamedOutputFormatClass(context, nameOutput));
     job.setOutputKeyClass(getNamedOutputKeyClass(context, nameOutput));
     job.setOutputValueClass(getNamedOutputValueClass(context, nameOutput));
-    taskContext = new TaskAttemptContext(
+    taskContext = TaskAttemptContextFactory.create(
       job.getConfiguration(), context.getTaskAttemptID());
     
     taskContexts.put(nameOutput, taskContext);
