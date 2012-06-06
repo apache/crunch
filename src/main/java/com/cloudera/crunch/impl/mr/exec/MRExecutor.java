@@ -65,7 +65,7 @@ public class MRExecutor {
     for (CrunchControlledJob job : control.getSuccessfulJobList()) {
       try {
         stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
-      } catch (IOException e) {
+      } catch (Exception e) {
         LOG.error("Exception thrown fetching job counters for stage: " + job.getJobName(), e);
       }
     }

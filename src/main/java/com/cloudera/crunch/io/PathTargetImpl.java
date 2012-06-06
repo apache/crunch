@@ -31,7 +31,11 @@ public abstract class PathTargetImpl implements PathTarget {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
 	  String name) {
-    FileOutputFormat.setOutputPath(job, path);
+    try {
+      FileOutputFormat.setOutputPath(job, path);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     if (name == null) {
       job.setOutputFormatClass(outputFormatClass);
       job.setOutputKeyClass(keyClass);

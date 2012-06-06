@@ -47,7 +47,11 @@ public class FileTargetImpl implements PathTarget {
 
   protected void configureForMapReduce(Job job, Class keyClass, Class valueClass,
 	  Path outputPath, String name) {
-    FileOutputFormat.setOutputPath(job, outputPath);
+    try {
+      FileOutputFormat.setOutputPath(job, outputPath);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
     if (name == null) {
       job.setOutputFormatClass(outputFormatClass);
       job.setOutputKeyClass(keyClass);
