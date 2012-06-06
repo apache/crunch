@@ -10,7 +10,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <avro.version>1.6.3</avro.version>
-    <hadoop.version>0.20.2-cdh3u1</hadoop.version>
+    <hadoop.version>0.20.2-cdh3u4</hadoop.version>
     <hbase.version>0.90.3-cdh3u1</hbase.version>
   </properties>
 	
@@ -29,7 +29,7 @@
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
+      <artifactId>hadoop-client</artifactId>
       <version>${hadoop.version}</version>
       <scope>provided</scope>
     </dependency>
