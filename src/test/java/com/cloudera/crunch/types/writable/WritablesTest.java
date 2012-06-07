@@ -15,6 +15,7 @@
 package com.cloudera.crunch.types.writable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.DataInput;
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import com.cloudera.crunch.types.PType;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -39,9 +39,8 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
-import com.cloudera.crunch.types.avro.AvroType;
-import com.cloudera.crunch.types.avro.Avros;
 import com.google.common.collect.Lists;
 
 public class WritablesTest {
@@ -125,6 +124,13 @@ public class WritablesTest {
     w.setWritten(0);
     w.setWritten(1);
     testInputOutputFn(Writables.pairs(Writables.strings(), Writables.strings()), j, w);
+  }
+  
+  @Test
+  public void testNestedTables() throws Exception {
+	PTableType<Long, Long> pll = Writables.tableOf(Writables.longs(), Writables.longs());
+	PTableType<Pair<Long, Long>, String> nest = Writables.tableOf(pll, Writables.strings());
+	assertNotNull(nest);
   }
   
   @Test

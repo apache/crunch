@@ -30,7 +30,6 @@ import com.cloudera.crunch.types.Converter;
 import com.cloudera.crunch.types.PGroupedTableType;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
-import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 
 class WritableTableType<K, V> implements PTableType<K, V> {

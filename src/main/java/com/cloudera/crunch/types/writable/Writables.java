@@ -258,12 +258,21 @@ public class Writables {
   public static <K, V> WritableTableType<K, V> tableOf(
       PType<K> key, PType<V> value) {
     if (!(key instanceof WritableType)) {
-      throw new IllegalArgumentException("Key type must be of class WritableType");
+      if (key instanceof WritableTableType) {
+    	WritableTableType wtt = (WritableTableType) key;
+    	key = pairs(wtt.getKeyType(), wtt.getValueType());
+      } else {
+        throw new IllegalArgumentException("Key type must be of class WritableType");
+      }
     } else if (!(value instanceof WritableType)) {
-      throw new IllegalArgumentException("Value type must be of class WritableType");
-    } else {
-      return new WritableTableType((WritableType) key, (WritableType) value);
+      if (value instanceof WritableTableType) {
+    	WritableTableType wtt = (WritableTableType) value;
+    	value = pairs(wtt.getKeyType(), wtt.getValueType());
+      } else {
+        throw new IllegalArgumentException("Value type must be of class WritableType");
+      }
     }
+    return new WritableTableType((WritableType) key, (WritableType) value);
   }
 
   /**

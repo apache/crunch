@@ -15,10 +15,12 @@
 package com.cloudera.crunch.types.avro;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
+import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
@@ -32,6 +34,7 @@ import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.writable.Writables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -99,6 +102,13 @@ public class AvrosTest {
     w.add(new Utf8("a"));
     w.add(new Utf8("b"));
     testInputOutputFn(Avros.collections(Avros.strings()), j, w);
+  }
+  
+  @Test
+  public void testNestedTables() throws Exception {
+	PTableType<Long, Long> pll = Avros.tableOf(Avros.longs(), Avros.longs());
+	PTableType<Pair<Long, Long>, String> nest = Avros.tableOf(pll, Avros.strings());
+	assertNotNull(nest);
   }
   
   @Test
