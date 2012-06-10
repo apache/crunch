@@ -62,13 +62,36 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     }, ptf.tableOf(keyType, ptf.tuple2(ptf.collections(valueType), ptf.collections(other.valueType))))
   }
 
-  def join[V2](other: PTable[K, V2]) = {
-    val jres = Join.join[K, V, V2](this.native, other.native)
+  type JoinFn[V2] = (JTable[K, V], JTable[K, V2]) => JTable[K, CPair[V, V2]]
+
+  protected def join[V2](joinFn: JoinFn[V2], other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    val jres = joinFn(this.native, other.native)
     val ptf = getTypeFamily()
+    val ptype = ptf.tableOf(keyType, ptf.tuple2(valueType, other.valueType))
     val inter = new PTable[K, CPair[V, V2]](jres)
     inter.parallelDo(new SMapTableValuesFn[K, CPair[V, V2], (V, V2)] {
       def apply(x: CPair[V, V2]) = (x.first(), x.second())
-    }, ptf.tableOf(keyType, ptf.tuple2(valueType, other.valueType)))
+    }, ptype)
+  }
+
+  def join[V2](other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    innerJoin(other)
+  }
+
+  def innerJoin[V2](other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    join[V2](Join.innerJoin[K, V, V2](_, _), other)
+  }
+
+  def leftJoin[V2](other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    join[V2](Join.leftJoin[K, V, V2](_, _), other)
+  }
+
+  def rightJoin[V2](other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    join[V2](Join.rightJoin[K, V, V2](_, _), other)
+  }
+
+  def fullJoin[V2](other: PTable[K, V2]): PTable[K, (V, V2)] = {
+    join[V2](Join.fullJoin[K, V, V2](_, _), other)
   }
 
   def top(limit: Int, maximize: Boolean) = {

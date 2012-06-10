@@ -14,90 +14,46 @@
  */
 package com.cloudera.scrunch
 
-import com.cloudera.crunch.{Source, TableSource, Target}
 import java.io.Serializable
+
+import scala.collection.mutable.ListBuffer
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.GenericOptionsParser
-import scala.collection.mutable.ListBuffer
 
-trait PipelineApp extends DelayedInit {
+import com.cloudera.crunch.{Source, TableSource, Target}
+import com.cloudera.scrunch.Pipeline.PReader
+
+trait PipelineApp extends MREmbeddedPipeline with PipelineHelper with DelayedInit {
   implicit def _string2path(str: String) = new Path(str)
 
-  private val conf = new Configuration()
-  private var pipeline = new Pipeline(conf, true)(ClassManifest.fromClass(getClass()))
-
+  /** Contains factory methods used to create `Source`s. */
   val from = From
+
+  /** Contains factory methods used to create `Target`s. */
   val to = To
+
+  /** Contains factory methods used to create `SourceTarget`s. */
   val at = At
 
-  def cluster { pipeline = new Pipeline(conf)(ClassManifest.fromClass(getClass())) }
-
-  def debug { pipeline.debug }
-
-  def configuration = pipeline.getConfiguration
-  def fs: FileSystem = FileSystem.get(configuration)
-
-  def read[T](source: Source[T]) = pipeline.read(source)
-
-  def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
-
-  def load[T](source: Source[T]) = read(source)
-
-  def load[K, V](tableSource: TableSource[K, V]) = read(tableSource)
-
-  def write(data: PCollection[_], target: Target) {
-    pipeline.write(data, target)
-  }
-  
-  def write(data: PTable[_, _], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def store(data: PCollection[_], target: Target) {
-    pipeline.write(data, target)
-  }
-  
-  def store(data: PTable[_, _], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def dump(data: PCollection[_]) {
-    data.materialize.foreach { println(_) }
-  }
-
-  def dump(data: PTable[_, _]) {
-    data.materialize.foreach { println(_) }
-  }
-
-  def cogroup[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
-    t1.cogroup(t2)
-  }
-
-  def join[K: PTypeH, V1: PTypeH, V2: PTypeH](t1: PTable[K, V1], t2: PTable[K, V2]) = {
-    t1.join(t2)
-  }
-
-  def union[T](first: PCollection[T], others: PCollection[T]*) = first.union(others:_*)
-
-  def union[K, V](first: PTable[K, V], others: PTable[K, V]*) = first.union(others:_*)
-
-  def run() { pipeline.run }
-
-  def done() { pipeline.done }
+  private val initCode = new ListBuffer[() => Unit]
 
   private var _args: Array[String] = _
 
+  /** Command-line arguments passed to this application. */
   protected def args: Array[String] = _args
 
-  private val initCode = new ListBuffer[() => Unit]
+  def configuration: Configuration = pipeline.getConfiguration
+
+  /** Gets the distributed filesystem associated with this application's configuration. */
+  def fs: FileSystem = FileSystem.get(configuration)
 
   override def delayedInit(body: => Unit) {
     initCode += (() => body)
   }
 
   def main(args: Array[String]) = {
-    cluster
     val parser = new GenericOptionsParser(configuration, args)
     _args = parser.getRemainingArgs()
     for (proc <- initCode) proc()
