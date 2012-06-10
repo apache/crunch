@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
+import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Target;
 import com.cloudera.crunch.impl.mr.collect.DoTableImpl;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
@@ -93,17 +94,17 @@ public class JobPrototype {
     this.dependencies.add(dependency);
   }
 
-  public CrunchJob getCrunchJob(Class<?> jarClass, Configuration conf) throws IOException {
+  public CrunchJob getCrunchJob(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
     if (job == null) {
-      job = build(jarClass, conf);
+      job = build(jarClass, conf, pipeline);
       for (JobPrototype proto : dependencies) {
-        job.addDependingJob(proto.getCrunchJob(jarClass, conf));
+        job.addDependingJob(proto.getCrunchJob(jarClass, conf, pipeline));
       }
     }
     return job;
   }
 
-  private CrunchJob build(Class<?> jarClass, Configuration conf) throws IOException {
+  private CrunchJob build(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
     Job job = new Job(conf);
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
@@ -174,7 +175,7 @@ public class JobPrototype {
       }
       job.setInputFormatClass(CrunchInputFormat.class);
     }
-    job.setJobName(createJobName(inputNodes, reduceNode));
+    job.setJobName(createJobName(pipeline.getName(), inputNodes, reduceNode));
     
     return new CrunchJob(job, outputPath, outputHandler);
   }
@@ -189,8 +190,8 @@ public class JobPrototype {
     DistCache.write(conf, path, rtNodes);
   }
 
-  private String createJobName(List<DoNode> mapNodes, DoNode reduceNode) {
-    JobNameBuilder builder = new JobNameBuilder();
+  private String createJobName(String pipelineName, List<DoNode> mapNodes, DoNode reduceNode) {
+    JobNameBuilder builder = new JobNameBuilder(pipelineName);
     builder.visit(mapNodes);
     if (reduceNode != null) {
       builder.visit(reduceNode);

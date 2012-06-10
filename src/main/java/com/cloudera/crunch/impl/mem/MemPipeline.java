@@ -197,4 +197,9 @@ public class MemPipeline implements Pipeline {
   public void enableDebug() {
 	LOG.info("Note: in-memory pipelines do not have debug logging");
   }
+  
+  @Override
+  public String getName() {
+	  return "Memory Pipeline";
+  }
 }

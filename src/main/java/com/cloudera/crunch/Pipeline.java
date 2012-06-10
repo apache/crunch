@@ -28,6 +28,12 @@ public interface Pipeline {
   void setConfiguration(Configuration conf);
   
   /**
+   * Returns the name of this pipeline.
+   * @return Name of the pipeline
+   */
+  String getName();
+  
+  /**
    * Returns the {@code Configuration} instance associated with this pipeline.
    */
   Configuration getConfiguration();
