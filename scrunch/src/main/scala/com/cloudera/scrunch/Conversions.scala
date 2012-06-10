@@ -92,7 +92,7 @@ object PTypeH {
         ptf.sets(implicitly[PTypeH[T]].get(ptf))
       }
     }
-   }
+  }
 
   implicit def pairs[A: PTypeH, B: PTypeH] = {
     new PTypeH[(A, B)] {
