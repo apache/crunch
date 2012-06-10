@@ -170,7 +170,7 @@ public class MSCRPlanner {
 
     MRExecutor exec = new MRExecutor(jarClass);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
-      exec.addJob(proto.getCrunchJob(jarClass, conf));
+      exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline));
     }
     return exec;
   }

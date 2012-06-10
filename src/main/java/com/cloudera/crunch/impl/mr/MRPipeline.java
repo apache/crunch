@@ -61,6 +61,7 @@ public class MRPipeline implements Pipeline {
   private static final Random RANDOM = new Random();
   
   private final Class<?> jarClass;
+  private final String name;
   private final Map<PCollectionImpl, Set<Target>> outputTargets;
   private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
   private final Path tempDirectory;
@@ -73,8 +74,17 @@ public class MRPipeline implements Pipeline {
     this(jarClass, new Configuration());
   }
   
+  public MRPipeline(Class<?> jarClass, String name){
+    this(jarClass, name, new Configuration());
+  }
+  
   public MRPipeline(Class<?> jarClass, Configuration conf) {
+	  this(jarClass, jarClass.getName(), conf);
+  }
+  
+  public MRPipeline(Class<?> jarClass, String name, Configuration conf) {
     this.jarClass = jarClass;
+    this.name = name;
     this.outputTargets = Maps.newHashMap();
     this.outputTargetsToMaterialize = Maps.newHashMap();
     this.conf = conf;
@@ -252,5 +262,10 @@ public class MRPipeline implements Pipeline {
   @Override
   public void enableDebug() {
 	getConfiguration().setBoolean(RuntimeParameters.DEBUG, true);
+  }
+  
+  @Override
+  public String getName() {
+	  return name;
   }
 }

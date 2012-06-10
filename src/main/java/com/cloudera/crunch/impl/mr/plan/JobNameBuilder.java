@@ -28,7 +28,13 @@ public class JobNameBuilder {
   
   private static final Joiner JOINER = Joiner.on("+");
   private static final Joiner CHILD_JOINER = Joiner.on("/");
+  
+  private String pipelineName;
   List<String> rootStack = Lists.newArrayList();
+  
+  public JobNameBuilder(final String pipelineName){
+    this.pipelineName = pipelineName;
+  }
   
   public void visit(DoNode node) {
     visit(node, rootStack);
@@ -66,6 +72,6 @@ public class JobNameBuilder {
   }
   
   public String build() {
-    return JOINER.join(rootStack);
+    return String.format("%s: %s", pipelineName, JOINER.join(rootStack));
   }
 }
