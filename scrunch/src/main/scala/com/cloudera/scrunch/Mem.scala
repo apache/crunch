@@ -14,75 +14,72 @@
  */
 package com.cloudera.scrunch
 
+import java.lang.{Iterable => JIterable}
+
+import scala.collection.JavaConversions._
+
+import org.apache.hadoop.conf.Configuration
+
 import com.cloudera.crunch.{Pair => P}
 import com.cloudera.crunch.{Source, TableSource, Target}
 import com.cloudera.crunch.impl.mem.MemPipeline
-import java.lang.{Iterable => JIterable}
-import org.apache.hadoop.conf.Configuration
-import scala.collection.JavaConversions._
-import Conversions._
+import com.cloudera.scrunch.Conversions._
 
 /**
  * Object for working with in-memory PCollection and PTable instances.
  */
-object Mem {
+object Mem extends MemEmbeddedPipeline with PipelineHelper {
   private val ptf = Avros
 
-  val pipeline = new Pipeline(new Configuration(), true)(ClassManifest.fromClass(getClass()))
-
+  /**
+   * Constructs a PCollection using in memory data.
+   *
+   * @param collect The data to load.
+   * @return A PCollection containing the specified data.
+   */
   def collectionOf[T](ts: T*)(implicit pt: PTypeH[T]): PCollection[T] = {
     collectionOf(List(ts:_*))
   }
 
+  /**
+   * Constructs a PCollection using in memory data.
+   *
+   * @param collect The data to load.
+   * @return A PCollection containing the specified data.
+   */
   def collectionOf[T](collect: Iterable[T])(implicit pt: PTypeH[T]): PCollection[T] = {
     val native = MemPipeline.typedCollectionOf(pt.get(ptf), asJavaIterable(collect))
     new PCollection[T](native)
   }
 
+  /**
+   * Constructs a PTable using in memory data.
+   *
+   * @param pairs The data to load.
+   * @return A PTable containing the specified data.
+   */
   def tableOf[K, V](pairs: (K, V)*)(implicit pk: PTypeH[K], pv: PTypeH[V]): PTable[K, V] = {
     tableOf(List(pairs:_*))
   }
 
+  /**
+   * Constructs a PTable using in memory data.
+   *
+   * @param pairs The data to load.
+   * @return A PTable containing the specified data.
+   */
   def tableOf[K, V](pairs: Iterable[(K, V)])(implicit pk: PTypeH[K], pv: PTypeH[V]): PTable[K, V] = {
     val cpairs = pairs.map(kv => P.of(kv._1, kv._2))
     val ptype = ptf.tableOf(pk.get(ptf), pv.get(ptf))
     new PTable[K, V](MemPipeline.typedTableOf(ptype, asJavaIterable(cpairs)))
   }
 
-
+  /** Contains factory methods used to create `Source`s. */
   val from = From
+
+  /** Contains factory methods used to create `Target`s. */
   val to = To
+
+  /** Contains factory methods used to create `SourceTarget`s. */
   val at = At
-
-  def read[T](source: Source[T]) = pipeline.read(source)
-
-  def read[K, V](tableSource: TableSource[K, V]) = pipeline.read(tableSource)
-
-  def load[T](source: Source[T]) = read(source)
-
-  def load[K, V](tableSource: TableSource[K, V]) = read(tableSource)
-
-  def write(data: PCollection[_], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def write(data: PTable[_, _], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def store(data: PCollection[_], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def store(data: PTable[_, _], target: Target) {
-    pipeline.write(data, target)
-  }
-
-  def dump(data: PCollection[_]) {
-    data.materialize.foreach { println(_) }
-  }
-
-  def dump(data: PTable[_, _]) {
-    data.materialize.foreach { println(_) }
-  }
 }

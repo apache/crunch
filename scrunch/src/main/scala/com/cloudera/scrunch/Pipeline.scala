@@ -36,30 +36,44 @@ class Pipeline[R: ClassManifest](val conf: Configuration = new Configuration(), 
   /**
    * Gets the configuration object associated with this pipeline.
    */
-  def getConfiguration = jpipeline.getConfiguration()
+  def getConfiguration = {
+    jpipeline.getConfiguration()
+  }
 
   /**
-   * Reads a source into a parallel collection.
+   * Reads a source into a [[com.cloudera.scrunch.PCollection]]
    *
    * @param source The source to read from.
-   * @param reader The reader that will be used internally to read the source.
-   * @tparam S The type of the source.
-   * @tparam C The type of the collection associated with the specified source.
+   * @tparam T The type of the values being read.
    * @return A PCollection containing data read from the specified source.
    */
-  def read[S, C](source: S)(implicit reader: PReader[S, C]): C = reader.read(source, this)
+  def read[T](source: Source[T]): PCollection[T] = new PCollection(jpipeline.read(source))
+
+  /**
+   * Reads a source into a [[com.cloudera.scrunch.PTable]]
+   *
+   * @param source The source to read from.
+   * @tparam K The type of the keys being read.
+   * @tparam V The type of the values being read.
+   * @return A PCollection containing data read from the specified source.
+   */
+  def read[K, V](source: TableSource[K, V]): PTable[K, V] = new PTable(jpipeline.read(source))
 
   /**
    * Writes a parallel collection to a target.
    *
    * @param collection The collection to write.
    * @param target The destination target for this write.
-   * @param writer The writer that will be used internally to write the source.
-   * @tparam C The type of the collection being written.
    */
-  def write[C](collection: C, target: Target)(implicit writer: PWriter[C]) {
-    writer.write(collection, target, this)
-  }
+  def write(collection: PCollection[_], target: Target): Unit = jpipeline.write(collection.native, target)
+
+  /**
+   * Writes a parallel table to a target.
+   *
+   * @param table The table to write.
+   * @param target The destination target for this write.
+   */
+  def write(table: PTable[_, _], target: Target): Unit = jpipeline.write(table.native, target)
 
   /**
    * Constructs and executes a series of MapReduce jobs in order
@@ -152,18 +166,11 @@ object Pipeline {
     /**
      * Creates a PReader that reads Sources by delegating to the crunch pipeline.
      */
-    implicit def SourceReader[T] = new PReader[Source[T], PCollection[T]]() {
-      def read(source: Source[T], pipeline: Pipeline[_]): PCollection[T] = {
-        new PCollection[T](pipeline.jpipeline.read(source))
-      }
-    }
-
-    /**
-     * Creates a PReader that reads TableSources by delegating to the crunch pipeline.
-     */
-    implicit def TableSourceReader[K, V] = new PReader[TableSource[K, V], PTable[K, V]]() {
-      def read(source: TableSource[K, V], pipeline: Pipeline[_]): PTable[K, V] = {
-        new PTable[K, V](pipeline.jpipeline.read(source))
+    def SourceReader[T] = {
+      new PReader[Source[T], PCollection[T]]() {
+        def read(source: Source[T], pipeline: Pipeline[_]): PCollection[T] = {
+          new PCollection[T](pipeline.jpipeline.read(source))
+        }
       }
     }
   }
