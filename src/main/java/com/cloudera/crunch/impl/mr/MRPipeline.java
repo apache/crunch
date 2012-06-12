@@ -26,8 +26,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import com.cloudera.crunch.DoFn;
-import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;

@@ -16,6 +16,7 @@ package com.cloudera.crunch.impl.mr.collect;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.PCollection;
@@ -26,6 +27,7 @@ import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.lib.Join;
 import com.cloudera.crunch.lib.PTables;
+import com.cloudera.crunch.materialize.MaterializableMap;
 import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Lists;
 
@@ -107,4 +109,12 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
   public PCollection<V> values() {
     return PTables.values(this);
   }
+
+  /**
+   * Returns a {@link PTable} made up of the keys and values in this PTable.
+   */
+  public Map<K, V> materializeToMap() {
+    return new MaterializableMap<K, V>(this.materialize());
+  }
+
 }
