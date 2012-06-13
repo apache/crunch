@@ -111,7 +111,7 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
   }
 
   /**
-   * Returns a {@link PTable} made up of the keys and values in this PTable.
+   * Returns a Map<K, V> made up of the keys and values in this PTable.
    */
   public Map<K, V> materializeToMap() {
     return new MaterializableMap<K, V>(this.materialize());

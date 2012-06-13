@@ -120,7 +120,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   PCollection<V> values();
   
   /**
-   * Returns a {@link PTable} made up of the keys and values in this PTable.
+   * Returns a Map<K, V> made up of the keys and values in this PTable.
    */
   Map<K, V> materializeToMap();
 
