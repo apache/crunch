@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2011, Cloudera, Inc. All Rights Reserved.
+ * Copyright (c) 2012, Cloudera, Inc. All Rights Reserved.
  *
  * Cloudera, Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"). You may not use this file except in
