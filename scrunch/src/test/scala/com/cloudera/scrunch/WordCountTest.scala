@@ -24,7 +24,7 @@ import _root_.org.junit.Test
 
 class WordCountTest extends JUnitSuite {
   @Test def wordCount {
-    val pipeline = new Pipeline[WordCountTest]
+    val pipeline = Pipeline.mapReduce[WordCountTest]
     val input = FileHelper.createTempCopyOf("shakes.txt")
     val wordCountOut = FileHelper.createOutputPath
 

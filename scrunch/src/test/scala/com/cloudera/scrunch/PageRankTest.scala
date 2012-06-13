@@ -47,7 +47,7 @@ class CachingPageRankFn extends DoFn[P[String, (Float, Float, List[String])], P[
 }
 
 class PageRankTest extends JUnitSuite {
-  val pipeline = new Pipeline[PageRankTest]
+  val pipeline = Pipeline.mapReduce[PageRankTest]
 
   def initialInput(fileName: String) = {
     pipeline.read(from.textFile(fileName))

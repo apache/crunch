@@ -16,29 +16,29 @@ package com.cloudera.scrunch
 
 import org.apache.hadoop.conf.Configuration
 
-import com.cloudera.crunch.Source
-import com.cloudera.crunch.TableSource
-import com.cloudera.crunch.Target
-import com.cloudera.scrunch.Pipeline.PReader
-import com.cloudera.scrunch.Pipeline.PWriter
-
+/**
+ * Adds a pipeline to the class it is being mixed in to.
+ */
 trait EmbeddedPipeline {
-  /** Used to create the configuration object for a pipeline. */
-  protected def createConfiguration(): Configuration = new Configuration()
-
   /** The pipeline to use. */
-  protected def pipeline: Pipeline[_]
+  protected def pipeline: Pipeline
 }
 
+/**
+ * Adds a mapreduce pipeline to the class it is being mixed in to.
+ */
 trait MREmbeddedPipeline extends EmbeddedPipeline with EmbeddedPipelineLike {
-  protected val pipeline: Pipeline[_] = {
-    new Pipeline(createConfiguration())(ClassManifest.fromClass(getClass()))
+  protected val pipeline: Pipeline = {
+    Pipeline.mapReduce(ClassManifest.fromClass(getClass()).erasure, new Configuration())
   }
 }
 
+/**
+ * Adds an in memory pipeline to the class it is being mixed in to.
+ */
 trait MemEmbeddedPipeline extends EmbeddedPipeline with EmbeddedPipelineLike {
-  protected val pipeline: Pipeline[_] = {
-    new Pipeline(createConfiguration(), true)(ClassManifest.fromClass(getClass()))
+  protected val pipeline: Pipeline = {
+    Pipeline.inMemory
   }
 }
 

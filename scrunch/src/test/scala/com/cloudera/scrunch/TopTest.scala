@@ -28,7 +28,7 @@ class TopTest extends JUnitSuite {
   }
 
   @Test def top2 {
-    val pipeline = new Pipeline[TopTest]
+    val pipeline = Pipeline.mapReduce[TopTest]
     val input = FileHelper.createTempCopyOf("shakes.txt")
 
     val wc = pipeline.read(from.textFile(input))

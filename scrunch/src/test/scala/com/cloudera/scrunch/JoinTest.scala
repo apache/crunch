@@ -21,7 +21,7 @@ import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
 class JoinTest extends JUnitSuite {
-  val pipeline = new Pipeline[CogroupTest]
+  val pipeline = Pipeline.mapReduce[CogroupTest]
 
   def wordCount(fileName: String) = {
     pipeline.read(from.textFile(fileName))
