@@ -23,7 +23,6 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.GenericOptionsParser
 
 import com.cloudera.crunch.{Source, TableSource, Target}
-import com.cloudera.scrunch.Pipeline.PReader
 
 trait PipelineApp extends MREmbeddedPipeline with PipelineHelper with DelayedInit {
   implicit def _string2path(str: String) = new Path(str)

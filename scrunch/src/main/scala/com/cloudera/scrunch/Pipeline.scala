@@ -14,92 +14,46 @@
  */
 package com.cloudera.scrunch
 
+import java.lang.Class
+
 import org.apache.hadoop.conf.Configuration
 
-import com.cloudera.crunch.{PCollection => JCollection, Pipeline => JPipeline}
-import com.cloudera.crunch.{Source, TableSource, Target}
+import com.cloudera.crunch.{Pipeline => JPipeline}
 import com.cloudera.crunch.impl.mem.MemPipeline
 import com.cloudera.crunch.impl.mr.MRPipeline
-import com.cloudera.scrunch.Conversions._
 
 /**
  * Manages the state of a pipeline execution.
+ *
+ * ==Overview==
+ * There are two subtypes of [[com.cloudera.crunch.Pipeline]]:
+ * [[com.cloudera.crunch.Pipeline#MapReduce]] - for jobs run on a Hadoop cluster.
+ * [[com.cloudera.crunch.Pipeline#InMemory]] - for jobs run in memory.
+ *
+ * To create a Hadoop pipeline:
+ * {{{
+ * import com.cloudera.scrunch.Pipeline
+ *
+ * Pipeline.mapreduce[MyClass]
+ * }}}
+ *
+ * To get an in memory pipeline:
+ * {{{
+ * import com.cloudera.scrunch.Pipeline
+ *
+ * Pipeline.inMemory
+ * }}}
  */
-class Pipeline[R: ClassManifest](val conf: Configuration = new Configuration(), memory: Boolean = false) {
-  import Pipeline._
-
-  /**
-   * Internal representation of this pipeline, a Crunch pipeline.
-   */
-  val jpipeline = if (memory) { MemPipeline.getInstance() } else { new MRPipeline(classManifest[R].erasure, conf) }
-
-  /**
-   * Gets the configuration object associated with this pipeline.
-   */
-  def getConfiguration = {
-    jpipeline.getConfiguration()
-  }
-
-  /**
-   * Reads a source into a [[com.cloudera.scrunch.PCollection]]
-   *
-   * @param source The source to read from.
-   * @tparam T The type of the values being read.
-   * @return A PCollection containing data read from the specified source.
-   */
-  def read[T](source: Source[T]): PCollection[T] = new PCollection(jpipeline.read(source))
-
-  /**
-   * Reads a source into a [[com.cloudera.scrunch.PTable]]
-   *
-   * @param source The source to read from.
-   * @tparam K The type of the keys being read.
-   * @tparam V The type of the values being read.
-   * @return A PCollection containing data read from the specified source.
-   */
-  def read[K, V](source: TableSource[K, V]): PTable[K, V] = new PTable(jpipeline.read(source))
-
-  /**
-   * Writes a parallel collection to a target.
-   *
-   * @param collection The collection to write.
-   * @param target The destination target for this write.
-   */
-  def write(collection: PCollection[_], target: Target): Unit = jpipeline.write(collection.native, target)
-
-  /**
-   * Writes a parallel table to a target.
-   *
-   * @param table The table to write.
-   * @param target The destination target for this write.
-   */
-  def write(table: PTable[_, _], target: Target): Unit = jpipeline.write(table.native, target)
-
-  /**
-   * Constructs and executes a series of MapReduce jobs in order
-   * to write data to the output targets.
-   */
-  def run(): Unit = jpipeline.run()
-
-  /**
-   * Run any remaining jobs required to generate outputs and then
-   * clean up any intermediate data files that were created in
-   * this run or previous calls to `run`.
-   */
-  def done(): Unit = jpipeline.done()
-
-  /**
-   * Turn on debug logging for jobs that are run from this pipeline.
-   */
-  def debug(): Unit = jpipeline.enableDebug()
-
+class Pipeline(val jpipeline: JPipeline) extends PipelineLike {
   /**
    * A convenience method for reading a text file.
    *
    * @param pathName Path to desired text file.
    * @return A PCollection containing the lines in the specified file.
    */
-  def readTextFile(pathName: String) = new PCollection[String](jpipeline.readTextFile(pathName))
+  def readTextFile(pathName: String): PCollection[String] = {
+    new PCollection[String](jpipeline.readTextFile(pathName))
+  }
 
   /**
    * A convenience method for writing a text file.
@@ -113,65 +67,73 @@ class Pipeline[R: ClassManifest](val conf: Configuration = new Configuration(), 
 }
 
 /**
- * Companion object for [[com.cloudera.scrunch.Pipeline]].
+ * Companion object. Contains subclasses of Pipeline.
  */
 object Pipeline {
   /**
-   * PWriters are used to perform the actual writing of PCollection and friends
-   * to targets.
+   * Pipeline for running jobs on a hadoop cluster.
    *
-   * @tparam C The type of the collection being written by this PWriter.
+   * @param clazz Type of the class using the pipeline.
+   * @param configuration Hadoop configuration to use.
    */
-  trait PWriter[C] {
-    def write(collection: C, target: Target, pipeline: Pipeline[_]): Unit
-  }
+  class MapReducePipeline (clazz: Class[_], configuration: Configuration)
+    extends Pipeline(new MRPipeline(clazz, configuration))
 
   /**
-   * Companion object.
+   * Pipeline for running jobs in memory.
    */
-  object PWriter {
-    /**
-     * Creates a PWriter that writes PCollections by delegating to the crunch pipeline.
-     */
-    implicit def PCollectionWriter[T] = new PWriter[PCollection[T]]() {
-      def write(collection: PCollection[T], target: Target, pipeline: Pipeline[_]) {
-        pipeline.jpipeline.write(collection.native, target)
-      }
-    }
-
-    /**
-     * Creates a PWriter that writes PTables by delegating to the crunch pipeline.
-     */
-    implicit def PTableWriter[K, V] = new PWriter[PTable[K, V]]() {
-      def write(collection: PTable[K, V], target: Target, pipeline: Pipeline[_]) {
-        pipeline.jpipeline.write(collection.native, target)
-      }
-    }
-  }
+  object InMemoryPipeline extends Pipeline(MemPipeline.getInstance())
 
   /**
-   * PReaders are used to perform the actual reading of sources.
+   * Creates a pipeline for running jobs on a hadoop cluster using the default configuration.
    *
-   * @tparam S The type of the source being read from.
-   * @tparam C The type of the collections being read from the specified source.
+   * @param clazz Type of the class using the pipeline.
    */
-  trait PReader[S, C] {
-    def read(source: S, pipeline: Pipeline[_]): C
+  def mapReduce(clazz: Class[_]): MapReducePipeline = mapReduce(clazz, new Configuration())
+
+  /**
+   * Creates a pipeline for running jobs on a hadoop cluster.
+   *
+   * @param clazz Type of the class using the pipeline.
+   * @param configuration Hadoop configuration to use.
+   */
+  def mapReduce(clazz: Class[_], configuration: Configuration): MapReducePipeline = {
+    new MapReducePipeline(clazz, configuration)
   }
 
   /**
-   * Companion object.
+   * Creates a pipeline for running jobs on a hadoop cluster using the default configuration.
+   *
+   * @tparam T Type of the class using the pipeline.
    */
-  object PReader {
-    /**
-     * Creates a PReader that reads Sources by delegating to the crunch pipeline.
-     */
-    def SourceReader[T] = {
-      new PReader[Source[T], PCollection[T]]() {
-        def read(source: Source[T], pipeline: Pipeline[_]): PCollection[T] = {
-          new PCollection[T](pipeline.jpipeline.read(source))
-        }
-      }
-    }
+  def mapReduce[T : ClassManifest]: MapReducePipeline = mapReduce[T](new Configuration())
+
+  /**
+   * Creates a pipeline for running jobs on a hadoop cluster.
+   *
+   * @param configuration Hadoop configuration to use.
+   * @tparam T Type of the class using the pipeline.
+   */
+  def mapReduce[T : ClassManifest](configuration: Configuration): MapReducePipeline = {
+    new MapReducePipeline(implicitly[ClassManifest[T]].erasure, configuration)
   }
+
+  /**
+   * Gets a pipeline for running jobs in memory.
+   */
+  def inMemory: InMemoryPipeline.type = InMemoryPipeline
+
+  /**
+   * Creates a new Pipeline according to the provided specifications.
+   *
+   * @param configuration Configuration for connecting to a Hadoop cluster.
+   * @param memory Option specifying whether or not the pipeline is an in memory or mapreduce pipeline.
+   * @param manifest ClassManifest for the class using the pipeline.
+   * @tparam T type of the class using the pipeline.
+   * @deprecated Use either {{{Pipeline.mapReduce(class, conf)}}} or {{{Pipeline.inMemory}}}
+   */
+  def apply[T](
+    configuration: Configuration = new Configuration(),
+    memory: Boolean = false)(implicit manifest: ClassManifest[T]
+  ): Pipeline = if (memory) inMemory else mapReduce(manifest.erasure, configuration)
 }

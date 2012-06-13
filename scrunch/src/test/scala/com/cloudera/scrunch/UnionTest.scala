@@ -21,7 +21,7 @@ import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
 class UnionTest extends JUnitSuite {
-  val pipeline = new Pipeline[UnionTest]
+  val pipeline = Pipeline.mapReduce[UnionTest]
   val shakespeare = FileHelper.createTempCopyOf("shakes.txt")
   val maugham = FileHelper.createTempCopyOf("maugham.txt")
 
