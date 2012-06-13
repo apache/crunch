@@ -16,6 +16,7 @@
 package com.cloudera.crunch;
 
 import java.util.Collection;
+import java.util.Map;
 
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
@@ -118,4 +119,9 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    */
   PCollection<V> values();
   
+  /**
+   * Returns a Map<K, V> made up of the keys and values in this PTable.
+   */
+  Map<K, V> materializeToMap();
+
 }
