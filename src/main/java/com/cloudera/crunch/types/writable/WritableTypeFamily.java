@@ -94,10 +94,7 @@ public class WritableTypeFamily implements PTypeFamily {
   }
 
   public <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value) {
-    if (!(key instanceof WritableType) || !(value instanceof WritableType)) {
-      throw new IllegalArgumentException("Cannot use non-WritableType in Writables.tableOf");
-    }
-    return Writables.tableOf((WritableType) key, (WritableType) value);
+    return Writables.tableOf(key, value);
   }
 
   public <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
