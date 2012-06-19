@@ -16,7 +16,6 @@ package com.cloudera.crunch.types.avro;
 
 import java.util.Iterator;
 
-import com.cloudera.crunch.types.Converter;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 
@@ -24,7 +23,8 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.types.Converter;
 
 public class AvroPairConverter<K, V> implements Converter<AvroKey<K>, AvroValue<V>, Pair<K, V>, Pair<K, Iterable<V>>> {
-
+  private static final long serialVersionUID = 1L;
+  
   private transient AvroKey<K> keyWrapper = null;
   private transient AvroValue<V> valueWrapper = null;
   

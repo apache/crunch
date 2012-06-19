@@ -65,7 +65,8 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
 
   public static class PairIterableMapFn<K, V> extends
       MapFn<Pair<Object, Iterable<Object>>, Pair<K, Iterable<V>>> {
-
+    private static final long serialVersionUID = 1L;
+    
     private final MapFn<Object, K> keys;
     private final MapFn<Object, V> values;
 
@@ -82,7 +83,7 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
 
     @Override
     public Pair<K, Iterable<V>> map(Pair<Object, Iterable<Object>> input) {
-      return Pair.<K, Iterable<V>> of(keys.map(input.first()),
+      return Pair.<K, Iterable<V>>of(keys.map(input.first()),
           new PTypeIterable(values, input.second()));
     }
   }

@@ -21,6 +21,8 @@ import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 
 public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
+  private static final long serialVersionUID = 1L;
+  
   private MapFn<K, S> keys;
   private MapFn<V, T> values;
 

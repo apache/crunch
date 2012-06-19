@@ -47,12 +47,6 @@ public class WritableTypeFamily implements PTypeFamily {
   private WritableTypeFamily() {
   }
 
-  private static <S, W extends Writable> WritableType<S, W> create(Class<S> typeClass,
-      Class<W> writableClass, MapFn<W, S> inputDoFn, MapFn<S, W> outputDoFn) {
-    return new WritableType<S, W>(typeClass, writableClass, inputDoFn,
-        outputDoFn);
-  }
-
   public PType<Void> nulls() {
     return Writables.nulls();
   }
@@ -111,7 +105,7 @@ public class WritableTypeFamily implements PTypeFamily {
     return Writables.quads(p1, p2, p3, p4);
   }
 
-  public PType<TupleN> tuples(PType... ptypes) {
+  public PType<TupleN> tuples(PType<?>... ptypes) {
     return Writables.tuples(ptypes);
   }
 
@@ -141,7 +135,7 @@ public class WritableTypeFamily implements PTypeFamily {
   }
 
   @Override
-  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
+  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType<?>... ptypes) {
     return Writables.tuples(clazz, ptypes);
   }
 

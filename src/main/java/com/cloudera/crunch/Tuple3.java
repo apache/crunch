@@ -79,7 +79,7 @@ public class Tuple3<V1, V2, V3> implements Tuple {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    Tuple3 other = (Tuple3) obj;
+    Tuple3<?, ?, ?> other = (Tuple3<?, ?, ?>) obj;
     return (first == other.first || (first != null && first.equals(other.first))) &&
     	(second == other.second || (second != null && second.equals(other.second))) &&
     	(third == other.third || (third != null && third.equals(other.third)));

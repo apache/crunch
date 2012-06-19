@@ -14,7 +14,6 @@
  */
 package com.cloudera.crunch.types.writable;
 
-import com.cloudera.crunch.types.Converter;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.cloudera.crunch.GroupingOptions;

@@ -28,6 +28,8 @@ import com.google.common.collect.Lists;
  * @param <V> Type of the second {@link com.cloudera.crunch.PTable}'s values
  */
 public class FullOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
+  private static final long serialVersionUID = 1L;
+  
   private transient int lastId;
   private transient K lastKey;
   private transient List<U> leftValues;

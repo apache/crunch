@@ -35,7 +35,8 @@ import com.google.common.collect.Sets;
  *
  */
 public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S, T>> {
-
+  private static final long serialVersionUID = 1L;
+  
   public static interface Aggregator<T> extends Serializable {
     /**
      * Clears the internal state of this Aggregator and prepares it for the values associated
@@ -66,6 +67,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
    * instance.
    */
   public static class AggregatorCombineFn<K, V> extends CombineFn<K, V> {
+    private static final long serialVersionUID = 1L;
+    
     private final Aggregator<V> aggregator;
     
     public AggregatorCombineFn(Aggregator<V> aggregator) {
@@ -85,6 +88,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   private static abstract class TupleAggregator<T> implements Aggregator<T> {
+    private static final long serialVersionUID = 1L;
+    
     private final List<Aggregator<Object>> aggregators;
     
     public TupleAggregator(Aggregator<?>...aggregators) {
@@ -113,6 +118,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class PairAggregator<V1, V2> extends TupleAggregator<Pair<V1, V2>> {
+    private static final long serialVersionUID = 1L;
+    
     public PairAggregator(Aggregator<V1> a1, Aggregator<V2> a2) {
       super(a1, a2);
     }
@@ -129,6 +136,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class TripAggregator<A, B, C> extends TupleAggregator<Tuple3<A, B, C>> {
+    private static final long serialVersionUID = 1L;
+    
     public TripAggregator(Aggregator<A> a1, Aggregator<B> a2, Aggregator<C> a3) {
       super(a1, a2, a3);
     }
@@ -146,6 +155,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static class QuadAggregator<A, B, C, D> extends TupleAggregator<Tuple4<A, B, C, D>> {
+    private static final long serialVersionUID = 1L;
+    
     public QuadAggregator(Aggregator<A> a1, Aggregator<B> a2, Aggregator<C> a3, Aggregator<D> a4) {
       super(a1, a2, a3, a4);
     }
@@ -163,6 +174,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class TupleNAggregator extends TupleAggregator<TupleN> {
+    private static final long serialVersionUID = 1L;
+    
     private final int size;
     
     public TupleNAggregator(Aggregator<?>... aggregators) {
@@ -212,7 +225,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static final <K> CombineFn<K, TupleN> tupleAggregator(AggregatorFactory<?>... factories) {
-    Aggregator[] aggs = new Aggregator[factories.length];
+    Aggregator<?>[] aggs = new Aggregator[factories.length];
     for (int i = 0; i < aggs.length; i++) {
       aggs[i] = factories[i].create();
     }
@@ -328,6 +341,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class SumLongs implements Aggregator<Long> {
+    private static final long serialVersionUID = 1L;
+    
     private long sum = 0;
     
     @Override
@@ -350,6 +365,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class SumInts implements Aggregator<Integer> {
+    private static final long serialVersionUID = 1L;
+    
     private int sum = 0;
     
     @Override
@@ -372,6 +389,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class SumFloats implements Aggregator<Float> {
+    private static final long serialVersionUID = 1L;
+    
     private float sum = 0;
     
     @Override
@@ -394,6 +413,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class SumDoubles implements Aggregator<Double> {
+    private static final long serialVersionUID = 1L;
+    
     private double sum = 0;
     
     @Override
@@ -416,6 +437,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class SumBigInts implements Aggregator<BigInteger> {
+    private static final long serialVersionUID = 1L;
+    
     private BigInteger sum = BigInteger.ZERO;
     
     @Override
@@ -438,6 +461,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxLongs implements Aggregator<Long> {
+    private static final long serialVersionUID = 1L;
+    
     private Long max = null;
     
     @Override
@@ -462,6 +487,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxInts implements Aggregator<Integer> {
+    private static final long serialVersionUID = 1L;
+    
     private Integer max = null;
     
     @Override
@@ -486,6 +513,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxFloats implements Aggregator<Float> {
+    private static final long serialVersionUID = 1L;
+    
     private Float max = null;
     
     @Override
@@ -510,6 +539,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxDoubles implements Aggregator<Double> {
+    private static final long serialVersionUID = 1L;
+    
     private Double max = null;
     
     @Override
@@ -534,6 +565,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxBigInts implements Aggregator<BigInteger> {
+    private static final long serialVersionUID = 1L;
+    
     private BigInteger max = null;
     
     @Override
@@ -558,6 +591,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MinLongs implements Aggregator<Long> {
+    private static final long serialVersionUID = 1L;
+    
     private Long min = null;
     
     @Override
@@ -582,6 +617,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MinInts implements Aggregator<Integer> {
+    private static final long serialVersionUID = 1L;
+    
     private Integer min = null;
     
     @Override
@@ -606,6 +643,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MinFloats implements Aggregator<Float> {
+    private static final long serialVersionUID = 1L;
+    
     private Float min = null;
     
     @Override
@@ -630,6 +669,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MinDoubles implements Aggregator<Double> {
+    private static final long serialVersionUID = 1L;
+    
     private Double min = null;
     
     @Override
@@ -654,6 +695,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
 
   public static class MinBigInts implements Aggregator<BigInteger> {
+    private static final long serialVersionUID = 1L;
+    
     private BigInteger min = null;
     
     @Override
@@ -678,6 +721,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   };
   
   public static class MaxNAggregator<V extends Comparable<V>> implements Aggregator<V> {
+    private static final long serialVersionUID = 1L;
+    
     private final int arity;
     private transient SortedSet<V> elements;
 
@@ -711,6 +756,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class MinNAggregator<V extends Comparable<V>> implements Aggregator<V> {
+    private static final long serialVersionUID = 1L;
+    
     private final int arity;
     private transient SortedSet<V> elements;
     
@@ -744,6 +791,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
   
   public static class FirstNAggregator<V> implements Aggregator<V> {
+    private static final long serialVersionUID = 1L;
+    
     private final int arity;
     private final List<V> elements;
     
@@ -771,6 +820,8 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   }
 
   public static class LastNAggregator<V> implements Aggregator<V> {
+    private static final long serialVersionUID = 1L;
+    
     private final int arity;
     private final LinkedList<V> elements;
     

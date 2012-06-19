@@ -27,6 +27,8 @@ import com.cloudera.crunch.Pair;
  */
 public abstract class JoinFn<K, U, V>
     extends DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>> {
+  private static final long serialVersionUID = 1L;
+  
   /** @return The name of this join type (e.g. innerJoin, leftOuterJoin). */
   public abstract String getJoinType();
 

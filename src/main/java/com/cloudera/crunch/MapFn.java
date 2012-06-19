@@ -21,6 +21,7 @@ package com.cloudera.crunch;
  *
  */
 public abstract class MapFn<S, T> extends DoFn<S, T> {
+  private static final long serialVersionUID = 1L;
   
   /**
    * Maps the given input into an instance of the output type.

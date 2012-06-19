@@ -90,9 +90,9 @@ public class JoinUtils {
     }
   }
   
-  public static class AvroIndexedRecordPartitioner extends Partitioner<AvroKey, AvroValue> {
+  public static class AvroIndexedRecordPartitioner<K, V> extends Partitioner<AvroKey<K>, AvroValue<V>> {
     @Override
-    public int getPartition(AvroKey key, AvroValue value, int numPartitions) {
+    public int getPartition(AvroKey<K> key, AvroValue<V> value, int numPartitions) {
       IndexedRecord record = (IndexedRecord) key.datum();
       return (Math.abs(record.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }

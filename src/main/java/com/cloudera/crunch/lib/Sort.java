@@ -111,6 +111,7 @@ public class Sort {
         collection.getPType(), order);
     PTable<T, Void> pt =
       collection.parallelDo("sort-pre", new DoFn<T, Pair<T, Void>>() {
+        private static final long serialVersionUID = 1L;
         @Override
         public void process(T input,
             Emitter<Pair<T, Void>> emitter) {
@@ -119,6 +120,7 @@ public class Sort {
       }, type);
     PTable<T, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo("sort-post", new DoFn<Pair<T, Void>, T>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<T, Void> input, Emitter<T> emitter) {
         emitter.emit(input.first());
@@ -166,6 +168,7 @@ public class Sort {
         tf.nulls());
     PTable<Pair<U, V>, Void> pt =
       collection.parallelDo(new DoFn<Pair<U, V>, Pair<Pair<U, V>, Void>>() {
+        private static final long serialVersionUID = 1L;
         @Override
         public void process(Pair<U, V> input,
             Emitter<Pair<Pair<U, V>, Void>> emitter) {
@@ -176,6 +179,7 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Pair<U, V>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Pair<U, V>,Void>, Pair<U, V>>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Pair<U, V>, Void> input,
           Emitter<Pair<U, V>> emitter) {
@@ -200,6 +204,7 @@ public class Sort {
         tf.nulls());
     PTable<Tuple3<V1, V2, V3>, Void> pt =
       collection.parallelDo(new DoFn<Tuple3<V1, V2, V3>, Pair<Tuple3<V1, V2, V3>, Void>>() {
+        private static final long serialVersionUID = 1L;
         @Override
         public void process(Tuple3<V1, V2, V3> input,
             Emitter<Pair<Tuple3<V1, V2, V3>, Void>> emitter) {
@@ -210,6 +215,7 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple3<V1, V2, V3>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Tuple3<V1, V2, V3>,Void>, Tuple3<V1, V2, V3>>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Tuple3<V1, V2, V3>, Void> input,
           Emitter<Tuple3<V1, V2, V3>> emitter) {
@@ -234,6 +240,7 @@ public class Sort {
         tf.nulls());
     PTable<Tuple4<V1, V2, V3, V4>, Void> pt =
       collection.parallelDo(new DoFn<Tuple4<V1, V2, V3, V4>, Pair<Tuple4<V1, V2, V3, V4>, Void>>() {
+        private static final long serialVersionUID = 1L;
         @Override
         public void process(Tuple4<V1, V2, V3, V4> input,
             Emitter<Pair<Tuple4<V1, V2, V3, V4>, Void>> emitter) {
@@ -244,6 +251,7 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple4<V1, V2, V3, V4>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Tuple4<V1, V2, V3, V4>,Void>, Tuple4<V1, V2, V3, V4>>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Tuple4<V1, V2, V3, V4>, Void> input,
           Emitter<Tuple4<V1, V2, V3, V4>> emitter) {
@@ -267,6 +275,7 @@ public class Sort {
         tf.nulls());
     PTable<TupleN, Void> pt =
       collection.parallelDo(new DoFn<TupleN, Pair<TupleN, Void>>() {
+        private static final long serialVersionUID = 1L;
         @Override
         public void process(TupleN input,
             Emitter<Pair<TupleN, Void>> emitter) {
@@ -277,6 +286,7 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<TupleN, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<TupleN,Void>, TupleN>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<TupleN, Void> input,
           Emitter<TupleN> emitter) {
@@ -286,14 +296,14 @@ public class Sort {
   }
   
   // TODO: move to type family?
-  private static GroupingOptions buildGroupingOptions(Configuration conf,
-      PTypeFamily tf, PType ptype, Order order) {
+  private static <T> GroupingOptions buildGroupingOptions(Configuration conf,
+      PTypeFamily tf, PType<T> ptype, Order order) {
     Builder builder = GroupingOptions.builder();
     if (order == Order.DESCENDING) {
       if (tf == WritableTypeFamily.getInstance()) {
         builder.sortComparatorClass(ReverseWritableComparator.class);
       } else if (tf == AvroTypeFamily.getInstance()) {
-        AvroType avroType = (AvroType) ptype;
+        AvroType<T> avroType = (AvroType<T>) ptype;
         Schema schema = avroType.getSchema();
         conf.set("crunch.schema", schema.toString());
         builder.sortComparatorClass(ReverseAvroComparator.class);
@@ -304,8 +314,8 @@ public class Sort {
     return builder.build();
   }
   
-  private static GroupingOptions buildGroupingOptions(Configuration conf,
-      PTypeFamily tf, PType ptype, ColumnOrder[] columnOrders) {
+  private static <T> GroupingOptions buildGroupingOptions(Configuration conf,
+      PTypeFamily tf, PType<T> ptype, ColumnOrder[] columnOrders) {
     Builder builder = GroupingOptions.builder();
     if (tf == WritableTypeFamily.getInstance()) {
       TupleWritableComparator.configureOrdering(conf, columnOrders);
@@ -355,7 +365,7 @@ public class Sort {
     public void setConf(Configuration conf) {
       super.setConf(conf);
       if (conf != null) {
-        schema = Schema.parse(conf.get("crunch.schema"));
+        schema = (new Schema.Parser()).parse(conf.get("crunch.schema"));
       }
     }
 
@@ -480,12 +490,12 @@ public class Sort {
     public void setConf(Configuration conf) {
       super.setConf(conf);
       if (conf != null) {
-        schema = Schema.parse(conf.get("crunch.schema"));
+        schema = (new Schema.Parser()).parse(conf.get("crunch.schema"));
       }
     }
 
-    public static void configureOrdering(Configuration conf, ColumnOrder[] columnOrders,
-        PType ptype) {
+    public static <S> void configureOrdering(Configuration conf, ColumnOrder[] columnOrders,
+        PType<S> ptype) {
       Schema orderedSchema = createOrderedTupleSchema(ptype, columnOrders);
       conf.set("crunch.schema", orderedSchema.toString());
     }
@@ -493,19 +503,19 @@ public class Sort {
     // TODO: move to Avros
     // TODO: need to re-order columns in map output then switch back in the reduce
     //       this will require more extensive changes in Crunch
-    private static Schema createOrderedTupleSchema(PType ptype, ColumnOrder[] orders) {
+    private static <S> Schema createOrderedTupleSchema(PType<S> ptype, ColumnOrder[] orders) {
       // Guarantee each tuple schema has a globally unique name
       String tupleName = "tuple" + UUID.randomUUID().toString().replace('-', 'x');
       Schema schema = Schema.createRecord(tupleName, "", "crunch", false);
       List<Schema.Field> fields = Lists.newArrayList();
-      AvroType parentAvroType = (AvroType) ptype;
+      AvroType<S> parentAvroType = (AvroType<S>) ptype;
       Schema parentAvroSchema = parentAvroType.getSchema();
       
       BitSet orderedColumns = new BitSet();
       // First add any fields specified by ColumnOrder
       for (ColumnOrder columnOrder : orders) {
         int index = columnOrder.column - 1;
-        AvroType atype = (AvroType) ptype.getSubTypes().get(index);
+        AvroType<?> atype = (AvroType<?>) ptype.getSubTypes().get(index);
         Schema fieldSchema = Schema.createUnion(
             ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
         String fieldName = parentAvroSchema.getFields().get(index).name();
@@ -518,7 +528,7 @@ public class Sort {
         if (orderedColumns.get(i)) {
           continue;
         }
-        AvroType atype = (AvroType) ptype.getSubTypes().get(i);
+        AvroType<?> atype = (AvroType<?>) ptype.getSubTypes().get(i);
         Schema fieldSchema = Schema.createUnion(
             ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
         String fieldName = parentAvroSchema.getFields().get(i).name();

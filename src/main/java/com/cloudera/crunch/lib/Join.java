@@ -127,18 +127,20 @@ public class Join {
 
     PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("joinTagLeft",
         new MapFn<Pair<K, U>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
-          @Override
-          public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, U> input) {
-            return Pair.of(Pair.of(input.first(), 0), Pair.of(input.second(), (V) null));
-          }
-        }, ptt);
+      private static final long serialVersionUID = 1L;
+      @Override
+      public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, U> input) {
+        return Pair.of(Pair.of(input.first(), 0), Pair.of(input.second(), (V) null));
+      }
+    }, ptt);
     PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("joinTagRight",
         new MapFn<Pair<K, V>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
-          @Override
-          public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, V> input) {
-            return Pair.of(Pair.of(input.first(), 1), Pair.of((U) null, input.second()));
-          }
-        }, ptt);
+      private static final long serialVersionUID = 1L;
+      @Override
+      public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, V> input) {
+        return Pair.of(Pair.of(input.first(), 1), Pair.of((U) null, input.second()));
+      }
+    }, ptt);
     
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
     optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));

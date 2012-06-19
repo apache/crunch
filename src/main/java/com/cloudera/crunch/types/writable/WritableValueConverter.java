@@ -20,7 +20,8 @@ import org.apache.hadoop.io.NullWritable;
 import com.cloudera.crunch.types.Converter;
 
 class WritableValueConverter<W> implements Converter<Object, W, W, Iterable<W>> {
-
+  private static final long serialVersionUID = 1L;
+  
   private final Class<W> serializationClass;
   
   public WritableValueConverter(Class<W> serializationClass) {

@@ -28,6 +28,7 @@ public class PTables {
 
   public static <K, V> PCollection<K> keys(PTable<K, V> ptable) {
     return ptable.parallelDo("PTables.keys", new DoFn<Pair<K, V>, K>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<K, V> input, Emitter<K> emitter) {
         emitter.emit(input.first());
@@ -37,6 +38,7 @@ public class PTables {
   
   public static <K, V> PCollection<V> values(PTable<K, V> ptable) {
     return ptable.parallelDo("PTables.values", new DoFn<Pair<K, V>, V>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<K, V> input, Emitter<V> emitter) {
         emitter.emit(input.second());

@@ -16,12 +16,10 @@ package com.cloudera.crunch.types.avro;
 
 import java.util.Collection;
 
-import com.cloudera.crunch.types.Converter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
 import org.apache.avro.mapred.AvroValue;
-import org.apache.avro.specific.SpecificRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 

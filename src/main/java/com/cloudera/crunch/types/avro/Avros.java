@@ -80,6 +80,7 @@ public class Avros {
   }
   
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
+    private static final long serialVersionUID = 1L;
     @Override
     public String map(CharSequence input) {
       return input.toString();
@@ -87,6 +88,7 @@ public class Avros {
   };
   
   public static MapFn<String, Utf8> STRING_TO_UTF8 = new MapFn<String, Utf8>() {
+    private static final long serialVersionUID = 1L;
     @Override
     public Utf8 map(String input) {
       return new Utf8(input);
@@ -94,6 +96,7 @@ public class Avros {
   };
 
   public static MapFn<Object, ByteBuffer> BYTES_IN = new MapFn<Object, ByteBuffer>() {
+    private static final long serialVersionUID = 1L;
 	@Override
 	public ByteBuffer map(Object input) {
 	  if (input instanceof ByteBuffer) {
@@ -114,7 +117,7 @@ public class Avros {
   private static final AvroType<ByteBuffer> bytes = new AvroType<ByteBuffer>(
 	  ByteBuffer.class, Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance());
   
-  private static final Map<Class, PType> PRIMITIVES = ImmutableMap.<Class, PType>builder()
+  private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>>builder()
       .put(String.class, strings)
       .put(Long.class, longs)
       .put(Integer.class, ints)
@@ -124,14 +127,14 @@ public class Avros {
       .put(ByteBuffer.class, bytes)
       .build();
   
-  private static final Map<Class, AvroType> EXTENSIONS = Maps.newHashMap();
+  private static final Map<Class<?>, AvroType<?>> EXTENSIONS = Maps.newHashMap();
   
   public static <T> void register(Class<T> clazz, AvroType<T> ptype) {
     EXTENSIONS.put(clazz, ptype);
   }
   
   public static <T> PType<T> getPrimitiveType(Class<T> clazz) {
-    return PRIMITIVES.get(clazz);
+    return (PType<T>) PRIMITIVES.get(clazz);
   }
   
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
@@ -190,6 +193,7 @@ public class Avros {
   }
   
   private static class BytesToWritableMapFn<T extends Writable> extends MapFn<ByteBuffer, T> {
+    private static final long serialVersionUID = 1L;
     private static final Log LOG = LogFactory.getLog(BytesToWritableMapFn.class);
     
     private final Class<T> writableClazz;
@@ -212,6 +216,7 @@ public class Avros {
   }
   
   private static class WritableToBytesMapFn<T extends Writable> extends MapFn<T, ByteBuffer> {
+    private static final long serialVersionUID = 1L;
     private static final Log LOG = LogFactory.getLog(WritableToBytesMapFn.class);
     
     @Override
@@ -233,7 +238,8 @@ public class Avros {
   }
   
   private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {
-    
+    private static final long serialVersionUID = 1L;
+
     private final MapFn mapFn;
     
     public GenericDataArrayToCollection(MapFn mapFn) {
@@ -274,6 +280,7 @@ public class Avros {
   }
   
   private static class CollectionToGenericDataArray extends MapFn<Collection, GenericData.Array> {
+    private static final long serialVersionUID = 1L;
     
     private final MapFn mapFn;
     private final String jsonSchema;
@@ -321,6 +328,7 @@ public class Avros {
   }
 
   private static class AvroMapToMap<T> extends MapFn<Map<CharSequence, Object>, Map<String, T>> {
+    private static final long serialVersionUID = 1L;
 	private final MapFn<Object, T> mapFn;
 	
 	public AvroMapToMap(MapFn<Object, T> mapFn) {
@@ -353,6 +361,7 @@ public class Avros {
   }
   
   private static class MapToAvroMap<T> extends MapFn<Map<String, T>, Map<Utf8, Object>> {
+    private static final long serialVersionUID = 1L;
 	private final MapFn<T, Object> mapFn;
 	
 	public MapToAvroMap(MapFn<T, Object> mapFn) {
@@ -393,15 +402,16 @@ public class Avros {
   }
   
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
-    private final TupleFactory tupleFactory;
+    private static final long serialVersionUID = 1L;
+    private final TupleFactory<?> tupleFactory;
     private final List<MapFn> fns;
     
     private transient Object[] values;
     
-    public GenericRecordToTuple(TupleFactory tupleFactory, PType... ptypes) {
+    public GenericRecordToTuple(TupleFactory<?> tupleFactory, PType<?>... ptypes) {
       this.tupleFactory = tupleFactory;
       this.fns = Lists.newArrayList();
-      for (PType ptype : ptypes) {
+      for (PType<?> ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
         fns.add(atype.getInputMapFn());
       }
@@ -445,12 +455,13 @@ public class Avros {
   }
   
   private static class TupleToGenericRecord extends MapFn<Tuple, GenericRecord> {
+    private static final long serialVersionUID = 1L;
     private final List<MapFn> fns;
     private final String jsonSchema;
     
     private transient GenericRecord record;
     
-    public TupleToGenericRecord(Schema schema, PType... ptypes) {
+    public TupleToGenericRecord(Schema schema, PType<?>... ptypes) {
       this.fns = Lists.newArrayList();
       this.jsonSchema = schema.toString();
       for (PType ptype : ptypes) {
@@ -539,7 +550,7 @@ public class Avros {
         ptypes);  
   }
   
-  private static Schema createTupleSchema(PType... ptypes) {
+  private static Schema createTupleSchema(PType<?>... ptypes) {
 	// Guarantee each tuple schema has a globally unique name
 	String tupleName = "tuple" + UUID.randomUUID().toString().replace('-', 'x');
     Schema schema = Schema.createRecord(tupleName, "", "crunch", false);

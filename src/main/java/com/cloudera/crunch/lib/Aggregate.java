@@ -47,6 +47,8 @@ public class Aggregate {
   public static <S> PTable<S, Long> count(PCollection<S> collect) {
     PTypeFamily tf = collect.getTypeFamily();
     return collect.parallelDo("Aggregate.count", new MapFn<S, Pair<S, Long>>() {
+      private static final long serialVersionUID = 1L;
+      
       @Override
       public Pair<S, Long> map(S input) {
         return Pair.of(input, 1L);
@@ -65,12 +67,14 @@ public class Aggregate {
     
     @Override
     public int compare(Pair<K, V> left, Pair<K, V> right) {
-      int cmp = ((Comparable<V>)left.second()).compareTo(right.second());
+      int cmp = ((Comparable<V>) left.second()).compareTo(right.second());
       return ascending ? cmp : -cmp;
     }
   }
   
   public static class TopKFn<K, V> extends DoFn<Pair<K, V>, Pair<Integer, Pair<K, V>>> {
+    private static final long serialVersionUID = 1L;
+    
     private final int limit;
     private final boolean maximize;
     private transient PriorityQueue<Pair<K, V>> values;
@@ -102,7 +106,8 @@ public class Aggregate {
   }
   
   public static class TopKCombineFn<K, V> extends CombineFn<Integer, Pair<K, V>> {
-
+    private static final long serialVersionUID = 1L;
+    
     private final int limit;
     private final boolean maximize;
     
@@ -140,6 +145,7 @@ public class Aggregate {
         .groupByKey(1)
         .combineValues(new TopKCombineFn<K, V>(limit, maximize))
         .parallelDo("top" + limit + "reduce", new DoFn<Pair<Integer, Pair<K, V>>, Pair<K, V>>() {
+          private static final long serialVersionUID = 1L;
           @Override
           public void process(Pair<Integer, Pair<K, V>> input,
               Emitter<Pair<K, V>> emitter) {
@@ -160,6 +166,8 @@ public class Aggregate {
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
         collect.parallelDo("max", new DoFn<S, Pair<Boolean, S>>() {
+          private static final long serialVersionUID = 1L;
+          
           private transient S max = null;
           
           @Override
@@ -177,6 +185,8 @@ public class Aggregate {
           }
         }, tf.tableOf(tf.booleans(), collect.getPType()))
         .groupByKey(1).combineValues(new CombineFn<Boolean, S>() {
+          private static final long serialVersionUID = 1L;
+          
           @Override
           public void process(Pair<Boolean, Iterable<S>> input,
               Emitter<Pair<Boolean, S>> emitter) {
@@ -202,6 +212,7 @@ public class Aggregate {
     PTypeFamily tf = collect.getTypeFamily();
     return PTables.values(
         collect.parallelDo("min", new DoFn<S, Pair<Boolean, S>>() {
+          private static final long serialVersionUID = 1L;
           private transient S min = null;
           
           @Override
@@ -219,6 +230,7 @@ public class Aggregate {
           }
         }, tf.tableOf(tf.booleans(), collect.getPType()))
         .groupByKey().combineValues(new CombineFn<Boolean, S>() {
+          private static final long serialVersionUID = 1L;
           @Override
           public void process(Pair<Boolean, Iterable<S>> input,
               Emitter<Pair<Boolean, S>> emitter) {
@@ -235,6 +247,7 @@ public class Aggregate {
   public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {
     PTypeFamily tf = collect.getTypeFamily();
     return collect.groupByKey().parallelDo("collect", new MapValuesFn<K, Iterable<V>, Collection<V>>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public Collection<V> map(Iterable<V> v) {
         return Lists.newArrayList(v);

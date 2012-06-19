@@ -18,10 +18,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
-import com.cloudera.crunch.types.PTableType;
-import com.cloudera.crunch.types.PType;
-import com.cloudera.crunch.types.PTypeFamily;
-import com.cloudera.crunch.types.PTypeUtils;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 
@@ -131,7 +127,7 @@ public class AvroTypeFamily implements PTypeFamily {
   }
 
   @Override
-  public PType<TupleN> tuples(PType... ptypes) {
+  public PType<TupleN> tuples(PType<?>... ptypes) {
     return Avros.tuples(ptypes);
   }
 
@@ -158,7 +154,7 @@ public class AvroTypeFamily implements PTypeFamily {
   }
 
   @Override
-  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes) {
+  public <T extends Tuple> PType<T> tuples(Class<T> clazz, PType<?>... ptypes) {
     return Avros.tuples(clazz, ptypes);
   }
 
@@ -167,6 +163,4 @@ public class AvroTypeFamily implements PTypeFamily {
       MapFn<T, S> outputFn, PType<S> base) {
     return Avros.derived(clazz, inputFn, outputFn, base);
   }
-
-
 }

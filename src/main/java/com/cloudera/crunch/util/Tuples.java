@@ -122,9 +122,9 @@ public class Tuples {
   }
   
   public static class TupleNIterable implements Iterable<TupleN> {
-    private final Iterator[] iters;
+    private final Iterator<?>[] iters;
     
-    public TupleNIterable(Iterable... iterables) {
+    public TupleNIterable(Iterable<?>... iterables) {
       this.iters = new Iterator[iterables.length];
       for (int i = 0; i < iters.length; i++) {
         iters[i] = iterables[i].iterator();

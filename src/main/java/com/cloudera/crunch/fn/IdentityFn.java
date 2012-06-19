@@ -17,7 +17,8 @@ package com.cloudera.crunch.fn;
 import com.cloudera.crunch.MapFn;
 
 public class IdentityFn<T> extends MapFn<T, T> {
-
+  private static final long serialVersionUID = 1L;
+  
   private static final IdentityFn<Object> INSTANCE = new IdentityFn<Object>();
 
   @SuppressWarnings("unchecked")

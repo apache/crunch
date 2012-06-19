@@ -24,7 +24,8 @@ import com.google.common.base.Preconditions;
 public class Sample {
 
   public static class SamplerFn<S> extends DoFn<S, S> {
-	
+    private static final long serialVersionUID = 1L;
+    
 	private final long seed;
 	private final double acceptanceProbability;
 	private transient Random r;

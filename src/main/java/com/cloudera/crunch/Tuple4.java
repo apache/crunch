@@ -88,7 +88,7 @@ public class Tuple4<V1, V2, V3, V4> implements Tuple {
       return false;
     if (getClass() != obj.getClass())
       return false;
-    Tuple4 other = (Tuple4) obj;
+    Tuple4<?, ?, ?, ?> other = (Tuple4<?, ?, ?, ?>) obj;
     return (first == other.first || (first != null && first.equals(other.first))) &&
     	(second == other.second || (second != null && second.equals(other.second))) &&
     	(third == other.third || (third != null && third.equals(other.third))) &&

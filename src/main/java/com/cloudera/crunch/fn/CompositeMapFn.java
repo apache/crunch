@@ -20,7 +20,8 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 
 public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
-
+  private static final long serialVersionUID = 1L;
+  
   private final MapFn<R, S> first;
   private final MapFn<S, T> second;
   

@@ -40,16 +40,17 @@ public class Set {
   public static <T> PCollection<T> difference(PCollection<T> coll1,
       PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-     .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
-      @Override
-      public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
-          Emitter<T> emitter) {
-        Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
-        if (!groups.first().isEmpty() && groups.second().isEmpty()) {
-          emitter.emit(input.first());
-        }
-      }
-    }, coll1.getPType());
+        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
+          private static final long serialVersionUID = 1L;
+          @Override
+          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
+              Emitter<T> emitter) {
+            Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
+            if (!groups.first().isEmpty() && groups.second().isEmpty()) {
+              emitter.emit(input.first());
+            }
+          }
+        }, coll1.getPType());
   }
   
   /**
@@ -61,16 +62,17 @@ public class Set {
   public static <T> PCollection<T> intersection(PCollection<T> coll1,
       PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-     .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
-      @Override
-      public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
-          Emitter<T> emitter) {
-        Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
-        if (!groups.first().isEmpty() && !groups.second().isEmpty()) {
-          emitter.emit(input.first());
-        }
-      }
-    }, coll1.getPType());
+        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
+          private static final long serialVersionUID = 1L;
+          @Override
+          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
+              Emitter<T> emitter) {
+            Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
+            if (!groups.first().isEmpty() && !groups.second().isEmpty()) {
+              emitter.emit(input.first());
+            }
+          }
+        }, coll1.getPType());
   }
   
   /**
@@ -92,26 +94,28 @@ public class Set {
     PTypeFamily typeFamily = coll1.getTypeFamily();
     PType<T> type = coll1.getPType();
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-     .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>,
-         Tuple3<T, T, T>>() {
-      @Override
-      public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
-          Emitter<Tuple3<T, T, T>> emitter) {
-        Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
-        boolean inFirst = !groups.first().isEmpty();
-        boolean inSecond = !groups.second().isEmpty();
-        T t = input.first();
-        emitter.emit(Tuple3.of(
-            inFirst && !inSecond ? t : null,
-            !inFirst && inSecond ? t : null,
-            inFirst && inSecond ? t : null));
-      }
-    }, typeFamily.triples(type, type, type));
+        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>,
+            Tuple3<T, T, T>>() {
+          private static final long serialVersionUID = 1L;
+          @Override
+          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
+              Emitter<Tuple3<T, T, T>> emitter) {
+            Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
+            boolean inFirst = !groups.first().isEmpty();
+            boolean inSecond = !groups.second().isEmpty();
+            T t = input.first();
+            emitter.emit(Tuple3.of(
+                inFirst && !inSecond ? t : null,
+                    !inFirst && inSecond ? t : null,
+                        inFirst && inSecond ? t : null));
+          }
+        }, typeFamily.triples(type, type, type));
   }
   
   private static <T> PTable<T, Boolean> toTable(PCollection<T> coll) {
     PTypeFamily typeFamily = coll.getTypeFamily();
     return coll.parallelDo(new DoFn<T, Pair<T, Boolean>>() {
+      private static final long serialVersionUID = 1L;
       @Override
       public void process(T input, Emitter<Pair<T, Boolean>> emitter) {
         emitter.emit(Pair.of(input, Boolean.TRUE));

@@ -62,9 +62,9 @@ public interface PTypeFamily {
   <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
       PType<V2> p2, PType<V3> p3, PType<V4> p4);
 
-  PType<TupleN> tuples(PType... ptypes);
+  PType<TupleN> tuples(PType<?>... ptypes);
 
-  <T extends Tuple> PType<T> tuples(Class<T> clazz, PType... ptypes);
+  <T extends Tuple> PType<T> tuples(Class<T> clazz, PType<?>... ptypes);
   
   <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base);
   

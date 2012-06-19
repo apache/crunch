@@ -20,6 +20,8 @@ import org.apache.hadoop.io.NullWritable;
 import com.cloudera.crunch.types.Converter;
 
 public class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
+  private static final long serialVersionUID = 1L;
+  
   private transient AvroWrapper<K> wrapper = null;
   
   @Override

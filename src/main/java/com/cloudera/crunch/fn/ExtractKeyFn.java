@@ -22,7 +22,8 @@ import com.cloudera.crunch.Pair;
  * is used to convert from a {@code PCollection<V>} to a {@code PTable<K, V>}.
  */
 public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
-
+  private static final long serialVersionUID = 1L;
+  
   private final MapFn<V, K> mapFn;
   
   public ExtractKeyFn(MapFn<V, K> mapFn) {

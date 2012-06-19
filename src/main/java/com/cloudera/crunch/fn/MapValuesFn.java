@@ -19,6 +19,8 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.Pair;
 
 public abstract class MapValuesFn<K, V1, V2> extends DoFn<Pair<K, V1>, Pair<K, V2>> {
+  private static final long serialVersionUID = 1L;
+  
   @Override
   public void process(Pair<K, V1> input, Emitter<Pair<K, V2>> emitter) {
     emitter.emit(Pair.of(input.first(), map(input.second())));
