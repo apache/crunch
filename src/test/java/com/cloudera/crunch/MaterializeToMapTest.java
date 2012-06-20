@@ -14,11 +14,12 @@
  */
 package com.cloudera.crunch;
 
+import static junit.framework.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.Map;
 
 import org.junit.Test;
-import static junit.framework.Assert.assertTrue;
 
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;

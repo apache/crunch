@@ -15,8 +15,10 @@
 package com.cloudera.crunch.fn;
 
 import static org.junit.Assert.assertEquals;
-import com.cloudera.crunch.Pair;
+
 import org.junit.Test;
+
+import com.cloudera.crunch.Pair;
 
 @SuppressWarnings("serial")
 public class MapValuesTest {

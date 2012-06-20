@@ -19,11 +19,11 @@ import java.util.Random;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
-import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.PTable;
-import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.types.PTableType;
+import com.cloudera.crunch.types.PTypeFamily;
 
 /**
  * Utilities for Cartesian products of two {@code PTable} or {@code PCollection} instances.

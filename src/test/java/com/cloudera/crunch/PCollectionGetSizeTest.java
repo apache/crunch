@@ -13,9 +13,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.cloudera.crunch.FilterFn;
-import com.cloudera.crunch.PCollection;
-import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;

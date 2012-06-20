@@ -18,6 +18,8 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.hadoop.io.Writable;
+
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple;
@@ -29,7 +31,6 @@ import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.PTypeFamily;
 import com.cloudera.crunch.types.PTypeUtils;
-import org.apache.hadoop.io.Writable;
 
 /**
  * The {@link Writable}-based implementation of the {@link com.cloudera.crunch.types.PTypeFamily}

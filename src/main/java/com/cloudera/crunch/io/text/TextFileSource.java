@@ -37,7 +37,7 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements
 	return strPath.endsWith(".bz") || strPath.endsWith(".bz2");
   }
   
-  private static <S> Class<? extends FileInputFormat> getInputFormat(Path path, PType<S> ptype) {
+  private static <S> Class<? extends FileInputFormat<?,?>> getInputFormat(Path path, PType<S> ptype) {
 	if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
 	  return AvroUtf8InputFormat.class;
 	} else if (isBZip2(path)){

@@ -49,6 +49,7 @@ public class CrunchTaskContext {
   public List<RTNode> getNodes() throws IOException {
     Configuration conf = taskContext.getConfiguration();
     Path path = new Path(new Path(conf.get(PlanningParameters.CRUNCH_WORKING_DIRECTORY)), nodeContext.toString());
+    @SuppressWarnings("unchecked")
     List<RTNode> nodes = (List<RTNode>) DistCache.read(conf, path);
     if (nodes != null) {
       for (RTNode node : nodes) {

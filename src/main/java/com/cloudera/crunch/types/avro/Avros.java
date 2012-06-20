@@ -237,12 +237,12 @@ public class Avros {
         new WritableToBytesMapFn<T>());
   }
   
-  private static class GenericDataArrayToCollection extends MapFn<Object, Collection> {
+  private static class GenericDataArrayToCollection<T> extends MapFn<Object, Collection<T>> {
     private static final long serialVersionUID = 1L;
 
-    private final MapFn mapFn;
+    private final MapFn<Object,T> mapFn;
     
-    public GenericDataArrayToCollection(MapFn mapFn) {
+    public GenericDataArrayToCollection(MapFn<Object,T> mapFn) {
       this.mapFn = mapFn;
     }
     
@@ -262,24 +262,24 @@ public class Avros {
     }
     
     @Override
-    public Collection map(Object input) {
-      Collection ret = Lists.newArrayList();
+    public Collection<T> map(Object input) {
+      Collection<T> ret = Lists.newArrayList();
       if (input instanceof Collection) {
-    	for (Object in : (Collection) input) {
-    	  ret.add(mapFn.map(in));
-    	}
+        for (Object in : (Collection<Object>) input) {
+          ret.add(mapFn.map(in));
+        }
       } else {
-    	// Assume it is an array
-    	Object[] arr = (Object[]) input;
-    	for (Object in : arr) {
-    	  ret.add(mapFn.map(in));
-    	}
+        // Assume it is an array
+        Object[] arr = (Object[]) input;
+        for (Object in : arr) {
+          ret.add(mapFn.map(in));
+        }
       }
       return ret;
     }
   }
   
-  private static class CollectionToGenericDataArray extends MapFn<Collection, GenericData.Array> {
+  private static class CollectionToGenericDataArray extends MapFn<Collection<?>, GenericData.Array<?>> {
     private static final long serialVersionUID = 1L;
     
     private final MapFn mapFn;
@@ -307,7 +307,7 @@ public class Avros {
     }
     
     @Override
-    public GenericData.Array map(Collection input) {
+    public GenericData.Array<?> map(Collection<?> input) {
       if(schema == null) {
         schema = new Schema.Parser().parse(jsonSchema);
       }
@@ -322,7 +322,7 @@ public class Avros {
   public static final <T> AvroType<Collection<T>> collections(PType<T> ptype) {
     AvroType<T> avroType = (AvroType<T>) ptype;
     Schema collectionSchema = Schema.createArray(allowNulls(avroType.getSchema()));
-    GenericDataArrayToCollection input = new GenericDataArrayToCollection(avroType.getInputMapFn());
+    GenericDataArrayToCollection<T> input = new GenericDataArrayToCollection<T>(avroType.getInputMapFn());
     CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getOutputMapFn());
     return new AvroType(Collection.class, collectionSchema, input, output, ptype);
   }

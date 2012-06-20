@@ -15,8 +15,16 @@
 package com.cloudera.crunch.lib;
 
 import static com.cloudera.crunch.lib.Sort.ColumnOrder.by;
-import static com.cloudera.crunch.lib.Sort.Order.*;
+import static com.cloudera.crunch.lib.Sort.Order.ASCENDING;
+import static com.cloudera.crunch.lib.Sort.Order.DESCENDING;
 import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Arrays;
+
+import org.junit.Ignore;
+import org.junit.Test;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
@@ -27,7 +35,6 @@ import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
-import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Sort.ColumnOrder;
 import com.cloudera.crunch.lib.Sort.Order;
@@ -36,13 +43,6 @@ import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.PTypeFamily;
 import com.cloudera.crunch.types.avro.AvroTypeFamily;
 import com.cloudera.crunch.types.writable.WritableTypeFamily;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class SortTest implements Serializable {
   

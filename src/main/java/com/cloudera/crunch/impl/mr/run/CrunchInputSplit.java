@@ -36,8 +36,6 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import com.google.common.collect.Maps;
-
 public class CrunchInputSplit extends InputSplit implements Configurable, Writable {
 
   private InputSplit inputSplit;
@@ -90,7 +88,7 @@ public class CrunchInputSplit extends InputSplit implements Configurable, Writab
         conf.set(in.readUTF(), in.readUTF());
       }
     }
-    inputFormatClass = (Class<? extends InputFormat>) readClass(in);
+    inputFormatClass = (Class<? extends InputFormat<?,?>>) readClass(in);
     Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
     inputSplit = (InputSplit) ReflectionUtils
         .newInstance(inputSplitClass, conf);

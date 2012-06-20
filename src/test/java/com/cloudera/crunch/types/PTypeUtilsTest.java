@@ -19,10 +19,6 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.Collection;
 
-import com.cloudera.crunch.types.avro.AvroTypeFamily;
-import com.cloudera.crunch.types.avro.Avros;
-import com.cloudera.crunch.types.writable.WritableTypeFamily;
-import com.cloudera.crunch.types.writable.Writables;
 import org.apache.avro.Schema;
 import org.apache.avro.util.Utf8;
 import org.apache.hadoop.io.Text;

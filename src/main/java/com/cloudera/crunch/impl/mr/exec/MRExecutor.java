@@ -14,7 +14,6 @@
  */
 package com.cloudera.crunch.impl.mr.exec;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -32,17 +31,17 @@ import com.google.common.collect.Lists;
 public class MRExecutor {
 
   private static final Log LOG = LogFactory.getLog(MRExecutor.class);
-  
+
   private final CrunchJobControl control;
-  
+
   public MRExecutor(Class<?> jarClass) {
     this.control = new CrunchJobControl(jarClass.toString());
   }
-  
+
   public void addJob(CrunchJob job) {
     this.control.addJob(job);
   }
-  
+
   public PipelineResult execute() {
     try {
       Thread controlThread = new Thread(control);

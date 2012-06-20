@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
-import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.impl.mr.plan.DoNode;
 import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.writable.Writables;

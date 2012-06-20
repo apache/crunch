@@ -46,7 +46,7 @@ import com.google.common.collect.Sets;
 
 public class JobPrototype {
 
-  public static JobPrototype createMapReduceJob(PGroupedTableImpl group,
+  public static JobPrototype createMapReduceJob(PGroupedTableImpl<?,?> group,
       Set<NodePath> inputs, Path workingPath) {
     return new JobPrototype(inputs, group, workingPath);
   }
@@ -57,17 +57,17 @@ public class JobPrototype {
   }
 
   private final Set<NodePath> mapNodePaths;
-  private final PGroupedTableImpl group;
+  private final PGroupedTableImpl<?,?> group;
   private final Set<JobPrototype> dependencies = Sets.newHashSet();
-  private final Map<PCollectionImpl, DoNode> nodes = Maps.newHashMap();
+  private final Map<PCollectionImpl<?>, DoNode> nodes = Maps.newHashMap();
   private final Path workingPath;
   
   private HashMultimap<Target, NodePath> targetsToNodePaths;
-  private DoTableImpl combineFnTable;
+  private DoTableImpl<?,?> combineFnTable;
 
   private CrunchJob job;
 
-  private JobPrototype(Set<NodePath> inputs, PGroupedTableImpl group,
+  private JobPrototype(Set<NodePath> inputs, PGroupedTableImpl<?,?> group,
       Path workingPath) {
     this.mapNodePaths = ImmutableSet.copyOf(inputs);
     this.group = group;
@@ -119,7 +119,7 @@ public class JobPrototype {
       DoNode node = null;
       for (NodePath nodePath : targetsToNodePaths.get(target)) {
         if (node == null) {
-          PCollectionImpl collect = nodePath.tail();
+          PCollectionImpl<?> collect = nodePath.tail();
           node = DoNode.createOutputNode(target.toString(), collect.getPType());
           outputHandler.configureNode(node, target);
         }
@@ -154,7 +154,7 @@ public class JobPrototype {
         // Advance these one step, since we've already configured
         // the grouping node, and the PGroupedTableImpl is the tail
         // of the NodePath.
-        Iterator<PCollectionImpl> iter = nodePath.descendingIterator();
+        Iterator<PCollectionImpl<?>> iter = nodePath.descendingIterator();
         iter.next();
         mapNodes.add(walkPath(iter, mapOutputNode));
       }
@@ -199,15 +199,15 @@ public class JobPrototype {
     return builder.build();
   }
   
-  private DoNode walkPath(Iterator<PCollectionImpl> iter, DoNode working) {
+  private DoNode walkPath(Iterator<PCollectionImpl<?>> iter, DoNode working) {
     while (iter.hasNext()) {
-      PCollectionImpl collect = iter.next();
+      PCollectionImpl<?> collect = iter.next();
       if (combineFnTable != null &&
           !(collect instanceof PGroupedTableImpl)) {
         combineFnTable = null;
       } else if (collect instanceof DoTableImpl &&
-          ((DoTableImpl) collect).hasCombineFn()) {
-        combineFnTable = (DoTableImpl) collect;
+          ((DoTableImpl<?,?>) collect).hasCombineFn()) {
+        combineFnTable = (DoTableImpl<?,?>) collect;
       }
       if (!nodes.containsKey(collect)) {
         nodes.put(collect, collect.createDoNode());

@@ -16,11 +16,11 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertTrue;
 
-import com.cloudera.crunch.DoFn;
-import com.cloudera.crunch.Emitter;
-import com.cloudera.crunch.PCollection;
-import com.cloudera.crunch.PTable;
-import com.cloudera.crunch.Pipeline;
+import java.io.IOException;
+import java.util.Collection;
+
+import org.junit.Test;
+
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.test.FileHelper;
@@ -29,11 +29,6 @@ import com.cloudera.crunch.types.avro.AvroTypeFamily;
 import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
-import java.io.IOException;
-import java.util.Collection;
-
-import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class CollectionsTest {

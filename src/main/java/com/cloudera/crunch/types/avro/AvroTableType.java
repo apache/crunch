@@ -14,7 +14,6 @@
  */
 package com.cloudera.crunch.types.avro;
 
-import com.cloudera.crunch.types.PTableType;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.hadoop.conf.Configuration;

@@ -49,7 +49,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
     for (Map.Entry<InputBundle, Map<Integer, List<Path>>> entry : formatNodeMap.entrySet()) {
       InputBundle inputBundle = entry.getKey();
       Job jobCopy = new Job(conf);
-      InputFormat format = (InputFormat) ReflectionUtils.newInstance(
+      InputFormat<?,?> format = (InputFormat<?,?>) ReflectionUtils.newInstance(
           inputBundle.getInputFormatClass(), jobCopy.getConfiguration());
       for (Map.Entry<Integer, List<Path>> nodeEntry : entry.getValue()
           .entrySet()) {
@@ -72,7 +72,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
   @Override
   public RecordReader<K, V> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext context) throws IOException, InterruptedException {
-    return new CrunchRecordReader(inputSplit, context);
+    return new CrunchRecordReader<K,V>(inputSplit, context);
   }
 
 }

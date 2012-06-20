@@ -14,6 +14,21 @@
  */
 package com.cloudera.crunch;
 
+import static com.cloudera.crunch.CombineFn.MAX_BIGINTS;
+import static com.cloudera.crunch.CombineFn.MAX_DOUBLES;
+import static com.cloudera.crunch.CombineFn.MAX_FLOATS;
+import static com.cloudera.crunch.CombineFn.MAX_INTS;
+import static com.cloudera.crunch.CombineFn.MAX_LONGS;
+import static com.cloudera.crunch.CombineFn.MIN_BIGINTS;
+import static com.cloudera.crunch.CombineFn.MIN_DOUBLES;
+import static com.cloudera.crunch.CombineFn.MIN_FLOATS;
+import static com.cloudera.crunch.CombineFn.MIN_INTS;
+import static com.cloudera.crunch.CombineFn.MIN_LONGS;
+import static com.cloudera.crunch.CombineFn.SUM_BIGINTS;
+import static com.cloudera.crunch.CombineFn.SUM_DOUBLES;
+import static com.cloudera.crunch.CombineFn.SUM_FLOATS;
+import static com.cloudera.crunch.CombineFn.SUM_INTS;
+import static com.cloudera.crunch.CombineFn.SUM_LONGS;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
@@ -21,8 +36,16 @@ import java.util.List;
 
 import org.junit.Test;
 
-import static com.cloudera.crunch.CombineFn.*;
-
+import com.cloudera.crunch.CombineFn.Aggregator;
+import com.cloudera.crunch.CombineFn.AggregatorFactory;
+import com.cloudera.crunch.CombineFn.FirstNAggregator;
+import com.cloudera.crunch.CombineFn.LastNAggregator;
+import com.cloudera.crunch.CombineFn.MaxNAggregator;
+import com.cloudera.crunch.CombineFn.MinNAggregator;
+import com.cloudera.crunch.CombineFn.PairAggregator;
+import com.cloudera.crunch.CombineFn.QuadAggregator;
+import com.cloudera.crunch.CombineFn.TripAggregator;
+import com.cloudera.crunch.CombineFn.TupleNAggregator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 

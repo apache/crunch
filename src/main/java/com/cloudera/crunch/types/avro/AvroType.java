@@ -16,9 +16,6 @@ package com.cloudera.crunch.types.avro;
 
 import java.util.List;
 
-import com.cloudera.crunch.types.Converter;
-import com.cloudera.crunch.types.PType;
-import com.cloudera.crunch.types.PTypeFamily;
 import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.commons.lang.builder.HashCodeBuilder;

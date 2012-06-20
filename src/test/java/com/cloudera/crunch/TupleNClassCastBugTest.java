@@ -14,28 +14,28 @@
  */
 package com.cloudera.crunch;
 
-import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.lib.Aggregate;
-import com.cloudera.crunch.types.PTypeFamily;
-import com.cloudera.crunch.types.avro.AvroTypeFamily;
-import com.cloudera.crunch.types.writable.WritableTypeFamily;
-import com.google.common.io.Files;
-import org.junit.Test;
+import static com.google.common.io.Resources.getResource;
+import static com.google.common.io.Resources.newInputStreamSupplier;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
+import com.google.common.io.Files;
 
 public class TupleNClassCastBugTest {
 
   public static PCollection<TupleN> mapGroupDo(PCollection<String> lines, PTypeFamily ptf) {
     PTable<String, TupleN> mapped = lines.parallelDo(new MapFn<String, Pair<String, TupleN>>() {
+
       @Override
       public Pair<String, TupleN> map(String line) {
         String[] columns = line.split("\\t");

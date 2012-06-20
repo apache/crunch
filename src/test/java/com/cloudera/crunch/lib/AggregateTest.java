@@ -14,7 +14,8 @@
  */
 package com.cloudera.crunch.lib;
 
-import static com.cloudera.crunch.types.writable.Writables.*;
+import static com.cloudera.crunch.types.writable.Writables.strings;
+import static com.cloudera.crunch.types.writable.Writables.tableOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

@@ -20,8 +20,6 @@ import static org.junit.Assert.assertNotNull;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import com.cloudera.crunch.types.PTableType;
-import com.cloudera.crunch.types.PType;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
@@ -33,8 +31,8 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
-import com.cloudera.crunch.types.writable.Writables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 

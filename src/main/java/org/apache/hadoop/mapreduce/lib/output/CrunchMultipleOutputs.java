@@ -249,7 +249,6 @@ public class CrunchMultipleOutputs<KEYOUT, VALUEOUT> {
    * @param keyClass          key class
    * @param valueClass        value class
    */
-  @SuppressWarnings("unchecked")
   public static void addNamedOutput(Job job, String namedOutput,
       Class<? extends OutputFormat> outputFormatClass,
       Class<?> keyClass, Class<?> valueClass) {

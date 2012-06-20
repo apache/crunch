@@ -16,6 +16,11 @@ package com.cloudera.crunch;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Collection;
+import java.util.List;
+
+import org.junit.Test;
+
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.lib.Aggregate;
@@ -28,11 +33,6 @@ import com.cloudera.crunch.types.writable.WritableTypeFamily;
 import com.cloudera.crunch.util.PTypes;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-
-import java.util.Collection;
-import java.util.List;
-
-import org.junit.Test;
 
 public class PageRankTest {
 

@@ -14,14 +14,16 @@
  */
 package com.cloudera.crunch;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import com.cloudera.crunch.DoFn;
-import com.cloudera.crunch.Emitter;
-import com.cloudera.crunch.PCollection;
-import com.cloudera.crunch.PTable;
-import com.cloudera.crunch.Pipeline;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.List;
+
+import org.junit.Test;
+
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
 import com.cloudera.crunch.io.To;
@@ -34,19 +36,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
-
-import org.junit.Test;
-
 public class WordCountTest {
-  
-  enum WordCountStats { ANDS };
-  
+
+  enum WordCountStats {
+    ANDS
+  };
+
   public static PTable<String, Long> wordCount(PCollection<String> words, PTypeFamily typeFamily) {
     return Aggregate.count(words.parallelDo(new DoFn<String, String>() {
+
       @Override
       public void process(String line, Emitter<String> emitter) {
         for (String word : line.split("\\s+")) {
@@ -58,21 +56,21 @@ public class WordCountTest {
       }
     }, typeFamily.strings()));
   }
-  
+
   public static PTable<String, Long> substr(PTable<String, Long> ptable) {
-	return ptable.parallelDo(new DoFn<Pair<String, Long>, Pair<String, Long>>() {
-	  public void process(Pair<String, Long> input,
-		  Emitter<Pair<String, Long>> emitter) {
-		if (input.first().length() > 0) {
-		  emitter.emit(Pair.of(input.first().substring(0, 1), input.second()));
-		}
-	  }      
+    return ptable.parallelDo(new DoFn<Pair<String, Long>, Pair<String, Long>>() {
+
+      public void process(Pair<String, Long> input, Emitter<Pair<String, Long>> emitter) {
+        if (input.first().length() > 0) {
+          emitter.emit(Pair.of(input.first().substring(0, 1), input.second()));
+        }
+      }
     }, ptable.getPTableType());
   }
-  
+
   private boolean runSecond = false;
   private boolean useToOutput = false;
-  
+
   @Test
   public void testWritables() throws IOException {
     run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
@@ -81,7 +79,7 @@ public class WordCountTest {
   @Test
   public void testWritablesWithSecond() throws IOException {
     runSecond = true;
-	run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountTest.class), WritableTypeFamily.getInstance());
   }
 
   @Test
@@ -95,57 +93,55 @@ public class WordCountTest {
   public void testAvro() throws IOException {
     run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
   }
-  
+
   @Test
   public void testAvroWithSecond() throws IOException {
     runSecond = true;
     run(new MRPipeline(WordCountTest.class), AvroTypeFamily.getInstance());
   }
-  
+
   @Test
   public void testWithTopWritable() throws IOException {
     runWithTop(WritableTypeFamily.getInstance());
   }
-  
+
   @Test
   public void testWithTopAvro() throws IOException {
-    runWithTop(AvroTypeFamily.getInstance()); 
+    runWithTop(AvroTypeFamily.getInstance());
   }
-  
+
   public static void runWithTop(PTypeFamily tf) throws IOException {
     Pipeline pipeline = new MRPipeline(WordCountTest.class);
     String inputPath = FileHelper.createTempCopyOf("shakes.txt");
-    
-    PCollection<String> shakespeare = pipeline.read(
-         At.textFile(inputPath, tf.strings()));
+
+    PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, tf.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, tf);
-    List<Pair<String, Long>> top5 = Lists.newArrayList(
-        Aggregate.top(wordCount, 5, true).materialize());
-    assertEquals(ImmutableList.of(Pair.of("", 1470L),
-        Pair.of("the", 620L), Pair.of("and", 427L), Pair.of("of", 396L), 
-        Pair.of("to", 367L)), top5);
+    List<Pair<String, Long>> top5 = Lists.newArrayList(Aggregate.top(wordCount, 5, true)
+        .materialize());
+    assertEquals(
+        ImmutableList.of(Pair.of("", 1470L), Pair.of("the", 620L), Pair.of("and", 427L),
+            Pair.of("of", 396L), Pair.of("to", 367L)), top5);
   }
-  
+
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-	String inputPath = FileHelper.createTempCopyOf("shakes.txt");
-	File output = FileHelper.createOutputPath();
-	String outputPath = output.getAbsolutePath();
-	
-    PCollection<String> shakespeare = pipeline.read(
-         At.textFile(inputPath, typeFamily.strings()));
+    String inputPath = FileHelper.createTempCopyOf("shakes.txt");
+    File output = FileHelper.createOutputPath();
+    String outputPath = output.getAbsolutePath();
+
+    PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, typeFamily.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
     if (useToOutput) {
       wordCount.write(To.textFile(outputPath));
     } else {
       pipeline.writeTextFile(wordCount, outputPath);
     }
-    
+
     if (runSecond) {
       File substrCount = File.createTempFile("substr", "");
       String substrPath = substrCount.getAbsolutePath();
       substrCount.delete();
       PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(
-          CombineFn.<String>SUM_LONGS());
+          CombineFn.<String> SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
     PipelineResult res = pipeline.done();
@@ -157,7 +153,7 @@ public class WordCountTest {
       assertEquals(1, stageResults.size());
       assertEquals(427, stageResults.get(0).getCounterValue(WordCountStats.ANDS));
     }
-    
+
     File outputFile = new File(outputPath, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
@@ -168,6 +164,6 @@ public class WordCountTest {
       }
     }
     assertTrue(passed);
-	output.deleteOnExit();
-  }  
+    output.deleteOnExit();
+  }
 }

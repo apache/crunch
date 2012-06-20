@@ -20,14 +20,14 @@ import java.util.LinkedList;
 import com.cloudera.crunch.impl.mr.collect.PCollectionImpl;
 import com.google.common.collect.Lists;
 
-class NodePath implements Iterable<PCollectionImpl> {
-  private LinkedList<PCollectionImpl> path;
+class NodePath implements Iterable<PCollectionImpl<?>> {
+  private LinkedList<PCollectionImpl<?>> path;
 
   public NodePath() {
     this.path = Lists.newLinkedList();
   }
 
-  public NodePath(PCollectionImpl tail) {
+  public NodePath(PCollectionImpl<?> tail) {
     this.path = Lists.newLinkedList();
     this.path.add(tail);
   }
@@ -36,31 +36,31 @@ class NodePath implements Iterable<PCollectionImpl> {
     this.path = Lists.newLinkedList(other.path);
   }
 
-  public void push(PCollectionImpl stage) {
-    this.path.push((PCollectionImpl) stage);
+  public void push(PCollectionImpl<?> stage) {
+    this.path.push((PCollectionImpl<?>) stage);
   }
 
-  public void close(PCollectionImpl head) {
+  public void close(PCollectionImpl<?> head) {
     this.path.push(head);
   }
 
-  public Iterator<PCollectionImpl> iterator() {
+  public Iterator<PCollectionImpl<?>> iterator() {
     return path.iterator();
   }
 
-  public Iterator<PCollectionImpl> descendingIterator() {
+  public Iterator<PCollectionImpl<?>> descendingIterator() {
     return path.descendingIterator();
   }
 
-  public PCollectionImpl get(int index) {
+  public PCollectionImpl<?> get(int index) {
     return path.get(index);
   }
 
-  public PCollectionImpl head() {
+  public PCollectionImpl<?> head() {
     return path.peekFirst();
   }
 
-  public PCollectionImpl tail() {
+  public PCollectionImpl<?> tail() {
     return path.peekLast();
   }
 
@@ -81,19 +81,19 @@ class NodePath implements Iterable<PCollectionImpl> {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (PCollectionImpl collect : path) {
+    for (PCollectionImpl<?> collect : path) {
       sb.append(collect.getName() + "|");
     }
     sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
   }
   
-  public NodePath splitAt(int splitIndex, PCollectionImpl newHead) {
+  public NodePath splitAt(int splitIndex, PCollectionImpl<?> newHead) {
     NodePath top = new NodePath();
     for (int i = 0; i <= splitIndex; i++) {
       top.path.add(path.get(i));
     }
-    LinkedList<PCollectionImpl> nextPath = Lists.newLinkedList();
+    LinkedList<PCollectionImpl<?>> nextPath = Lists.newLinkedList();
     nextPath.add(newHead);
     nextPath.addAll(path.subList(splitIndex + 1, path.size()));
     path = nextPath;

@@ -45,9 +45,9 @@ public class MSCRPlanner {
 
   // Used to ensure that we always build pipelines starting from the deepest outputs, which
   // helps ensure that we handle intermediate outputs correctly.
-  private static final Comparator<PCollectionImpl> DEPTH_COMPARATOR = new Comparator<PCollectionImpl>() {
+  private static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
     @Override
-    public int compare(PCollectionImpl left, PCollectionImpl right) {
+    public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
       int cmp = right.getDepth() - left.getDepth();   
       if (cmp == 0){
           // Ensure we don't throw away two output collections at the same depth.
@@ -59,12 +59,12 @@ public class MSCRPlanner {
   };
   
   private final MRPipeline pipeline;
-  private final Map<PCollectionImpl, Set<Target>> outputs;
+  private final Map<PCollectionImpl<?>, Set<Target>> outputs;
 
   public MSCRPlanner(MRPipeline pipeline,
-      Map<PCollectionImpl, Set<Target>> outputs) {
+      Map<PCollectionImpl<?>, Set<Target>> outputs) {
     this.pipeline = pipeline;
-    this.outputs = new TreeMap<PCollectionImpl, Set<Target>>(DEPTH_COMPARATOR);
+    this.outputs = new TreeMap<PCollectionImpl<?>, Set<Target>>(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
   }
 
@@ -73,24 +73,24 @@ public class MSCRPlanner {
     // Constructs all of the node paths, which either start w/an input
     // or a GBK and terminate in an output collection of any type.
     NodeVisitor visitor = new NodeVisitor();
-    for (PCollectionImpl output : outputs.keySet()) {
+    for (PCollectionImpl<?> output : outputs.keySet()) {
       visitor.visitOutput(output);
     }
 
     // Pull out the node paths.
-    Map<PCollectionImpl, Set<NodePath>> nodePaths = visitor.getNodePaths();
+    Map<PCollectionImpl<?>, Set<NodePath>> nodePaths = visitor.getNodePaths();
 
     // Keeps track of the dependencies from collections -> jobs and then
     // between different jobs.
-    Map<PCollectionImpl, JobPrototype> assignments = Maps.newHashMap();
-    Map<PCollectionImpl, Set<JobPrototype>> jobDependencies =
-        new HashMap<PCollectionImpl, Set<JobPrototype>>();
+    Map<PCollectionImpl<?>, JobPrototype> assignments = Maps.newHashMap();
+    Map<PCollectionImpl<?>, Set<JobPrototype>> jobDependencies =
+        new HashMap<PCollectionImpl<?>, Set<JobPrototype>>();
 
     // Find the set of GBKs that DO NOT depend on any other GBK.
-    Set<PGroupedTableImpl> workingGroupings = null;
+    Set<PGroupedTableImpl<?,?>> workingGroupings = null;
     while (!(workingGroupings = getWorkingGroupings(nodePaths)).isEmpty()) {
 
-      for (PGroupedTableImpl grouping : workingGroupings) {
+      for (PGroupedTableImpl<?,?> grouping : workingGroupings) {
         Set<NodePath> mapInputPaths = nodePaths.get(grouping);
         JobPrototype proto = JobPrototype.createMapReduceJob(grouping,
             mapInputPaths, pipeline.createTempPath());
@@ -102,16 +102,16 @@ public class MSCRPlanner {
         }
       }
 
-      Map<PGroupedTableImpl, Set<NodePath>> dependencyPaths = getDependencyPaths(
+      Map<PGroupedTableImpl<?,?>, Set<NodePath>> dependencyPaths = getDependencyPaths(
           workingGroupings, nodePaths);
-      for (Map.Entry<PGroupedTableImpl, Set<NodePath>> entry : dependencyPaths.entrySet()) {
-        PGroupedTableImpl grouping = entry.getKey();
+      for (Map.Entry<PGroupedTableImpl<?,?>, Set<NodePath>> entry : dependencyPaths.entrySet()) {
+        PGroupedTableImpl<?,?> grouping = entry.getKey();
         Set<NodePath> currentNodePaths = entry.getValue();
 
         JobPrototype proto = assignments.get(grouping);
         Set<NodePath> gbkPaths = Sets.newHashSet();
         for (NodePath nodePath : currentNodePaths) {
-          PCollectionImpl tail = nodePath.tail();
+          PCollectionImpl<?> tail = nodePath.tail();
           if (tail instanceof PGroupedTableImpl) {
             gbkPaths.add(nodePath);
             if (!jobDependencies.containsKey(tail)) {
@@ -145,9 +145,9 @@ public class MSCRPlanner {
 
     // Process any map-only jobs that are remaining.
     if (!nodePaths.isEmpty()) {
-      for (Map.Entry<PCollectionImpl, Set<NodePath>> entry : nodePaths
+      for (Map.Entry<PCollectionImpl<?>, Set<NodePath>> entry : nodePaths
           .entrySet()) {
-        PCollectionImpl collect = entry.getKey();
+        PCollectionImpl<?> collect = entry.getKey();
         if (!assignments.containsKey(collect)) {
           HashMultimap<Target, NodePath> mapOutputs = HashMultimap.create();
           for (NodePath nodePath : entry.getValue()) {
@@ -175,17 +175,17 @@ public class MSCRPlanner {
     return exec;
   }
 
-  private Map<PGroupedTableImpl, Set<NodePath>> getDependencyPaths(
-      Set<PGroupedTableImpl> workingGroupings,
-      Map<PCollectionImpl, Set<NodePath>> nodePaths) {
-    Map<PGroupedTableImpl, Set<NodePath>> dependencyPaths = Maps.newHashMap();
-    for (PGroupedTableImpl grouping : workingGroupings) {
+  private Map<PGroupedTableImpl<?,?>, Set<NodePath>> getDependencyPaths(
+      Set<PGroupedTableImpl<?,?>> workingGroupings,
+      Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
+    Map<PGroupedTableImpl<?,?>, Set<NodePath>> dependencyPaths = Maps.newHashMap();
+    for (PGroupedTableImpl<?,?> grouping : workingGroupings) {
       dependencyPaths.put(grouping, Sets.<NodePath> newHashSet());
     }
 
     // Find the targets that depend on one of the elements of the current
     // working group.
-    for (PCollectionImpl target : nodePaths.keySet()) {
+    for (PCollectionImpl<?> target : nodePaths.keySet()) {
       if (!workingGroupings.contains(target)) {
         for (NodePath nodePath : nodePaths.get(target)) {
           if (workingGroupings.contains(nodePath.head())) {
@@ -198,9 +198,9 @@ public class MSCRPlanner {
   }
 
   private int getSplitIndex(Set<NodePath> currentNodePaths) {
-    List<Iterator<PCollectionImpl>> iters = Lists.newArrayList();
+    List<Iterator<PCollectionImpl<?>>> iters = Lists.newArrayList();
     for (NodePath nodePath : currentNodePaths) {
-      Iterator<PCollectionImpl> iter = nodePath.iterator();
+      Iterator<PCollectionImpl<?>> iter = nodePath.iterator();
       iter.next(); // prime this past the initial NGroupedTableImpl
       iters.add(iter);
     }
@@ -211,10 +211,10 @@ public class MSCRPlanner {
     int splitIndex = -1;
     while (!end) {
       splitIndex++;
-      PCollectionImpl current = null;
-      for (Iterator<PCollectionImpl> iter : iters) {
+      PCollectionImpl<?> current = null;
+      for (Iterator<PCollectionImpl<?>> iter : iters) {
         if (iter.hasNext()) {
-          PCollectionImpl next = iter.next();
+          PCollectionImpl<?> next = iter.next();
           if (next instanceof PGroupedTableImpl) {
             end = true;
             break;
@@ -237,7 +237,7 @@ public class MSCRPlanner {
   private void handleGroupingDependencies(Set<NodePath> gbkPaths,
       Set<NodePath> currentNodePaths) throws IOException {
     int splitIndex = getSplitIndex(currentNodePaths);
-    PCollectionImpl splitTarget = currentNodePaths.iterator().next()
+    PCollectionImpl<?> splitTarget = currentNodePaths.iterator().next()
         .get(splitIndex);
     if (!outputs.containsKey(splitTarget)) {
       outputs.put(splitTarget, Sets.<Target>newHashSet());
@@ -247,7 +247,7 @@ public class MSCRPlanner {
     Target targetToReplace = null;
     for (Target t : outputs.get(splitTarget)) {
       if (t instanceof SourceTarget) {
-        srcTarget = (SourceTarget) t;
+        srcTarget = (SourceTarget<?>) t;
         break;
       } else {
         srcTarget = t.asSourceTarget(splitTarget.getPType());
@@ -265,7 +265,7 @@ public class MSCRPlanner {
     outputs.get(splitTarget).add(srcTarget);
     splitTarget.materializeAt(srcTarget);
 
-    PCollectionImpl inputNode = (PCollectionImpl) pipeline.read(srcTarget);
+    PCollectionImpl<?> inputNode = (PCollectionImpl<?>) pipeline.read(srcTarget);
     Set<NodePath> nextNodePaths = Sets.newHashSet();
     for (NodePath nodePath : currentNodePaths) {
       if (gbkPaths.contains(nodePath)) {
@@ -278,10 +278,10 @@ public class MSCRPlanner {
     currentNodePaths.addAll(nextNodePaths);
   }
 
-  private Set<PGroupedTableImpl> getWorkingGroupings(
-      Map<PCollectionImpl, Set<NodePath>> nodePaths) {
-    Set<PGroupedTableImpl> gbks = Sets.newHashSet();
-    for (PCollectionImpl target : nodePaths.keySet()) {
+  private Set<PGroupedTableImpl<?,?>> getWorkingGroupings(
+      Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
+    Set<PGroupedTableImpl<?,?>> gbks = Sets.newHashSet();
+    for (PCollectionImpl<?> target : nodePaths.keySet()) {
       if (target instanceof PGroupedTableImpl) {
         boolean hasGBKDependency = false;
         for (NodePath nodePath : nodePaths.get(target)) {
@@ -291,7 +291,7 @@ public class MSCRPlanner {
           }
         }
         if (!hasGBKDependency) {
-          gbks.add((PGroupedTableImpl) target);
+          gbks.add((PGroupedTableImpl<?,?>) target);
         }
       }
     }
@@ -300,21 +300,21 @@ public class MSCRPlanner {
 
   private static class NodeVisitor implements PCollectionImpl.Visitor {
 
-    private final Map<PCollectionImpl, Set<NodePath>> nodePaths;
-    private final Map<PCollectionImpl, Source> inputs;
-    private PCollectionImpl workingNode;
+    private final Map<PCollectionImpl<?>, Set<NodePath>> nodePaths;
+    private final Map<PCollectionImpl<?>, Source<?>> inputs;
+    private PCollectionImpl<?> workingNode;
     private NodePath workingPath;
 
     public NodeVisitor() {
-      this.nodePaths = new HashMap<PCollectionImpl, Set<NodePath>>();
-      this.inputs = new HashMap<PCollectionImpl, Source>();
+      this.nodePaths = new HashMap<PCollectionImpl<?>, Set<NodePath>>();
+      this.inputs = new HashMap<PCollectionImpl<?>, Source<?>>();
     }
 
-    public Map<PCollectionImpl, Set<NodePath>> getNodePaths() {
+    public Map<PCollectionImpl<?>, Set<NodePath>> getNodePaths() {
       return nodePaths;
     }
 
-    public void visitOutput(PCollectionImpl output) {
+    public void visitOutput(PCollectionImpl<?> output) {
       nodePaths.put(output, Sets.<NodePath> newHashSet());
       workingNode = output;
       workingPath = new NodePath();
@@ -330,9 +330,9 @@ public class MSCRPlanner {
 
     @Override
     public void visitUnionCollection(UnionCollection<?> collection) {
-      PCollectionImpl baseNode = workingNode;
+      PCollectionImpl<?> baseNode = workingNode;
       NodePath basePath = workingPath;
-      for (PCollectionImpl parent : collection.getParents()) {
+      for (PCollectionImpl<?> parent : collection.getParents()) {
         workingPath = new NodePath(basePath);
         workingNode = baseNode;
         processParent(parent);
@@ -361,7 +361,7 @@ public class MSCRPlanner {
       processParent(collection.getOnlyParent());
     }
 
-    private void processParent(PCollectionImpl parent) {
+    private void processParent(PCollectionImpl<?> parent) {
       if (!nodePaths.containsKey(parent)) {
         parent.accept(this);
       } else {

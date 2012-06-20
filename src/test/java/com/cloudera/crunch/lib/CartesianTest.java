@@ -3,16 +3,15 @@ package com.cloudera.crunch.lib;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-
 import java.util.HashSet;
 import java.util.Iterator;
 
+import org.junit.Test;
+
 import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.Pair;
-import com.cloudera.crunch.lib.Cartesian;
-import com.cloudera.crunch.types.writable.Writables;
 import com.cloudera.crunch.impl.mem.MemPipeline;
+import com.cloudera.crunch.types.writable.Writables;
 import com.google.common.collect.ImmutableList;
 
 public class CartesianTest {

@@ -190,7 +190,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
 
     @Override
     public Iterable<TupleN> results() {
-      Iterable[] iterables = new Iterable[size];
+      Iterable<?>[] iterables = new Iterable[size];
       for (int i = 0; i < size; i++) {
         iterables[i] = results(i);
       }

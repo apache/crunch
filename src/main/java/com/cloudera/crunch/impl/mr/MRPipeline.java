@@ -60,8 +60,8 @@ public class MRPipeline implements Pipeline {
   
   private final Class<?> jarClass;
   private final String name;
-  private final Map<PCollectionImpl, Set<Target>> outputTargets;
-  private final Map<PCollectionImpl, MaterializableIterable> outputTargetsToMaterialize;
+  private final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
+  private final Map<PCollectionImpl<?>, MaterializableIterable<?>> outputTargetsToMaterialize;
   private final Path tempDirectory;
   private int tempFileIndex;
   private int nextAnonymousStageId;
@@ -111,7 +111,7 @@ public class MRPipeline implements Pipeline {
       LOG.error(e);
       return PipelineResult.EMPTY;
     }
-    for (PCollectionImpl c : outputTargets.keySet()) {
+    for (PCollectionImpl<?> c : outputTargets.keySet()) {
       if (outputTargetsToMaterialize.containsKey(c)) {
         MaterializableIterable iter = outputTargetsToMaterialize.get(c);
         iter.materialize();
@@ -156,15 +156,15 @@ public class MRPipeline implements Pipeline {
   @SuppressWarnings("unchecked")
   public void write(PCollection<?> pcollection, Target target) {
     if (pcollection instanceof PGroupedTableImpl) {
-      pcollection = ((PGroupedTableImpl) pcollection).ungroup();
+      pcollection = ((PGroupedTableImpl<?,?>) pcollection).ungroup();
     } else if (pcollection instanceof UnionCollection || pcollection instanceof UnionTable) {
       pcollection = pcollection.parallelDo("UnionCollectionWrapper",  
     		  (MapFn)IdentityFn.<Object>getInstance(), pcollection.getPType());	 
     }
-    addOutput((PCollectionImpl) pcollection, target);
+    addOutput((PCollectionImpl<?>) pcollection, target);
   }
 
-  private void addOutput(PCollectionImpl impl, Target target) {
+  private void addOutput(PCollectionImpl<?> impl, Target target) {
     if (!outputTargets.containsKey(impl)) {
       outputTargets.put(impl, Sets.<Target>newHashSet());
     }
@@ -178,7 +178,7 @@ public class MRPipeline implements Pipeline {
     	pcollection = pcollection.parallelDo("UnionCollectionWrapper",  
 	        (MapFn)IdentityFn.<Object>getInstance(), pcollection.getPType());	 
 	}  
-    PCollectionImpl impl = (PCollectionImpl) pcollection;
+    PCollectionImpl<T> impl = (PCollectionImpl<T>) pcollection;
     SourceTarget<T> matTarget = impl.getMaterializedAt();
     if (matTarget != null && matTarget instanceof ReadableSourceTarget) {
       return new MaterializableIterable<T>(this, (ReadableSourceTarget<T>) matTarget);

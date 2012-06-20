@@ -35,7 +35,6 @@ import com.cloudera.crunch.fn.MapKeysFn;
 import com.cloudera.crunch.fn.MapValuesFn;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.From;
-import com.cloudera.crunch.lib.Cogroup;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PTypeFamily;

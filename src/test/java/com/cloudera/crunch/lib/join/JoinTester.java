@@ -17,6 +17,8 @@ package com.cloudera.crunch.lib.join;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.junit.Test;
+
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PCollection;
@@ -31,7 +33,6 @@ import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PTypeFamily;
 import com.cloudera.crunch.types.avro.AvroTypeFamily;
 import com.cloudera.crunch.types.writable.WritableTypeFamily;
-import org.junit.Test;
 
 public abstract class JoinTester implements Serializable {
   private static class WordSplit extends DoFn<String, String> {

@@ -14,8 +14,8 @@
  */
 package com.cloudera.crunch.test;
 
-import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.Counters;
 
 /**
  * A utility class used during unit testing to update and read counters.

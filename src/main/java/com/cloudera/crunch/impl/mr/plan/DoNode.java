@@ -35,14 +35,14 @@ public class DoNode {
 
   private final DoFn fn;
   private final String name;
-  private final PType ptype;
+  private final PType<?> ptype;
   private final List<DoNode> children;
   private final Converter outputConverter;
-  private final Source source;
+  private final Source<?> source;
   private String outputName;
 
-  private DoNode(DoFn fn, String name, PType ptype, List<DoNode> children,
-      Converter outputConverter, Source source) {
+  private DoNode(DoFn fn, String name, PType<?> ptype, List<DoNode> children,
+      Converter outputConverter, Source<?> source) {
     this.fn = fn;
     this.name = name;
     this.ptype = ptype;
@@ -57,14 +57,14 @@ public class DoNode {
 
   public static <K, V> DoNode createGroupingNode(String name,
       PGroupedTableType<K, V> ptype) {
-    DoFn fn = ptype.getOutputMapFn();
+    DoFn<?,?> fn = ptype.getOutputMapFn();
     return new DoNode(fn, name, ptype, NO_CHILDREN,
         ptype.getGroupingConverter(), null);
   }
   
   public static <S> DoNode createOutputNode(String name, PType<S> ptype) {
     Converter outputConverter = ptype.getConverter();
-    DoFn fn = ptype.getOutputMapFn();
+    DoFn<?,?> fn = ptype.getOutputMapFn();
     return new DoNode(fn, name, ptype, NO_CHILDREN,
         outputConverter, null);
   }
@@ -75,8 +75,8 @@ public class DoNode {
   }
 
   public static <S> DoNode createInputNode(Source<S> source) {
-    PType ptype = source.getType();
-    DoFn fn = ptype.getInputMapFn();
+    PType<?> ptype = source.getType();
+    DoFn<?,?> fn = ptype.getInputMapFn();
     return new DoNode(fn, source.toString(), ptype, allowsChildren(), null,
         source);
   }
@@ -97,11 +97,11 @@ public class DoNode {
     return children;
   }
   
-  public Source getSource() {
+  public Source<?> getSource() {
     return source;
   }
 
-  public PType getPType() {
+  public PType<?> getPType() {
     return ptype;
   }
 
@@ -132,7 +132,7 @@ public class DoNode {
       if (nodeContext == NodeContext.MAP) {
         inputConverter = ptype.getConverter();
       } else {
-        inputConverter = ((PGroupedTableType) ptype).getGroupingConverter();
+        inputConverter = ((PGroupedTableType<?,?>) ptype).getGroupingConverter();
       }
     }          
     return new RTNode(fn, name, childRTNodes, inputConverter, outputConverter,

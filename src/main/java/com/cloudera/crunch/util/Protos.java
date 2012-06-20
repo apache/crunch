@@ -23,8 +23,8 @@ import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.MapFn;
 import com.google.common.base.Splitter;
-import com.google.protobuf.Message;
 import com.google.protobuf.Descriptors.FieldDescriptor;
+import com.google.protobuf.Message;
 import com.google.protobuf.Message.Builder;
 
 /**

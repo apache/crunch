@@ -16,7 +16,6 @@ package com.cloudera.crunch.types.writable;
 
 import java.util.List;
 
-import com.cloudera.crunch.types.PTypeFamily;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
@@ -30,6 +29,7 @@ import com.cloudera.crunch.types.Converter;
 import com.cloudera.crunch.types.PGroupedTableType;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
+import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 
 class WritableTableType<K, V> implements PTableType<K, V> {

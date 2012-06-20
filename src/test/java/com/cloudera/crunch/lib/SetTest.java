@@ -17,18 +17,6 @@ package com.cloudera.crunch.lib;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import com.cloudera.crunch.PCollection;
-import com.cloudera.crunch.Pipeline;
-import com.cloudera.crunch.Tuple3;
-import com.cloudera.crunch.impl.mem.MemPipeline;
-import com.cloudera.crunch.impl.mr.MRPipeline;
-import com.cloudera.crunch.io.At;
-import com.cloudera.crunch.test.FileHelper;
-import com.cloudera.crunch.types.PTypeFamily;
-import com.cloudera.crunch.types.avro.AvroTypeFamily;
-import com.cloudera.crunch.types.writable.WritableTypeFamily;
-import com.google.common.collect.Lists;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +28,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import com.cloudera.crunch.PCollection;
+import com.cloudera.crunch.Pipeline;
+import com.cloudera.crunch.Tuple3;
+import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.test.FileHelper;
+import com.cloudera.crunch.types.PTypeFamily;
+import com.cloudera.crunch.types.avro.AvroTypeFamily;
+import com.cloudera.crunch.types.writable.WritableTypeFamily;
+import com.google.common.collect.Lists;
 
 @RunWith(value = Parameterized.class)
 public class SetTest {
