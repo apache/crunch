@@ -25,8 +25,7 @@ import com.google.common.collect.ImmutableList;
  *
  */
 public abstract class FilterFn<T> extends DoFn<T, T> {
-  private static final long serialVersionUID = 1L;
-  
+
   /**
    * If true, emit the given record.
    */
@@ -49,7 +48,6 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
   }
   
   public static class AndFn<S> extends FilterFn<S> {
-    private static final long serialVersionUID = 1L;
     
     private final List<FilterFn<S>> fns;
     
@@ -82,7 +80,6 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
   }
   
   public static class OrFn<S> extends FilterFn<S> {
-    private static final long serialVersionUID = 1L;
     
     private final List<FilterFn<S>> fns;
     
@@ -115,7 +112,6 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
   }
   
   public static class NotFn<S> extends FilterFn<S> {
-    private static final long serialVersionUID = 1L;
     
     private final FilterFn<S> base;
     

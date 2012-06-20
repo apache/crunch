@@ -41,7 +41,6 @@ public class Protos {
   }
   
   public static class ExtractKeyFn<M extends Message, K> extends MapFn<M, K> {
-    private static final long serialVersionUID = 1L;
     
     private final String fieldName;
     
@@ -68,7 +67,6 @@ public class Protos {
   }
   
   public static class TextToProtoFn<M extends Message> extends DoFn<String, M> {
-    private static final long serialVersionUID = 1L;
     
     private final String sep;
     private final Class<M> msgClass;

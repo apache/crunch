@@ -54,8 +54,6 @@ public class Cogroup {
   }
 
   private static class CogroupFn1<K, V, U> extends MapValuesFn<K, V, Pair<V, U>> {
-    private static final long serialVersionUID = 1L;
-
     @Override
     public Pair<V, U> map(V v) {
       return Pair.of(v, null);
@@ -63,8 +61,6 @@ public class Cogroup {
   }
 
   private static class CogroupFn2<K, V, U> extends MapValuesFn<K, U, Pair<V, U>> {
-    private static final long serialVersionUID = 1L;
-    
     @Override
     public Pair<V, U> map(U u) {
       return Pair.of(null, u);
@@ -73,8 +69,6 @@ public class Cogroup {
 
   private static class PostGroupFn<K, V, U> extends
       DoFn<Pair<K, Iterable<Pair<V, U>>>, Pair<K, Pair<Collection<V>, Collection<U>>>> {
-    private static final long serialVersionUID = 1L;
-    
     @Override
     public void process(Pair<K, Iterable<Pair<V, U>>> input,
         Emitter<Pair<K, Pair<Collection<V>, Collection<U>>>> emitter) {

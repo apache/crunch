@@ -24,29 +24,28 @@ import com.google.common.base.Preconditions;
 public class Sample {
 
   public static class SamplerFn<S> extends DoFn<S, S> {
-    private static final long serialVersionUID = 1L;
-    
-	private final long seed;
-	private final double acceptanceProbability;
-	private transient Random r;
-	
-	public SamplerFn(long seed, double acceptanceProbability) {
-	  Preconditions.checkArgument(0.0 < acceptanceProbability && acceptanceProbability < 1.0);
-	  this.seed = seed;
-	  this.acceptanceProbability = acceptanceProbability;
-	}
-	
-	@Override
-	public void initialize() {
-	  r = new Random(seed);
-	}
-	
-	@Override
-	public void process(S input, Emitter<S> emitter) {
-	  if (r.nextDouble() < acceptanceProbability) {
-		emitter.emit(input);
-	  }
-	}
+
+    private final long seed;
+    private final double acceptanceProbability;
+    private transient Random r;
+
+    public SamplerFn(long seed, double acceptanceProbability) {
+      Preconditions.checkArgument(0.0 < acceptanceProbability && acceptanceProbability < 1.0);
+      this.seed = seed;
+      this.acceptanceProbability = acceptanceProbability;
+    }
+
+    @Override
+    public void initialize() {
+      r = new Random(seed);
+    }
+
+    @Override
+    public void process(S input, Emitter<S> emitter) {
+      if (r.nextDouble() < acceptanceProbability) {
+        emitter.emit(input);
+      }
+    }
   }
   
   public static <S> PCollection<S> sample(PCollection<S> input, double probability) {

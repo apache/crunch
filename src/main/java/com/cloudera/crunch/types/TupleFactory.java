@@ -25,8 +25,7 @@ import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 
 public abstract class TupleFactory<T extends Tuple> implements Serializable {
-  private static final long serialVersionUID = 1L;
-  
+
   public void initialize() { }
   
   public abstract T makeTuple(Object...values);

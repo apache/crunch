@@ -19,7 +19,6 @@ import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.Pair;
 
 public abstract class MapKeysFn<K1, K2, V> extends DoFn<Pair<K1, V>, Pair<K2, V>> {
-  private static final long serialVersionUID = 1L;
   
   @Override
   public void process(Pair<K1, V> input, Emitter<Pair<K2, V>> emitter) {

@@ -53,7 +53,6 @@ import com.google.common.collect.Maps;
  */
 public class Writables {
   private static final MapFn<NullWritable, Void> NULL_WRITABLE_TO_VOID = new MapFn<NullWritable, Void>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Void map(NullWritable input) {
       return null;
@@ -61,7 +60,6 @@ public class Writables {
   };
 
   private static final MapFn<Void, NullWritable> VOID_TO_NULL_WRITABLE = new MapFn<Void, NullWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public NullWritable map(Void input) {
       return NullWritable.get();
@@ -69,7 +67,6 @@ public class Writables {
   };
   
   private static final MapFn<Text, String> TEXT_TO_STRING = new MapFn<Text, String>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public String map(Text input) {
       return input.toString();
@@ -77,7 +74,6 @@ public class Writables {
   };
 
   private static final MapFn<String, Text> STRING_TO_TEXT = new MapFn<String, Text>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Text map(String input) {
       return new Text(input);
@@ -85,7 +81,6 @@ public class Writables {
   };
 
   private static final MapFn<IntWritable, Integer> IW_TO_INT = new MapFn<IntWritable, Integer>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Integer map(IntWritable input) {
       return input.get();
@@ -93,7 +88,6 @@ public class Writables {
   };
 
   private static final MapFn<Integer, IntWritable> INT_TO_IW = new MapFn<Integer, IntWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public IntWritable map(Integer input) {
       return new IntWritable(input);
@@ -101,7 +95,6 @@ public class Writables {
   };
 
   private static final MapFn<LongWritable, Long> LW_TO_LONG = new MapFn<LongWritable, Long>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Long map(LongWritable input) {
       return input.get();
@@ -109,7 +102,6 @@ public class Writables {
   };
 
   private static final MapFn<Long, LongWritable> LONG_TO_LW = new MapFn<Long, LongWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public LongWritable map(Long input) {
       return new LongWritable(input);
@@ -117,7 +109,6 @@ public class Writables {
   };
 
   private static final MapFn<FloatWritable, Float> FW_TO_FLOAT = new MapFn<FloatWritable, Float>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Float map(FloatWritable input) {
       return input.get();
@@ -125,7 +116,6 @@ public class Writables {
   };
 
   private static final MapFn<Float, FloatWritable> FLOAT_TO_FW = new MapFn<Float, FloatWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public FloatWritable map(Float input) {
       return new FloatWritable(input);
@@ -133,7 +123,6 @@ public class Writables {
   };
 
   private static final MapFn<DoubleWritable, Double> DW_TO_DOUBLE = new MapFn<DoubleWritable, Double>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Double map(DoubleWritable input) {
       return input.get();
@@ -141,7 +130,6 @@ public class Writables {
   };
 
   private static final MapFn<Double, DoubleWritable> DOUBLE_TO_DW = new MapFn<Double, DoubleWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public DoubleWritable map(Double input) {
       return new DoubleWritable(input);
@@ -149,7 +137,6 @@ public class Writables {
   };
 
   private static final MapFn<BooleanWritable, Boolean> BW_TO_BOOLEAN = new MapFn<BooleanWritable, Boolean>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public Boolean map(BooleanWritable input) {
       return input.get();
@@ -159,7 +146,6 @@ public class Writables {
   private static final BooleanWritable TRUE = new BooleanWritable(true);
   private static final BooleanWritable FALSE = new BooleanWritable(false);
   private static final MapFn<Boolean, BooleanWritable> BOOLEAN_TO_BW = new MapFn<Boolean, BooleanWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public BooleanWritable map(Boolean input) {
       return input == Boolean.TRUE ? TRUE : FALSE;
@@ -167,7 +153,6 @@ public class Writables {
   };
   
   private static final MapFn<BytesWritable, ByteBuffer> BW_TO_BB = new MapFn<BytesWritable, ByteBuffer>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public ByteBuffer map(BytesWritable input) {
       return ByteBuffer.wrap(input.getBytes(), 0, input.getLength());
@@ -175,7 +160,6 @@ public class Writables {
   };
   
   private static final MapFn<ByteBuffer, BytesWritable> BB_TO_BW = new MapFn<ByteBuffer, BytesWritable>() {
-    private static final long serialVersionUID = 1L;
     @Override
     public BytesWritable map(ByteBuffer input) {
       BytesWritable bw = new BytesWritable();
@@ -350,7 +334,6 @@ public class Writables {
    * 
    */
   private static class TupleTWMapFn extends MapFn<Tuple, TupleWritable> {
-    private static final long serialVersionUID = 1L;
     
     private transient TupleWritable writable;
     private transient Writable[] values;
@@ -487,7 +470,6 @@ public class Writables {
 
   private static class CollectionArrayMapFn<T> extends
       MapFn<Collection<T>, GenericArrayWritable> {
-    private static final long serialVersionUID = 1L;
     
     private final Class<? extends Writable> clazz;
     private final MapFn<T, Object> mapFn;
@@ -534,72 +516,70 @@ public class Writables {
   }
 
   private static class MapInputMapFn<T> extends MapFn<TextMapWritable<Writable>, Map<String, T>> {
-    private static final long serialVersionUID = 1L;
     private final MapFn<Writable, T> mapFn;
-	
-	public MapInputMapFn(MapFn<Writable, T> mapFn) {
-	  this.mapFn = mapFn;
-	}
-	
-	@Override
-	public void configure(Configuration conf) {
-	  mapFn.configure(conf);
-	}
+
+    public MapInputMapFn(MapFn<Writable, T> mapFn) {
+      this.mapFn = mapFn;
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
 
     @Override
     public void setConfigurationForTest(Configuration conf) {
       mapFn.setConfigurationForTest(conf);
     }
 
-	@Override
-	public void initialize() {
-	  mapFn.setContext(getContext());
-	}
-	
-	@Override
-	public Map<String, T> map(TextMapWritable<Writable> input) {
-	  Map<String, T> out = Maps.newHashMap();
-	  for (Map.Entry<Text, Writable> e : input.entrySet()) {
-		out.put(e.getKey().toString(), mapFn.map(e.getValue()));
-	  }
-	  return out;
-	}
+    @Override
+    public void initialize() {
+      mapFn.setContext(getContext());
+    }
+
+    @Override
+    public Map<String, T> map(TextMapWritable<Writable> input) {
+      Map<String, T> out = Maps.newHashMap();
+      for (Map.Entry<Text, Writable> e : input.entrySet()) {
+        out.put(e.getKey().toString(), mapFn.map(e.getValue()));
+      }
+      return out;
+    }
   }
   
   private static class MapOutputMapFn<T> extends MapFn<Map<String, T>, TextMapWritable<Writable>> {
-    private static final long serialVersionUID = 1L;
-    
-	private final Class<Writable> clazz;
-	private final MapFn<T, Writable> mapFn;
-	
-	public MapOutputMapFn(Class<Writable> clazz, MapFn<T, Writable> mapFn) {
-	  this.clazz = clazz;
-	  this.mapFn = mapFn;
-	}
 
-	@Override
-	public void configure(Configuration conf) {
-	  mapFn.configure(conf);
-	}
+    private final Class<Writable> clazz;
+    private final MapFn<T, Writable> mapFn;
+
+    public MapOutputMapFn(Class<Writable> clazz, MapFn<T, Writable> mapFn) {
+      this.clazz = clazz;
+      this.mapFn = mapFn;
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      mapFn.configure(conf);
+    }
 
     @Override
     public void setConfigurationForTest(Configuration conf) {
       mapFn.setConfigurationForTest(conf);
     }
-	
-	@Override
-	public void initialize() {
-	  mapFn.setContext(getContext());
-	}
 
-	@Override
-	public TextMapWritable<Writable> map(Map<String, T> input) {
-	  TextMapWritable<Writable> tmw = new TextMapWritable<Writable>(clazz);
-	  for (Map.Entry<String, T> e : input.entrySet()) {
-		tmw.put(new Text(e.getKey()), mapFn.map(e.getValue()));
-	  }
-	  return tmw;
-	}	
+    @Override
+    public void initialize() {
+      mapFn.setContext(getContext());
+    }
+
+    @Override
+    public TextMapWritable<Writable> map(Map<String, T> input) {
+      TextMapWritable<Writable> tmw = new TextMapWritable<Writable>(clazz);
+      for (Map.Entry<String, T> e : input.entrySet()) {
+        tmw.put(new Text(e.getKey()), mapFn.map(e.getValue()));
+      }
+      return tmw;
+    }	
   }
   
   public static <T> WritableType<Map<String, T>, MapWritable> maps(PType<T> ptype) {

@@ -35,8 +35,6 @@ import com.cloudera.crunch.test.TestCounters;
  *
  */
 public abstract class DoFn<S, T> implements Serializable {
-  private static final long serialVersionUID = 1L;
-  
   private transient TaskInputOutputContext<?, ?, ?, ?> context;
   private transient Configuration testConf;
   private transient String internalStatus;

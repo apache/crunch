@@ -18,7 +18,6 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.types.Converter;
 
 public class WritablePairConverter<K, V> implements Converter<K, V, Pair<K, V>, Pair<K, Iterable<V>>> {
-  private static final long serialVersionUID = 1L;
   
   private final Class<K> keyClass;
   private final Class<V> valueClass;

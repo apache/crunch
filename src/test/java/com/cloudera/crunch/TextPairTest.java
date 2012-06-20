@@ -36,8 +36,6 @@ public class TextPairTest  {
   
   public static PCollection<Pair<String, String>> wordDuplicate(PCollection<String> words) {
     return words.parallelDo("my word duplicator", new DoFn<String, Pair<String, String>>() {
-      private static final long serialVersionUID = 1L;
-      @Override
       public void process(String line, Emitter<Pair<String, String>> emitter) {
         for (String word : line.split("\\W+")) {
           if(word.length() > 0) {

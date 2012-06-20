@@ -65,23 +65,18 @@ public class PTypes {
   }
   
   public static MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
-    private static final long serialVersionUID = 1L;
-    @Override
     public BigInteger map(ByteBuffer input) {
       return input == null ? null : new BigInteger(input.array());
     }
   };
 
   public static MapFn<BigInteger, ByteBuffer> BIGINT_TO_BYTE = new MapFn<BigInteger, ByteBuffer>() {
-    private static final long serialVersionUID = 1L;
-    @Override
     public ByteBuffer map(BigInteger input) {
       return input == null ? null : ByteBuffer.wrap(input.toByteArray());
     }
   };
   
   public static class SmileInputMapFn<T> extends MapFn<ByteBuffer, T> {
-    private static final long serialVersionUID = 1L;
 
     private final Class<T> clazz;
     private transient ObjectMapper mapper;
@@ -106,7 +101,6 @@ public class PTypes {
   }
   
   public static class SmileOutputMapFn<T> extends MapFn<T, ByteBuffer> {
-    private static final long serialVersionUID = 1L;
     private transient ObjectMapper mapper;
     
     @Override
@@ -125,7 +119,6 @@ public class PTypes {
   }
 
   public static class JacksonInputMapFn<T> extends MapFn<String, T> {
-    private static final long serialVersionUID = 1L;
     
     private final Class<T> clazz;
     private transient ObjectMapper mapper;
@@ -150,7 +143,6 @@ public class PTypes {
   }
   
   public static class JacksonOutputMapFn<T> extends MapFn<T, String> {
-    private static final long serialVersionUID = 1L;
     
     private transient ObjectMapper mapper;
     
@@ -170,7 +162,6 @@ public class PTypes {
   }
   
   public static class ProtoInputMapFn<T extends Message> extends MapFn<ByteBuffer, T> {
-    private static final long serialVersionUID = 1L;
     
     private final Class<T> clazz;
     private transient T instance;
@@ -196,7 +187,6 @@ public class PTypes {
   }
   
   public static class ProtoOutputMapFn<T extends Message> extends MapFn<T, ByteBuffer> {
-    private static final long serialVersionUID = 1L;
     
     public ProtoOutputMapFn() {
     }
@@ -208,7 +198,6 @@ public class PTypes {
   }
 
   public static class ThriftInputMapFn<T extends TBase> extends MapFn<ByteBuffer, T> {
-    private static final long serialVersionUID = 1L;
 
     private final Class<T> clazz;
     private transient T instance;
@@ -244,7 +233,7 @@ public class PTypes {
   }
   
   public static class ThriftOutputMapFn<T extends TBase> extends MapFn<T, ByteBuffer> {
-    private static final long serialVersionUID = 1L;
+
     private transient TSerializer serializer;
     
     public ThriftOutputMapFn() {

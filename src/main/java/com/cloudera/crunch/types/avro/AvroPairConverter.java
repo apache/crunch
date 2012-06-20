@@ -23,7 +23,6 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.types.Converter;
 
 public class AvroPairConverter<K, V> implements Converter<AvroKey<K>, AvroValue<V>, Pair<K, V>, Pair<K, Iterable<V>>> {
-  private static final long serialVersionUID = 1L;
   
   private transient AvroKey<K> keyWrapper = null;
   private transient AvroValue<V> valueWrapper = null;

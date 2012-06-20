@@ -41,7 +41,6 @@ public class Set {
       PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
         .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
-          private static final long serialVersionUID = 1L;
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
               Emitter<T> emitter) {
@@ -63,7 +62,6 @@ public class Set {
       PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
         .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
-          private static final long serialVersionUID = 1L;
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
               Emitter<T> emitter) {
@@ -96,7 +94,6 @@ public class Set {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2))
         .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>,
             Tuple3<T, T, T>>() {
-          private static final long serialVersionUID = 1L;
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
               Emitter<Tuple3<T, T, T>> emitter) {
@@ -115,7 +112,6 @@ public class Set {
   private static <T> PTable<T, Boolean> toTable(PCollection<T> coll) {
     PTypeFamily typeFamily = coll.getTypeFamily();
     return coll.parallelDo(new DoFn<T, Pair<T, Boolean>>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(T input, Emitter<Pair<T, Boolean>> emitter) {
         emitter.emit(Pair.of(input, Boolean.TRUE));

@@ -111,7 +111,6 @@ public class Sort {
         collection.getPType(), order);
     PTable<T, Void> pt =
       collection.parallelDo("sort-pre", new DoFn<T, Pair<T, Void>>() {
-        private static final long serialVersionUID = 1L;
         @Override
         public void process(T input,
             Emitter<Pair<T, Void>> emitter) {
@@ -120,7 +119,6 @@ public class Sort {
       }, type);
     PTable<T, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo("sort-post", new DoFn<Pair<T, Void>, T>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<T, Void> input, Emitter<T> emitter) {
         emitter.emit(input.first());
@@ -168,7 +166,6 @@ public class Sort {
         tf.nulls());
     PTable<Pair<U, V>, Void> pt =
       collection.parallelDo(new DoFn<Pair<U, V>, Pair<Pair<U, V>, Void>>() {
-        private static final long serialVersionUID = 1L;
         @Override
         public void process(Pair<U, V> input,
             Emitter<Pair<Pair<U, V>, Void>> emitter) {
@@ -179,7 +176,6 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Pair<U, V>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Pair<U, V>,Void>, Pair<U, V>>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Pair<U, V>, Void> input,
           Emitter<Pair<U, V>> emitter) {
@@ -204,7 +200,6 @@ public class Sort {
         tf.nulls());
     PTable<Tuple3<V1, V2, V3>, Void> pt =
       collection.parallelDo(new DoFn<Tuple3<V1, V2, V3>, Pair<Tuple3<V1, V2, V3>, Void>>() {
-        private static final long serialVersionUID = 1L;
         @Override
         public void process(Tuple3<V1, V2, V3> input,
             Emitter<Pair<Tuple3<V1, V2, V3>, Void>> emitter) {
@@ -215,7 +210,6 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple3<V1, V2, V3>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Tuple3<V1, V2, V3>,Void>, Tuple3<V1, V2, V3>>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Tuple3<V1, V2, V3>, Void> input,
           Emitter<Tuple3<V1, V2, V3>> emitter) {
@@ -240,7 +234,6 @@ public class Sort {
         tf.nulls());
     PTable<Tuple4<V1, V2, V3, V4>, Void> pt =
       collection.parallelDo(new DoFn<Tuple4<V1, V2, V3, V4>, Pair<Tuple4<V1, V2, V3, V4>, Void>>() {
-        private static final long serialVersionUID = 1L;
         @Override
         public void process(Tuple4<V1, V2, V3, V4> input,
             Emitter<Pair<Tuple4<V1, V2, V3, V4>, Void>> emitter) {
@@ -251,7 +244,6 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple4<V1, V2, V3, V4>, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<Tuple4<V1, V2, V3, V4>,Void>, Tuple4<V1, V2, V3, V4>>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<Tuple4<V1, V2, V3, V4>, Void> input,
           Emitter<Tuple4<V1, V2, V3, V4>> emitter) {
@@ -275,7 +267,6 @@ public class Sort {
         tf.nulls());
     PTable<TupleN, Void> pt =
       collection.parallelDo(new DoFn<TupleN, Pair<TupleN, Void>>() {
-        private static final long serialVersionUID = 1L;
         @Override
         public void process(TupleN input,
             Emitter<Pair<TupleN, Void>> emitter) {
@@ -286,7 +277,6 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<TupleN, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo(new DoFn<Pair<TupleN,Void>, TupleN>() {
-      private static final long serialVersionUID = 1L;
       @Override
       public void process(Pair<TupleN, Void> input,
           Emitter<TupleN> emitter) {
