@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -145,7 +146,7 @@ public class MemPipeline implements Pipeline {
       Path path = ((PathTarget) target).getPath();
       try {
         FileSystem fs = FileSystem.get(conf);
-        FSDataOutputStream os = fs.create(path);
+        FSDataOutputStream os = fs.create(new Path(path, "out"));
         if (collection instanceof PTable) {
           for (Object o : collection.materialize()) {
             Pair p = (Pair) o;
