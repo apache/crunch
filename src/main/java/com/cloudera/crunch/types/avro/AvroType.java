@@ -57,7 +57,7 @@ public class AvroType<T> implements PType<T> {
 			MapFn outputMapFn, PType... ptypes) {
 		this.typeClass = typeClass;
 		this.schema = Preconditions.checkNotNull(schema);
-    this.schemaString = schema.toString();
+		this.schemaString = schema.toString();
 		this.baseInputMapFn = inputMapFn;
 		this.baseOutputMapFn = outputMapFn;
 		this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
@@ -79,9 +79,9 @@ public class AvroType<T> implements PType<T> {
 	}
 
 	public Schema getSchema() {
-    if (schema == null) {
-      schema = new Schema.Parser().parse(schemaString);
-    }
+	  if (schema == null){
+	    schema = new Schema.Parser().parse(schemaString);
+	  }
 		return schema;
 	}
 
