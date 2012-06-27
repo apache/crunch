@@ -18,12 +18,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Random;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Get;
@@ -33,6 +40,8 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapred.TaskAttemptContext;
+import org.apache.hadoop.filecache.DistributedCache;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +51,8 @@ import com.cloudera.crunch.io.hbase.HBaseSourceTarget;
 import com.cloudera.crunch.io.hbase.HBaseTarget;
 import com.cloudera.crunch.lib.Aggregate;
 import com.cloudera.crunch.types.writable.Writables;
+import com.cloudera.crunch.util.DistCache;
+import com.google.common.io.ByteStreams;
 
 public class WordCountHBaseTest {
   protected static final Log LOG = LogFactory.getLog(WordCountHBaseTest.class);
@@ -77,6 +88,7 @@ public class WordCountHBaseTest {
         }, Writables.writables(Put.class));
   }
 
+  @SuppressWarnings("deprecation")
   @Before
   public void setUp() throws Exception {
     Configuration conf = hbaseTestUtil.getConfiguration();
@@ -88,9 +100,44 @@ public class WordCountHBaseTest {
     conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
     conf.setInt("hbase.master.info.port", -1);
     conf.setInt("hbase.regionserver.info.port", -1);
+
     hbaseTestUtil.startMiniZKCluster();
     hbaseTestUtil.startMiniCluster();
-    hbaseTestUtil.startMiniMapReduceCluster();
+    hbaseTestUtil.startMiniMapReduceCluster(1);
+    
+    // For Hadoop-2.0.0, we have to do a bit more work.
+    if (TaskAttemptContext.class.isInterface()) {
+      conf = hbaseTestUtil.getConfiguration();
+      FileSystem fs = FileSystem.get(conf);
+      Path tmpPath = new Path("target", "WordCountHBaseTest-tmpDir");
+      FileSystem localFS = FileSystem.getLocal(conf);
+      for (FileStatus jarFile : localFS.listStatus(new Path("target/lib/"))) {
+        Path target = new Path(tmpPath, jarFile.getPath().getName());
+        fs.copyFromLocalFile(jarFile.getPath(), target);
+        DistributedCache.addFileToClassPath(target, conf, fs);
+      }
+    
+      // Create a programmatic container for this jar.
+      JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseTest.jar"));
+      File baseDir = new File("target/test-classes");
+      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest.class");
+      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest$1.class");
+      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest$2.class");
+      jos.close();
+
+      Path target = new Path(tmpPath, "WordCountHBaseTest.jar");
+      fs.copyFromLocalFile(true, new Path("WordCountHBaseTest.jar"), target);
+      DistributedCache.addFileToClassPath(target, conf, fs);
+    }
+  }
+  
+  private void jarUp(JarOutputStream jos, File baseDir, String classDir) throws IOException {
+    File file = new File(baseDir, classDir);
+    JarEntry e = new JarEntry(classDir);
+    e.setTime(file.lastModified());
+    jos.putNextEntry(e);
+    ByteStreams.copy(new FileInputStream(file), jos);
+    jos.closeEntry();
   }
   
   @Test
