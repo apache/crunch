@@ -52,8 +52,18 @@ public abstract class DoFn<S, T> implements Serializable {
   /**
    * Processes the records from a {@link PCollection}.
    * 
-   * @param input The input record
-   * @param emitter The emitter to send the output to
+   * <br/>
+   * <br/>
+   * <b>Note:</b> Crunch can reuse a single input record object whose content
+   * changes on each {@link #process(Object, Emitter)} method call. This
+   * functionality is imposed by Hadoop's <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/Reducer.html">Reducer</a> implementation: 
+   * <i>The framework will reuse the key and value objects that are passed into the reduce, therefore the application
+   * should clone the objects they want to keep a copy of.</i>
+   * 
+   * @param input
+   *          The input record.
+   * @param emitter
+   *          The emitter to send the output to
    */
   public abstract void process(S input, Emitter<T> emitter);
 
