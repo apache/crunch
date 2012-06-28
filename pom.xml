@@ -9,7 +9,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <avro.version>1.6.3</avro.version>
+    <avro.version>1.7.0</avro.version>
     <hadoop.version>0.20.2-cdh3u4</hadoop.version>
     <hbase.version>0.90.6-cdh3u4</hbase.version>
   </properties>

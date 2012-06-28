@@ -68,22 +68,20 @@ public class SpecificAvroGroupByTest implements Serializable {
 		testSpecificAvro(pipeline);
 	}
 
-	@Test(expected = Exception.class)
-	public void testGrouByOnSpecificAvroButReflectionDatumReader()
-			throws Exception {
-		MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByTest.class);
+  @Test
+  public void testGrouByOnSpecificAvroButReflectionDatumReader()
+      throws Exception {
+    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByTest.class);
 
-		// Simulate the old (pre-fix) AvroSerializer implementation which
-		// creates ReflectDatumReader even for specific Avro types. This leads
-		// to:
-		// java.lang.ClassCastException: [Ljava.lang.String; cannot be cast to
-		// java.util.List
-		// at com.cloudera.crunch.test.Person.put(Person.java:49)
-		pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT,
-				true);
+    // https://issues.apache.org/jira/browse/AVRO-1046  resolves 
+    // the ClassCastException when reading specific Avro types with 
+    // ReflectDatumReader
+    
+    pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT,
+        true);
 
-		testSpecificAvro(pipeline);
-	}
+    testSpecificAvro(pipeline);
+  }
 
 	public void testSpecificAvro(MRPipeline pipeline) throws Exception {
 
