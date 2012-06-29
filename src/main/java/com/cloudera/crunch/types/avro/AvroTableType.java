@@ -26,123 +26,133 @@ import com.cloudera.crunch.types.PType;
 
 /**
  * The implementation of the PTableType interface for Avro-based serialization.
- *
+ * 
  */
-public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, V> {
-  
-  private static class PairToAvroPair extends MapFn<Pair, org.apache.avro.mapred.Pair> {
-    private final MapFn keyMapFn;
-    private final MapFn valueMapFn;
-    private final String firstJson;
-    private final String secondJson;
-    
-    private String pairSchemaJson;
-    private transient Schema pairSchema;
-    
-    public PairToAvroPair(AvroType keyType, AvroType valueType) {
-      this.keyMapFn = keyType.getOutputMapFn();
-      this.firstJson = keyType.getSchema().toString();
-      this.valueMapFn = valueType.getOutputMapFn();
-      this.secondJson = valueType.getSchema().toString();
-    }
-    
-    @Override
-    public void configure(Configuration conf) {
-      keyMapFn.configure(conf);
-      valueMapFn.configure(conf);
-    }
+public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements
+		PTableType<K, V> {
 
+	private static class PairToAvroPair extends
+			MapFn<Pair, org.apache.avro.mapred.Pair> {
+		private final MapFn keyMapFn;
+		private final MapFn valueMapFn;
+		private final String firstJson;
+		private final String secondJson;
 
-    @Override
-    public void setConfigurationForTest(Configuration conf) {
-      keyMapFn.setConfigurationForTest(conf);
-      valueMapFn.setConfigurationForTest(conf);
-    }
+		private String pairSchemaJson;
+		private transient Schema pairSchema;
 
-    @Override
-    public void initialize() {
-      keyMapFn.setContext(getContext());
-      valueMapFn.setContext(getContext());
-      pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
-          new Schema.Parser().parse(firstJson),
-          new Schema.Parser().parse(secondJson)).toString();
-    }
-    
-    @Override
-    public org.apache.avro.mapred.Pair map(Pair input) {
-      if(pairSchema == null) {
-        pairSchema = new Schema.Parser().parse(pairSchemaJson);
-      }
-      org.apache.avro.mapred.Pair avroPair = new org.apache.avro.mapred.Pair(pairSchema);
-      avroPair.key(keyMapFn.map(input.first()));
-      avroPair.value(valueMapFn.map(input.second()));
-      return avroPair;
-    }
-  }
-  
-  private static class IndexedRecordToPair extends MapFn<IndexedRecord, Pair> {
-    
-    private final MapFn firstMapFn;
-    private final MapFn secondMapFn;
-    
-    public IndexedRecordToPair(MapFn firstMapFn, MapFn secondMapFn) {
-      this.firstMapFn = firstMapFn;
-      this.secondMapFn = secondMapFn;
-    }
-    
-    @Override
-    public void configure(Configuration conf) {
-      firstMapFn.configure(conf);
-      secondMapFn.configure(conf);
-    }
+		public PairToAvroPair(AvroType keyType, AvroType valueType) {
+			this.keyMapFn = keyType.getOutputMapFn();
+			this.firstJson = keyType.getSchema().toString();
+			this.valueMapFn = valueType.getOutputMapFn();
+			this.secondJson = valueType.getSchema().toString();
+		}
 
-    @Override
-    public void setConfigurationForTest(Configuration conf) {
-      firstMapFn.setConfigurationForTest(conf);
-      secondMapFn.setConfigurationForTest(conf);
-    }
-    
-    @Override
-    public void initialize() {
-      firstMapFn.setContext(getContext());
-      secondMapFn.setContext(getContext());
-    }
-    
-    @Override
-    public Pair map(IndexedRecord input) {
-      return Pair.of(firstMapFn.map(input.get(0)), secondMapFn.map(input.get(1)));
-    }
-  }
-  
-  private final AvroType<K> keyType;
-  private final AvroType<V> valueType;
-  
-  public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
-    super(pairClass,
-        org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(), valueType.getSchema()),
-        new IndexedRecordToPair(keyType.getInputMapFn(), valueType.getInputMapFn()),
-        new PairToAvroPair(keyType, valueType), keyType, valueType);
-    this.keyType = keyType;
-    this.valueType = valueType;
-  }
-  
-  @Override
-  public boolean isSpecific() {
-	return keyType.isSpecific() || valueType.isSpecific();
-  }
-  
-  @Override
-  public PType<K> getKeyType() {
-    return keyType;
-  }
+		@Override
+		public void configure(Configuration conf) {
+			keyMapFn.configure(conf);
+			valueMapFn.configure(conf);
+		}
 
-  @Override
-  public PType<V> getValueType() {
-    return valueType;
-  }
+		@Override
+		public void setConfigurationForTest(Configuration conf) {
+			keyMapFn.setConfigurationForTest(conf);
+			valueMapFn.setConfigurationForTest(conf);
+		}
 
-  @Override
-  public PGroupedTableType<K, V> getGroupedTableType() {
-    return new AvroGroupedTableType<K, V>(this);
-  }
+		@Override
+		public void initialize() {
+			keyMapFn.setContext(getContext());
+			valueMapFn.setContext(getContext());
+			pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
+					new Schema.Parser().parse(firstJson),
+					new Schema.Parser().parse(secondJson)).toString();
+		}
+
+		@Override
+		public org.apache.avro.mapred.Pair map(Pair input) {
+			if (pairSchema == null) {
+				pairSchema = new Schema.Parser().parse(pairSchemaJson);
+			}
+			org.apache.avro.mapred.Pair avroPair = new org.apache.avro.mapred.Pair(
+					pairSchema);
+			avroPair.key(keyMapFn.map(input.first()));
+			avroPair.value(valueMapFn.map(input.second()));
+			return avroPair;
+		}
+	}
+
+	private static class IndexedRecordToPair extends MapFn<IndexedRecord, Pair> {
+
+		private final MapFn firstMapFn;
+		private final MapFn secondMapFn;
+
+		public IndexedRecordToPair(MapFn firstMapFn, MapFn secondMapFn) {
+			this.firstMapFn = firstMapFn;
+			this.secondMapFn = secondMapFn;
+		}
+
+		@Override
+		public void configure(Configuration conf) {
+			firstMapFn.configure(conf);
+			secondMapFn.configure(conf);
+		}
+
+		@Override
+		public void setConfigurationForTest(Configuration conf) {
+			firstMapFn.setConfigurationForTest(conf);
+			secondMapFn.setConfigurationForTest(conf);
+		}
+
+		@Override
+		public void initialize() {
+			firstMapFn.setContext(getContext());
+			secondMapFn.setContext(getContext());
+		}
+
+		@Override
+		public Pair map(IndexedRecord input) {
+			return Pair.of(firstMapFn.map(input.get(0)),
+					secondMapFn.map(input.get(1)));
+		}
+	}
+
+	private final AvroType<K> keyType;
+	private final AvroType<V> valueType;
+
+	public AvroTableType(AvroType<K> keyType, AvroType<V> valueType,
+			Class<Pair<K, V>> pairClass) {
+		super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(
+				keyType.getSchema(), valueType.getSchema()),
+				new IndexedRecordToPair(keyType.getInputMapFn(),
+						valueType.getInputMapFn()), new PairToAvroPair(keyType,
+						valueType), keyType, valueType);
+		this.keyType = keyType;
+		this.valueType = valueType;
+	}
+
+	@Override
+	public boolean isSpecific() {
+		return keyType.isSpecific() || valueType.isSpecific();
+	}
+
+	@Override
+	public boolean isGeneric() {
+		return keyType.isGeneric() || valueType.isGeneric();
+	}
+
+	@Override
+	public PType<K> getKeyType() {
+		return keyType;
+	}
+
+	@Override
+	public PType<V> getValueType() {
+		return valueType;
+	}
+
+	@Override
+	public PGroupedTableType<K, V> getGroupedTableType() {
+		return new AvroGroupedTableType<K, V>(this);
+	}
 }

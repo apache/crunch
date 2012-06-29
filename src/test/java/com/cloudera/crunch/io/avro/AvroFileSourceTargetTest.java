@@ -28,6 +28,7 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.reflect.ReflectData;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +37,7 @@ import com.cloudera.crunch.PCollection;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
 import com.cloudera.crunch.io.At;
+import com.cloudera.crunch.io.avro.AvroFileReaderFactoryTest.PojoPerson;
 import com.cloudera.crunch.test.Person;
 import com.cloudera.crunch.types.avro.Avros;
 import com.google.common.collect.Lists;
@@ -55,14 +57,15 @@ public class AvroFileSourceTargetTest implements Serializable {
 		avroFile.delete();
 	}
 
-	private void populateGenericFile(List<GenericRecord> genericRecords) throws IOException {
+	private void populateGenericFile(List<GenericRecord> genericRecords,
+			Schema schema) throws IOException {
 		FileOutputStream outputStream = new FileOutputStream(this.avroFile);
 		GenericDatumWriter<GenericRecord> genericDatumWriter = new GenericDatumWriter<GenericRecord>(
-				Person.SCHEMA$);
+				schema);
 
 		DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(
 				genericDatumWriter);
-		dataFileWriter.create(Person.SCHEMA$, outputStream);
+		dataFileWriter.create(schema, outputStream);
 
 		for (GenericRecord record : genericRecords) {
 			dataFileWriter.append(record);
@@ -79,13 +82,14 @@ public class AvroFileSourceTargetTest implements Serializable {
 		savedRecord.put("name", "John Doe");
 		savedRecord.put("age", 42);
 		savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-		populateGenericFile(Lists.newArrayList(savedRecord));
+		populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
 		Pipeline pipeline = new MRPipeline(AvroFileSourceTargetTest.class);
-		PCollection<Person> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
-				Avros.records(Person.class)));
+		PCollection<Person> genericCollection = pipeline.read(At.avroFile(
+				avroFile.getAbsolutePath(), Avros.records(Person.class)));
 
-		List<Person> personList = Lists.newArrayList(genericCollection.materialize());
+		List<Person> personList = Lists.newArrayList(genericCollection
+				.materialize());
 
 		Person expectedPerson = new Person();
 		expectedPerson.setName("John Doe");
@@ -96,25 +100,51 @@ public class AvroFileSourceTargetTest implements Serializable {
 		siblingNames.add("Jane");
 		expectedPerson.setSiblingnames(siblingNames);
 
-		assertEquals(Lists.newArrayList(expectedPerson), Lists.newArrayList(personList));
+		assertEquals(Lists.newArrayList(expectedPerson),
+				Lists.newArrayList(personList));
 	}
 
 	@Test
 	public void testGeneric() throws IOException {
-		String genericSchemaJson = Person.SCHEMA$.toString().replace("Person", "GenericPerson");
-		Schema genericPersonSchema = new Schema.Parser().parse(genericSchemaJson);
+		String genericSchemaJson = Person.SCHEMA$.toString().replace("Person",
+				"GenericPerson");
+		Schema genericPersonSchema = new Schema.Parser()
+				.parse(genericSchemaJson);
 		GenericRecord savedRecord = new GenericData.Record(genericPersonSchema);
 		savedRecord.put("name", "John Doe");
 		savedRecord.put("age", 42);
 		savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-		populateGenericFile(Lists.newArrayList(savedRecord));
+		populateGenericFile(Lists.newArrayList(savedRecord),
+				genericPersonSchema);
 
 		Pipeline pipeline = new MRPipeline(AvroFileSourceTargetTest.class);
-		PCollection<Record> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
-				Avros.generics(genericPersonSchema)));
+		PCollection<Record> genericCollection = pipeline
+				.read(At.avroFile(avroFile.getAbsolutePath(),
+						Avros.generics(genericPersonSchema)));
 
-		List<Record> recordList = Lists.newArrayList(genericCollection.materialize());
+		List<Record> recordList = Lists.newArrayList(genericCollection
+				.materialize());
 
-		assertEquals(Lists.newArrayList(savedRecord), Lists.newArrayList(recordList));
+		assertEquals(Lists.newArrayList(savedRecord),
+				Lists.newArrayList(recordList));
+	}
+
+	@Test
+	public void testReflect() throws IOException {
+		Schema pojoPersonSchema = ReflectData.get().getSchema(PojoPerson.class);
+		GenericRecord savedRecord = new GenericData.Record(pojoPersonSchema);
+		savedRecord.put("name", "John Doe");
+		populateGenericFile(Lists.newArrayList(savedRecord), pojoPersonSchema);
+
+		Pipeline pipeline = new MRPipeline(AvroFileSourceTargetTest.class);
+		PCollection<PojoPerson> personCollection = pipeline.read(At.avroFile(
+				avroFile.getAbsolutePath(), Avros.reflects(PojoPerson.class)));
+
+		List<PojoPerson> recordList = Lists.newArrayList(personCollection
+				.materialize());
+
+		assertEquals(1, recordList.size());
+		PojoPerson person = recordList.get(0);
+		assertEquals("John Doe", person.getName());
 	}
 }

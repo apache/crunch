@@ -17,6 +17,7 @@ package com.cloudera.crunch.types.avro;
 import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
@@ -46,8 +47,8 @@ public class AvroType<T> implements PType<T> {
 	private final List<PType> subTypes;
 
 	public AvroType(Class<T> typeClass, Schema schema, PType... ptypes) {
-		this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(),
-				ptypes);
+		this(typeClass, schema, IdentityFn.getInstance(), IdentityFn
+				.getInstance(), ptypes);
 	}
 
 	public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn,
@@ -79,20 +80,29 @@ public class AvroType<T> implements PType<T> {
 	}
 
 	/**
-	 * Determine if the wrapped type is a specific or generic avro type.
+	 * Determine if the wrapped type is a specific data avro type.
 	 * 
 	 * @return true if the wrapped type is a specific data type
 	 */
 	public boolean isSpecific() {
-	  if (SpecificRecord.class.isAssignableFrom(typeClass)) {
-	    return true;
-	  }
-	  for (PType ptype : subTypes) {
-	    if (SpecificRecord.class.isAssignableFrom(ptype.getTypeClass())) {
-	      return true;
-	    }
-	  }
-	  return false;
+		if (SpecificRecord.class.isAssignableFrom(typeClass)) {
+			return true;
+		}
+		for (PType ptype : subTypes) {
+			if (SpecificRecord.class.isAssignableFrom(ptype.getTypeClass())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Determine if the wrapped type is a generic data avro type.
+	 * 
+	 * @return true if the wrapped type is a generic type
+	 */
+	public boolean isGeneric() {
+		return GenericData.Record.class.equals(typeClass);
 	}
 
 	public MapFn<Object, T> getInputMapFn() {
