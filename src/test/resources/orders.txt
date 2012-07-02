@@ -1,0 +1,4 @@
+222|Toilet plunger
+333|Toilet brush
+222|Toilet paper
+111|Corn flakes
