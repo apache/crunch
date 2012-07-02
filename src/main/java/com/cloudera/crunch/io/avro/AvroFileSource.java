@@ -45,7 +45,8 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(FileSystem.get(conf), path, new AvroFileReaderFactory<T>(
+    FileSystem fs = FileSystem.get(path.toUri(), conf);
+    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>(
         (AvroType<T>) ptype, conf));
   }
 }

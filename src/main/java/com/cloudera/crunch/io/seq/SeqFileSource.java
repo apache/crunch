@@ -26,18 +26,16 @@ import com.cloudera.crunch.io.ReadableSource;
 import com.cloudera.crunch.io.impl.FileSourceImpl;
 import com.cloudera.crunch.types.PType;
 
-public class SeqFileSource<T> extends FileSourceImpl<T> implements
-	ReadableSource<T> {
+public class SeqFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
   public SeqFileSource(Path path, PType<T> ptype) {
-	super(path, ptype, SequenceFileInputFormat.class);
+    super(path, ptype, SequenceFileInputFormat.class);
   }
-  
+
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-	FileSystem fs = FileSystem.get(conf);
-	return CompositePathIterable.create(fs, path, 
-	    new SeqFileReaderFactory<T>(ptype, conf));
+    FileSystem fs = FileSystem.get(path.toUri(), conf);
+    return CompositePathIterable.create(fs, path, new SeqFileReaderFactory<T>(ptype, conf));
   }
 
   @Override

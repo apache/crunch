@@ -42,7 +42,7 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
 
   @Override
   public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
-    FileSystem fs = FileSystem.get(conf);
+    FileSystem fs = FileSystem.get(path.toUri(), conf);
     return CompositePathIterable.create(fs, path, 
         new SeqFileTableReaderFactory<K, V>((PTableType<K, V>) ptype, conf));
   }

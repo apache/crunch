@@ -2,6 +2,8 @@ package com.cloudera.crunch.lib.join;
 
 import java.io.IOException;
 
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.cloudera.crunch.DoFn;
@@ -53,21 +55,25 @@ public class MapsideJoin {
     MRPipeline pipeline = (MRPipeline) right.getPipeline();
     pipeline.materialize(right);
 
-    // TODO Make this method internal to MRPipeline so that we don't run once
-    // for every separate MapsideJoin at the same level
+    // TODO Move necessary logic to MRPipeline so that we can theoretically
+    // optimize his by running the setup of multiple map-side joins concurrently
     pipeline.run();
 
-    // TODO Verify that this cast is safe -- are there any situations where this
-    // wouldn't work?
-    SourcePathTargetImpl<Pair<K, V>> sourcePathTarget = (SourcePathTargetImpl<Pair<K, V>>) pipeline
+    ReadableSourceTarget<Pair<K, V>> readableSourceTarget = pipeline
         .getMaterializeSourceTarget(right);
+    if (!(readableSourceTarget instanceof SourcePathTargetImpl)) {
+      throw new CrunchRuntimeException("Right-side contents can't be read from a path");
+    }
 
-    // TODO Put the data in the distributed cache
+    // Suppress warnings because we've just checked this cast via instanceof
+    @SuppressWarnings("unchecked")
+    SourcePathTargetImpl<Pair<K, V>> sourcePathTarget = (SourcePathTargetImpl<Pair<K, V>>) readableSourceTarget;
 
     Path path = sourcePathTarget.getPath();
-    PType<Pair<K, V>> pType = right.getPType();
+    DistributedCache.addCacheFile(path.toUri(), pipeline.getConfiguration());
 
-    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.toString(), pType);
+    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.toString(),
+        right.getPType());
     PTypeFamily typeFamily = left.getTypeFamily();
     return left.parallelDo(
         "mapjoin",
@@ -79,13 +85,28 @@ public class MapsideJoin {
 
   static class MapsideJoinDoFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
-    private String path;
+    private String inputPath;
     private PType<Pair<K, V>> ptype;
     private Multimap<K, V> joinMap;
 
-    public MapsideJoinDoFn(String path, PType<Pair<K, V>> ptype) {
-      this.path = path;
+    public MapsideJoinDoFn(String inputPath, PType<Pair<K, V>> ptype) {
+      this.inputPath = inputPath;
       this.ptype = ptype;
+    }
+
+    private Path getCacheFilePath() {
+      try {
+        for (Path localPath : DistributedCache.getLocalCacheFiles(getConfiguration())) {
+          if (localPath.toString().endsWith(inputPath)) {
+            return localPath.makeQualified(FileSystem.getLocal(getConfiguration()));
+
+          }
+        }
+      } catch (IOException e) {
+        throw new CrunchRuntimeException(e);
+      }
+
+      throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
     }
 
     @Override
@@ -93,7 +114,7 @@ public class MapsideJoin {
       super.initialize();
 
       ReadableSourceTarget<Pair<K, V>> sourceTarget = (ReadableSourceTarget<Pair<K, V>>) ptype
-          .getDefaultFileSource(new Path(path));
+          .getDefaultFileSource(getCacheFilePath());
       Iterable<Pair<K, V>> iterable = null;
       try {
         iterable = sourceTarget.read(getConfiguration());
