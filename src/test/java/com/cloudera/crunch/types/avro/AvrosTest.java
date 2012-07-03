@@ -15,7 +15,9 @@
 package com.cloudera.crunch.types.avro;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -31,6 +33,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Tuple3;
 import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
+import com.cloudera.crunch.test.Person;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
 import com.google.common.collect.ImmutableList;
@@ -104,9 +107,9 @@ public class AvrosTest {
   
   @Test
   public void testNestedTables() throws Exception {
-	PTableType<Long, Long> pll = Avros.tableOf(Avros.longs(), Avros.longs());
-	String schema = Avros.tableOf(pll, Avros.strings()).getSchema().toString();
-	assertNotNull(schema);
+    PTableType<Long, Long> pll = Avros.tableOf(Avros.longs(), Avros.longs());
+    String schema = Avros.tableOf(pll, Avros.strings()).getSchema().toString();
+    assertNotNull(schema);
   }
   
   @Test
@@ -204,4 +207,15 @@ public class AvrosTest {
     assertEquals(java, ptype.getInputMapFn().map(avro));
     assertEquals(avro, ptype.getOutputMapFn().map(java));
   }
+
+  @Test
+  public void testIsPrimitive_True() {
+    assertTrue(Avros.isPrimitive(Avros.ints()));
+  }
+
+  @Test
+  public void testIsPrimitive_False() {
+    assertFalse(Avros.isPrimitive(Avros.reflects(Person.class)));
+  }
+
 }

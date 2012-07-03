@@ -18,16 +18,18 @@ import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.SourceTarget;
+import com.cloudera.crunch.fn.IdentityFn;
 import com.cloudera.crunch.io.seq.SeqFileSourceTarget;
 import com.cloudera.crunch.types.Converter;
 import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.PTypeFamily;
 import com.google.common.collect.ImmutableList;
 
-public class WritableType<T, W> implements PType<T> {
+public class WritableType<T, W extends Writable> implements PType<T> {
 
   private final Class<T> typeClass;
   private final Class<W> writableClass;
@@ -95,6 +97,19 @@ public class WritableType<T, W> implements PType<T> {
 		subTypes.equals(wt.subTypes));
   }
   
+  // Unchecked warnings are suppressed because we know that W and T are the same
+  // type (due to the IdentityFn being used)
+  @SuppressWarnings("unchecked")
+  @Override
+  public T getDetachedValue(T value) {
+    if (this.inputFn.getClass().equals(IdentityFn.class)) {
+      W writableValue = (W) value;
+      return (T) Writables.deepCopy(writableValue, this.writableClass);
+    } else {
+      return value;
+    }
+  }
+
   @Override
   public int hashCode() {
 	HashCodeBuilder hcb = new HashCodeBuilder();

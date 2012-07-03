@@ -12,6 +12,10 @@ public class CrunchRuntimeException extends RuntimeException {
     super(e);
   }
   
+  public CrunchRuntimeException(String msg, Exception e) {
+    super(msg, e);
+  }
+
   public boolean wasLogged() {
     return logged;
   }

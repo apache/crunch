@@ -14,6 +14,11 @@
  */
 package com.cloudera.crunch.types.writable;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -39,6 +44,7 @@ import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.fn.IdentityFn;
+import com.cloudera.crunch.impl.mr.run.CrunchRuntimeException;
 import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.TupleFactory;
 import com.cloudera.crunch.util.PTypes;
@@ -207,7 +213,7 @@ public class Writables {
     return (PType<T>) PRIMITIVES.get(clazz);
   }
   
-  public static <T> void register(Class<T> clazz, WritableType<T, ?> ptype) {
+  public static <T> void register(Class<T> clazz, WritableType<T, ? extends Writable> ptype) {
     EXTENSIONS.put(clazz, ptype);
   }
   
@@ -243,11 +249,11 @@ public class Writables {
     return bytes;
   }
   
-  public static final <T> WritableType<T, T> records(Class<T> clazz) {
+  public static final <T, W extends Writable> WritableType<T, W> records(Class<T> clazz) {
     if (EXTENSIONS.containsKey(clazz)) {
-      return (WritableType<T, T>) EXTENSIONS.get(clazz);
+      return (WritableType<T, W>) EXTENSIONS.get(clazz);
     }
-    return (WritableType<T, T>) writables(clazz.asSubclass(Writable.class));
+    return (WritableType<T, W>) writables(clazz.asSubclass(Writable.class));
   }
 
   public static <W extends Writable> WritableType<W, W> writables(Class<W> clazz) {
@@ -593,6 +599,32 @@ public class Writables {
     return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());  
   }
   
+  /**
+   * Perform a deep copy of a writable value.
+   * 
+   * @param value
+   *          The value to be copied
+   * @param writableClass
+   *          The Writable class of the value to be copied
+   * @return A fully detached deep copy of the input value
+   */
+  public static <T extends Writable> T deepCopy(T value, Class<T> writableClass) {
+    ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
+    DataOutputStream dataOut = new DataOutputStream(byteOutStream);
+    T copiedValue = null;
+    try {
+      value.write(dataOut);
+      dataOut.flush();
+      ByteArrayInputStream byteInStream = new ByteArrayInputStream(byteOutStream.toByteArray());
+      DataInput dataInput = new DataInputStream(byteInStream);
+      copiedValue = writableClass.newInstance();
+      copiedValue.readFields(dataInput);
+    } catch (Exception e) {
+      throw new CrunchRuntimeException("Error while deep copying " + value, e);
+    }
+    return copiedValue;
+  }
+
   // Not instantiable
   private Writables() {
   }

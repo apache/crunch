@@ -41,10 +41,12 @@ public class AvroType<T> implements PType<T> {
 	private static final Converter AVRO_CONVERTER = new AvroKeyConverter();
 
 	private final Class<T> typeClass;
-	private final Schema schema;
+  private final String schemaString;
+  private transient Schema schema;
 	private final MapFn baseInputMapFn;
 	private final MapFn baseOutputMapFn;
 	private final List<PType> subTypes;
+  private AvroDeepCopier<T> deepCopier;
 
 	public AvroType(Class<T> typeClass, Schema schema, PType... ptypes) {
 		this(typeClass, schema, IdentityFn.getInstance(), IdentityFn
@@ -55,6 +57,7 @@ public class AvroType<T> implements PType<T> {
 			MapFn outputMapFn, PType... ptypes) {
 		this.typeClass = typeClass;
 		this.schema = Preconditions.checkNotNull(schema);
+    this.schemaString = schema.toString();
 		this.baseInputMapFn = inputMapFn;
 		this.baseOutputMapFn = outputMapFn;
 		this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
@@ -76,6 +79,9 @@ public class AvroType<T> implements PType<T> {
 	}
 
 	public Schema getSchema() {
+    if (schema == null) {
+      schema = new Schema.Parser().parse(schemaString);
+    }
 		return schema;
 	}
 
@@ -122,6 +128,26 @@ public class AvroType<T> implements PType<T> {
 	public SourceTarget<T> getDefaultFileSource(Path path) {
 		return new AvroFileSourceTarget<T>(path, this);
 	}
+
+  private AvroDeepCopier<T> getDeepCopier() {
+    if (deepCopier == null) {
+      if (isSpecific()) {
+        deepCopier = new AvroDeepCopier.AvroSpecificDeepCopier<T>(typeClass, getSchema());
+      } else if (isGeneric()) {
+        deepCopier = (AvroDeepCopier<T>) new AvroDeepCopier.AvroGenericDeepCopier(getSchema());
+      } else {
+        deepCopier = new AvroDeepCopier.AvroReflectDeepCopier<T>(typeClass, getSchema());
+      }
+    }
+    return deepCopier;
+  }
+
+  public T getDetachedValue(T value) {
+    if (this.baseInputMapFn instanceof IdentityFn && !Avros.isPrimitive(this)) {
+      return getDeepCopier().deepCopy(value);
+    }
+    return value;
+  }
 
 	@Override
 	public boolean equals(Object other) {

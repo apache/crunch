@@ -224,9 +224,14 @@ public class Aggregate {
   
   public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {
     PTypeFamily tf = collect.getTypeFamily();
+    final PType<V> valueType = collect.getValueType();
     return collect.groupByKey().parallelDo("collect", new MapValuesFn<K, Iterable<V>, Collection<V>>() {
-      public Collection<V> map(Iterable<V> v) {
-        return Lists.newArrayList(v);
+          public Collection<V> map(Iterable<V> values) {
+            List<V> collected = Lists.newArrayList();
+            for (V value : values) {
+              collected.add(valueType.getDetachedValue(value));
+            }
+            return collected;
       }
     }, tf.tableOf(collect.getKeyType(), tf.collections(collect.getValueType())));  
   }

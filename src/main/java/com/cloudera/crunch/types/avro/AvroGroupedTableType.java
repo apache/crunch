@@ -27,6 +27,7 @@ import com.cloudera.crunch.GroupingOptions;
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.fn.PairMapFn;
+import com.cloudera.crunch.lib.PTables;
 import com.cloudera.crunch.types.Converter;
 import com.cloudera.crunch.types.PGroupedTableType;
 
@@ -70,6 +71,11 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     return outputFn;
   }
   
+  @Override
+  public Pair<K, Iterable<V>> getDetachedValue(Pair<K, Iterable<V>> value) {
+    return PTables.getGroupedDetachedValue(this, value);
+  }
+
   @Override
   public void configureShuffle(Job job, GroupingOptions options) {
     AvroTableType<K, V> att = (AvroTableType<K, V>) tableType;

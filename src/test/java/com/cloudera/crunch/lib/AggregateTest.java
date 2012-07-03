@@ -19,8 +19,11 @@ import static com.cloudera.crunch.types.writable.Writables.tableOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
+import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
 import com.cloudera.crunch.MapFn;
@@ -30,14 +33,17 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.Pipeline;
 import com.cloudera.crunch.impl.mem.MemPipeline;
 import com.cloudera.crunch.impl.mr.MRPipeline;
+import com.cloudera.crunch.test.Employee;
 import com.cloudera.crunch.test.FileHelper;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PTypeFamily;
 import com.cloudera.crunch.types.avro.AvroTypeFamily;
 import com.cloudera.crunch.types.avro.Avros;
 import com.cloudera.crunch.types.writable.WritableTypeFamily;
+import com.cloudera.crunch.types.writable.Writables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 public class AggregateTest {
 
@@ -121,5 +127,103 @@ public class AggregateTest {
     
     PTable<String, Integer> bottom2 = Aggregate.top(counts, 2, false);
     assertEquals(ImmutableList.of(Pair.of("foo", 12), Pair.of("bar", 17)), bottom2.materialize());
+  }
+
+  @Test
+  public void testCollectValues_Writables() throws IOException {
+    Pipeline pipeline = new MRPipeline(AggregateTest.class);
+    Map<Integer, Collection<Text>> collectionMap = pipeline
+        .readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+        .parallelDo(new MapStringToTextPair(),
+            Writables.tableOf(Writables.ints(), Writables.writables(Text.class))
+        ).collectValues().materializeToMap();
+
+    assertEquals(1, collectionMap.size());
+
+    assertEquals(Lists.newArrayList(new Text("c"), new Text("d"), new Text("a")),
+        collectionMap.get(1));
+  }
+
+  @Test
+  public void testCollectValues_Avro() throws IOException {
+
+    MapStringToEmployeePair mapFn = new MapStringToEmployeePair();
+    Pipeline pipeline = new MRPipeline(AggregateTest.class);
+    Map<Integer, Collection<Employee>> collectionMap = pipeline
+        .readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+        .parallelDo(mapFn,
+            Avros.tableOf(Avros.ints(), Avros.records(Employee.class))).collectValues()
+        .materializeToMap();
+
+    assertEquals(1, collectionMap.size());
+
+    Employee empC = mapFn.map("c").second();
+    Employee empD = mapFn.map("d").second();
+    Employee empA = mapFn.map("a").second();
+
+    assertEquals(Lists.newArrayList(empC, empD, empA),
+        collectionMap.get(1));
+  }
+
+  private static class MapStringToTextPair extends MapFn<String, Pair<Integer, Text>> {
+    @Override
+    public Pair<Integer, Text> map(String input) {
+      return Pair.of(1, new Text(input));
+    }
+  }
+
+  private static class MapStringToEmployeePair extends MapFn<String, Pair<Integer, Employee>> {
+    @Override
+    public Pair<Integer, Employee> map(String input) {
+      Employee emp = new Employee();
+      emp.setName(input);
+      emp.setSalary(0);
+      emp.setDepartment("");
+      return Pair.of(1, emp);
+    }
+  }
+
+  public static class PojoText {
+    private String value;
+
+    public PojoText() {
+      this("");
+    }
+
+    public PojoText(String value) {
+      this.value = value;
+    }
+
+    public String getValue() {
+      return value;
+    }
+
+    public void setValue(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public String toString() {
+      return String.format("PojoText<%s>", this.value);
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj)
+        return true;
+      if (obj == null)
+        return false;
+      if (getClass() != obj.getClass())
+        return false;
+      PojoText other = (PojoText) obj;
+      if (value == null) {
+        if (other.value != null)
+          return false;
+      } else if (!value.equals(other.value))
+        return false;
+      return true;
+    }
+
   }
 }

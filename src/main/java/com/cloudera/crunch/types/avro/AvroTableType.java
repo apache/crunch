@@ -20,6 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import com.cloudera.crunch.MapFn;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.lib.PTables;
 import com.cloudera.crunch.types.PGroupedTableType;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
@@ -155,4 +156,9 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements
 	public PGroupedTableType<K, V> getGroupedTableType() {
 		return new AvroGroupedTableType<K, V>(this);
 	}
+
+  @Override
+  public Pair<K, V> getDetachedValue(Pair<K, V> value) {
+    return PTables.getDetachedValue(this, value);
+  }
 }

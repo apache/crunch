@@ -25,6 +25,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.SourceTarget;
 import com.cloudera.crunch.fn.PairMapFn;
 import com.cloudera.crunch.io.seq.SeqFileTableSourceTarget;
+import com.cloudera.crunch.lib.PTables;
 import com.cloudera.crunch.types.Converter;
 import com.cloudera.crunch.types.PGroupedTableType;
 import com.cloudera.crunch.types.PTableType;
@@ -100,6 +101,11 @@ class WritableTableType<K, V> implements PTableType<K, V> {
     return new SeqFileTableSourceTarget<K, V>(path, this);
   }
   
+  @Override
+  public Pair<K, V> getDetachedValue(Pair<K, V> value) {
+    return PTables.getDetachedValue(this, value);
+  }
+
   @Override
   public boolean equals(Object obj) {
 	if (obj == null || !(obj instanceof WritableTableType)) {

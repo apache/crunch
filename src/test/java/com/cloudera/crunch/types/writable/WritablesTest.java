@@ -16,7 +16,8 @@ package com.cloudera.crunch.types.writable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -254,7 +255,7 @@ public class WritablesTest {
   public void testRegister() throws Exception {
     WritableType<TestWritable, TestWritable> wt = Writables.writables(TestWritable.class);
     Writables.register(TestWritable.class, wt);
-    assertTrue(Writables.records(TestWritable.class) == wt);
+    assertSame(Writables.records(TestWritable.class), wt);
   }
     
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -263,5 +264,13 @@ public class WritablesTest {
     ptype.getOutputMapFn().initialize();
     assertEquals(java, ptype.getInputMapFn().map(writable));
     assertEquals(writable, ptype.getOutputMapFn().map(java));
+  }
+
+  @Test
+  public void testDeepCopy() {
+    Text text = new Text("Test");
+    Text copiedText = Writables.deepCopy(text, Text.class);
+    assertEquals(text, copiedText);
+    assertNotSame(text, copiedText);
   }
 }

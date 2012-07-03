@@ -142,6 +142,10 @@ public class Avros {
 		return (PType<T>) PRIMITIVES.get(clazz);
 	}
 
+  static <T> boolean isPrimitive(AvroType<T> avroType) {
+    return PRIMITIVES.containsKey(avroType.getTypeClass());
+  }
+
 	private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
 		return new AvroType<T>(clazz, Schema.create(schemaType));
 	}
