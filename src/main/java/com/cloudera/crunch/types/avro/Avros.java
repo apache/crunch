@@ -44,6 +44,7 @@ import com.cloudera.crunch.Tuple4;
 import com.cloudera.crunch.TupleN;
 import com.cloudera.crunch.fn.CompositeMapFn;
 import com.cloudera.crunch.fn.IdentityFn;
+import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
 import com.cloudera.crunch.types.TupleFactory;
 import com.cloudera.crunch.util.PTypes;
@@ -601,6 +602,14 @@ public class Avros {
 
 	public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key,
 			PType<V> value) {
+	  if (key instanceof PTableType) {
+	    PTableType ptt = (PTableType) key;
+	    key = Avros.pairs(ptt.getKeyType(), ptt.getValueType());
+	  }
+	  if (value instanceof PTableType) {
+	    PTableType ptt = (PTableType) value;
+	    value = Avros.pairs(ptt.getKeyType(), ptt.getValueType());
+	  }
 		AvroType<K> avroKey = (AvroType<K>) key;
 		AvroType<V> avroValue = (AvroType<V>) value;
 		return new AvroTableType(avroKey, avroValue, Pair.class);

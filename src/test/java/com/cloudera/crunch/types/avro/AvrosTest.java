@@ -105,8 +105,8 @@ public class AvrosTest {
   @Test
   public void testNestedTables() throws Exception {
 	PTableType<Long, Long> pll = Avros.tableOf(Avros.longs(), Avros.longs());
-	PTableType<Pair<Long, Long>, String> nest = Avros.tableOf(pll, Avros.strings());
-	assertNotNull(nest);
+	String schema = Avros.tableOf(pll, Avros.strings()).getSchema().toString();
+	assertNotNull(schema);
   }
   
   @Test
