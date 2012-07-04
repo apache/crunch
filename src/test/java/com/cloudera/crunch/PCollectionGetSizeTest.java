@@ -89,7 +89,6 @@ public class PCollectionGetSizeTest {
     }
 
     @Test
-    @Ignore("MemPipeline implementation is inconsistent with the MRPipeline")
     public void testGetSizeOfEmptyIntermediatePCollection_MemPipeline() {
 
         PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(MemPipeline.getInstance());
@@ -106,7 +105,6 @@ public class PCollectionGetSizeTest {
     }
 
     @Test
-    @Ignore("MemPipelien impelmentation is inconsistent with the MRPipelien")
     public void testMaterializeOfEmptyIntermediatePCollection_MemPipeline() {
 
         PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(MemPipeline.getInstance());
@@ -133,7 +131,6 @@ public class PCollectionGetSizeTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    @Ignore("MemPipelien impelmentation is inconsistent with the MRPipelien")
     public void testExpectExceptionForGettingSizeOfNonExistingFile_MemPipeline() {
         MemPipeline.getInstance().readTextFile("non_existing.file").getSize();
     }

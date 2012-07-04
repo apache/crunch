@@ -118,11 +118,11 @@ public class MemPipeline implements Pipeline {
         return new MemCollection<T>(iterable, source.getType(), source.toString());
       } catch (IOException e) {
         LOG.error("Exception reading source: " + source.toString(), e);
-        return null;
+        throw new IllegalStateException(e);
       }
     }
     LOG.error("Source " + source + " is not readable");
-    return null;
+    throw new IllegalStateException("Source " + source + " is not readable");
   }
 
   @Override
@@ -133,11 +133,11 @@ public class MemPipeline implements Pipeline {
         return new MemTable<K, V>(iterable, source.getTableType(), source.toString());
       } catch (IOException e) {
         LOG.error("Exception reading source: " + source.toString(), e);
-        return null;
+        throw new IllegalStateException(e);
       }
     }
     LOG.error("Source " + source + " is not readable");
-    return null;
+    throw new IllegalStateException("Source " + source + " is not readable");
   }
 
   @Override
