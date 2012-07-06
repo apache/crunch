@@ -16,8 +16,6 @@ package com.cloudera.crunch.lib;
 
 import java.util.List;
 
-import org.apache.hadoop.thirdparty.guava.common.collect.Lists;
-
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.PCollection;
@@ -27,6 +25,7 @@ import com.cloudera.crunch.Pair;
 import com.cloudera.crunch.types.PGroupedTableType;
 import com.cloudera.crunch.types.PTableType;
 import com.cloudera.crunch.types.PType;
+import com.google.common.collect.Lists;
 
 /**
  * Methods for performing common operations on PTables.

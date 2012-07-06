@@ -8,10 +8,10 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
-import org.apache.hadoop.thirdparty.guava.common.collect.Lists;
 import org.junit.Test;
 
 import com.cloudera.crunch.test.Person;
+import com.google.common.collect.Lists;
 
 public class AvroTypeTest {
 
