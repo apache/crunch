@@ -17,6 +17,7 @@ package com.cloudera.crunch.lib.join;
 import static org.junit.Assert.assertTrue;
 
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.types.PTypeFamily;
 
 public class FullOuterJoinTest extends JoinTester {
   @Override
@@ -41,7 +42,7 @@ public class FullOuterJoinTest extends JoinTester {
   }
 
   @Override
-  protected JoinFn<String, Long, Long> getJoinFn() {
-    return new FullOuterJoinFn<String, Long, Long>();
+  protected JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily) {
+    return new FullOuterJoinFn<String, Long, Long>(typeFamily.longs());
   }
 }

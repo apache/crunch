@@ -18,6 +18,7 @@ import java.util.List;
 
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.types.PType;
 import com.google.common.collect.Lists;
 
 /**
@@ -28,9 +29,13 @@ import com.google.common.collect.Lists;
  * @param <V> Type of the second {@link com.cloudera.crunch.PTable}'s values
  */
 public class RightOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
-  
+
   private transient K lastKey;
   private transient List<U> leftValues;
+
+  public RightOuterJoinFn(PType<U> leftValueType) {
+    super(leftValueType);
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -50,7 +55,7 @@ public class RightOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
     if (id == 0) {
       for (Pair<U, V> pair : pairs) {
         if (pair.first() != null)
-          leftValues.add(pair.first());
+          leftValues.add(leftValueType.getDetachedValue(pair.first()));
       }
     } else {
       for (Pair<U, V> pair : pairs) {

@@ -17,6 +17,7 @@ package com.cloudera.crunch.lib.join;
 import com.cloudera.crunch.DoFn;
 import com.cloudera.crunch.Emitter;
 import com.cloudera.crunch.Pair;
+import com.cloudera.crunch.types.PType;
 
 /**
  * Represents a {@link com.cloudera.crunch.DoFn} for performing joins.
@@ -28,6 +29,19 @@ import com.cloudera.crunch.Pair;
 public abstract class JoinFn<K, U, V>
     extends DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>> {
   
+  protected PType<U> leftValueType;
+
+  /**
+   * Instantiate with the PType of the value of the left side of the join (used
+   * for creating deep copies of values).
+   * 
+   * @param leftValueType
+   *          The PType of the value type of the left side of the join
+   */
+  public JoinFn(PType<U> leftValueType) {
+    this.leftValueType = leftValueType;
+  }
+
   /** @return The name of this join type (e.g. innerJoin, leftOuterJoin). */
   public abstract String getJoinType();
 

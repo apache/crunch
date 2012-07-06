@@ -50,7 +50,7 @@ public abstract class JoinTester implements Serializable {
     PTable<String, Long> ws1 = Aggregate.count(w1.parallelDo("ws1", new WordSplit(), ptf.strings()));
     PTable<String, Long> ws2 = Aggregate.count(w2.parallelDo("ws2", new WordSplit(), ptf.strings()));
 
-    PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2, getJoinFn());
+    PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2, getJoinFn(ptf));
 
     PTable<String, Long> sums = join.parallelDo("cnt",
         new DoFn<Pair<String, Pair<Long, Long>>, Pair<String, Long>>() {
@@ -100,5 +100,5 @@ public abstract class JoinTester implements Serializable {
   /**
    * @return The JoinFn to use.
    */
-  protected abstract JoinFn<String, Long, Long> getJoinFn();
+  protected abstract JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily);
 }
