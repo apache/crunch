@@ -4,7 +4,7 @@
   <groupId>com.cloudera.crunch</groupId>
   <artifactId>crunch-examples</artifactId>
   <packaging>jar</packaging>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <name>crunch-examples</name>
 
   <dependencies>
@@ -22,9 +22,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.cloudera.crunch</groupId>
+      <groupId>org.apache.crunch</groupId>
       <artifactId>crunch</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0</version>
     </dependency>
   </dependencies>
 
@@ -47,7 +47,7 @@
           </descriptors>
           <archive>
             <manifest>
-              <mainClass>com.cloudera.crunch.examples.WordCount</mainClass>
+              <mainClass>org.apache.crunch.examples.WordCount</mainClass>
             </manifest>
           </archive>
         </configuration>
