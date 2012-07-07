@@ -25,7 +25,7 @@
       <version>2.9.2</version>
     </dependency>
     <dependency>
-      <groupId>com.cloudera.crunch</groupId>
+      <groupId>org.apache.crunch</groupId>
       <artifactId>crunch</artifactId>
       <version>0.3.0</version>
     </dependency>
