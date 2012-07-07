@@ -36,7 +36,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import com.cloudera.crunch.impl.mr.run.TaskAttemptContextFactory;
+import org.apache.crunch.impl.mr.run.TaskAttemptContextFactory;
 
 /**
  * The MultipleOutputs class simplifies writing output data 
