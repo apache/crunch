@@ -1,28 +1,92 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.cloudera.crunch</groupId>
+  <groupId>org.apache.crunch</groupId>
   <artifactId>scrunch</artifactId>
   <version>0.2.0</version>
-  <name>scrunch</name>
+  <name>Apache Incubator Crunch for Scala</name>
 
   <properties>
     <maven.compiler.source>1.6</maven.compiler.source>
     <maven.compiler.target>1.6</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>2.9.2</scala.version>
+    <hadoop.version>0.20.2-cdh3u4</hadoop.version>
+    <hbase.version>0.90.6-cdh3u4</hbase.version>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>maven-hadoop</id>
-      <name>Hadoop Releases</name>
-      <url>https://repository.cloudera.com/content/repositories/releases/</url>
-    </repository>
-  </repositories>
+  <scm>
+    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-crunch.git</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</developerConnection>
+  </scm>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://issues.apache.org/jira/browse/CRUNCH</url>
+  </issueManagement>
+
+  <licenses>
+    <license>
+      <name>Apache 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+
+  <mailingLists>
+    <mailingList>
+      <name>User List</name>
+      <subscribe>crunch-user-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>crunch-user-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>crunch-user@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-user/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Developer List</name>
+      <subscribe>crunch-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>crunch-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>crunch-dev@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-dev/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Commits List</name>
+      <subscribe>crunch-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>crunch-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>crunch-commits@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-commits/</archive>
+    </mailingList>
+  </mailingLists>
 
   <dependencies>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>2.9.2</version>
+      <version>${scala.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.crunch</groupId>
@@ -32,13 +96,13 @@
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
-      <version>0.20.2-cdh3u4</version>
+      <version>${hadoop.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase</artifactId>
-      <version>0.90.6-cdh3u4</version>
+      <version>${hbase.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -75,11 +139,19 @@
     </dependency>
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.9.2</artifactId>
+      <artifactId>scalatest_${scala.version}</artifactId>
       <version>1.7.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>maven-hadoop</id>
+      <name>Hadoop Releases</name>
+      <url>https://repository.cloudera.com/content/repositories/releases/</url>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>
