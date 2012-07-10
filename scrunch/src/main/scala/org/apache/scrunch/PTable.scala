@@ -17,11 +17,14 @@
  */
 package org.apache.scrunch
 
+import java.util.{Collection => JCollect}
+
+import scala.collection.JavaConversions._
+
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
 import org.apache.crunch.lib.{Join, Aggregate, Cogroup, PTables}
-import java.util.{Collection => JCollect}
-import scala.collection.JavaConversions._
+import org.apache.scrunch.interpreter.InterpreterRunner
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
   import PTable._
@@ -110,10 +113,11 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def wrap(newNative: AnyRef) = {
     new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
- 
+
   def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
- 
+
   def materialize(): Iterable[(K, V)] = {
+    InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
     native.materialize.view.map(x => (x.first, x.second))
   }
 

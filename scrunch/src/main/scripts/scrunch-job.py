@@ -26,8 +26,8 @@ if os.path.islink(__file__):
 else:
   ORIGINAL_FILE = __file__
 
-SCIENCE_ROOT = os.path.abspath(os.path.dirname(ORIGINAL_FILE)+"/../")
-JARFILE = SCIENCE_ROOT + "/target/scrunch-0.2.0-jar-with-dependencies.jar" #what jar has all the depencies for this job
+DIST_ROOT = os.path.abspath(os.path.dirname(ORIGINAL_FILE)+"/../")
+LIB_DIR = DIST_ROOT + "/lib" # Dir with all scrunch dependencies.
 TMPDIR = "/tmp"
 BUILDDIR = TMPDIR + "/script-build"
 COMPILE_CMD = "java -cp %s/scala-library.jar:%s/scala-compiler.jar -Dscala.home=%s scala.tools.nsc.Main" % (SCALA_LIB, SCALA_LIB, SCALA_LIB)
@@ -77,12 +77,13 @@ def get_job_name(file):
   else:
     return file
 
-JARPATH = os.path.abspath(JARFILE)
-if not os.path.exists(JARPATH):
-  sys.stderr.write("Scrunch assembly jar not found; run mvn assembly:assembly to construct it.\n")
+LIB_PATH = os.path.abspath(LIB_DIR)
+if not os.path.exists(LIB_PATH):
+  sys.stderr.write("Scrunch distribution lib directory not found; run mvn package to construct a distribution to run examples from.\n")
   sys.exit(1)
-  
-JARBASE = os.path.basename(JARFILE)
+LIB_JARS = glob.glob(os.path.join(LIB_PATH, "*.jar"))
+LIB_CP = ":".join(LIB_JARS)
+
 JOBPATH = os.path.abspath(JOBFILE)
 JOB = get_job_name(JOBFILE)
 JOBJAR = JOB + ".jar"
@@ -96,19 +97,18 @@ def build_job_jar():
   if os.path.exists(BUILDDIR):
     shutil.rmtree(BUILDDIR)
   os.makedirs(BUILDDIR)
-  cmd = "%s -classpath %s:%s -d %s %s" % (COMPILE_CMD, JARPATH, HADOOP_JARS, BUILDDIR, JOBFILE)
+  cmd = "%s -classpath %s:%s -d %s %s" % (COMPILE_CMD, LIB_CP, HADOOP_JARS, BUILDDIR, JOBFILE)
   print cmd
   if subprocess.call(cmd, shell=True):
     shutil.rmtree(BUILDDIR)
     sys.exit(1)
 
-  shutil.copy(JARPATH, JOBJARPATH)
-  jar_cmd = "jar uf %s -C %s ." % (JOBJARPATH, BUILDDIR)
+  jar_cmd = "jar cf %s -C %s ." % (JOBJARPATH, BUILDDIR)
   subprocess.call(jar_cmd, shell=True)
   shutil.rmtree(BUILDDIR)
 
 def hadoop_command():
-  return "%s/bin/hadoop jar %s %s %s" % (HADOOP_HOME, JOBJARPATH, JOB, " ".join(argv))
+  return "HADOOP_CLASSPATH=%s ; %s/bin/hadoop jar %s %s %s" % (LIB_CP, HADOOP_HOME, JOBJARPATH, JOB, " ".join(argv))
 
 if is_file() and needs_rebuild():
   build_job_jar()

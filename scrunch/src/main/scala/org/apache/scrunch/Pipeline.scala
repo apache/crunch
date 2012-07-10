@@ -17,13 +17,16 @@
  */
 package org.apache.scrunch
 
-import java.lang.Class
+import java.io.File
 
 import org.apache.hadoop.conf.Configuration
+import org.slf4j.LoggerFactory
 
 import org.apache.crunch.{Pipeline => JPipeline}
 import org.apache.crunch.impl.mem.MemPipeline
 import org.apache.crunch.impl.mr.MRPipeline
+import org.apache.crunch.util.DistCache
+import org.apache.scrunch.interpreter.InterpreterRunner
 
 /**
  * Manages the state of a pipeline execution.
@@ -73,14 +76,33 @@ class Pipeline(val jpipeline: JPipeline) extends PipelineLike {
  * Companion object. Contains subclasses of Pipeline.
  */
 object Pipeline {
+  val log = LoggerFactory.getLogger(classOf[Pipeline])
+
   /**
    * Pipeline for running jobs on a hadoop cluster.
    *
    * @param clazz Type of the class using the pipeline.
    * @param configuration Hadoop configuration to use.
    */
-  class MapReducePipeline (clazz: Class[_], configuration: Configuration)
-    extends Pipeline(new MRPipeline(clazz, configuration))
+  class MapReducePipeline (clazz: Class[_], configuration: Configuration) extends Pipeline(
+      {
+        // Attempt to add all jars in the Scrunch distribution lib directory to the job that will
+        // be run.
+        val jarPath = DistCache.findContainingJar(classOf[org.apache.scrunch.Pipeline])
+        if (jarPath != null) {
+          val scrunchJarFile = new File(jarPath)
+          DistCache.addJarDirToDistributedCache(configuration, scrunchJarFile.getParent())
+        } else {
+          log.warn("Could not locate Scrunch jar file, so could not add Scrunch jars to the " +
+              "job(s) about to be run.")
+        }
+        if (InterpreterRunner.repl == null) {
+          new MRPipeline(clazz, configuration)
+        } else {
+          // We're running in the REPL, so we'll use the crunch jar as the job jar.
+          new MRPipeline(classOf[org.apache.scrunch.Pipeline], configuration)
+        }
+      })
 
   /**
    * Pipeline for running jobs in memory.

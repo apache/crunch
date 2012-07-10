@@ -3,3 +3,6 @@
 .settings
 .cache
 target
+*.iml
+.idea
+

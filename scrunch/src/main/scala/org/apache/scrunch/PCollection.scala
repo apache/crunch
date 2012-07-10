@@ -17,11 +17,13 @@
  */
 package org.apache.scrunch
 
+import scala.collection.JavaConversions
+
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, Target}
 import org.apache.crunch.lib.Aggregate
 import org.apache.scrunch.Conversions._
-import scala.collection.JavaConversions
+import org.apache.scrunch.interpreter.InterpreterRunner
 
 class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
   import PCollection._
@@ -45,20 +47,23 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
 
   def by[K: PTypeH](f: S => K): PTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].get(getTypeFamily()), native.getPType())
-    parallelDo(mapKeyFn[S, K](f), ptype) 
+    parallelDo(mapKeyFn[S, K](f), ptype)
   }
 
   def groupBy[K: PTypeH](f: S => K): PGroupedTable[K, S] = {
     by(f).groupByKey
   }
-  
-  def materialize() = JavaConversions.iterableAsScalaIterable[S](native.materialize)
+
+  def materialize() = {
+    InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
+    JavaConversions.iterableAsScalaIterable[S](native.materialize)
+  }
 
   def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
-  
+
   def count() = {
     val count = new PTable[S, java.lang.Long](Aggregate.count(native))
-    count.mapValues(_.longValue()) 
+    count.mapValues(_.longValue())
   }
 
   def max() = wrap(Aggregate.max(native))

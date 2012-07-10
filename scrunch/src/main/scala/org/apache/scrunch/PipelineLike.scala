@@ -23,6 +23,7 @@ import org.apache.crunch.{Pipeline => JPipeline}
 import org.apache.crunch.Source
 import org.apache.crunch.TableSource
 import org.apache.crunch.Target
+import org.apache.scrunch.interpreter.InterpreterRunner
 
 trait PipelineLike {
   def jpipeline: JPipeline
@@ -71,7 +72,10 @@ trait PipelineLike {
    * Constructs and executes a series of MapReduce jobs in order
    * to write data to the output targets.
    */
-  def run(): Unit = jpipeline.run()
+  def run(): Unit = {
+    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    jpipeline.run()
+  }
 
   /**
    * Run any remaining jobs required to generate outputs and then
