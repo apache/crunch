@@ -64,7 +64,7 @@ public class JobPrototype {
   private final Set<JobPrototype> dependencies = Sets.newHashSet();
   private final Map<PCollectionImpl<?>, DoNode> nodes = Maps.newHashMap();
   private final Path workingPath;
-  
+
   private HashMultimap<Target, NodePath> targetsToNodePaths;
   private DoTableImpl<?,?> combineFnTable;
 
@@ -112,7 +112,7 @@ public class JobPrototype {
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
     job.setJarByClass(jarClass);
-    
+
     Set<DoNode> outputNodes = Sets.newHashSet();
     Set<Target> targets = targetsToNodePaths.keySet();
     Path outputPath = new Path(workingPath, "output");
@@ -151,7 +151,7 @@ public class JobPrototype {
 
       group.configureShuffle(job);
 
-      DoNode mapOutputNode = group.getGroupingNode();      
+      DoNode mapOutputNode = group.getGroupingNode();
       Set<DoNode> mapNodes = Sets.newHashSet();
       for (NodePath nodePath : mapNodePaths) {
         // Advance these one step, since we've already configured
@@ -179,7 +179,7 @@ public class JobPrototype {
       job.setInputFormatClass(CrunchInputFormat.class);
     }
     job.setJobName(createJobName(pipeline.getName(), inputNodes, reduceNode));
-    
+
     return new CrunchJob(job, outputPath, outputHandler);
   }
 
@@ -201,7 +201,7 @@ public class JobPrototype {
     }
     return builder.build();
   }
-  
+
   private DoNode walkPath(Iterator<PCollectionImpl<?>> iter, DoNode working) {
     while (iter.hasNext()) {
       PCollectionImpl<?> collect = iter.next();

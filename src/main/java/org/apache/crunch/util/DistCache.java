@@ -22,6 +22,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.util.Enumeration;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -118,6 +121,40 @@ public class DistCache {
   public static void addJarToDistributedCache(Configuration conf, String jarFile)
       throws IOException {
     addJarToDistributedCache(conf, new File(jarFile));
+  }
+
+  /**
+   * Finds the path to a jar that contains the class provided, if any. There is no guarantee that
+   * the jar returned will be the first on the classpath to contain the file. This method is
+   * basically lifted out of Hadoop's {@link org.apache.hadoop.mapred.JobConf} class.
+   *
+   * @param jarClass The class the jar file should contain.
+   * @return The path to a jar file that contains the class, or <code>null</code> if no such jar
+   *     exists.
+   * @throws IOException If there is a problem searching for the jar file.
+   */
+  public static String findContainingJar(Class jarClass) throws IOException {
+    ClassLoader loader = jarClass.getClassLoader();
+    String classFile = jarClass.getName().replaceAll("\\.", "/") + ".class";
+      for(Enumeration itr = loader.getResources(classFile); itr.hasMoreElements();) {
+        URL url = (URL) itr.nextElement();
+        if ("jar".equals(url.getProtocol())) {
+          String toReturn = url.getPath();
+          if (toReturn.startsWith("file:")) {
+            toReturn = toReturn.substring("file:".length());
+          }
+          // URLDecoder is a misnamed class, since it actually decodes
+          // x-www-form-urlencoded MIME type rather than actual
+          // URL encoding (which the file path has). Therefore it would
+          // decode +s to ' 's which is incorrect (spaces are actually
+          // either unencoded or encoded as "%20"). Replace +s first, so
+          // that they are kept sacred during the decoding process.
+          toReturn = toReturn.replaceAll("\\+", "%2B");
+          toReturn = URLDecoder.decode(toReturn, "UTF-8");
+          return toReturn.replaceAll("!.*$", "");
+        }
+      }
+    return null;
   }
 
   /**

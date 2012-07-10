@@ -21,23 +21,30 @@ import org.apache.crunch.io.{From => from, To => to, At => at}
 import org.apache.crunch.types.avro.AvroType
 import org.apache.hadoop.fs.Path;
 
-object From {
+trait From {
   def avroFile[T](path: String, atype: AvroType[T]) = from.avroFile(path, atype)
   def avroFile[T](path: Path, atype: AvroType[T]) = from.avroFile(path, atype)
   def textFile(path: String) = from.textFile(path)
   def textFile(path: Path) = from.textFile(path)
 }
 
-object To {
+object From extends From
+
+trait To {
   def avroFile[T](path: String) = to.avroFile(path)
   def avroFile[T](path: Path) = to.avroFile(path)
   def textFile(path: String) = to.textFile(path)
   def textFile(path: Path) = to.textFile(path)
 }
 
-object At {
+object To extends To
+
+trait At {
   def avroFile[T](path: String, atype: AvroType[T]) = at.avroFile(path, atype)
   def avroFile[T](path: Path, atype: AvroType[T]) = at.avroFile(path, atype)
   def textFile(path: String) = at.textFile(path)
   def textFile(path: Path) = at.textFile(path)
 }
+
+object At extends At
+

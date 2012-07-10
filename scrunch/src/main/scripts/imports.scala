@@ -15,16 +15,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.scrunch.PipelineApp
+import org.apache.scrunch._
 
-object WordCount extends PipelineApp {
-
-  def countWords(file: String) = {
-    read(from.textFile(file))
-      .flatMap(_.split("\\W+").filter(!_.isEmpty()))
-      .count
-  }
-
-  val counts = join(countWords(args(0)), countWords(args(1)))
-  write(counts, to.textFile(args(2)))
-}
