@@ -170,13 +170,18 @@ object InterpreterRunner extends MainGenericRunner {
     dir.foreach { file =>
       if (file.isDirectory) {
         // Recursively descend into subdirectories, adjusting the package name as we do.
+        val dirPath = entryPath + file.name + "/"
+        val entry: JarEntry = new JarEntry(dirPath)
+        jarStream.putNextEntry(entry)
+        jarStream.closeEntry()
         addVirtualDirectoryToJar(file.asInstanceOf[VirtualDirectory],
-            entryPath + file.name + "/", jarStream)
+            dirPath, jarStream)
       } else if (file.hasExtension("class")) {
         // Add class files as an entry in the jar file and write the class to the jar.
         val entry: JarEntry = new JarEntry(entryPath + file.name)
         jarStream.putNextEntry(entry)
         jarStream.write(file.toByteArray)
+        jarStream.closeEntry()
       }
     }
   }
