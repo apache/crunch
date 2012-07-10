@@ -123,9 +123,10 @@ public class WordCountHBaseTest {
       // Create a programmatic container for this jar.
       JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseTest.jar"));
       File baseDir = new File("target/test-classes");
-      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest.class");
-      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest$1.class");
-      jarUp(jos, baseDir, "com/cloudera/crunch/WordCountHBaseTest$2.class");
+      String prefix = "org/apache/crunch/";
+      jarUp(jos, baseDir, prefix + "WordCountHBaseTest.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseTest$1.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseTest$2.class");
       jos.close();
 
       Path target = new Path(tmpPath, "WordCountHBaseTest.jar");
