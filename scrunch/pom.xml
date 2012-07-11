@@ -18,10 +18,15 @@ under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.crunch</groupId>
+  <parent>
+    <groupId>org.apache.crunch</groupId>
+    <artifactId>crunch-parent</artifactId>
+    <version>0.3.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>scrunch</artifactId>
-  <version>0.2.0</version>
   <name>Apache Incubator Crunch for Scala</name>
 
   <properties>
@@ -101,7 +106,7 @@ under the License.
     <dependency>
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch</artifactId>
-      <version>0.3.0</version>
+      <version>0.3.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
