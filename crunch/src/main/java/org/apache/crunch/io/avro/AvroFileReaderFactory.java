@@ -28,63 +28,61 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.MapFn;
+import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import org.apache.crunch.MapFn;
-import org.apache.crunch.io.FileReaderFactory;
-import org.apache.crunch.types.avro.AvroType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
 public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
-	private static final Log LOG = LogFactory
-			.getLog(AvroFileReaderFactory.class);
+  private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
 
-	private final DatumReader<T> recordReader;
-	private final MapFn<T, T> mapFn;
-	private final Configuration conf;
+  private final DatumReader<T> recordReader;
+  private final MapFn<T, T> mapFn;
+  private final Configuration conf;
 
-	public AvroFileReaderFactory(AvroType<T> atype, Configuration conf) {
-		this.recordReader = createDatumReader(atype);
-		this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
-		this.conf = conf;
-	}
+  public AvroFileReaderFactory(AvroType<T> atype, Configuration conf) {
+    this.recordReader = createDatumReader(atype);
+    this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
+    this.conf = conf;
+  }
 
-	private DatumReader<T> createDatumReader(AvroType<T> avroType) {
-		if (avroType.isSpecific()) {
-			return new SpecificDatumReader<T>(avroType.getSchema());
-		} else if (avroType.isGeneric()) {
-			return new GenericDatumReader<T>(avroType.getSchema());
-		} else {
-			return new ReflectDatumReader<T>(avroType.getSchema());
-		}
-	}
+  private DatumReader<T> createDatumReader(AvroType<T> avroType) {
+    if (avroType.isSpecific()) {
+      return new SpecificDatumReader<T>(avroType.getSchema());
+    } else if (avroType.isGeneric()) {
+      return new GenericDatumReader<T>(avroType.getSchema());
+    } else {
+      return new ReflectDatumReader<T>(avroType.getSchema());
+    }
+  }
 
-	@Override
-	public Iterator<T> read(FileSystem fs, final Path path) {
-		this.mapFn.setConfigurationForTest(conf);
-		this.mapFn.initialize();
-		try {
-			FsInput fsi = new FsInput(path, fs.getConf());
-			final DataFileReader<T> reader = new DataFileReader<T>(fsi,
-					recordReader);
-			return new UnmodifiableIterator<T>() {
-				@Override
-				public boolean hasNext() {
-					return reader.hasNext();
-				}
+  @Override
+  public Iterator<T> read(FileSystem fs, final Path path) {
+    this.mapFn.setConfigurationForTest(conf);
+    this.mapFn.initialize();
+    try {
+      FsInput fsi = new FsInput(path, fs.getConf());
+      final DataFileReader<T> reader = new DataFileReader<T>(fsi, recordReader);
+      return new UnmodifiableIterator<T>() {
+        @Override
+        public boolean hasNext() {
+          return reader.hasNext();
+        }
 
-				@Override
-				public T next() {
-					return mapFn.map(reader.next());
-				}
-			};
-		} catch (IOException e) {
-			LOG.info("Could not read avro file at path: " + path, e);
-			return Iterators.emptyIterator();
-		}
-	}
+        @Override
+        public T next() {
+          return mapFn.map(reader.next());
+        }
+      };
+    } catch (IOException e) {
+      LOG.info("Could not read avro file at path: " + path, e);
+      return Iterators.emptyIterator();
+    }
+  }
 }

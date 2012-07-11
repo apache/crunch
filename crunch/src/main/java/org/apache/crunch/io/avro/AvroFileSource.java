@@ -20,10 +20,6 @@ package org.apache.crunch.io.avro;
 import java.io.IOException;
 
 import org.apache.avro.mapred.AvroJob;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -31,12 +27,15 @@ import org.apache.crunch.io.impl.InputBundle;
 import org.apache.crunch.types.avro.AvroInputFormat;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
   public AvroFileSource(Path path, AvroType<T> ptype) {
     super(path, ptype, new InputBundle(AvroInputFormat.class)
-        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(!ptype.isSpecific()))
+        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.isReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName()));
   }
@@ -49,7 +48,7 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     FileSystem fs = FileSystem.get(path.toUri(), conf);
-    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>(
-        (AvroType<T>) ptype, conf));
+    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>((AvroType<T>) ptype,
+        conf));
   }
 }

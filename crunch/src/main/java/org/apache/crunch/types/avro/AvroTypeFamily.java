@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -37,18 +36,17 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.PTypeUtils;
 
 public class AvroTypeFamily implements PTypeFamily {
-  
+
   private static final AvroTypeFamily INSTANCE = new AvroTypeFamily();
-  
+
   public static AvroTypeFamily getInstance() {
     return INSTANCE;
   }
-  
+
   // There can only be one instance.
   private AvroTypeFamily() {
   }
 
-  
   @Override
   public PType<Void> nulls() {
     return Avros.nulls();
@@ -95,13 +93,13 @@ public class AvroTypeFamily implements PTypeFamily {
   }
 
   public PType<GenericData.Record> generics(Schema schema) {
-	return Avros.generics(schema);
+    return Avros.generics(schema);
   }
-  
+
   public <T> PType<T> containers(Class<T> clazz) {
     return Avros.containers(clazz);
   }
-  
+
   @Override
   public <T> PType<Collection<T>> collections(PType<T> ptype) {
     return Avros.collections(ptype);
@@ -109,23 +107,22 @@ public class AvroTypeFamily implements PTypeFamily {
 
   @Override
   public <T> PType<Map<String, T>> maps(PType<T> ptype) {
-	return Avros.maps(ptype);
+    return Avros.maps(ptype);
   }
-  
+
   @Override
   public <V1, V2> PType<Pair<V1, V2>> pairs(PType<V1> p1, PType<V2> p2) {
     return Avros.pairs(p1, p2);
   }
 
   @Override
-  public <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3) {
+  public <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1, PType<V2> p2, PType<V3> p3) {
     return Avros.triples(p1, p2, p3);
   }
 
   @Override
-  public <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3, PType<V4> p4) {
+  public <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1, PType<V2> p2,
+      PType<V3> p3, PType<V4> p4) {
     return Avros.quads(p1, p2, p3, p4);
   }
 
@@ -162,8 +159,8 @@ public class AvroTypeFamily implements PTypeFamily {
   }
 
   @Override
-  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn,
-      MapFn<T, S> outputFn, PType<S> base) {
+  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn,
+      PType<S> base) {
     return Avros.derived(clazz, inputFn, outputFn, base);
   }
 }

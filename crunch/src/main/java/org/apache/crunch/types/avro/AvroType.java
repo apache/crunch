@@ -23,8 +23,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.IdentityFn;
@@ -32,8 +30,11 @@ import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.fs.Path;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 /**
  * The implementation of the PType interface for Avro-based serialization.
@@ -41,96 +42,111 @@ import com.google.common.collect.ImmutableList;
  */
 public class AvroType<T> implements PType<T> {
 
-	private static final Converter AVRO_CONVERTER = new AvroKeyConverter();
+  private static final Converter AVRO_CONVERTER = new AvroKeyConverter();
 
-	private final Class<T> typeClass;
+  private final Class<T> typeClass;
   private final String schemaString;
   private transient Schema schema;
-	private final MapFn baseInputMapFn;
-	private final MapFn baseOutputMapFn;
-	private final List<PType> subTypes;
+  private final MapFn baseInputMapFn;
+  private final MapFn baseOutputMapFn;
+  private final List<PType> subTypes;
   private AvroDeepCopier<T> deepCopier;
 
-	public AvroType(Class<T> typeClass, Schema schema, PType... ptypes) {
-		this(typeClass, schema, IdentityFn.getInstance(), IdentityFn
-				.getInstance(), ptypes);
-	}
+  public AvroType(Class<T> typeClass, Schema schema, PType... ptypes) {
+    this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), ptypes);
+  }
 
-	public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn,
-			MapFn outputMapFn, PType... ptypes) {
-		this.typeClass = typeClass;
-		this.schema = Preconditions.checkNotNull(schema);
-		this.schemaString = schema.toString();
-		this.baseInputMapFn = inputMapFn;
-		this.baseOutputMapFn = outputMapFn;
-		this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
-	}
+  public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn,
+      PType... ptypes) {
+    this.typeClass = typeClass;
+    this.schema = Preconditions.checkNotNull(schema);
+    this.schemaString = schema.toString();
+    this.baseInputMapFn = inputMapFn;
+    this.baseOutputMapFn = outputMapFn;
+    this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
+  }
 
-	@Override
-	public Class<T> getTypeClass() {
-		return typeClass;
-	}
+  @Override
+  public Class<T> getTypeClass() {
+    return typeClass;
+  }
 
-	@Override
-	public PTypeFamily getFamily() {
-		return AvroTypeFamily.getInstance();
-	}
+  @Override
+  public PTypeFamily getFamily() {
+    return AvroTypeFamily.getInstance();
+  }
 
-	@Override
-	public List<PType> getSubTypes() {
-		return subTypes;
-	}
+  @Override
+  public List<PType> getSubTypes() {
+    return Lists.<PType> newArrayList(subTypes);
+  }
 
-	public Schema getSchema() {
-	  if (schema == null){
-	    schema = new Schema.Parser().parse(schemaString);
-	  }
-		return schema;
-	}
+  public Schema getSchema() {
+    if (schema == null) {
+      schema = new Schema.Parser().parse(schemaString);
+    }
+    return schema;
+  }
 
-	/**
-	 * Determine if the wrapped type is a specific data avro type.
-	 * 
-	 * @return true if the wrapped type is a specific data type
-	 */
-	public boolean isSpecific() {
-		if (SpecificRecord.class.isAssignableFrom(typeClass)) {
-			return true;
-		}
-		for (PType ptype : subTypes) {
-			if (SpecificRecord.class.isAssignableFrom(ptype.getTypeClass())) {
-				return true;
-			}
-		}
-		return false;
-	}
+  /**
+   * Determine if the wrapped type is a specific data avro type.
+   * 
+   * @return true if the wrapped type is a specific data type
+   */
+  public boolean isSpecific() {
+    return SpecificRecord.class.isAssignableFrom(typeClass);
+  }
 
-	/**
-	 * Determine if the wrapped type is a generic data avro type.
-	 * 
-	 * @return true if the wrapped type is a generic type
-	 */
-	public boolean isGeneric() {
-		return GenericData.Record.class.equals(typeClass);
-	}
+  /**
+   * Determine if the wrapped type is a generic data avro type.
+   * 
+   * @return true if the wrapped type is a generic type
+   */
+  public boolean isGeneric() {
+    return GenericData.Record.class.equals(typeClass);
+  }
 
-	public MapFn<Object, T> getInputMapFn() {
-		return baseInputMapFn;
-	}
+  /**
+   * Determine if the wrapped type is a reflection-based avro type.
+   * 
+   * @return true if the wrapped type is a reflection-based type
+   */
+  public boolean isReflect() {
+    if (Avros.isPrimitive(this)) {
+      return false;
+    }
 
-	public MapFn<T, Object> getOutputMapFn() {
-		return baseOutputMapFn;
-	}
+    if (!this.subTypes.isEmpty()) {
 
-	@Override
-	public Converter getConverter() {
-		return AVRO_CONVERTER;
-	}
+      for (PType<?> subType : this.subTypes) {
+        if (((AvroType<?>) subType).isReflect()) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-	@Override
-	public SourceTarget<T> getDefaultFileSource(Path path) {
-		return new AvroFileSourceTarget<T>(path, this);
-	}
+    return !(typeClass.equals(GenericData.Record.class) || SpecificRecord.class
+        .isAssignableFrom(typeClass));
+  }
+
+  public MapFn<Object, T> getInputMapFn() {
+    return baseInputMapFn;
+  }
+
+  public MapFn<T, Object> getOutputMapFn() {
+    return baseOutputMapFn;
+  }
+
+  @Override
+  public Converter getConverter() {
+    return AVRO_CONVERTER;
+  }
+
+  @Override
+  public SourceTarget<T> getDefaultFileSource(Path path) {
+    return new AvroFileSourceTarget<T>(path, this);
+  }
 
   private AvroDeepCopier<T> getDeepCopier() {
     if (deepCopier == null) {
@@ -152,21 +168,21 @@ public class AvroType<T> implements PType<T> {
     return value;
   }
 
-	@Override
-	public boolean equals(Object other) {
-		if (other == null || !(other instanceof AvroType)) {
-			return false;
-		}
-		AvroType at = (AvroType) other;
-		return (typeClass.equals(at.typeClass) && subTypes.equals(at.subTypes));
+  @Override
+  public boolean equals(Object other) {
+    if (other == null || !(other instanceof AvroType)) {
+      return false;
+    }
+    AvroType at = (AvroType) other;
+    return (typeClass.equals(at.typeClass) && subTypes.equals(at.subTypes));
 
-	}
+  }
 
-	@Override
-	public int hashCode() {
-		HashCodeBuilder hcb = new HashCodeBuilder();
-		hcb.append(typeClass).append(subTypes);
-		return hcb.toHashCode();
-	}
+  @Override
+  public int hashCode() {
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    hcb.append(typeClass).append(subTypes);
+    return hcb.toHashCode();
+  }
 
 }

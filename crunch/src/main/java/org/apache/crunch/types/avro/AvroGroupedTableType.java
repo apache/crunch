@@ -23,9 +23,6 @@ import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroKeyComparator;
 import org.apache.avro.mapred.AvroValue;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
@@ -33,6 +30,8 @@ import org.apache.crunch.fn.PairMapFn;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Job;
 
 /**
  *
@@ -43,20 +42,18 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   private static final AvroPairConverter CONVERTER = new AvroPairConverter();
   private final MapFn inputFn;
   private final MapFn outputFn;
-  
+
   public AvroGroupedTableType(AvroTableType<K, V> tableType) {
     super(tableType);
     AvroType keyType = (AvroType) tableType.getKeyType();
     AvroType valueType = (AvroType) tableType.getValueType();
-    this.inputFn =  new PairIterableMapFn(keyType.getInputMapFn(),
-        valueType.getInputMapFn());
-    this.outputFn = new PairMapFn(keyType.getOutputMapFn(),
-        valueType.getOutputMapFn());
+    this.inputFn = new PairIterableMapFn(keyType.getInputMapFn(), valueType.getInputMapFn());
+    this.outputFn = new PairMapFn(keyType.getOutputMapFn(), valueType.getOutputMapFn());
   }
 
   @Override
   public Class<Pair<K, Iterable<V>>> getTypeClass() {
-    return (Class<Pair<K, Iterable<V>>>) Pair.of(null, null).getClass();  
+    return (Class<Pair<K, Iterable<V>>>) Pair.of(null, null).getClass();
   }
 
   @Override
@@ -68,12 +65,12 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   public MapFn getInputMapFn() {
     return inputFn;
   }
-  
+
   @Override
   public MapFn getOutputMapFn() {
     return outputFn;
   }
-  
+
   @Override
   public Pair<K, Iterable<V>> getDetachedValue(Pair<K, Iterable<V>> value) {
     return PTables.getGroupedDetachedValue(this, value);
@@ -84,9 +81,9 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     AvroTableType<K, V> att = (AvroTableType<K, V>) tableType;
     String schemaJson = att.getSchema().toString();
     Configuration conf = job.getConfiguration();
-    
-    if (!att.isSpecific()) {
-        conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+
+    if (att.isReflect()) {
+      conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
     }
     conf.set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);
     job.setSortComparatorClass(AvroKeyComparator.class);
@@ -95,16 +92,15 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     if (options != null) {
       options.configure(job);
     }
-    
+
     Avros.configureReflectDataFactory(conf);
-    
-    Collection<String> serializations =
-        job.getConfiguration().getStringCollection("io.serializations");
+
+    Collection<String> serializations = job.getConfiguration().getStringCollection(
+        "io.serializations");
     if (!serializations.contains(SafeAvroSerialization.class.getName())) {
       serializations.add(SafeAvroSerialization.class.getName());
-      job.getConfiguration().setStrings("io.serializations",
-          serializations.toArray(new String[0]));
+      job.getConfiguration().setStrings("io.serializations", serializations.toArray(new String[0]));
     }
   }
-  
+
 }

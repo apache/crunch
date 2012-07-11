@@ -25,66 +25,113 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
+import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
 import org.junit.Test;
 
-import org.apache.crunch.test.Person;
 import com.google.common.collect.Lists;
 
 public class AvroTypeTest {
 
-	@Test
-	public void testIsSpecific_SpecificData() {
-		assertTrue(Avros.records(Person.class).isSpecific());
-	}
+  @Test
+  public void testIsSpecific_SpecificData() {
+    assertTrue(Avros.records(Person.class).isSpecific());
+  }
 
-	@Test
-	public void testIsGeneric_SpecificData() {
-		assertFalse(Avros.records(Person.class).isGeneric());
-	}
+  @Test
+  public void testIsGeneric_SpecificData() {
+    assertFalse(Avros.records(Person.class).isGeneric());
+  }
 
-	@Test
-	public void testIsSpecific_GenericData() {
-		assertFalse(Avros.generics(Person.SCHEMA$).isSpecific());
-	}
+  @Test
+  public void testIsSpecific_GenericData() {
+    assertFalse(Avros.generics(Person.SCHEMA$).isSpecific());
+  }
 
-	@Test
-	public void testIsGeneric_GenericData() {
-		assertTrue(Avros.generics(Person.SCHEMA$).isGeneric());
-	}
+  @Test
+  public void testIsGeneric_GenericData() {
+    assertTrue(Avros.generics(Person.SCHEMA$).isGeneric());
+  }
 
-	@Test
-	public void testIsSpecific_NonAvroClass() {
-		assertFalse(Avros.ints().isSpecific());
-	}
+  @Test
+  public void testIsSpecific_NonAvroClass() {
+    assertFalse(Avros.ints().isSpecific());
+  }
 
-	@Test
-	public void testIsGeneric_NonAvroClass() {
-		assertFalse(Avros.ints().isGeneric());
-	}
+  @Test
+  public void testIsGeneric_NonAvroClass() {
+    assertFalse(Avros.ints().isGeneric());
+  }
 
-	@Test
-	public void testIsSpecific_SpecificAvroTable() {
-		assertTrue(Avros.tableOf(Avros.strings(), Avros.records(Person.class))
-				.isSpecific());
-	}
+  @Test
+  public void testIsSpecific_SpecificAvroTable() {
+    assertFalse(Avros.tableOf(Avros.strings(), Avros.records(Person.class)).isSpecific());
+  }
 
-	@Test
-	public void testIsGeneric_SpecificAvroTable() {
-		assertFalse(Avros.tableOf(Avros.strings(), Avros.records(Person.class))
-				.isGeneric());
-	}
+  @Test
+  public void testIsGeneric_SpecificAvroTable() {
+    assertFalse(Avros.tableOf(Avros.strings(), Avros.records(Person.class)).isGeneric());
+  }
 
-	@Test
-	public void testIsSpecific_GenericAvroTable() {
-		assertFalse(Avros.tableOf(Avros.strings(),
-				Avros.generics(Person.SCHEMA$)).isSpecific());
-	}
+  @Test
+  public void testIsSpecific_GenericAvroTable() {
+    assertFalse(Avros.tableOf(Avros.strings(), Avros.generics(Person.SCHEMA$)).isSpecific());
+  }
 
-	@Test
-	public void testIsGeneric_GenericAvroTable() {
-		assertTrue(Avros.tableOf(Avros.strings(),
-				Avros.generics(Person.SCHEMA$)).isGeneric());
-	}
+  @Test
+  public void testIsGeneric_GenericAvroTable() {
+    assertFalse(Avros.tableOf(Avros.strings(), Avros.generics(Person.SCHEMA$)).isGeneric());
+  }
+
+  @Test
+  public void testIsReflect_GenericType() {
+    assertFalse(Avros.generics(Person.SCHEMA$).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_SpecificType() {
+    assertFalse(Avros.records(Person.class).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_ReflectSimpleType() {
+    assertTrue(Avros.reflects(StringWrapper.class).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_NonReflectSubType() {
+    assertFalse(Avros.pairs(Avros.ints(), Avros.ints()).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_ReflectSubType() {
+    assertTrue(Avros.pairs(Avros.ints(), Avros.reflects(StringWrapper.class)).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_TableOfNonReflectTypes() {
+    assertFalse(Avros.tableOf(Avros.ints(), Avros.strings()).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_TableWithReflectKey() {
+    assertTrue(Avros.tableOf(Avros.reflects(StringWrapper.class), Avros.ints()).isReflect());
+  }
+
+  @Test
+  public void testIsReflect_TableWithReflectValue() {
+    assertTrue(Avros.tableOf(Avros.ints(), Avros.reflects(StringWrapper.class)).isReflect());
+  }
+
+  @Test
+  public void testReflect_CollectionContainingReflectValue() {
+    assertTrue(Avros.collections(Avros.reflects(StringWrapper.class)).isReflect());
+  }
+
+  @Test
+  public void testReflect_CollectionNotContainingReflectValue() {
+    assertFalse(Avros.collections(Avros.generics(Person.SCHEMA$)).isReflect());
+  }
 
   @Test
   public void testGetDetachedValue_AlreadyMappedAvroType() {
