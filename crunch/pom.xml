@@ -29,110 +29,46 @@ under the License.
   <artifactId>crunch</artifactId>
   <name>Apache Incubator Crunch</name>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <avro.version>1.7.0</avro.version>
-    <hadoop.version>0.20.2-cdh3u4</hadoop.version>
-    <hbase.version>0.90.6-cdh3u4</hbase.version>
-  </properties>
-
-  <scm>
-    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-crunch.git</url>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</developerConnection>
-  </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>http://issues.apache.org/jira/browse/CRUNCH</url>
-  </issueManagement>
-
-  <licenses>
-    <license>
-      <name>Apache 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-      <comments>A business-friendly OSS license</comments>
-    </license>
-  </licenses>
-
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-
-  <mailingLists>
-    <mailingList>
-      <name>User List</name>
-      <subscribe>crunch-user-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-user-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-user@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-user/</archive>
-    </mailingList>
-    <mailingList>
-      <name>Developer List</name>
-      <subscribe>crunch-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-dev-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-dev@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-dev/</archive>
-    </mailingList>
-    <mailingList>
-      <name>Commits List</name>
-      <subscribe>crunch-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-commits-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-commits@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-commits/</archive>
-    </mailingList>
-  </mailingLists>
-
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>11.0.2</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
-      <version>${hadoop.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro</artifactId>
-      <version>${avro.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-mapred</artifactId>
-      <version>${avro.version}</version>
     </dependency>
 
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <version>2.2</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
-      <version>1.8.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
-      <version>1.8.3</version>
     </dependency>
 
     <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-smile</artifactId>
-      <version>1.8.6</version>
     </dependency>
 
     <!-- Both Protobufs and Thrift are supported as
@@ -149,174 +85,70 @@ under the License.
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>2.4.1</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.8.0</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.2</version>
       <scope>test</scope>
     </dependency>
     
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
-      <version>1.9.0</version>
       <scope>test</scope>
     </dependency>
            
     <dependency>
      <groupId>org.apache.hadoop</groupId>
      <artifactId>hadoop-minicluster</artifactId>
-     <version>${hadoop.version}</version>
      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
-      <version>1.1</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
-      <version>1.1.1</version>
     </dependency>
    
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>1.2.15</version>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.mail</groupId>
-          <artifactId>mail</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.jms</groupId>
-          <artifactId>jms</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.sun.jdmk</groupId>
-          <artifactId>jmxtools</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.sun.jmx</groupId>
-          <artifactId>jmxri</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.6.1</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase</artifactId>
-      <version>${hbase.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>avro</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>hadoop-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase</artifactId>
-      <version>${hbase.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.hadoop</groupId>
-          <artifactId>avro</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>maven-hadoop</id>
-      <name>Hadoop Releases</name>
-      <url>https://repository.cloudera.com/content/repositories/releases/</url>
-    </repository>
-  </repositories>
-
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
-        <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.10</version>
-        <configuration>
-          <argLine>-Xmx512m</argLine>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>2.1.2</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>com.github.github</groupId>
         <artifactId>site-maven-plugin</artifactId>
@@ -349,15 +181,5 @@ under the License.
       </plugin>
     </plugins>
   </build>
-
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.5.1</version>
-      </plugin>
-    </plugins>
-  </reporting>
 
 </project>
