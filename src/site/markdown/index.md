@@ -11,10 +11,10 @@ functions simple to write, easy to test, and efficient to run.
 Crunch uses Maven for dependency management. The code in the examples/ subdirectory relies
 on the top-level crunch libraries. In order to execute the included WordCount application, run:
 
-	mvn install
-	cd examples/
-	mvn package
-	hadoop jar target/crunch-examples-0.2.0-job.jar com.cloudera.crunch.examples.WordCount <inputfile> <outputdir>
+    mvn install
+    cd examples/
+    mvn package
+    hadoop jar target/crunch-examples-0.2.0-job.jar com.cloudera.crunch.examples.WordCount <inputfile> <outputdir>
 
 ## High Level Concepts
 
@@ -49,34 +49,34 @@ the Pipeline object's `run` or `done` methods are called.
 
 Here is the classic WordCount application using Crunch:
 
-	import com.cloudera.crunch.DoFn;
-	import com.cloudera.crunch.Emitter;
-	import com.cloudera.crunch.PCollection;
-	import com.cloudera.crunch.PTable;
-	import com.cloudera.crunch.Pipeline;
-	import com.cloudera.crunch.impl.mr.MRPipeline;
-	import com.cloudera.crunch.lib.Aggregate;
-	import com.cloudera.crunch.type.writable.Writables;
+    import com.cloudera.crunch.DoFn;
+    import com.cloudera.crunch.Emitter;
+    import com.cloudera.crunch.PCollection;
+    import com.cloudera.crunch.PTable;
+    import com.cloudera.crunch.Pipeline;
+    import com.cloudera.crunch.impl.mr.MRPipeline;
+    import com.cloudera.crunch.lib.Aggregate;
+    import com.cloudera.crunch.type.writable.Writables;
 
-	public class WordCount {
-  	  public static void main(String[] args) throws Exception {
-	    Pipeline pipeline = new MRPipeline(WordCount.class);    
-	    PCollection<String> lines = pipeline.readTextFile(args[0]);
-	
-	    PCollection<String> words = lines.parallelDo("my splitter", new DoFn<String, String>() {
-	      public void process(String line, Emitter<String> emitter) {
-	        for (String word : line.split("\\s+")) {
-	          emitter.emit(word);
-	        }
-	      }
-	    }, Writables.strings());
+    public class WordCount {
+      public static void main(String[] args) throws Exception {
+        Pipeline pipeline = new MRPipeline(WordCount.class);    
+        PCollection<String> lines = pipeline.readTextFile(args[0]);
+    
+        PCollection<String> words = lines.parallelDo("my splitter", new DoFn<String, String>() {
+          public void process(String line, Emitter<String> emitter) {
+            for (String word : line.split("\\s+")) {
+              emitter.emit(word);
+            }
+          }
+        }, Writables.strings());
 
-	    PTable<String, Long> counts = Aggregate.count(words);
-	
-	    pipeline.writeTextFile(counts, args[1]);
-	    pipeline.run();
-	  }
-	}
+        PTable<String, Long> counts = Aggregate.count(words);
+    
+        pipeline.writeTextFile(counts, args[1]);
+        pipeline.run();
+      }
+    }
 
 Let's walk through the example line by line.
 
@@ -127,41 +127,41 @@ Out of Crunch's simple primitive operations, we can build arbitrarily complex ch
 to perform higher-level operations, like aggregations and joins, that can work on any type of input data.
 Let's look at the implementation of the `Aggregate.count` function:
 
-	package com.cloudera.crunch.lib;
+    package com.cloudera.crunch.lib;
 
-	import com.cloudera.crunch.CombineFn;
-	import com.cloudera.crunch.MapFn;
-	import com.cloudera.crunch.PCollection;
-	import com.cloudera.crunch.PTable;
-	import com.cloudera.crunch.Pair;
-	import com.cloudera.crunch.type.PTypeFamily;
-	
-	public class Aggregate {
-	
-	  private static class Counter<S> extends MapFn<S, Pair<S, Long>> {
-	    public Pair<S, Long> map(S input) {
+    import com.cloudera.crunch.CombineFn;
+    import com.cloudera.crunch.MapFn;
+    import com.cloudera.crunch.PCollection;
+    import com.cloudera.crunch.PTable;
+    import com.cloudera.crunch.Pair;
+    import com.cloudera.crunch.type.PTypeFamily;
+    
+    public class Aggregate {
+    
+      private static class Counter<S> extends MapFn<S, Pair<S, Long>> {
+        public Pair<S, Long> map(S input) {
               return Pair.of(input, 1L);
-	    }
-	  }
-	
-	  public static <S> PTable<S, Long> count(PCollection<S> collect) {
-	    PTypeFamily tf = collect.getTypeFamily();
-	
-	    // Create a PTable from the PCollection by mapping each element
-	    // to a key of the PTable with the value equal to 1L
-	    PTable<S, Long> withCounts = collect.parallelDo("count:" + collect.getName(),
-	        new Counter<S>(), tf.tableOf(collect.getPType(), tf.longs()));
-	
-	    // Group the records of the PTable based on their key.
-	    PGroupedTable<S, Long> grouped = withCounts.groupByKey();
-	
-	    // Sum the 1L values associated with the keys to get the
-	    // count of each element in this PCollection, and return it
-	    // as a PTable so that it may be processed further or written
-	    // out for storage.
-	    return grouped.combineValues(CombineFn.<S>SUM_LONGS());
-	  }
-	}
+        }
+      }
+    
+      public static <S> PTable<S, Long> count(PCollection<S> collect) {
+        PTypeFamily tf = collect.getTypeFamily();
+    
+        // Create a PTable from the PCollection by mapping each element
+        // to a key of the PTable with the value equal to 1L
+        PTable<S, Long> withCounts = collect.parallelDo("count:" + collect.getName(),
+            new Counter<S>(), tf.tableOf(collect.getPType(), tf.longs()));
+    
+        // Group the records of the PTable based on their key.
+        PGroupedTable<S, Long> grouped = withCounts.groupByKey();
+    
+        // Sum the 1L values associated with the keys to get the
+        // count of each element in this PCollection, and return it
+        // as a PTable so that it may be processed further or written
+        // out for storage.
+        return grouped.combineValues(CombineFn.<S>SUM_LONGS());
+      }
+    }
 
 First, we get the PTypeFamily that is associated with the PType for the collection. The
 call to parallelDo converts each record in this PCollection into a Pair of the input record
@@ -239,42 +239,42 @@ Assume we have a `PTable<K, U>` named "a" and a different `PTable<K, V>` named "
 single `PTable<K, Pair<Collection<U>, Collection<V>>>`. First, we need to apply parallelDo operations to a and b that
 convert them into the same Crunch type, `PTable<K, Pair<U, V>>`:
 
-	// Perform the "tagging" operation as a parallelDo on PTable a
-	PTable<K, Pair<U, V>> aPrime = a.parallelDo("taga", new MapFn<Pair<K, U>, Pair<K, Pair<U, V>>>() {
-	  public Pair<K, Pair<U, V>> map(Pair<K, U> input) {
-	    return Pair.of(input.first(), Pair.of(input.second(), null));
-	  }
-	}, tableOf(a.getKeyType(), pair(a.getValueType(), b.getValueType())));
-	
-	// Perform the "tagging" operation as a parallelDo on PTable b
-	PTable<K, Pair<U, V>> bPrime = b.parallelDo("tagb", new MapFn<Pair<K, V>, Pair<K, Pair<U, V>>>() {
-	  public Pair<K, Pair<U, V>> map(Pair<K, V> input) {
-	    return Pair.of(input.first(), Pair.of(null, input.second()));
-	  }
-	}, tableOf(a.getKeyType(), pair(a.getValueType(), b.getValueType())));
+    // Perform the "tagging" operation as a parallelDo on PTable a
+    PTable<K, Pair<U, V>> aPrime = a.parallelDo("taga", new MapFn<Pair<K, U>, Pair<K, Pair<U, V>>>() {
+      public Pair<K, Pair<U, V>> map(Pair<K, U> input) {
+        return Pair.of(input.first(), Pair.of(input.second(), null));
+      }
+    }, tableOf(a.getKeyType(), pair(a.getValueType(), b.getValueType())));
+    
+    // Perform the "tagging" operation as a parallelDo on PTable b
+    PTable<K, Pair<U, V>> bPrime = b.parallelDo("tagb", new MapFn<Pair<K, V>, Pair<K, Pair<U, V>>>() {
+      public Pair<K, Pair<U, V>> map(Pair<K, V> input) {
+        return Pair.of(input.first(), Pair.of(null, input.second()));
+      }
+    }, tableOf(a.getKeyType(), pair(a.getValueType(), b.getValueType())));
 
 Once the input PTables are tagged into a single type, we can apply the union operation to create a single PTable
 reference that includes both of the tagged PTables and then group the unioned PTable by the common key:
 
-	PTable<K, Pair<U, V>> both = aPrime.union(bPrime);
-	PGroupedTable<K, Pair<U, V>> grouped = both.groupByKey();
+    PTable<K, Pair<U, V>> both = aPrime.union(bPrime);
+    PGroupedTable<K, Pair<U, V>> grouped = both.groupByKey();
 
 The grouping operation will create an `Iterable<Pair<U, V>>` which we can then convert to a `Pair<Collection<U>, Collection<V>>`:
 
-	grouped.parallelDo("cogroup", new MapFn<Pair<K, Iterable<Pair<U, V>>>, Pair<K, Pair<Collection<U>, Collection<V>>>>() {
-	  public Pair<K, Pair<Collection<U>, Collection<V>>> map(Pair<K, Iterable<Pair<U, V>>> input) {
-	    Collection<U> uValues = new ArrayList<U>();
-	    Collection<V> vValues = new ArrayList<V>();
-	    for (Pair<U, V> pair : input.second()) {
-	      if (pair.first() != null) {
-	        uValues.add(pair.first());
-	      } else {
-	        vValues.add(pair.second());
-	      }
-	    }
-	    return Pair.of(input.first(), Pair.of(uValues, vValues));
-	  },
-	}, tableOf(grouped.getKeyType(), pair(collections(a.getValueType()), collections(b.getValueType()))));
+    grouped.parallelDo("cogroup", new MapFn<Pair<K, Iterable<Pair<U, V>>>, Pair<K, Pair<Collection<U>, Collection<V>>>>() {
+      public Pair<K, Pair<Collection<U>, Collection<V>>> map(Pair<K, Iterable<Pair<U, V>>> input) {
+        Collection<U> uValues = new ArrayList<U>();
+        Collection<V> vValues = new ArrayList<V>();
+        for (Pair<U, V> pair : input.second()) {
+          if (pair.first() != null) {
+            uValues.add(pair.first());
+          } else {
+            vValues.add(pair.second());
+          }
+        }
+        return Pair.of(input.first(), Pair.of(uValues, vValues));
+      },
+    }, tableOf(grouped.getKeyType(), pair(collections(a.getValueType()), collections(b.getValueType()))));
 
 ## Current Limitations and Future Work
 
