@@ -3,7 +3,7 @@
 ## Introduction
 
 Crunch is a Java library for writing, testing, and running MapReduce pipelines, based on
-Google's FlumeJava. Its goal is to make pipelines that are composed of many user-defined
+Google\'s FlumeJava. Its goal is to make pipelines that are composed of many user-defined
 functions simple to write, easy to test, and efficient to run.
 
 ## Build and Installation
@@ -11,10 +11,8 @@ functions simple to write, easy to test, and efficient to run.
 Crunch uses Maven for dependency management. The code in the examples/ subdirectory relies
 on the top-level crunch libraries. In order to execute the included WordCount application, run:
 
-    mvn install
-    cd examples/
-    mvn package
-    hadoop jar target/crunch-examples-0.2.0-job.jar com.cloudera.crunch.examples.WordCount <inputfile> <outputdir>
+    mvn clean install
+    hadoop jar examples/target/crunch-examples-*-job.jar org.apache.crunch.examples.WordCount <inputfile> <outputdir>
 
 ## High Level Concepts
 
@@ -43,20 +41,20 @@ joins.
 
 Every Crunch pipeline starts with a `Pipeline` object that is used to coordinate building the pipeline and executing the underlying MapReduce
 jobs. For efficiency, Crunch uses lazy evaluation, so it will only construct MapReduce jobs from the different stages of the pipelines when
-the Pipeline object's `run` or `done` methods are called.
+the Pipeline object\'s `run` or `done` methods are called.
 
 ## A Detailed Example
 
 Here is the classic WordCount application using Crunch:
 
-    import com.cloudera.crunch.DoFn;
-    import com.cloudera.crunch.Emitter;
-    import com.cloudera.crunch.PCollection;
-    import com.cloudera.crunch.PTable;
-    import com.cloudera.crunch.Pipeline;
-    import com.cloudera.crunch.impl.mr.MRPipeline;
-    import com.cloudera.crunch.lib.Aggregate;
-    import com.cloudera.crunch.type.writable.Writables;
+    import org.apache.crunch.DoFn;
+    import org.apache.crunch.Emitter;
+    import org.apache.crunch.PCollection;
+    import org.apache.crunch.PTable;
+    import org.apache.crunch.Pipeline;
+    import org.apache.crunch.impl.mr.MRPipeline;
+    import org.apache.crunch.lib.Aggregate;
+    import org.apache.crunch.types.writable.Writables;
 
     public class WordCount {
       public static void main(String[] args) throws Exception {
@@ -78,7 +76,7 @@ Here is the classic WordCount application using Crunch:
       }
     }
 
-Let's walk through the example line by line.
+Let\'s walk through the example line by line.
 
 ### Step 1: Creating a Pipeline and referencing a text file
 
@@ -89,7 +87,7 @@ that is used to tell Hadoop where to find the code that is used in the pipeline 
 We now need to tell the Pipeline about the inputs it will be consuming. The Pipeline interface
 defines a `readTextFile` method that takes in a String and returns a PCollection of Strings.
 In addition to text files, Crunch supports reading data from SequenceFiles and Avro container files,
-via the `SequenceFileSource` and `AvroFileSource` classes defined in the com.cloudera.crunch.io package.
+via the `SequenceFileSource` and `AvroFileSource` classes defined in the org.apache.crunch.io package.
 
 Note that each PCollection is a _reference_ to a source of data- no data is actually loaded into a
 PCollection on the client machine.
@@ -116,25 +114,26 @@ in the output PCollection is serialized. While Crunch takes advantage of Java Ge
 compile-time type safety, the generic type information is not available at runtime. Crunch needs to know
 how to map the records stored in each PCollection into a Hadoop-supported serialization format in order
 to read and write data to disk. Two serialization implementations are supported in crunch via the
-`PTypeFamily` interface: a Writable-based system that is defined in the com.cloudera.crunch.type.writable
-package, and an Avro-based system that is defined in the com.cloudera.crunch.type.avro package. Each
+`PTypeFamily` interface: a Writable-based system that is defined in the org.apache.crunch.types.writable
+package, and an Avro-based system that is defined in the org.apache.crunch.types.avro package. Each
 implementation provides convenience methods for working with the common PTypes (Strings, longs, bytes, etc.)
 as well as utility methods for creating PTypes from existing Writable classes or Avro schemas.
 
 ### Step 3: Counting the words
 
-Out of Crunch's simple primitive operations, we can build arbitrarily complex chains of operations in order
+Out of Crunch\'s simple primitive operations, we can build arbitrarily complex chains of operations in order
 to perform higher-level operations, like aggregations and joins, that can work on any type of input data.
-Let's look at the implementation of the `Aggregate.count` function:
+Let\'s look at the implementation of the `Aggregate.count` function:
 
-    package com.cloudera.crunch.lib;
+    package org.apache.crunch.lib;
 
-    import com.cloudera.crunch.CombineFn;
-    import com.cloudera.crunch.MapFn;
-    import com.cloudera.crunch.PCollection;
-    import com.cloudera.crunch.PTable;
-    import com.cloudera.crunch.Pair;
-    import com.cloudera.crunch.type.PTypeFamily;
+    import org.apache.crunch.CombineFn;
+    import org.apache.crunch.MapFn;
+    import org.apache.crunch.PCollection;
+    import org.apache.crunch.PGroupedTable;
+    import org.apache.crunch.PTable;
+    import org.apache.crunch.Pair;
+    import org.apache.crunch.types.PTypeFamily;
     
     public class Aggregate {
     
@@ -170,14 +169,14 @@ and the number one by extending the `MapFn` convenience subclass of DoFn, and us
 PTable instance, with the key being the PType of the PCollection and the value being the Long
 implementation for this PTypeFamily.
 
-The next line features the second of Crunch's four operations, `groupByKey`. The groupByKey
+The next line features the second of Crunch\'s four operations, `groupByKey`. The groupByKey
 operation may only be applied to a PTable, and returns an instance of the `PGroupedTable`
 interface, which references the grouping of all of the values in the PTable that have the same key.
 The groupByKey operation is what triggers the reduce phase of a MapReduce within Crunch.
 
-The last line in the function returns the output of the third of Crunch's four operations,
+The last line in the function returns the output of the third of Crunch\'s four operations,
 `combineValues`. The combineValues operator takes a `CombineFn` as an argument, which is a
-specialized subclass of DoFn that operates on an implementation of Java's Iterable interface. The
+specialized subclass of DoFn that operates on an implementation of Java\'s Iterable interface. The
 use of combineValues (as opposed to parallelDo) signals to Crunch that the CombineFn may be used to
 aggregate values for the same key on the map side of a MapReduce job as well as the reduce side.
 
@@ -185,10 +184,10 @@ aggregate values for the same key on the map side of a MapReduce job as well as 
 
 The Pipeline object also provides a `writeTextFile` convenience method for indicating that a
 PCollection should be written to a text file. There are also output targets for SequenceFiles and
-Avro container files, available in the com.cloudera.crunch.io package.
+Avro container files, available in the org.apache.crunch.io package.
 
 After you are finished constructing a pipeline and specifying the output destinations, call the
-pipeline's blocking `run` method in order to compile the pipeline into one or more MapReduce
+pipeline\'s blocking `run` method in order to compile the pipeline into one or more MapReduce
 jobs and execute them.
 
 ## Writing Your Own Pipelines
@@ -198,11 +197,11 @@ This section discusses the different steps of creating your own Crunch pipelines
 ### Writing a DoFn
 
 The DoFn class is designed to keep the complexity of the MapReduce APIs out of your way when you
-don't need them while still keeping them accessible when you do.
+don\'t need them while still keeping them accessible when you do.
 
 #### Serialization
 
-First, all DoFn instances are required to be `java.io.Serializable`. This is a key aspect of Crunch's design:
+First, all DoFn instances are required to be `java.io.Serializable`. This is a key aspect of Crunch\'s design:
 once a particular DoFn is assigned to the Map or Reduce stage of a MapReduce job, all of the state
 of that DoFn is serialized so that it may be distributed to all of the nodes in the Hadoop cluster that
 will be running that task. There are two important implications of this for developers:
@@ -231,7 +230,7 @@ are associated with a MapReduce stage, so that they may be accessed during initi
 ### Performing Cogroups and Joins
 
 In Crunch, cogroups and joins are performed on PTable instances that have the same key type. This section walks through
-the basic flow of a cogroup operation, explaining how this higher-level operation is composed of Crunch's four primitives.
+the basic flow of a cogroup operation, explaining how this higher-level operation is composed of Crunch\'s four primitives.
 In general, these common operations are provided as part of the core Crunch library or in extensions, you do not need
 to write them yourself. But it can be useful to understand how they work under the covers.
 
