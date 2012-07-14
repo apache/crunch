@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+
 import com.google.common.collect.Lists;
 
 class NodePath implements Iterable<PCollectionImpl<?>> {
@@ -75,12 +76,12 @@ class NodePath implements Iterable<PCollectionImpl<?>> {
     NodePath nodePath = (NodePath) other;
     return path.equals(nodePath.path);
   }
-  
+
   @Override
   public int hashCode() {
     return 17 + 37 * path.hashCode();
   }
-  
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -90,7 +91,7 @@ class NodePath implements Iterable<PCollectionImpl<?>> {
     sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
   }
-  
+
   public NodePath splitAt(int splitIndex, PCollectionImpl<?> newHead) {
     NodePath top = new NodePath();
     for (int i = 0; i <= splitIndex; i++) {

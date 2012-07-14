@@ -154,8 +154,7 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
     try {
       for (int i = 0; i < card; ++i) {
         if (has(i)) {
-          cls[i] = Class.forName(Text.readString(in))
-              .asSubclass(Writable.class);
+          cls[i] = Class.forName(Text.readString(in)).asSubclass(Writable.class);
         }
       }
       for (int i = 0; i < card; ++i) {
@@ -207,7 +206,7 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
         Writable v2 = o.values[i];
         if (v1 != v2 && (v1 != null && !v1.equals(v2))) {
           if (v1 instanceof WritableComparable && v2 instanceof WritableComparable) {
-            int cmp = ((WritableComparable)v1).compareTo((WritableComparable)v2);
+            int cmp = ((WritableComparable) v1).compareTo((WritableComparable) v2);
             if (cmp != 0) {
               return cmp;
             }

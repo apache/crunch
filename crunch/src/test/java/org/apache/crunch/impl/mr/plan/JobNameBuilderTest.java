@@ -19,9 +19,9 @@ package org.apache.crunch.impl.mr.plan;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.crunch.types.writable.Writables;
 import org.junit.Test;
 
-import org.apache.crunch.types.writable.Writables;
 import com.google.common.collect.Lists;
 
 public class JobNameBuilderTest {
@@ -34,7 +34,7 @@ public class JobNameBuilderTest {
     JobNameBuilder jobNameBuilder = new JobNameBuilder(pipelineName);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
     String jobName = jobNameBuilder.build();
-    
+
     assertEquals(String.format("%s: %s", pipelineName, nodeName), jobName);
   }
 

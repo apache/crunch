@@ -27,12 +27,14 @@ import org.apache.avro.reflect.ReflectDatumWriter;
  */
 public class ReflectDataFactory {
 
-  public ReflectData getReflectData() { return ReflectData.AllowNull.get(); }
-  
+  public ReflectData getReflectData() {
+    return ReflectData.AllowNull.get();
+  }
+
   public <T> ReflectDatumReader<T> getReader(Schema schema) {
     return new ReflectDatumReader<T>(schema);
   }
-  
+
   public <T> ReflectDatumWriter<T> getWriter() {
     return new ReflectDatumWriter<T>();
   }

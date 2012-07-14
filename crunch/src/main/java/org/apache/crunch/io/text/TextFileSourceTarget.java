@@ -17,22 +17,21 @@
  */
 package org.apache.crunch.io.text;
 
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
 
 public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public TextFileSourceTarget(String path, PType<T> ptype) {
     this(new Path(path), ptype);
   }
-  
+
   public TextFileSourceTarget(Path path, PType<T> ptype) {
     super(new TextFileSource<T>(path, ptype), new TextFileTarget(path));
   }
-  
+
   @Override
   public String toString() {
-	return target.toString();
+    return target.toString();
   }
 }

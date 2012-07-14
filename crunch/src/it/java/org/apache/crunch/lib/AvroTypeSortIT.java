@@ -17,10 +17,10 @@
  */
 package org.apache.crunch.lib;
 
+import static junit.framework.Assert.assertEquals;
 import static org.apache.crunch.types.avro.Avros.ints;
 import static org.apache.crunch.types.avro.Avros.records;
 import static org.apache.crunch.types.avro.Avros.strings;
-import static junit.framework.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,15 +30,15 @@ import java.util.List;
 
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.specific.SpecificDatumWriter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.Person;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Lists;
 
 /**
@@ -46,103 +46,95 @@ import com.google.common.collect.Lists;
  */
 public class AvroTypeSortIT implements Serializable {
 
-	private static final long serialVersionUID = 1344118240353796561L;
+  private static final long serialVersionUID = 1344118240353796561L;
 
-	private transient File avroFile;
+  private transient File avroFile;
 
-	@Before
-	public void setUp() throws IOException {
-		avroFile = File.createTempFile("avrotest", ".avro");
-	}
+  @Before
+  public void setUp() throws IOException {
+    avroFile = File.createTempFile("avrotest", ".avro");
+  }
 
-	@After
-	public void tearDown() {
-		avroFile.delete();
-	}
+  @After
+  public void tearDown() {
+    avroFile.delete();
+  }
 
-	@Test
-	public void testSortAvroTypesBySelectedFields() throws Exception {
+  @Test
+  public void testSortAvroTypesBySelectedFields() throws Exception {
 
-		MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class);
+    MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class);
 
-		Person ccc10 = createPerson("CCC", 10);
-		Person bbb20 = createPerson("BBB", 20);
-		Person aaa30 = createPerson("AAA", 30);
+    Person ccc10 = createPerson("CCC", 10);
+    Person bbb20 = createPerson("BBB", 20);
+    Person aaa30 = createPerson("AAA", 30);
 
-		writeAvroFile(Lists.newArrayList(ccc10, bbb20, aaa30), avroFile);
+    writeAvroFile(Lists.newArrayList(ccc10, bbb20, aaa30), avroFile);
 
-		PCollection<Person> unsorted = pipeline.read(At.avroFile(
-				avroFile.getAbsolutePath(), records(Person.class)));
+    PCollection<Person> unsorted = pipeline.read(At.avroFile(avroFile.getAbsolutePath(), records(Person.class)));
 
-		// Sort by Name
-		MapFn<Person, String> nameExtractor = new MapFn<Person, String>() {
+    // Sort by Name
+    MapFn<Person, String> nameExtractor = new MapFn<Person, String>() {
 
-			@Override
-			public String map(Person input) {
-				return input.getName().toString();
-			}
-		};
+      @Override
+      public String map(Person input) {
+        return input.getName().toString();
+      }
+    };
 
-		PCollection<Person> sortedByName = unsorted
-				.by(nameExtractor, strings()).groupByKey().ungroup().values();
+    PCollection<Person> sortedByName = unsorted.by(nameExtractor, strings()).groupByKey().ungroup().values();
 
-		List<Person> sortedByNameList = Lists.newArrayList(sortedByName
-				.materialize());
+    List<Person> sortedByNameList = Lists.newArrayList(sortedByName.materialize());
 
-		assertEquals(3, sortedByNameList.size());
-		assertEquals(aaa30, sortedByNameList.get(0));
-		assertEquals(bbb20, sortedByNameList.get(1));
-		assertEquals(ccc10, sortedByNameList.get(2));
+    assertEquals(3, sortedByNameList.size());
+    assertEquals(aaa30, sortedByNameList.get(0));
+    assertEquals(bbb20, sortedByNameList.get(1));
+    assertEquals(ccc10, sortedByNameList.get(2));
 
-		// Sort by Age
+    // Sort by Age
 
-		MapFn<Person, Integer> ageExtractor = new MapFn<Person, Integer>() {
+    MapFn<Person, Integer> ageExtractor = new MapFn<Person, Integer>() {
 
-			@Override
-			public Integer map(Person input) {
-				return input.getAge();
-			}
-		};
+      @Override
+      public Integer map(Person input) {
+        return input.getAge();
+      }
+    };
 
-		PCollection<Person> sortedByAge = unsorted.by(ageExtractor, ints())
-				.groupByKey().ungroup().values();
+    PCollection<Person> sortedByAge = unsorted.by(ageExtractor, ints()).groupByKey().ungroup().values();
 
-		List<Person> sortedByAgeList = Lists.newArrayList(sortedByAge
-				.materialize());
+    List<Person> sortedByAgeList = Lists.newArrayList(sortedByAge.materialize());
 
-		assertEquals(3, sortedByAgeList.size());
-		assertEquals(ccc10, sortedByAgeList.get(0));
-		assertEquals(bbb20, sortedByAgeList.get(1));
-		assertEquals(aaa30, sortedByAgeList.get(2));
+    assertEquals(3, sortedByAgeList.size());
+    assertEquals(ccc10, sortedByAgeList.get(0));
+    assertEquals(bbb20, sortedByAgeList.get(1));
+    assertEquals(aaa30, sortedByAgeList.get(2));
 
-		pipeline.done();
-	}
+    pipeline.done();
+  }
 
-	private void writeAvroFile(List<Person> people, File avroFile)
-			throws IOException {
+  private void writeAvroFile(List<Person> people, File avroFile) throws IOException {
 
-		FileOutputStream outputStream = new FileOutputStream(avroFile);
-		SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(
-				Person.class);
+    FileOutputStream outputStream = new FileOutputStream(avroFile);
+    SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(Person.class);
 
-		DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(
-				writer);
-		dataFileWriter.create(Person.SCHEMA$, outputStream);
-		for (Person person : people) {
-			dataFileWriter.append(person);
-		}
-		dataFileWriter.close();
-		outputStream.close();
-	}
+    DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(writer);
+    dataFileWriter.create(Person.SCHEMA$, outputStream);
+    for (Person person : people) {
+      dataFileWriter.append(person);
+    }
+    dataFileWriter.close();
+    outputStream.close();
+  }
 
-	private Person createPerson(String name, int age) throws IOException {
+  private Person createPerson(String name, int age) throws IOException {
 
-		Person person = new Person();
-		person.setAge(age);
-		person.setName(name);
-		List<CharSequence> siblingNames = Lists.newArrayList();
-		person.setSiblingnames(siblingNames);
+    Person person = new Person();
+    person.setAge(age);
+    person.setName(name);
+    List<CharSequence> siblingNames = Lists.newArrayList();
+    person.setSiblingnames(siblingNames);
 
-		return person;
-	}
+    return person;
+  }
 }

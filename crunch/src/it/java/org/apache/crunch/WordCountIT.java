@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
@@ -35,6 +33,8 @@ import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -119,11 +119,10 @@ public class WordCountIT {
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, tf.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, tf);
-    List<Pair<String, Long>> top5 = Lists.newArrayList(Aggregate.top(wordCount, 5, true)
-        .materialize());
+    List<Pair<String, Long>> top5 = Lists.newArrayList(Aggregate.top(wordCount, 5, true).materialize());
     assertEquals(
-        ImmutableList.of(Pair.of("", 1470L), Pair.of("the", 620L), Pair.of("and", 427L),
-            Pair.of("of", 396L), Pair.of("to", 367L)), top5);
+        ImmutableList.of(Pair.of("", 1470L), Pair.of("the", 620L), Pair.of("and", 427L), Pair.of("of", 396L),
+            Pair.of("to", 367L)), top5);
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
@@ -143,8 +142,7 @@ public class WordCountIT {
       File substrCount = File.createTempFile("substr", "");
       String substrPath = substrCount.getAbsolutePath();
       substrCount.delete();
-      PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(
-          CombineFn.<String> SUM_LONGS());
+      PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(CombineFn.<String> SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
     PipelineResult res = pipeline.done();

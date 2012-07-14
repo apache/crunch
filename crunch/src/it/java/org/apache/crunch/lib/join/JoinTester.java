@@ -20,8 +20,6 @@ package org.apache.crunch.lib.join;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.junit.Test;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
@@ -36,6 +34,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
 
 public abstract class JoinTester implements Serializable {
   private static class WordSplit extends DoFn<String, String> {
@@ -47,24 +46,21 @@ public abstract class JoinTester implements Serializable {
     }
   }
 
-  protected PTable<String, Long> join(PCollection<String> w1, PCollection<String> w2,
-        PTypeFamily ptf) {
+  protected PTable<String, Long> join(PCollection<String> w1, PCollection<String> w2, PTypeFamily ptf) {
     PTableType<String, Long> ntt = ptf.tableOf(ptf.strings(), ptf.longs());
     PTable<String, Long> ws1 = Aggregate.count(w1.parallelDo("ws1", new WordSplit(), ptf.strings()));
     PTable<String, Long> ws2 = Aggregate.count(w2.parallelDo("ws2", new WordSplit(), ptf.strings()));
 
     PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2, getJoinFn(ptf));
 
-    PTable<String, Long> sums = join.parallelDo("cnt",
-        new DoFn<Pair<String, Pair<Long, Long>>, Pair<String, Long>>() {
-          @Override
-          public void process(Pair<String, Pair<Long, Long>> input,
-                              Emitter<Pair<String, Long>> emitter) {
-            Pair<Long, Long> pair = input.second();
-            long sum = (pair.first() != null ? pair.first() : 0) + (pair.second() != null ? pair.second() : 0);
-            emitter.emit(Pair.of(input.first(), sum));
-          }
-        }, ntt);
+    PTable<String, Long> sums = join.parallelDo("cnt", new DoFn<Pair<String, Pair<Long, Long>>, Pair<String, Long>>() {
+      @Override
+      public void process(Pair<String, Pair<Long, Long>> input, Emitter<Pair<String, Long>> emitter) {
+        Pair<Long, Long> pair = input.second();
+        long sum = (pair.first() != null ? pair.first() : 0) + (pair.second() != null ? pair.second() : 0);
+        emitter.emit(Pair.of(input.first(), sum));
+      }
+    }, ntt);
 
     return sums;
   }
@@ -84,10 +80,10 @@ public abstract class JoinTester implements Serializable {
   }
 
   @Test
-   public void testWritableJoin() throws Exception {
+  public void testWritableJoin() throws Exception {
     run(new MRPipeline(InnerJoinIT.class), WritableTypeFamily.getInstance());
   }
-  
+
   @Test
   public void testAvroJoin() throws Exception {
     run(new MRPipeline(InnerJoinIT.class), AvroTypeFamily.getInstance());
@@ -95,8 +91,9 @@ public abstract class JoinTester implements Serializable {
 
   /**
    * Used to check that the result of the join makes sense.
-   *
-   * @param lines The result of the join.
+   * 
+   * @param lines
+   *          The result of the join.
    */
   public abstract void assertPassed(Iterable<Pair<String, Long>> lines);
 

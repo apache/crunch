@@ -24,7 +24,7 @@ import org.apache.crunch.Pair;
  * An extension of {@code PType} specifically for {@link PTable} objects. It
  * allows separate access to the {@code PType}s of the key and value for the
  * {@code PTable}.
- *
+ * 
  */
 public interface PTableType<K, V> extends PType<Pair<K, V>> {
   /**
@@ -35,8 +35,8 @@ public interface PTableType<K, V> extends PType<Pair<K, V>> {
   /**
    * Returns the value type for the table.
    */
-  PType<V> getValueType(); 
-  
+  PType<V> getValueType();
+
   /**
    * Returns the grouped table version of this type.
    */

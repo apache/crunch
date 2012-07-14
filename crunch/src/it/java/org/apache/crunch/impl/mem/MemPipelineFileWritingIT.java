@@ -25,11 +25,11 @@ import java.util.List;
 
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
+import org.junit.Test;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-
-import org.junit.Test;
 
 public class MemPipelineFileWritingIT {
   @Test

@@ -17,28 +17,25 @@
  */
 package org.apache.crunch.io.impl;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.Source;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
 
-public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements
-	PathTarget {
+public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements PathTarget {
 
   public SourcePathTargetImpl(Source<T> source, PathTarget target) {
-	super(source, target);
+    super(source, target);
   }
-  
+
   @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
-	  String name) {
-	((PathTarget) target).configureForMapReduce(job, ptype, outputPath, name);
+  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
+    ((PathTarget) target).configureForMapReduce(job, ptype, outputPath, name);
   }
 
   @Override
   public Path getPath() {
-	return ((PathTarget) target).getPath();
+    return ((PathTarget) target).getPath();
   }
 }

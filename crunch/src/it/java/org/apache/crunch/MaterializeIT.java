@@ -23,85 +23,82 @@ import static junit.framework.Assert.assertTrue;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
+
 import com.google.common.collect.Lists;
 
 public class MaterializeIT {
 
-	/** Filter that rejects everything. */
-	@SuppressWarnings("serial")
-	private static class FalseFilterFn extends FilterFn<String> {
+  /** Filter that rejects everything. */
+  @SuppressWarnings("serial")
+  private static class FalseFilterFn extends FilterFn<String> {
 
-		@Override
-		public boolean accept(final String input) {
-			return false;
-		}
-	}
+    @Override
+    public boolean accept(final String input) {
+      return false;
+    }
+  }
 
-	@Test
-	public void testMaterializeInput_Writables() throws IOException {
-		runMaterializeInput(new MRPipeline(MaterializeIT.class), WritableTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeInput_Writables() throws IOException {
+    runMaterializeInput(new MRPipeline(MaterializeIT.class), WritableTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeInput_Avro() throws IOException {
-		runMaterializeInput(new MRPipeline(MaterializeIT.class), AvroTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeInput_Avro() throws IOException {
+    runMaterializeInput(new MRPipeline(MaterializeIT.class), AvroTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeInput_InMemoryWritables() throws IOException {
-		runMaterializeInput(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeInput_InMemoryWritables() throws IOException {
+    runMaterializeInput(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeInput_InMemoryAvro() throws IOException {
-		runMaterializeInput(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeInput_InMemoryAvro() throws IOException {
+    runMaterializeInput(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeEmptyIntermediate_Writables() throws IOException {
-		runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class),
-				WritableTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeEmptyIntermediate_Writables() throws IOException {
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class), WritableTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeEmptyIntermediate_Avro() throws IOException {
-		runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class),
-				AvroTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeEmptyIntermediate_Avro() throws IOException {
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class), AvroTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeEmptyIntermediate_InMemoryWritables() throws IOException {
-		runMaterializeEmptyIntermediate(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeEmptyIntermediate_InMemoryWritables() throws IOException {
+    runMaterializeEmptyIntermediate(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
+  }
 
-	@Test
-	public void testMaterializeEmptyIntermediate_InMemoryAvro() throws IOException {
-		runMaterializeEmptyIntermediate(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
-	}
+  @Test
+  public void testMaterializeEmptyIntermediate_InMemoryAvro() throws IOException {
+    runMaterializeEmptyIntermediate(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
+  }
 
-	public void runMaterializeInput(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-		List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
-		String inputPath = FileHelper.createTempCopyOf("set1.txt");
+  public void runMaterializeInput(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+    List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
+    String inputPath = FileHelper.createTempCopyOf("set1.txt");
 
-		PCollection<String> lines = pipeline.readTextFile(inputPath);
-		assertEquals(expectedContent, Lists.newArrayList(lines.materialize()));
-		pipeline.done();
-	}
+    PCollection<String> lines = pipeline.readTextFile(inputPath);
+    assertEquals(expectedContent, Lists.newArrayList(lines.materialize()));
+    pipeline.done();
+  }
 
-	public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily)
-			throws IOException {
-		String inputPath = FileHelper.createTempCopyOf("set1.txt");
-		PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FalseFilterFn());
+  public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+    String inputPath = FileHelper.createTempCopyOf("set1.txt");
+    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FalseFilterFn());
 
-		assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());
-		pipeline.done();
-	}
+    assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());
+    pipeline.done();
+  }
 }

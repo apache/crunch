@@ -23,19 +23,19 @@ import org.apache.crunch.DoFn;
 
 /**
  * Converts the input key/value from a MapReduce task into the input to a
- * {@link DoFn}, or takes the output of a {@code DoFn} and write it to
- * the output key/values.
+ * {@link DoFn}, or takes the output of a {@code DoFn} and write it to the
+ * output key/values.
  */
 public interface Converter<K, V, S, T> extends Serializable {
   S convertInput(K key, V value);
-  
+
   T convertIterableInput(K key, Iterable<V> value);
-  
+
   K outputKey(S value);
-  
+
   V outputValue(S value);
-  
+
   Class<K> getKeyClass();
-  
+
   Class<V> getValueClass();
 }

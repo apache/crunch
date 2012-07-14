@@ -20,11 +20,11 @@ package org.apache.crunch.util;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.hadoop.util.ReflectionUtils;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
+import org.apache.hadoop.util.ReflectionUtils;
+
 import com.google.common.base.Splitter;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.Message;
@@ -38,21 +38,21 @@ public class Protos {
   public static <M extends Message, K> MapFn<M, K> extractKey(String fieldName) {
     return new ExtractKeyFn<M, K>(fieldName);
   }
-  
+
   public static <M extends Message> DoFn<String, M> lineParser(String sep, Class<M> msgClass) {
-    return new TextToProtoFn<M>(sep, msgClass);  
+    return new TextToProtoFn<M>(sep, msgClass);
   }
-  
+
   public static class ExtractKeyFn<M extends Message, K> extends MapFn<M, K> {
-    
+
     private final String fieldName;
-    
+
     private transient FieldDescriptor fd;
-    
+
     public ExtractKeyFn(String fieldName) {
       this.fieldName = fieldName;
     }
-    
+
     @Override
     public K map(M input) {
       if (input == null) {
@@ -60,31 +60,33 @@ public class Protos {
       } else if (fd == null) {
         fd = input.getDescriptorForType().findFieldByName(fieldName);
         if (fd == null) {
-          throw new IllegalStateException(
-              "Could not find field: " + fieldName + " in message: " + input);
+          throw new IllegalStateException("Could not find field: " + fieldName + " in message: " + input);
         }
       }
       return (K) input.getField(fd);
     }
-    
+
   }
-  
+
   public static class TextToProtoFn<M extends Message> extends DoFn<String, M> {
-    
+
     private final String sep;
     private final Class<M> msgClass;
-    
+
     private transient M msgInstance;
     private transient List<FieldDescriptor> fields;
     private transient Splitter splitter;
-    
-    enum ParseErrors { TOTAL, NUMBER_FORMAT };
-    
+
+    enum ParseErrors {
+      TOTAL,
+      NUMBER_FORMAT
+    };
+
     public TextToProtoFn(String sep, Class<M> msgClass) {
       this.sep = sep;
       this.msgClass = msgClass;
     }
-    
+
     @Override
     public void initialize() {
       this.msgInstance = ReflectionUtils.newInstance(msgClass, getConfiguration());
@@ -136,7 +138,7 @@ public class Protos {
             }
           }
         }
-        
+
         if (parseError) {
           increment(ParseErrors.TOTAL);
         } else {
@@ -145,6 +147,5 @@ public class Protos {
       }
     }
   }
-  
-  
+
 }

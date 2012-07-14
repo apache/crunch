@@ -43,10 +43,14 @@ public class DistCacheTest {
   private String[] testFileQualifiedPaths;
 
   /**
-   * Setup resources for tests.  These include:
-   * 1. A Hadoop configuration.
-   * 2. A directory of temporary files that includes 3 .jar files and 1 other file.
-   * 3. Arrays containing the canonical paths and qualified paths to the test files.
+   * Setup resources for tests. These include:
+   * <ol>
+   * <li>A Hadoop configuration.
+   * <li>A directory of temporary files that includes 3 .jar files and 1 other
+   * file.
+   * <li>Arrays containing the canonical paths and qualified paths to the test
+   * files.
+   * </ol>
    */
   @Before
   public void setup() throws IOException {
@@ -69,12 +73,14 @@ public class DistCacheTest {
 
   /**
    * Tests adding jars one-by-one to a job's configuration.
-   *
-   * @throws IOException If there is a problem adding the jars.
+   * 
+   * @throws IOException
+   *           If there is a problem adding the jars.
    */
   @Test
   public void testAddJar() throws IOException {
-    // Add each valid jar path to the distributed cache configuration, and verify each was
+    // Add each valid jar path to the distributed cache configuration, and
+    // verify each was
     // added correctly in turn.
     for (int i = 0; i < testFilePaths.length; i++) {
       DistCache.addJarToDistributedCache(testConf, testFilePaths[i]);
@@ -84,10 +90,11 @@ public class DistCacheTest {
   }
 
   /**
-   * Tests that attempting to add the path to a jar that does not exist to the configuration
-   * throws an exception.
-   *
-   * @throws IOException If the added jar path does not exist. This exception is expected.
+   * Tests that attempting to add the path to a jar that does not exist to the
+   * configuration throws an exception.
+   * 
+   * @throws IOException
+   *           If the added jar path does not exist. This exception is expected.
    */
   @Test(expected = IOException.class)
   public void testAddJarThatDoesntExist() throws IOException {
@@ -95,11 +102,13 @@ public class DistCacheTest {
   }
 
   /**
-   * Tests that adding a directory of jars to the configuration works as expected. .jar files
-   * under the added directory should be added to the configuration,
-   * and all other files should be skipped.
-   *
-   * @throws IOException If there is a problem adding the jar directory to the configuration.
+   * Tests that adding a directory of jars to the configuration works as
+   * expected. .jar files under the added directory should be added to the
+   * configuration, and all other files should be skipped.
+   * 
+   * @throws IOException
+   *           If there is a problem adding the jar directory to the
+   *           configuration.
    */
   @Test
   public void testAddJarDirectory() throws IOException {
@@ -107,24 +116,25 @@ public class DistCacheTest {
     // Throw the added jar paths in a set to detect duplicates.
     String[] splitJarPaths = StringUtils.split(testConf.get("tmpjars"), ",");
     Set<String> addedJarPaths = new HashSet<String>();
-    for (String path: splitJarPaths) {
+    for (String path : splitJarPaths) {
       addedJarPaths.add(path);
     }
-    assertEquals("Incorrect number of jar paths added.", testFilePaths.length,
-        addedJarPaths.size());
+    assertEquals("Incorrect number of jar paths added.", testFilePaths.length, addedJarPaths.size());
 
     // Ensure all expected paths were added.
     for (int i = 0; i < testFileQualifiedPaths.length; i++) {
-      assertTrue("Expected jar path missing from jar paths added to tmpjars: " +
-          testFileQualifiedPaths[i], addedJarPaths.contains(testFileQualifiedPaths[i]));
+      assertTrue("Expected jar path missing from jar paths added to tmpjars: " + testFileQualifiedPaths[i],
+          addedJarPaths.contains(testFileQualifiedPaths[i]));
     }
   }
 
   /**
-   * Tests that adding a jar directory that does not exist to the configuration throws an
-   * exception.
-   *
-   * @throws IOException If the added jar directory does not exist. This exception is expected.
+   * Tests that adding a jar directory that does not exist to the configuration
+   * throws an exception.
+   * 
+   * @throws IOException
+   *           If the added jar directory does not exist. This exception is
+   *           expected.
    */
   @Test(expected = IOException.class)
   public void testAddJarDirectoryThatDoesntExist() throws IOException {
@@ -132,10 +142,12 @@ public class DistCacheTest {
   }
 
   /**
-   * Tests that adding a jar directory that is not a directory to the configuration throws an
-   * exception.
-   *
-   * @throws IOException If the added jar directory is not a directory. This exception is expected.
+   * Tests that adding a jar directory that is not a directory to the
+   * configuration throws an exception.
+   * 
+   * @throws IOException
+   *           If the added jar directory is not a directory. This exception is
+   *           expected.
    */
   @Test(expected = IOException.class)
   public void testAddJarDirectoryNotDirectory() throws IOException {

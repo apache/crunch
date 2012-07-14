@@ -22,15 +22,14 @@ import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
 import org.apache.crunch.types.PTableType;
 
-public class TableSourceTargetImpl<K, V> extends SourceTargetImpl<Pair<K, V>>
-	implements TableSource<K, V> {
+public class TableSourceTargetImpl<K, V> extends SourceTargetImpl<Pair<K, V>> implements TableSource<K, V> {
 
   public TableSourceTargetImpl(TableSource<K, V> source, Target target) {
-	super(source, target);
+    super(source, target);
   }
-  
+
   @Override
   public PTableType<K, V> getTableType() {
-	return ((TableSource<K, V>) source).getTableType();
+    return ((TableSource<K, V>) source).getTableType();
   }
 }

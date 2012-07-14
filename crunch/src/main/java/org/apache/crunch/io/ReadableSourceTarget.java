@@ -20,10 +20,11 @@ package org.apache.crunch.io;
 import org.apache.crunch.SourceTarget;
 
 /**
- * An interface that indicates that a {@code SourceTarget} instance can be
- * read into the local client.
- *
- * @param <T> The type of data read.
+ * An interface that indicates that a {@code SourceTarget} instance can be read
+ * into the local client.
+ * 
+ * @param <T>
+ *          The type of data read.
  */
 public interface ReadableSourceTarget<T> extends ReadableSource<T>, SourceTarget<T> {
 }

@@ -19,10 +19,6 @@ package org.apache.crunch.lib.join;
 
 import java.io.IOException;
 
-import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PTable;
@@ -33,6 +29,10 @@ import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.impl.SourcePathTargetImpl;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
@@ -76,8 +76,7 @@ public class MapsideJoin {
     // optimize his by running the setup of multiple map-side joins concurrently
     pipeline.run();
 
-    ReadableSourceTarget<Pair<K, V>> readableSourceTarget = pipeline
-        .getMaterializeSourceTarget(right);
+    ReadableSourceTarget<Pair<K, V>> readableSourceTarget = pipeline.getMaterializeSourceTarget(right);
     if (!(readableSourceTarget instanceof SourcePathTargetImpl)) {
       throw new CrunchRuntimeException("Right-side contents can't be read from a path");
     }
@@ -89,14 +88,10 @@ public class MapsideJoin {
     Path path = sourcePathTarget.getPath();
     DistributedCache.addCacheFile(path.toUri(), pipeline.getConfiguration());
 
-    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.toString(),
-        right.getPType());
+    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.toString(), right.getPType());
     PTypeFamily typeFamily = left.getTypeFamily();
-    return left.parallelDo(
-        "mapjoin",
-        mapJoinDoFn,
-        typeFamily.tableOf(left.getKeyType(),
-            typeFamily.pairs(left.getValueType(), right.getValueType())));
+    return left.parallelDo("mapjoin", mapJoinDoFn,
+        typeFamily.tableOf(left.getKeyType(), typeFamily.pairs(left.getValueType(), right.getValueType())));
 
   }
 

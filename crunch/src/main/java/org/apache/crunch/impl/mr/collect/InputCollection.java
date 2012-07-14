@@ -20,11 +20,11 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.ImmutableList;
 
 public class InputCollection<S> extends PCollectionImpl<S> {
@@ -54,7 +54,7 @@ public class InputCollection<S> extends PCollectionImpl<S> {
     }
     return sz;
   }
-  
+
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitInputCollection(this);
@@ -69,7 +69,7 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
   }
-  
+
   @Override
   public boolean equals(Object obj) {
     if (obj == null || !(obj instanceof InputCollection)) {
@@ -77,7 +77,7 @@ public class InputCollection<S> extends PCollectionImpl<S> {
     }
     return source.equals(((InputCollection) obj).source);
   }
-  
+
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(source).toHashCode();

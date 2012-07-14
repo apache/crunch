@@ -24,31 +24,31 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
 public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(TextFileReaderFactory.class);
-  
+
   private final PType<T> ptype;
   private final Configuration conf;
-  
+
   public TextFileReaderFactory(PType<T> ptype, Configuration conf) {
     this.ptype = ptype;
     this.conf = conf;
   }
-  
+
   @Override
   public Iterator<T> read(FileSystem fs, Path path) {
     MapFn mapFn = null;
@@ -64,33 +64,34 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
     }
     mapFn.setConfigurationForTest(conf);
     mapFn.initialize();
-    
-	FSDataInputStream is = null;
-	try {
-	  is = fs.open(path);
-	} catch (IOException e) {
-	  LOG.info("Could not read path: " + path, e);
-	  return Iterators.emptyIterator();
-	}
-	
-	final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-	final MapFn<String, T> iterMapFn = mapFn;
-	return new UnmodifiableIterator<T>() {
-	  private String nextLine;
-	  @Override
-	  public boolean hasNext() {
-		try {
-		  return (nextLine = reader.readLine()) != null;
-		} catch (IOException e) {
-		  LOG.info("Exception reading text file stream", e);
-		  return false;
-		}
-	  }
 
-	  @Override
-	  public T next() {
-		return iterMapFn.map(nextLine);
-	  }
-	};
+    FSDataInputStream is = null;
+    try {
+      is = fs.open(path);
+    } catch (IOException e) {
+      LOG.info("Could not read path: " + path, e);
+      return Iterators.emptyIterator();
+    }
+
+    final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    final MapFn<String, T> iterMapFn = mapFn;
+    return new UnmodifiableIterator<T>() {
+      private String nextLine;
+
+      @Override
+      public boolean hasNext() {
+        try {
+          return (nextLine = reader.readLine()) != null;
+        } catch (IOException e) {
+          LOG.info("Exception reading text file stream", e);
+          return false;
+        }
+      }
+
+      @Override
+      public T next() {
+        return iterMapFn.map(nextLine);
+      }
+    };
   }
 }

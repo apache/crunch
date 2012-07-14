@@ -19,28 +19,26 @@ package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class ExtractKeyFnTest {
 
-	protected static final MapFn<String, Integer> mapFn = new MapFn<String, Integer>() {
-		@Override
-		public Integer map(String input) {
-			return input.hashCode();
-		}
-	};
+  protected static final MapFn<String, Integer> mapFn = new MapFn<String, Integer>() {
+    @Override
+    public Integer map(String input) {
+      return input.hashCode();
+    }
+  };
 
-	protected static final ExtractKeyFn<Integer, String> one = new ExtractKeyFn<Integer, String>(
-			mapFn);
+  protected static final ExtractKeyFn<Integer, String> one = new ExtractKeyFn<Integer, String>(mapFn);
 
-	@Test
-	public void test() {
-		StoreLastEmitter<Pair<Integer, String>> emitter = StoreLastEmitter.create();
-		one.process("boza", emitter);
-		assertEquals(Pair.of("boza".hashCode(), "boza"), emitter.getLast());
-	}
+  @Test
+  public void test() {
+    StoreLastEmitter<Pair<Integer, String>> emitter = StoreLastEmitter.create();
+    one.process("boza", emitter);
+    assertEquals(Pair.of("boza".hashCode(), "boza"), emitter.getLast());
+  }
 }

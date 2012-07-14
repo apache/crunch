@@ -21,7 +21,7 @@ import org.apache.crunch.types.PTableType;
 
 /**
  * The interface {@code Source} implementations that return a {@link PTable}.
- *
+ * 
  */
 public interface TableSource<K, V> extends Source<Pair<K, V>> {
   PTableType<K, V> getTableType();

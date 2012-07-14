@@ -18,14 +18,13 @@
 package org.apache.crunch.types.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.crunch.types.Converter;
 import org.apache.hadoop.io.NullWritable;
 
-import org.apache.crunch.types.Converter;
-
 public class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
-  
+
   private transient AvroWrapper<K> wrapper = null;
-  
+
   @Override
   public K convertInput(AvroWrapper<K> key, NullWritable value) {
     return key.datum();
@@ -60,8 +59,7 @@ public class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritab
   }
 
   @Override
-  public Iterable<K> convertIterableInput(AvroWrapper<K> key,
-      Iterable<NullWritable> value) {
+  public Iterable<K> convertIterableInput(AvroWrapper<K> key, Iterable<NullWritable> value) {
     throw new UnsupportedOperationException("Should not be possible");
   }
 }

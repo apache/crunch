@@ -43,7 +43,12 @@ public class CrunchControlledJob {
 
   // A job will be in one of the following states
   public static enum State {
-    SUCCESS, WAITING, RUNNING, READY, FAILED, DEPENDENT_FAILED
+    SUCCESS,
+    WAITING,
+    RUNNING,
+    READY,
+    FAILED,
+    DEPENDENT_FAILED
   };
 
   public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
@@ -63,8 +68,7 @@ public class CrunchControlledJob {
    * @param dependingJobs
    *          an array of jobs the current job depends on
    */
-  public CrunchControlledJob(Job job, List<CrunchControlledJob> dependingJobs)
-      throws IOException {
+  public CrunchControlledJob(Job job, List<CrunchControlledJob> dependingJobs) throws IOException {
     this.job = job;
     this.dependingJobs = dependingJobs;
     this.state = State.WAITING;
@@ -95,8 +99,7 @@ public class CrunchControlledJob {
     if (this.dependingJobs == null || this.dependingJobs.size() == 0) {
       sb.append("job has no depending job:\t").append("\n");
     } else {
-      sb.append("job has ").append(this.dependingJobs.size())
-          .append(" dependeng jobs:\n");
+      sb.append("job has ").append(this.dependingJobs.size()).append(" dependeng jobs:\n");
       for (int i = 0; i < this.dependingJobs.size(); i++) {
         sb.append("\t depending job ").append(i).append(":\t");
         sb.append((this.dependingJobs.get(i)).getJobName()).append("\n");
@@ -227,8 +230,7 @@ public class CrunchControlledJob {
    * @return true if this job is in a complete state
    */
   public synchronized boolean isCompleted() {
-    return this.state == State.FAILED || this.state == State.DEPENDENT_FAILED
-        || this.state == State.SUCCESS;
+    return this.state == State.FAILED || this.state == State.DEPENDENT_FAILED || this.state == State.SUCCESS;
   }
 
   /**
@@ -294,8 +296,7 @@ public class CrunchControlledJob {
       }
       if (s == State.FAILED || s == State.DEPENDENT_FAILED) {
         this.state = State.DEPENDENT_FAILED;
-        this.message = "depending job " + i + " with jobID " + pred.getJobID()
-            + " failed. " + pred.getMessage();
+        this.message = "depending job " + i + " with jobID " + pred.getJobID() + " failed. " + pred.getMessage();
         break;
       }
       // pred must be in success state

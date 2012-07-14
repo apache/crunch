@@ -27,18 +27,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -51,6 +39,18 @@ import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.TupleFactory;
 import org.apache.crunch.util.PTypes;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -74,7 +74,7 @@ public class Writables {
       return NullWritable.get();
     }
   };
-  
+
   private static final MapFn<Text, String> TEXT_TO_STRING = new MapFn<Text, String>() {
     @Override
     public String map(Text input) {
@@ -160,14 +160,14 @@ public class Writables {
       return input == Boolean.TRUE ? TRUE : FALSE;
     }
   };
-  
+
   private static final MapFn<BytesWritable, ByteBuffer> BW_TO_BB = new MapFn<BytesWritable, ByteBuffer>() {
     @Override
     public ByteBuffer map(BytesWritable input) {
       return ByteBuffer.wrap(input.getBytes(), 0, input.getLength());
     }
   };
-  
+
   private static final MapFn<ByteBuffer, BytesWritable> BB_TO_BW = new MapFn<ByteBuffer, BytesWritable>() {
     @Override
     public BytesWritable map(ByteBuffer input) {
@@ -177,49 +177,42 @@ public class Writables {
     }
   };
 
-  private static <S, W extends Writable> WritableType<S, W> create(Class<S> typeClass,
-      Class<W> writableClass, MapFn<W, S> inputDoFn, MapFn<S, W> outputDoFn) {
-    return new WritableType<S, W>(typeClass, writableClass, inputDoFn,
-        outputDoFn);
+  private static <S, W extends Writable> WritableType<S, W> create(Class<S> typeClass, Class<W> writableClass,
+      MapFn<W, S> inputDoFn, MapFn<S, W> outputDoFn) {
+    return new WritableType<S, W>(typeClass, writableClass, inputDoFn, outputDoFn);
   }
 
   private static final WritableType<Void, NullWritable> nulls = create(Void.class, NullWritable.class,
       NULL_WRITABLE_TO_VOID, VOID_TO_NULL_WRITABLE);
-  private static final WritableType<String, Text> strings = create(String.class, Text.class,
-      TEXT_TO_STRING, STRING_TO_TEXT);
-  private static final WritableType<Long, LongWritable> longs = create(Long.class, LongWritable.class,
-      LW_TO_LONG, LONG_TO_LW);
-  private static final WritableType<Integer, IntWritable> ints = create(Integer.class, IntWritable.class,
-      IW_TO_INT, INT_TO_IW);
+  private static final WritableType<String, Text> strings = create(String.class, Text.class, TEXT_TO_STRING,
+      STRING_TO_TEXT);
+  private static final WritableType<Long, LongWritable> longs = create(Long.class, LongWritable.class, LW_TO_LONG,
+      LONG_TO_LW);
+  private static final WritableType<Integer, IntWritable> ints = create(Integer.class, IntWritable.class, IW_TO_INT,
+      INT_TO_IW);
   private static final WritableType<Float, FloatWritable> floats = create(Float.class, FloatWritable.class,
       FW_TO_FLOAT, FLOAT_TO_FW);
-  private static final WritableType<Double, DoubleWritable> doubles = create(Double.class,
-      DoubleWritable.class, DW_TO_DOUBLE, DOUBLE_TO_DW);
-  private static final WritableType<Boolean, BooleanWritable> booleans = create(Boolean.class,
-      BooleanWritable.class, BW_TO_BOOLEAN, BOOLEAN_TO_BW);
-  private static final WritableType<ByteBuffer, BytesWritable> bytes = create(ByteBuffer.class,
-      BytesWritable.class, BW_TO_BB, BB_TO_BW);
+  private static final WritableType<Double, DoubleWritable> doubles = create(Double.class, DoubleWritable.class,
+      DW_TO_DOUBLE, DOUBLE_TO_DW);
+  private static final WritableType<Boolean, BooleanWritable> booleans = create(Boolean.class, BooleanWritable.class,
+      BW_TO_BOOLEAN, BOOLEAN_TO_BW);
+  private static final WritableType<ByteBuffer, BytesWritable> bytes = create(ByteBuffer.class, BytesWritable.class,
+      BW_TO_BB, BB_TO_BW);
 
-  private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>>builder()
-      .put(String.class, strings)
-      .put(Long.class, longs)
-      .put(Integer.class, ints)
-      .put(Float.class, floats)
-      .put(Double.class, doubles)
-      .put(Boolean.class, booleans)
-      .put(ByteBuffer.class, bytes)
-      .build();
-  
+  private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>> builder()
+      .put(String.class, strings).put(Long.class, longs).put(Integer.class, ints).put(Float.class, floats)
+      .put(Double.class, doubles).put(Boolean.class, booleans).put(ByteBuffer.class, bytes).build();
+
   private static final Map<Class<?>, WritableType<?, ?>> EXTENSIONS = Maps.newHashMap();
-  
+
   public static <T> PType<T> getPrimitiveType(Class<T> clazz) {
     return (PType<T>) PRIMITIVES.get(clazz);
   }
-  
+
   public static <T> void register(Class<T> clazz, WritableType<T, ? extends Writable> ptype) {
     EXTENSIONS.put(clazz, ptype);
   }
-  
+
   public static final WritableType<Void, NullWritable> nulls() {
     return nulls;
   }
@@ -247,11 +240,11 @@ public class Writables {
   public static final WritableType<Boolean, BooleanWritable> booleans() {
     return booleans;
   }
-  
+
   public static final WritableType<ByteBuffer, BytesWritable> bytes() {
     return bytes;
   }
-  
+
   public static final <T, W extends Writable> WritableType<T, W> records(Class<T> clazz) {
     if (EXTENSIONS.containsKey(clazz)) {
       return (WritableType<T, W>) EXTENSIONS.get(clazz);
@@ -264,8 +257,7 @@ public class Writables {
     return new WritableType<W, W>(clazz, clazz, wIdentity, wIdentity);
   }
 
-  public static <K, V> WritableTableType<K, V> tableOf(
-      PType<K> key, PType<V> value) {
+  public static <K, V> WritableTableType<K, V> tableOf(PType<K> key, PType<V> value) {
     if (key instanceof WritableTableType) {
       WritableTableType wtt = (WritableTableType) key;
       key = pairs(wtt.getKeyType(), wtt.getValueType());
@@ -312,7 +304,7 @@ public class Writables {
         fn.setConfigurationForTest(conf);
       }
     }
-    
+
     @Override
     public void initialize() {
       for (MapFn fn : fns) {
@@ -343,7 +335,7 @@ public class Writables {
    * 
    */
   private static class TupleTWMapFn extends MapFn<Tuple, TupleWritable> {
-    
+
     private transient TupleWritable writable;
     private transient Writable[] values;
 
@@ -399,24 +391,18 @@ public class Writables {
     return new WritableType(Pair.class, TupleWritable.class, input, output, p1, p2);
   }
 
-  public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3) {
+  public static <V1, V2, V3> WritableType<Tuple3<V1, V2, V3>, TupleWritable> triples(PType<V1> p1, PType<V2> p2,
+      PType<V3> p3) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE3, p1, p2, p3);
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3);
-    return new WritableType(Tuple3.class, TupleWritable.class,
-        input,
-        output,
-        p1, p2, p3);
+    return new WritableType(Tuple3.class, TupleWritable.class, input, output, p1, p2, p3);
   }
 
-  public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3, PType<V4> p4) {
+  public static <V1, V2, V3, V4> WritableType<Tuple4<V1, V2, V3, V4>, TupleWritable> quads(PType<V1> p1, PType<V2> p2,
+      PType<V3> p3, PType<V4> p4) {
     TWTupleMapFn input = new TWTupleMapFn(TupleFactory.TUPLE4, p1, p2, p3, p4);
     TupleTWMapFn output = new TupleTWMapFn(p1, p2, p3, p4);
-    return new WritableType(Tuple4.class, TupleWritable.class,
-        input,
-        output,
-        p1, p2, p3, p4);
+    return new WritableType(Tuple4.class, TupleWritable.class, input, output, p1, p2, p3, p4);
   }
 
   public static WritableType<TupleN, TupleWritable> tuples(PType... ptypes) {
@@ -433,19 +419,17 @@ public class Writables {
     TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
     TWTupleMapFn input = new TWTupleMapFn(factory, ptypes);
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
-    return new WritableType(clazz, TupleWritable.class, input, output, ptypes);  
+    return new WritableType(clazz, TupleWritable.class, input, output, ptypes);
   }
-  
-  public static <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn,
-      PType<S> base) {
+
+  public static <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {
     WritableType<S, ?> wt = (WritableType<S, ?>) base;
     MapFn input = new CompositeMapFn(wt.getInputMapFn(), inputFn);
     MapFn output = new CompositeMapFn(outputFn, wt.getOutputMapFn());
     return new WritableType(clazz, wt.getSerializationClass(), input, output, base.getSubTypes().toArray(new PType[0]));
   }
-  
-  private static class ArrayCollectionMapFn<T> extends
-      MapFn<GenericArrayWritable, Collection<T>> {
+
+  private static class ArrayCollectionMapFn<T> extends MapFn<GenericArrayWritable, Collection<T>> {
     private final MapFn<Object, T> mapFn;
 
     public ArrayCollectionMapFn(MapFn<Object, T> mapFn) {
@@ -461,12 +445,12 @@ public class Writables {
     public void setConfigurationForTest(Configuration conf) {
       mapFn.setConfigurationForTest(conf);
     }
-    
+
     @Override
     public void initialize() {
-      mapFn.setContext(getContext());   
+      mapFn.setContext(getContext());
     }
-    
+
     @Override
     public Collection<T> map(GenericArrayWritable input) {
       Collection<T> collection = Lists.newArrayList();
@@ -477,14 +461,12 @@ public class Writables {
     }
   }
 
-  private static class CollectionArrayMapFn<T> extends
-      MapFn<Collection<T>, GenericArrayWritable> {
-    
+  private static class CollectionArrayMapFn<T> extends MapFn<Collection<T>, GenericArrayWritable> {
+
     private final Class<? extends Writable> clazz;
     private final MapFn<T, Object> mapFn;
 
-    public CollectionArrayMapFn(Class<? extends Writable> clazz,
-        MapFn<T, Object> mapFn) {
+    public CollectionArrayMapFn(Class<? extends Writable> clazz, MapFn<T, Object> mapFn) {
       this.clazz = clazz;
       this.mapFn = mapFn;
     }
@@ -498,12 +480,12 @@ public class Writables {
     public void setConfigurationForTest(Configuration conf) {
       mapFn.setConfigurationForTest(conf);
     }
-    
+
     @Override
     public void initialize() {
-      mapFn.setContext(getContext());   
+      mapFn.setContext(getContext());
     }
-    
+
     @Override
     public GenericArrayWritable map(Collection<T> input) {
       GenericArrayWritable arrayWritable = new GenericArrayWritable(clazz);
@@ -519,9 +501,8 @@ public class Writables {
 
   public static <T> WritableType<Collection<T>, GenericArrayWritable<T>> collections(PType<T> ptype) {
     WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
-    return new WritableType(Collection.class, GenericArrayWritable.class,
-        new ArrayCollectionMapFn(wt.getInputMapFn()), new CollectionArrayMapFn(
-            wt.getSerializationClass(), wt.getOutputMapFn()), ptype);
+    return new WritableType(Collection.class, GenericArrayWritable.class, new ArrayCollectionMapFn(wt.getInputMapFn()),
+        new CollectionArrayMapFn(wt.getSerializationClass(), wt.getOutputMapFn()), ptype);
   }
 
   private static class MapInputMapFn<T> extends MapFn<TextMapWritable<Writable>, Map<String, T>> {
@@ -555,7 +536,7 @@ public class Writables {
       return out;
     }
   }
-  
+
   private static class MapOutputMapFn<T> extends MapFn<Map<String, T>, TextMapWritable<Writable>> {
 
     private final Class<Writable> clazz;
@@ -588,20 +569,19 @@ public class Writables {
         tmw.put(new Text(e.getKey()), mapFn.map(e.getValue()));
       }
       return tmw;
-    }	
+    }
   }
-  
+
   public static <T> WritableType<Map<String, T>, MapWritable> maps(PType<T> ptype) {
-	WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
-    return new WritableType(Map.class, TextMapWritable.class,
-        new MapInputMapFn(wt.getInputMapFn()),
+    WritableType<T, ?> wt = (WritableType<T, ?>) ptype;
+    return new WritableType(Map.class, TextMapWritable.class, new MapInputMapFn(wt.getInputMapFn()),
         new MapOutputMapFn(wt.getSerializationClass(), wt.getOutputMapFn()), ptype);
   }
-  
+
   public static <T> PType<T> jsons(Class<T> clazz) {
-    return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());  
+    return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());
   }
-  
+
   /**
    * Perform a deep copy of a writable value.
    * 

@@ -24,6 +24,7 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -32,7 +33,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   private PTableType<K, V> ptype;
   private List<PCollectionImpl<Pair<K, V>>> parents;
   private long size;
-  
+
   private static <K, V> String flatName(List<PTableBase<K, V>> tables) {
     StringBuilder sb = new StringBuilder("union(");
     for (int i = 0; i < tables.size(); i++) {
@@ -43,7 +44,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
     }
     return sb.append(')').toString();
   }
-  
+
   public UnionTable(List<PTableBase<K, V>> tables) {
     super(flatName(tables));
     this.ptype = tables.get(0).getPTableType();
@@ -51,8 +52,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
     this.parents = Lists.newArrayList();
     for (PTableBase<K, V> parent : tables) {
       if (pipeline != parent.getPipeline()) {
-        throw new IllegalStateException(
-            "Cannot union PTables from different Pipeline instances");
+        throw new IllegalStateException("Cannot union PTables from different Pipeline instances");
       }
       this.parents.add(parent);
       size += parent.getSize();
@@ -63,7 +63,7 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   protected long getSizeInternal() {
     return size;
   }
-  
+
   @Override
   public PTableType<K, V> getPTableType() {
     return ptype;
@@ -81,14 +81,12 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
 
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
-    visitor.visitUnionCollection(new UnionCollection<Pair<K, V>>(
-        parents));
+    visitor.visitUnionCollection(new UnionCollection<Pair<K, V>>(parents));
   }
 
   @Override
   public DoNode createDoNode() {
-    throw new UnsupportedOperationException(
-        "Unioned table does not support do nodes");
+    throw new UnsupportedOperationException("Unioned table does not support do nodes");
   }
 
 }

@@ -21,8 +21,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -33,13 +31,14 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.mapreduce.Job;
+
 import com.google.common.collect.ImmutableList;
 
-public class PGroupedTableImpl<K, V> extends
-    PCollectionImpl<Pair<K, Iterable<V>>> implements PGroupedTable<K, V> {
+public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>>> implements PGroupedTable<K, V> {
 
   private static final Log LOG = LogFactory.getLog(PGroupedTableImpl.class);
-  
+
   private final PTableBase<K, V> parent;
   private final GroupingOptions groupingOptions;
   private final PGroupedTableType<K, V> ptype;
@@ -58,8 +57,7 @@ public class PGroupedTableImpl<K, V> extends
   public void configureShuffle(Job job) {
     ptype.configureShuffle(job, groupingOptions);
     if (groupingOptions == null || groupingOptions.getNumReducers() <= 0) {
-      long bytesPerTask = job.getConfiguration().getLong("crunch.bytes.per.reduce.task",
-          (1000L * 1000L * 1000L));
+      long bytesPerTask = job.getConfiguration().getLong("crunch.bytes.per.reduce.task", (1000L * 1000L * 1000L));
       int numReduceTasks = 1 + (int) (getSize() / bytesPerTask);
       if (numReduceTasks > 0) {
         job.setNumReduceTasks(numReduceTasks);
@@ -69,20 +67,19 @@ public class PGroupedTableImpl<K, V> extends
       }
     }
   }
-  
+
   @Override
   protected long getSizeInternal() {
     return parent.getSizeInternal();
   }
-  
+
   @Override
   public PType<Pair<K, Iterable<V>>> getPType() {
     return ptype;
   }
 
   public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
-    return new DoTableImpl<K, V>("combine", this, combineFn,
-        parent.getPTableType());
+    return new DoTableImpl<K, V>("combine", this, combineFn, parent.getPTableType());
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
@@ -110,8 +107,7 @@ public class PGroupedTableImpl<K, V> extends
 
   @Override
   public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(),
-        ptype.getInputMapFn(), ptype);
+    return DoNode.createFnNode(getName(), ptype.getInputMapFn(), ptype);
   }
 
   public DoNode getGroupingNode() {

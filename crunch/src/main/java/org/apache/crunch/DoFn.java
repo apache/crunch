@@ -19,38 +19,39 @@ package org.apache.crunch;
 
 import java.io.Serializable;
 
+import org.apache.crunch.test.TestCounters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import org.apache.crunch.test.TestCounters;
-
 /**
  * Base class for all data processing functions in Crunch.
  * 
- * <p>Note that all {@code DoFn} instances implement {@link Serializable},
- * and thus all of their non-transient member variables must implement
+ * <p>
+ * Note that all {@code DoFn} instances implement {@link Serializable}, and thus
+ * all of their non-transient member variables must implement
  * {@code Serializable} as well. If your DoFn depends on non-serializable
- * classes for data processing, they may be declared as {@code transient}
- * and initialized in the DoFn's {@code initialize} method.
- *
+ * classes for data processing, they may be declared as {@code transient} and
+ * initialized in the DoFn's {@code initialize} method.
+ * 
  */
 public abstract class DoFn<S, T> implements Serializable {
   private transient TaskInputOutputContext<?, ?, ?, ?> context;
   private transient Configuration testConf;
   private transient String internalStatus;
-  
+
   /**
-   * Called during the job planning phase. Subclasses may override
-   * this method in order to modify the configuration of the Job
-   * that this DoFn instance belongs to.
+   * Called during the job planning phase. Subclasses may override this method
+   * in order to modify the configuration of the Job that this DoFn instance
+   * belongs to.
    * 
-   * @param conf The Configuration instance for the Job.
+   * @param conf
+   *          The Configuration instance for the Job.
    */
-  public void configure(Configuration conf) {  
+  public void configure(Configuration conf) {
   }
-  
+
   /**
    * Processes the records from a {@link PCollection}.
    * 
@@ -58,9 +59,11 @@ public abstract class DoFn<S, T> implements Serializable {
    * <br/>
    * <b>Note:</b> Crunch can reuse a single input record object whose content
    * changes on each {@link #process(Object, Emitter)} method call. This
-   * functionality is imposed by Hadoop's <a href="http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/Reducer.html">Reducer</a> implementation: 
-   * <i>The framework will reuse the key and value objects that are passed into the reduce, therefore the application
-   * should clone the objects they want to keep a copy of.</i>
+   * functionality is imposed by Hadoop's <a href=
+   * "http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/mapred/Reducer.html"
+   * >Reducer</a> implementation: <i>The framework will reuse the key and value
+   * objects that are passed into the reduce, therefore the application should
+   * clone the objects they want to keep a copy of.</i>
    * 
    * @param input
    *          The input record.
@@ -70,26 +73,27 @@ public abstract class DoFn<S, T> implements Serializable {
   public abstract void process(S input, Emitter<T> emitter);
 
   /**
-   * Called during the setup of the MapReduce job this {@code DoFn}
-   * is associated with. Subclasses may override this method to
-   * do appropriate initialization.
+   * Called during the setup of the MapReduce job this {@code DoFn} is
+   * associated with. Subclasses may override this method to do appropriate
+   * initialization.
    */
   public void initialize() {
   }
 
   /**
-   * Called during the cleanup of the MapReduce job this {@code DoFn}
-   * is associated with. Subclasses may override this method to do
-   * appropriate cleanup.
+   * Called during the cleanup of the MapReduce job this {@code DoFn} is
+   * associated with. Subclasses may override this method to do appropriate
+   * cleanup.
    * 
-   * @param emitter The emitter that was used for output
+   * @param emitter
+   *          The emitter that was used for output
    */
   public void cleanup(Emitter<T> emitter) {
   }
 
   /**
-   * Called during setup to pass the {@link TaskInputOutputContext} to
-   * this {@code DoFn} instance.
+   * Called during setup to pass the {@link TaskInputOutputContext} to this
+   * {@code DoFn} instance.
    */
   public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
     this.context = context;
@@ -98,12 +102,14 @@ public abstract class DoFn<S, T> implements Serializable {
 
   /**
    * Sets a {@code Configuration} instance to be used during unit tests.
-   * @param conf The Configuration instance.
+   * 
+   * @param conf
+   *          The Configuration instance.
    */
   public void setConfigurationForTest(Configuration conf) {
     this.testConf = conf;
   }
-  
+
   /**
    * Returns an estimate of how applying this function to a {@link PCollection}
    * will cause it to change in side. The optimizer uses these estimates to
@@ -117,11 +123,11 @@ public abstract class DoFn<S, T> implements Serializable {
   public float scaleFactor() {
     return 1.2f;
   }
-  
+
   protected TaskInputOutputContext<?, ?, ?, ?> getContext() {
     return context;
   }
-  
+
   protected Configuration getConfiguration() {
     if (context != null) {
       return context.getConfiguration();
@@ -130,35 +136,35 @@ public abstract class DoFn<S, T> implements Serializable {
     }
     return null;
   }
-  
+
   protected Counter getCounter(Enum<?> counterName) {
     if (context == null) {
       return TestCounters.getCounter(counterName);
     }
     return context.getCounter(counterName);
   }
-  
+
   protected Counter getCounter(String groupName, String counterName) {
     if (context == null) {
       return TestCounters.getCounter(groupName, counterName);
     }
     return context.getCounter(groupName, counterName);
   }
-  
+
   protected void increment(Enum<?> counterName) {
     increment(counterName, 1);
   }
-  
+
   protected void increment(Enum<?> counterName, long value) {
     getCounter(counterName).increment(value);
   }
-  
+
   protected void progress() {
     if (context != null) {
       context.progress();
     }
   }
-  
+
   protected TaskAttemptID getTaskAttemptID() {
     if (context != null) {
       return context.getTaskAttemptID();
@@ -166,19 +172,19 @@ public abstract class DoFn<S, T> implements Serializable {
       return new TaskAttemptID();
     }
   }
-  
+
   protected void setStatus(String status) {
     if (context != null) {
       context.setStatus(status);
     }
     this.internalStatus = status;
   }
-  
+
   protected String getStatus() {
     if (context != null) {
       return context.getStatus();
     }
     return internalStatus;
   }
-  
+
 }

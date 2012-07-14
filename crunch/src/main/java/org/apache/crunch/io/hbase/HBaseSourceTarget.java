@@ -22,6 +22,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.Pair;
+import org.apache.crunch.SourceTarget;
+import org.apache.crunch.TableSource;
+import org.apache.crunch.impl.mr.run.CrunchMapper;
+import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Result;
@@ -32,22 +39,14 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Base64;
 import org.apache.hadoop.mapreduce.Job;
 
-import org.apache.crunch.Pair;
-import org.apache.crunch.SourceTarget;
-import org.apache.crunch.TableSource;
-import org.apache.crunch.impl.mr.run.CrunchMapper;
-import org.apache.crunch.types.PTableType;
-import org.apache.crunch.types.PType;
-import org.apache.crunch.types.writable.Writables;
-
 public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {
 
   private static final PTableType<ImmutableBytesWritable, Result> PTYPE = Writables.tableOf(
       Writables.writables(ImmutableBytesWritable.class), Writables.writables(Result.class));
-  
+
   protected Scan scan;
-  
+
   public HBaseSourceTarget(String table, Scan scan) {
     super(table);
     this.scan = scan;
@@ -62,7 +61,7 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   public PTableType<ImmutableBytesWritable, Result> getTableType() {
     return PTYPE;
   }
-  
+
   @Override
   public boolean equals(Object other) {
     if (other == null || !(other instanceof HBaseSourceTarget)) {
@@ -72,17 +71,17 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
     // XXX scan does not have equals method
     return table.equals(o.table) && scan.equals(o.scan);
   }
-  
+
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(table).append(scan).toHashCode();
   }
-  
+
   @Override
   public String toString() {
     return "HBaseTable(" + table + ")";
   }
-  
+
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     Configuration conf = job.getConfiguration();
@@ -93,7 +92,7 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
     conf.set(TableInputFormat.SCAN, convertScanToString(scan));
     TableMapReduceUtil.addDependencyJars(job);
   }
-  
+
   static String convertScanToString(Scan scan) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(out);

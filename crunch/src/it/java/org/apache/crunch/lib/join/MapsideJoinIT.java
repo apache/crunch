@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PTable;
@@ -36,6 +34,8 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.writable.Writables;
+import org.junit.Test;
+
 import com.google.common.collect.Lists;
 
 public class MapsideJoinIT {
@@ -70,14 +70,12 @@ public class MapsideJoinIT {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
 
-    PTable<Integer, String> filteredOrderTable = orderTable.parallelDo(new NegativeFilter(),
-        orderTable.getPTableType());
+    PTable<Integer, String> filteredOrderTable = orderTable
+        .parallelDo(new NegativeFilter(), orderTable.getPTableType());
 
-    PTable<Integer, Pair<String, String>> joined = MapsideJoin.join(customerTable,
-        filteredOrderTable);
+    PTable<Integer, Pair<String, String>> joined = MapsideJoin.join(customerTable, filteredOrderTable);
 
-    List<Pair<Integer, Pair<String, String>>> materializedJoin = Lists.newArrayList(joined
-        .materialize());
+    List<Pair<Integer, Pair<String, String>>> materializedJoin = Lists.newArrayList(joined.materialize());
 
     assertTrue(materializedJoin.isEmpty());
 
@@ -100,8 +98,7 @@ public class MapsideJoinIT {
     expectedJoinResult.add(Pair.of(222, Pair.of("Jane Doe", "Toilet plunger")));
     expectedJoinResult.add(Pair.of(333, Pair.of("Someone Else", "Toilet brush")));
 
-    List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(joined
-        .materialize());
+    List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(joined.materialize());
     Collections.sort(joinedResultList);
 
     assertEquals(expectedJoinResult, joinedResultList);
@@ -109,8 +106,8 @@ public class MapsideJoinIT {
 
   private static PTable<Integer, String> readTable(Pipeline pipeline, String filename) {
     try {
-      return pipeline.readTextFile(FileHelper.createTempCopyOf(filename)).parallelDo("asTable",
-          new LineSplitter(), Writables.tableOf(Writables.ints(), Writables.strings()));
+      return pipeline.readTextFile(FileHelper.createTempCopyOf(filename)).parallelDo("asTable", new LineSplitter(),
+          Writables.tableOf(Writables.ints(), Writables.strings()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

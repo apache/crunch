@@ -22,9 +22,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
-
 import org.apache.crunch.types.TupleFactory;
+import org.junit.Test;
 
 public class TupleTest {
   private String first = "foo";
@@ -32,7 +31,7 @@ public class TupleTest {
   private Double third = 64.2;
   private Boolean fourth = false;
   private Float fifth = 17.29f;
-  
+
   @Test
   public void testTuple3() {
     Tuple3<String, Integer, Double> t = new Tuple3<String, Integer, Double>(first, second, third);
@@ -50,7 +49,7 @@ public class TupleTest {
       // expected
     }
   }
-  
+
   @Test
   public void testTuple3Equality() {
     Tuple3<String, Integer, Double> t = new Tuple3<String, Integer, Double>(first, second, third);
@@ -59,11 +58,11 @@ public class TupleTest {
     assertFalse((new Tuple3(null, null, null)).equals(t));
     assertTrue((new Tuple3(first, null, null)).equals(new Tuple3(first, null, null)));
   }
-  
+
   @Test
   public void testTuple4() {
-    Tuple4<String, Integer, Double, Boolean> t = 
-      new Tuple4<String, Integer, Double, Boolean>(first, second, third, fourth);
+    Tuple4<String, Integer, Double, Boolean> t = new Tuple4<String, Integer, Double, Boolean>(first, second, third,
+        fourth);
     assertEquals(4, t.size());
     assertEquals(first, t.first());
     assertEquals(second, t.second());
@@ -83,13 +82,12 @@ public class TupleTest {
 
   @Test
   public void testTuple4Equality() {
-    Tuple4<String, Integer, Double, Boolean> t = 
-      new Tuple4<String, Integer, Double, Boolean>(first, second, third, fourth);
+    Tuple4<String, Integer, Double, Boolean> t = new Tuple4<String, Integer, Double, Boolean>(first, second, third,
+        fourth);
     assertFalse(t.equals(new Tuple3(first, second, third)));
     assertFalse(t.equals(new Tuple4(first, null, third, null)));
     assertFalse((new Tuple4(null, null, null, null)).equals(t));
-    assertTrue((new Tuple4(first, null, third, null)).equals(
-        new Tuple4(first, null, third, null)));
+    assertTrue((new Tuple4(first, null, third, null)).equals(new Tuple4(first, null, third, null)));
   }
 
   @Test
@@ -111,12 +109,11 @@ public class TupleTest {
 
   @Test
   public void testTupleNEquality() {
-	TupleN t = new TupleN(first, second, third, fourth, fifth);
-	assertTrue(t.equals(new TupleN(first, second, third, fourth, fifth)));
+    TupleN t = new TupleN(first, second, third, fourth, fifth);
+    assertTrue(t.equals(new TupleN(first, second, third, fourth, fifth)));
     assertFalse(t.equals(new TupleN(first, null, third, null)));
     assertFalse((new TupleN(null, null, null, null, null)).equals(t));
-    assertTrue((new TupleN(first, second, third, null, null)).equals(
-        new TupleN(first, second, third, null, null)));
+    assertTrue((new TupleN(first, second, third, null, null)).equals(new TupleN(first, second, third, null, null)));
   }
 
   @Test

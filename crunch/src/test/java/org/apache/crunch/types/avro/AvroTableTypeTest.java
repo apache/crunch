@@ -42,8 +42,7 @@ public class AvroTableTypeTest {
 
     Pair<Integer, Person> pair = Pair.of(integerValue, person);
 
-    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(),
-        Avros.reflects(Person.class));
+    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(), Avros.reflects(Person.class));
 
     Pair<Integer, Person> detachedPair = tableType.getDetachedValue(pair);
 

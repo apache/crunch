@@ -26,15 +26,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.io.BinaryData;
 import org.apache.avro.reflect.ReflectData;
-import org.apache.hadoop.conf.Configurable;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.mapred.JobConf;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.GroupingOptions;
@@ -52,6 +43,15 @@ import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.TupleWritable;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.mapred.JobConf;
+
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -62,35 +62,38 @@ import com.google.common.collect.Lists;
  * Utilities for sorting {@code PCollection} instances.
  */
 public class Sort {
-  
+
   public enum Order {
-    ASCENDING, DESCENDING, IGNORE
+    ASCENDING,
+    DESCENDING,
+    IGNORE
   }
-  
+
   /**
    * To sort by column 2 ascending then column 1 descending, you would use:
    * <code>
    * sortPairs(coll, by(2, ASCENDING), by(1, DESCENDING))
-   * </code>
-   * Column numbering is 1-based.
+   * </code> Column numbering is 1-based.
    */
   public static class ColumnOrder {
     int column;
     Order order;
+
     public ColumnOrder(int column, Order order) {
       this.column = column;
       this.order = order;
     }
+
     public static ColumnOrder by(int column, Order order) {
       return new ColumnOrder(column, order);
     }
-    
+
     @Override
     public String toString() {
-      return"ColumnOrder: column:" + column + ", Order: " + order;
+      return "ColumnOrder: column:" + column + ", Order: " + order;
     }
   }
-  
+
   /**
    * Sorts the {@link PCollection} using the natural ordering of its elements.
    * 
@@ -99,10 +102,10 @@ public class Sort {
   public static <T> PCollection<T> sort(PCollection<T> collection) {
     return sort(collection, Order.ASCENDING);
   }
-  
+
   /**
-   * Sorts the {@link PCollection} using the natural ordering of its elements
-   * in the order specified.
+   * Sorts the {@link PCollection} using the natural ordering of its elements in
+   * the order specified.
    * 
    * @return a {@link PCollection} representing the sorted collection.
    */
@@ -110,16 +113,13 @@ public class Sort {
     PTypeFamily tf = collection.getTypeFamily();
     PTableType<T, Void> type = tf.tableOf(collection.getPType(), tf.nulls());
     Configuration conf = collection.getPipeline().getConfiguration();
-    GroupingOptions options = buildGroupingOptions(conf, tf,
-        collection.getPType(), order);
-    PTable<T, Void> pt =
-      collection.parallelDo("sort-pre", new DoFn<T, Pair<T, Void>>() {
-        @Override
-        public void process(T input,
-            Emitter<Pair<T, Void>> emitter) {
-          emitter.emit(Pair.of(input, (Void) null));
-        }
-      }, type);
+    GroupingOptions options = buildGroupingOptions(conf, tf, collection.getPType(), order);
+    PTable<T, Void> pt = collection.parallelDo("sort-pre", new DoFn<T, Pair<T, Void>>() {
+      @Override
+      public void process(T input, Emitter<Pair<T, Void>> emitter) {
+        emitter.emit(Pair.of(input, (Void) null));
+      }
+    }, type);
     PTable<T, Void> sortedPt = pt.groupByKey(options).ungroup();
     return sortedPt.parallelDo("sort-post", new DoFn<Pair<T, Void>, T>() {
       @Override
@@ -128,7 +128,6 @@ public class Sort {
       }
     }, collection.getPType());
   }
-  
 
   /**
    * Sorts the {@link PTable} using the natural ordering of its keys.
@@ -140,8 +139,8 @@ public class Sort {
   }
 
   /**
-   * Sorts the {@link PTable} using the natural ordering of its keys
-   * in the order specified.
+   * Sorts the {@link PTable} using the natural ordering of its keys in the
+   * order specified.
    * 
    * @return a {@link PTable} representing the sorted collection.
    */
@@ -151,37 +150,34 @@ public class Sort {
     GroupingOptions options = buildGroupingOptions(conf, tf, table.getKeyType(), key);
     return table.groupByKey(options).ungroup();
   }
-  
+
   /**
    * Sorts the {@link PCollection} of {@link Pair}s using the specified column
    * ordering.
    * 
    * @return a {@link PCollection} representing the sorted collection.
    */
-  public static <U, V> PCollection<Pair<U, V>> sortPairs(
-      PCollection<Pair<U, V>> collection, ColumnOrder... columnOrders) {
-    // put U and V into a pair/tuple in the key so we can do grouping and sorting
+  public static <U, V> PCollection<Pair<U, V>> sortPairs(PCollection<Pair<U, V>> collection,
+      ColumnOrder... columnOrders) {
+    // put U and V into a pair/tuple in the key so we can do grouping and
+    // sorting
     PTypeFamily tf = collection.getTypeFamily();
     PType<Pair<U, V>> pType = collection.getPType();
     @SuppressWarnings("unchecked")
-    PTableType<Pair<U, V>, Void> type = tf.tableOf(
-        tf.pairs(pType.getSubTypes().get(0), pType.getSubTypes().get(1)),
+    PTableType<Pair<U, V>, Void> type = tf.tableOf(tf.pairs(pType.getSubTypes().get(0), pType.getSubTypes().get(1)),
         tf.nulls());
-    PTable<Pair<U, V>, Void> pt =
-      collection.parallelDo(new DoFn<Pair<U, V>, Pair<Pair<U, V>, Void>>() {
-        @Override
-        public void process(Pair<U, V> input,
-            Emitter<Pair<Pair<U, V>, Void>> emitter) {
-          emitter.emit(Pair.of(input, (Void) null));
-        }
-      }, type);
+    PTable<Pair<U, V>, Void> pt = collection.parallelDo(new DoFn<Pair<U, V>, Pair<Pair<U, V>, Void>>() {
+      @Override
+      public void process(Pair<U, V> input, Emitter<Pair<Pair<U, V>, Void>> emitter) {
+        emitter.emit(Pair.of(input, (Void) null));
+      }
+    }, type);
     Configuration conf = collection.getPipeline().getConfiguration();
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Pair<U, V>, Void> sortedPt = pt.groupByKey(options).ungroup();
-    return sortedPt.parallelDo(new DoFn<Pair<Pair<U, V>,Void>, Pair<U, V>>() {
+    return sortedPt.parallelDo(new DoFn<Pair<Pair<U, V>, Void>, Pair<U, V>>() {
       @Override
-      public void process(Pair<Pair<U, V>, Void> input,
-          Emitter<Pair<U, V>> emitter) {
+      public void process(Pair<Pair<U, V>, Void> input, Emitter<Pair<U, V>> emitter) {
         emitter.emit(input.first());
       }
     }, collection.getPType());
@@ -193,29 +189,26 @@ public class Sort {
    * 
    * @return a {@link PCollection} representing the sorted collection.
    */
-  public static <V1, V2, V3> PCollection<Tuple3<V1, V2, V3>> sortTriples(
-      PCollection<Tuple3<V1, V2, V3>> collection, ColumnOrder... columnOrders) {
+  public static <V1, V2, V3> PCollection<Tuple3<V1, V2, V3>> sortTriples(PCollection<Tuple3<V1, V2, V3>> collection,
+      ColumnOrder... columnOrders) {
     PTypeFamily tf = collection.getTypeFamily();
     PType<Tuple3<V1, V2, V3>> pType = collection.getPType();
     @SuppressWarnings("unchecked")
     PTableType<Tuple3<V1, V2, V3>, Void> type = tf.tableOf(
-        tf.triples(pType.getSubTypes().get(0), pType.getSubTypes().get(1), pType.getSubTypes().get(2)),
-        tf.nulls());
-    PTable<Tuple3<V1, V2, V3>, Void> pt =
-      collection.parallelDo(new DoFn<Tuple3<V1, V2, V3>, Pair<Tuple3<V1, V2, V3>, Void>>() {
-        @Override
-        public void process(Tuple3<V1, V2, V3> input,
-            Emitter<Pair<Tuple3<V1, V2, V3>, Void>> emitter) {
-          emitter.emit(Pair.of(input, (Void) null));
-        }
-      }, type);
+        tf.triples(pType.getSubTypes().get(0), pType.getSubTypes().get(1), pType.getSubTypes().get(2)), tf.nulls());
+    PTable<Tuple3<V1, V2, V3>, Void> pt = collection.parallelDo(
+        new DoFn<Tuple3<V1, V2, V3>, Pair<Tuple3<V1, V2, V3>, Void>>() {
+          @Override
+          public void process(Tuple3<V1, V2, V3> input, Emitter<Pair<Tuple3<V1, V2, V3>, Void>> emitter) {
+            emitter.emit(Pair.of(input, (Void) null));
+          }
+        }, type);
     Configuration conf = collection.getPipeline().getConfiguration();
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple3<V1, V2, V3>, Void> sortedPt = pt.groupByKey(options).ungroup();
-    return sortedPt.parallelDo(new DoFn<Pair<Tuple3<V1, V2, V3>,Void>, Tuple3<V1, V2, V3>>() {
+    return sortedPt.parallelDo(new DoFn<Pair<Tuple3<V1, V2, V3>, Void>, Tuple3<V1, V2, V3>>() {
       @Override
-      public void process(Pair<Tuple3<V1, V2, V3>, Void> input,
-          Emitter<Tuple3<V1, V2, V3>> emitter) {
+      public void process(Pair<Tuple3<V1, V2, V3>, Void> input, Emitter<Tuple3<V1, V2, V3>> emitter) {
         emitter.emit(input.first());
       }
     }, collection.getPType());
@@ -232,24 +225,21 @@ public class Sort {
     PTypeFamily tf = collection.getTypeFamily();
     PType<Tuple4<V1, V2, V3, V4>> pType = collection.getPType();
     @SuppressWarnings("unchecked")
-    PTableType<Tuple4<V1, V2, V3, V4>, Void> type = tf.tableOf(
-        tf.quads(pType.getSubTypes().get(0), pType.getSubTypes().get(1), pType.getSubTypes().get(2),  pType.getSubTypes().get(3)),
-        tf.nulls());
-    PTable<Tuple4<V1, V2, V3, V4>, Void> pt =
-      collection.parallelDo(new DoFn<Tuple4<V1, V2, V3, V4>, Pair<Tuple4<V1, V2, V3, V4>, Void>>() {
-        @Override
-        public void process(Tuple4<V1, V2, V3, V4> input,
-            Emitter<Pair<Tuple4<V1, V2, V3, V4>, Void>> emitter) {
-          emitter.emit(Pair.of(input, (Void) null));
-        }
-      }, type);
+    PTableType<Tuple4<V1, V2, V3, V4>, Void> type = tf.tableOf(tf.quads(pType.getSubTypes().get(0), pType.getSubTypes()
+        .get(1), pType.getSubTypes().get(2), pType.getSubTypes().get(3)), tf.nulls());
+    PTable<Tuple4<V1, V2, V3, V4>, Void> pt = collection.parallelDo(
+        new DoFn<Tuple4<V1, V2, V3, V4>, Pair<Tuple4<V1, V2, V3, V4>, Void>>() {
+          @Override
+          public void process(Tuple4<V1, V2, V3, V4> input, Emitter<Pair<Tuple4<V1, V2, V3, V4>, Void>> emitter) {
+            emitter.emit(Pair.of(input, (Void) null));
+          }
+        }, type);
     Configuration conf = collection.getPipeline().getConfiguration();
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<Tuple4<V1, V2, V3, V4>, Void> sortedPt = pt.groupByKey(options).ungroup();
-    return sortedPt.parallelDo(new DoFn<Pair<Tuple4<V1, V2, V3, V4>,Void>, Tuple4<V1, V2, V3, V4>>() {
+    return sortedPt.parallelDo(new DoFn<Pair<Tuple4<V1, V2, V3, V4>, Void>, Tuple4<V1, V2, V3, V4>>() {
       @Override
-      public void process(Pair<Tuple4<V1, V2, V3, V4>, Void> input,
-          Emitter<Tuple4<V1, V2, V3, V4>> emitter) {
+      public void process(Pair<Tuple4<V1, V2, V3, V4>, Void> input, Emitter<Tuple4<V1, V2, V3, V4>> emitter) {
         emitter.emit(input.first());
       }
     }, collection.getPType());
@@ -261,36 +251,30 @@ public class Sort {
    * 
    * @return a {@link PCollection} representing the sorted collection.
    */
-  public static PCollection<TupleN> sortTuples(PCollection<TupleN> collection,
-      ColumnOrder... columnOrders) {
+  public static PCollection<TupleN> sortTuples(PCollection<TupleN> collection, ColumnOrder... columnOrders) {
     PTypeFamily tf = collection.getTypeFamily();
     PType<TupleN> pType = collection.getPType();
-    PTableType<TupleN, Void> type = tf.tableOf(
-        tf.tuples(pType.getSubTypes().toArray(new PType[0])),
-        tf.nulls());
-    PTable<TupleN, Void> pt =
-      collection.parallelDo(new DoFn<TupleN, Pair<TupleN, Void>>() {
-        @Override
-        public void process(TupleN input,
-            Emitter<Pair<TupleN, Void>> emitter) {
-          emitter.emit(Pair.of(input, (Void) null));
-        }
-      }, type);
+    PTableType<TupleN, Void> type = tf.tableOf(tf.tuples(pType.getSubTypes().toArray(new PType[0])), tf.nulls());
+    PTable<TupleN, Void> pt = collection.parallelDo(new DoFn<TupleN, Pair<TupleN, Void>>() {
+      @Override
+      public void process(TupleN input, Emitter<Pair<TupleN, Void>> emitter) {
+        emitter.emit(Pair.of(input, (Void) null));
+      }
+    }, type);
     Configuration conf = collection.getPipeline().getConfiguration();
     GroupingOptions options = buildGroupingOptions(conf, tf, pType, columnOrders);
     PTable<TupleN, Void> sortedPt = pt.groupByKey(options).ungroup();
-    return sortedPt.parallelDo(new DoFn<Pair<TupleN,Void>, TupleN>() {
+    return sortedPt.parallelDo(new DoFn<Pair<TupleN, Void>, TupleN>() {
       @Override
-      public void process(Pair<TupleN, Void> input,
-          Emitter<TupleN> emitter) {
+      public void process(Pair<TupleN, Void> input, Emitter<TupleN> emitter) {
         emitter.emit(input.first());
       }
     }, collection.getPType());
   }
-  
+
   // TODO: move to type family?
-  private static <T> GroupingOptions buildGroupingOptions(Configuration conf,
-      PTypeFamily tf, PType<T> ptype, Order order) {
+  private static <T> GroupingOptions buildGroupingOptions(Configuration conf, PTypeFamily tf, PType<T> ptype,
+      Order order) {
     Builder builder = GroupingOptions.builder();
     if (order == Order.DESCENDING) {
       if (tf == WritableTypeFamily.getInstance()) {
@@ -306,9 +290,9 @@ public class Sort {
     }
     return builder.build();
   }
-  
-  private static <T> GroupingOptions buildGroupingOptions(Configuration conf,
-      PTypeFamily tf, PType<T> ptype, ColumnOrder[] columnOrders) {
+
+  private static <T> GroupingOptions buildGroupingOptions(Configuration conf, PTypeFamily tf, PType<T> ptype,
+      ColumnOrder[] columnOrders) {
     Builder builder = GroupingOptions.builder();
     if (tf == WritableTypeFamily.getInstance()) {
       TupleWritableComparator.configureOrdering(conf, columnOrders);
@@ -321,25 +305,23 @@ public class Sort {
     }
     return builder.build();
   }
-  
+
   static class ReverseWritableComparator<T> extends Configured implements RawComparator<T> {
-    
+
     RawComparator<T> comparator;
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void setConf(Configuration conf) {
       super.setConf(conf);
       if (conf != null) {
         JobConf jobConf = new JobConf(conf);
-        comparator = WritableComparator.get(
-            jobConf.getMapOutputKeyClass().asSubclass(WritableComparable.class));
+        comparator = WritableComparator.get(jobConf.getMapOutputKeyClass().asSubclass(WritableComparable.class));
       }
     }
 
     @Override
-    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4,
-        int arg5) {
+    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4, int arg5) {
       return -comparator.compare(arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
@@ -349,11 +331,11 @@ public class Sort {
     }
 
   }
-  
+
   static class ReverseAvroComparator<T> extends Configured implements RawComparator<T> {
 
     Schema schema;
-    
+
     @Override
     public void setConf(Configuration conf) {
       super.setConf(conf);
@@ -368,47 +350,43 @@ public class Sort {
     }
 
     @Override
-    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4,
-        int arg5) {
+    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4, int arg5) {
       return -BinaryData.compare(arg0, arg1, arg2, arg3, arg4, arg5, schema);
     }
-    
+
   }
-  
+
   static class TupleWritableComparator extends WritableComparator implements Configurable {
-    
+
     private static final String CRUNCH_ORDERING_PROPERTY = "crunch.ordering";
-    
+
     Configuration conf;
     ColumnOrder[] columnOrders;
-    
+
     public TupleWritableComparator() {
       super(TupleWritable.class, true);
     }
-    
+
     public static void configureOrdering(Configuration conf, Order... orders) {
-      conf.set(CRUNCH_ORDERING_PROPERTY, Joiner.on(",").join(
-        Iterables.transform(Arrays.asList(orders),
-          new Function<Order, String>() {
-        @Override
-        public String apply(Order o) {
-          return o.name();
-        }
-      })));
+      conf.set(CRUNCH_ORDERING_PROPERTY,
+          Joiner.on(",").join(Iterables.transform(Arrays.asList(orders), new Function<Order, String>() {
+            @Override
+            public String apply(Order o) {
+              return o.name();
+            }
+          })));
     }
 
-    
     public static void configureOrdering(Configuration conf, ColumnOrder... columnOrders) {
-      conf.set(CRUNCH_ORDERING_PROPERTY, Joiner.on(",").join(
-        Iterables.transform(Arrays.asList(columnOrders),
-          new Function<ColumnOrder, String>() {
-        @Override
-        public String apply(ColumnOrder o) {
-          return o.column + ";" + o.order.name();
-        }
-      })));
+      conf.set(CRUNCH_ORDERING_PROPERTY,
+          Joiner.on(",").join(Iterables.transform(Arrays.asList(columnOrders), new Function<ColumnOrder, String>() {
+            @Override
+            public String apply(ColumnOrder o) {
+              return o.column + ";" + o.order.name();
+            }
+          })));
     }
-    
+
     @Override
     public int compare(WritableComparable a, WritableComparable b) {
       TupleWritable ta = (TupleWritable) a;
@@ -418,7 +396,7 @@ public class Sort {
         int order = 1;
         if (columnOrders[i].order == Order.ASCENDING) {
           order = 1;
-        } else  if (columnOrders[i].order == Order.DESCENDING) {
+        } else if (columnOrders[i].order == Order.DESCENDING) {
           order = -1;
         } else { // ignore
           continue;
@@ -433,10 +411,8 @@ public class Sort {
           Writable v1 = ta.get(index);
           Writable v2 = tb.get(index);
           if (v1 != v2 && (v1 != null && !v1.equals(v2))) {
-            if (v1 instanceof WritableComparable
-                && v2 instanceof WritableComparable) {
-              int cmp = ((WritableComparable) v1)
-                  .compareTo((WritableComparable) v2);
+            if (v1 instanceof WritableComparable && v2 instanceof WritableComparable) {
+              int cmp = ((WritableComparable) v1).compareTo((WritableComparable) v2);
               if (cmp != 0) {
                 return order * cmp;
               }
@@ -469,16 +445,16 @@ public class Sort {
           int column = Integer.parseInt(split[0]);
           Order order = Order.valueOf(split[1]);
           columnOrders[i] = ColumnOrder.by(column, order);
-          
+
         }
       }
     }
   }
-  
+
   static class TupleAvroComparator<T> extends Configured implements RawComparator<T> {
 
     Schema schema;
-    
+
     @Override
     public void setConf(Configuration conf) {
       super.setConf(conf);
@@ -487,15 +463,15 @@ public class Sort {
       }
     }
 
-    public static <S> void configureOrdering(Configuration conf, ColumnOrder[] columnOrders,
-        PType<S> ptype) {
+    public static <S> void configureOrdering(Configuration conf, ColumnOrder[] columnOrders, PType<S> ptype) {
       Schema orderedSchema = createOrderedTupleSchema(ptype, columnOrders);
       conf.set("crunch.schema", orderedSchema.toString());
     }
-    
+
     // TODO: move to Avros
-    // TODO: need to re-order columns in map output then switch back in the reduce
-    //       this will require more extensive changes in Crunch
+    // TODO: need to re-order columns in map output then switch back in the
+    // reduce
+    // this will require more extensive changes in Crunch
     private static <S> Schema createOrderedTupleSchema(PType<S> ptype, ColumnOrder[] orders) {
       // Guarantee each tuple schema has a globally unique name
       String tupleName = "tuple" + UUID.randomUUID().toString().replace('-', 'x');
@@ -503,17 +479,16 @@ public class Sort {
       List<Schema.Field> fields = Lists.newArrayList();
       AvroType<S> parentAvroType = (AvroType<S>) ptype;
       Schema parentAvroSchema = parentAvroType.getSchema();
-      
+
       BitSet orderedColumns = new BitSet();
       // First add any fields specified by ColumnOrder
       for (ColumnOrder columnOrder : orders) {
         int index = columnOrder.column - 1;
         AvroType<?> atype = (AvroType<?>) ptype.getSubTypes().get(index);
-        Schema fieldSchema = Schema.createUnion(
-            ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
+        Schema fieldSchema = Schema.createUnion(ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
         String fieldName = parentAvroSchema.getFields().get(index).name();
-        fields.add(new Schema.Field(fieldName, fieldSchema, "", null,
-            Schema.Field.Order.valueOf(columnOrder.order.name())));
+        fields.add(new Schema.Field(fieldName, fieldSchema, "", null, Schema.Field.Order.valueOf(columnOrder.order
+            .name())));
         orderedColumns.set(index);
       }
       // Then add remaining fields from the ptypes, with no sort order
@@ -522,11 +497,9 @@ public class Sort {
           continue;
         }
         AvroType<?> atype = (AvroType<?>) ptype.getSubTypes().get(i);
-        Schema fieldSchema = Schema.createUnion(
-            ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
+        Schema fieldSchema = Schema.createUnion(ImmutableList.of(atype.getSchema(), Schema.create(Type.NULL)));
         String fieldName = parentAvroSchema.getFields().get(i).name();
-        fields.add(new Schema.Field(fieldName, fieldSchema, "", null,
-            Schema.Field.Order.IGNORE));
+        fields.add(new Schema.Field(fieldName, fieldSchema, "", null, Schema.Field.Order.IGNORE));
       }
       schema.setFields(fields);
       return schema;
@@ -538,10 +511,9 @@ public class Sort {
     }
 
     @Override
-    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4,
-        int arg5) {
+    public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4, int arg5) {
       return BinaryData.compare(arg0, arg1, arg2, arg3, arg4, arg5, schema);
     }
-    
+
   }
 }

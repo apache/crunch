@@ -19,34 +19,38 @@ package org.apache.crunch.test;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.After;
-import org.junit.Test;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.junit.After;
+import org.junit.Test;
 
 /**
  * A test to verify using counters inside of a unit test works. :)
  */
 public class CountersTest {
 
-  public enum CT { ONE, TWO, THREE };
-  
+  public enum CT {
+    ONE,
+    TWO,
+    THREE
+  };
+
   @After
   public void after() {
-	  TestCounters.clearCounters();
+    TestCounters.clearCounters();
   }
-  
+
   public static class CTFn extends DoFn<String, String> {
     @Override
     public void process(String input, Emitter<String> emitter) {
       getCounter(CT.ONE).increment(1);
       getCounter(CT.TWO).increment(4);
       getCounter(CT.THREE).increment(7);
-    }    
+    }
   }
-  
-  @Test public void test() {
+
+  @Test
+  public void test() {
     CTFn fn = new CTFn();
     fn.process("foo", null);
     fn.process("bar", null);
@@ -54,8 +58,9 @@ public class CountersTest {
     assertEquals(8L, TestCounters.getCounter(CT.TWO).getValue());
     assertEquals(14L, TestCounters.getCounter(CT.THREE).getValue());
   }
-  
-  @Test public void secondTest() {
+
+  @Test
+  public void secondTest() {
     CTFn fn = new CTFn();
     fn.process("foo", null);
     fn.process("bar", null);

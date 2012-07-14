@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.ImmutableList;
 
 public class DoCollectionImpl<S> extends PCollectionImpl<S> {
@@ -30,8 +31,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   private final DoFn<Object, S> fn;
   private final PType<S> ntype;
 
-  <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn,
-      PType<S> ntype) {
+  <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn, PType<S> ntype) {
     super(name);
     this.parent = (PCollectionImpl<Object>) parent;
     this.fn = (DoFn<Object, S>) fn;
@@ -42,7 +42,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   protected long getSizeInternal() {
     return (long) (fn.scaleFactor() * parent.getSize());
   }
-  
+
   @Override
   public PType<S> getPType() {
     return ntype;

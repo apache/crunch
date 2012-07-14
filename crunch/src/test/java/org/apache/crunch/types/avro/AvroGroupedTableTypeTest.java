@@ -23,11 +23,11 @@ import static org.junit.Assert.assertSame;
 
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.PGroupedTableType;
+import org.junit.Test;
+
 import com.google.common.collect.Lists;
 
 public class AvroGroupedTableTypeTest {
@@ -43,8 +43,8 @@ public class AvroGroupedTableTypeTest {
     Iterable<Person> inputPersonIterable = Lists.newArrayList(person);
     Pair<Integer, Iterable<Person>> pair = Pair.of(integerValue, inputPersonIterable);
 
-    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(),
-        Avros.reflects(Person.class)).getGroupedTableType();
+    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(), Avros.reflects(Person.class))
+        .getGroupedTableType();
 
     Pair<Integer, Iterable<Person>> detachedPair = groupedTableType.getDetachedValue(pair);
 

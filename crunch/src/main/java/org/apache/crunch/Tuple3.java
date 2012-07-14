@@ -31,7 +31,7 @@ public class Tuple3<V1, V2, V3> implements Tuple {
   public static <A, B, C> Tuple3<A, B, C> of(A a, B b, C c) {
     return new Tuple3<A, B, C>(a, b, c);
   }
-  
+
   public Tuple3(V1 first, V2 second, V3 third) {
     this.first = first;
     this.second = second;
@@ -66,7 +66,7 @@ public class Tuple3<V1, V2, V3> implements Tuple {
   public int size() {
     return 3;
   }
-  
+
   @Override
   public int hashCode() {
     HashCodeBuilder hcb = new HashCodeBuilder();
@@ -82,15 +82,15 @@ public class Tuple3<V1, V2, V3> implements Tuple {
     if (getClass() != obj.getClass())
       return false;
     Tuple3<?, ?, ?> other = (Tuple3<?, ?, ?>) obj;
-    return (first == other.first || (first != null && first.equals(other.first))) &&
-    	(second == other.second || (second != null && second.equals(other.second))) &&
-    	(third == other.third || (third != null && third.equals(other.third)));
+    return (first == other.first || (first != null && first.equals(other.first)))
+        && (second == other.second || (second != null && second.equals(other.second)))
+        && (third == other.third || (third != null && third.equals(other.third)));
   }
 
   @Override
   public String toString() {
-	StringBuilder sb = new StringBuilder("Tuple3[");
-	sb.append(first).append(",").append(second).append(",").append(third);
-	return sb.append("]").toString();
+    StringBuilder sb = new StringBuilder("Tuple3[");
+    sb.append(first).append(",").append(second).append(",").append(third);
+    return sb.append("]").toString();
   }
 }

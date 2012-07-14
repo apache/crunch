@@ -17,9 +17,6 @@
  */
 package org.apache.crunch.io;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.client.Scan;
-
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.io.hbase.HBaseSourceTarget;
@@ -30,59 +27,59 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.Scan;
 
 /**
  * Static factory methods for creating various {@link SourceTarget} types.
- *
+ * 
  */
 public class At {
   public static <T> AvroFileSourceTarget<T> avroFile(String pathName, AvroType<T> avroType) {
-	return avroFile(new Path(pathName), avroType);
+    return avroFile(new Path(pathName), avroType);
   }
-  
+
   public static <T> AvroFileSourceTarget<T> avroFile(Path path, AvroType<T> avroType) {
-	return new AvroFileSourceTarget<T>(path, avroType);
+    return new AvroFileSourceTarget<T>(path, avroType);
   }
-  
+
   public static HBaseSourceTarget hbaseTable(String table) {
-	return hbaseTable(table, new Scan());
+    return hbaseTable(table, new Scan());
   }
-  
+
   public static HBaseSourceTarget hbaseTable(String table, Scan scan) {
-	return new HBaseSourceTarget(table, scan);
+    return new HBaseSourceTarget(table, scan);
   }
-  
+
   public static <T> SeqFileSourceTarget<T> sequenceFile(String pathName, PType<T> ptype) {
-	return sequenceFile(new Path(pathName), ptype);
+    return sequenceFile(new Path(pathName), ptype);
   }
-  
+
   public static <T> SeqFileSourceTarget<T> sequenceFile(Path path, PType<T> ptype) {
-	return new SeqFileSourceTarget<T>(path, ptype);
+    return new SeqFileSourceTarget<T>(path, ptype);
   }
-  
-  public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(String pathName, PType<K> keyType,
-      PType<V> valueType) {
-	return sequenceFile(new Path(pathName), keyType, valueType);
+
+  public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(String pathName, PType<K> keyType, PType<V> valueType) {
+    return sequenceFile(new Path(pathName), keyType, valueType);
   }
-  
-  public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(Path path, PType<K> keyType,
-      PType<V> valueType) {
-	PTypeFamily ptf = keyType.getFamily();
-	return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
+
+  public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(Path path, PType<K> keyType, PType<V> valueType) {
+    PTypeFamily ptf = keyType.getFamily();
+    return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
   }
-  
+
   public static TextFileSourceTarget<String> textFile(String pathName) {
-	return textFile(new Path(pathName));
+    return textFile(new Path(pathName));
   }
-  
+
   public static TextFileSourceTarget<String> textFile(Path path) {
-	return textFile(path, Writables.strings());
+    return textFile(path, Writables.strings());
   }
-  
+
   public static <T> TextFileSourceTarget<T> textFile(String pathName, PType<T> ptype) {
     return textFile(new Path(pathName), ptype);
   }
-  
+
   public static <T> TextFileSourceTarget<T> textFile(Path path, PType<T> ptype) {
     return new TextFileSourceTarget<T>(path, ptype);
   }

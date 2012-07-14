@@ -26,12 +26,12 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
+
 import com.google.common.io.Files;
 
 public class TupleNClassCastBugIT {
@@ -80,8 +80,10 @@ public class TupleNClassCastBugIT {
     pipeline.writeTextFile(mapGroupDo(docLines, typeFamily), outputPath);
     pipeline.done();
 
-    // *** We are not directly testing the output, we are looking for a ClassCastException
-    // *** which is thrown in a different thread during the reduce phase. If all is well
+    // *** We are not directly testing the output, we are looking for a
+    // ClassCastException
+    // *** which is thrown in a different thread during the reduce phase. If all
+    // is well
     // *** the file will exist and have six lines. Otherwise the bug is present.
     File outputFile = new File(output, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());

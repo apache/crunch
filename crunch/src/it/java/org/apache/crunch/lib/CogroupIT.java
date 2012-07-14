@@ -25,8 +25,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
-import org.junit.Test;
-
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -43,6 +41,8 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
+
 import com.google.common.base.Splitter;
 import com.google.common.io.Files;
 
@@ -57,14 +57,12 @@ public class CogroupIT {
     }
   }
 
-  public static PTable<String, Long> join(PCollection<String> w1,
-      PCollection<String> w2, PTypeFamily ptf) {
+  public static PTable<String, Long> join(PCollection<String> w1, PCollection<String> w2, PTypeFamily ptf) {
     PTableType<String, Long> ntt = ptf.tableOf(ptf.strings(), ptf.longs());
     PTable<String, Long> ws1 = w1.parallelDo("ws1", new WordSplit(), ntt);
     PTable<String, Long> ws2 = w2.parallelDo("ws2", new WordSplit(), ntt);
     PTable<String, Pair<Collection<Long>, Collection<Long>>> cg = Cogroup.cogroup(ws1, ws2);
-    PTable<String, Long> sums = cg.parallelDo(
-        "wc",
+    PTable<String, Long> sums = cg.parallelDo("wc",
         new MapValuesFn<String, Pair<Collection<Long>, Collection<Long>>, Long>() {
           @Override
           public Long map(Pair<Collection<Long>, Collection<Long>> v) {
@@ -87,29 +85,29 @@ public class CogroupIT {
           return "";
         }
       }
-    }, ntt).groupByKey().combineValues(CombineFn.<String>SUM_LONGS());
+    }, ntt).groupByKey().combineValues(CombineFn.<String> SUM_LONGS());
   }
 
   @Test
   public void testWritableJoin() throws Exception {
     run(new MRPipeline(CogroupIT.class), WritableTypeFamily.getInstance());
   }
-  
+
   @Test
   public void testAvroJoin() throws Exception {
     run(new MRPipeline(CogroupIT.class), AvroTypeFamily.getInstance());
   }
-  
+
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     String maughamInputPath = FileHelper.createTempCopyOf("maugham.txt");
     File output = FileHelper.createOutputPath();
-    
+
     PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInputPath));
     PCollection<String> maugham = pipeline.read(From.textFile(maughamInputPath));
     pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), output.getAbsolutePath());
     pipeline.done();
-    
+
     File outputFile = new File(output, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
@@ -120,7 +118,7 @@ public class CogroupIT {
       }
     }
     assertTrue(passed);
-    
+
     output.deleteOnExit();
   }
 }

@@ -27,12 +27,12 @@ import com.google.common.collect.Lists;
  * of implementations.
  */
 public class Collects {
-  
+
   public static <T> Collection<T> newArrayList() {
     return Lists.newArrayList();
   }
 
-  public static <T> Collection<T> newArrayList(T...elements) {
+  public static <T> Collection<T> newArrayList(T... elements) {
     return Lists.newArrayList(elements);
   }
 
@@ -44,5 +44,6 @@ public class Collects {
     return Lists.newArrayList(elements);
   }
 
-  private Collects() {}
+  private Collects() {
+  }
 }

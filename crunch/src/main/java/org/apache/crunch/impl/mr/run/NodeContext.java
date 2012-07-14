@@ -25,7 +25,9 @@ import org.apache.crunch.impl.mr.plan.DoNode;
  * 
  */
 public enum NodeContext {
-  MAP, REDUCE, COMBINE;
+  MAP,
+  REDUCE,
+  COMBINE;
 
   public String getConfigurationKey() {
     return "crunch.donode." + toString().toLowerCase();

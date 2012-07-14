@@ -22,7 +22,6 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.io.ReadableSourceTarget;
@@ -30,21 +29,21 @@ import org.apache.crunch.io.ReadableSourceTarget;
 public class MaterializableIterable<E> implements Iterable<E> {
 
   private static final Log LOG = LogFactory.getLog(MaterializableIterable.class);
-  
+
   private final Pipeline pipeline;
   private final ReadableSourceTarget<E> sourceTarget;
   private Iterable<E> materialized;
-  
+
   public MaterializableIterable(Pipeline pipeline, ReadableSourceTarget<E> source) {
-	this.pipeline = pipeline;
-	this.sourceTarget = source;
-	this.materialized = null;
+    this.pipeline = pipeline;
+    this.sourceTarget = source;
+    this.materialized = null;
   }
-  
+
   public ReadableSourceTarget<E> getSourceTarget() {
     return sourceTarget;
   }
-  
+
   @Override
   public Iterator<E> iterator() {
     if (materialized == null) {
@@ -55,11 +54,11 @@ public class MaterializableIterable<E> implements Iterable<E> {
   }
 
   public void materialize() {
-	try {
-	  materialized = sourceTarget.read(pipeline.getConfiguration());
-	} catch (IOException e) {
-	  LOG.error("Could not materialize: " + sourceTarget, e);
-	  throw new CrunchRuntimeException(e);
-	}	
+    try {
+      materialized = sourceTarget.read(pipeline.getConfiguration());
+    } catch (IOException e) {
+      LOG.error("Could not materialize: " + sourceTarget, e);
+      throw new CrunchRuntimeException(e);
+    }
   }
 }

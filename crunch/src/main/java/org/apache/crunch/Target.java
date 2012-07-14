@@ -22,10 +22,10 @@ import org.apache.crunch.types.PType;
 
 /**
  * A {@code Target} represents the output destination of a Crunch job.
- *
+ * 
  */
 public interface Target {
   boolean accept(OutputHandler handler, PType<?> ptype);
-  
+
   <T> SourceTarget<T> asSourceTarget(PType<T> ptype);
 }

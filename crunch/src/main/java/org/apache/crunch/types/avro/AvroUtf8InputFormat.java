@@ -34,8 +34,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 
 /**
- * An {@link org.apache.hadoop.mapred.InputFormat} for text files.
- * Each line is a {@link Utf8} key; values are null.
+ * An {@link org.apache.hadoop.mapred.InputFormat} for text files. Each line is
+ * a {@link Utf8} key; values are null.
  */
 public class AvroUtf8InputFormat extends FileInputFormat<AvroWrapper<Utf8>, NullWritable> {
 
@@ -44,7 +44,7 @@ public class AvroUtf8InputFormat extends FileInputFormat<AvroWrapper<Utf8>, Null
     private LineRecordReader lineRecordReader;
 
     private AvroWrapper<Utf8> currentKey = new AvroWrapper<Utf8>();
-    
+
     public Utf8LineRecordReader() throws IOException {
       this.lineRecordReader = new LineRecordReader();
     }
@@ -58,22 +58,19 @@ public class AvroUtf8InputFormat extends FileInputFormat<AvroWrapper<Utf8>, Null
     }
 
     @Override
-    public AvroWrapper<Utf8> getCurrentKey() throws IOException,
-        InterruptedException {
+    public AvroWrapper<Utf8> getCurrentKey() throws IOException, InterruptedException {
       Text txt = lineRecordReader.getCurrentValue();
       currentKey.datum(new Utf8(txt.toString()));
       return currentKey;
     }
 
     @Override
-    public NullWritable getCurrentValue() throws IOException,
-        InterruptedException {
+    public NullWritable getCurrentValue() throws IOException, InterruptedException {
       return NullWritable.get();
     }
 
     @Override
-    public void initialize(InputSplit split, TaskAttemptContext context)
-        throws IOException, InterruptedException {
+    public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
       lineRecordReader.initialize(split, context);
     }
 
@@ -94,9 +91,8 @@ public class AvroUtf8InputFormat extends FileInputFormat<AvroWrapper<Utf8>, Null
   }
 
   @Override
-  public RecordReader<AvroWrapper<Utf8>, NullWritable> createRecordReader(
-      InputSplit split, TaskAttemptContext context) throws IOException,
-      InterruptedException {
+  public RecordReader<AvroWrapper<Utf8>, NullWritable> createRecordReader(InputSplit split, TaskAttemptContext context)
+      throws IOException, InterruptedException {
     return new Utf8LineRecordReader();
   }
 }

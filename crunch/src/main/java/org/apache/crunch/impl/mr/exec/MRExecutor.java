@@ -21,10 +21,10 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.PipelineResult;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
 
-import org.apache.crunch.PipelineResult;
 import com.google.common.collect.Lists;
 
 /**

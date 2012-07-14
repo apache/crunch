@@ -19,22 +19,20 @@ package org.apache.crunch.io.impl;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.hadoop.conf.Configuration;
 
-public class ReadableSourcePathTargetImpl<T> extends SourcePathTargetImpl<T>
-	implements ReadableSourceTarget<T> {
+public class ReadableSourcePathTargetImpl<T> extends SourcePathTargetImpl<T> implements ReadableSourceTarget<T> {
 
   public ReadableSourcePathTargetImpl(ReadableSource<T> source, PathTarget target) {
-	super(source, target);
+    super(source, target);
   }
-  
+
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-	return ((ReadableSource<T>) source).read(conf);
+    return ((ReadableSource<T>) source).read(conf);
   }
 
 }

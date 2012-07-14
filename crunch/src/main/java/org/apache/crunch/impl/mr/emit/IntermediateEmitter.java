@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.run.RTNode;
+
 import com.google.common.collect.ImmutableList;
 
 /**

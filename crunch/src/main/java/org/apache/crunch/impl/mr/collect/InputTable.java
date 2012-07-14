@@ -25,13 +25,14 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.ImmutableList;
 
 public class InputTable<K, V> extends PTableBase<K, V> {
 
   private final TableSource<K, V> source;
   private final InputCollection<Pair<K, V>> asCollection;
-  
+
   public InputTable(TableSource<K, V> source, MRPipeline pipeline) {
     super(source.toString());
     this.source = source;
@@ -68,12 +69,12 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
   }
-  
+
   @Override
   public int hashCode() {
     return asCollection.hashCode();
   }
-  
+
   @Override
   public boolean equals(Object other) {
     return asCollection.equals(other);

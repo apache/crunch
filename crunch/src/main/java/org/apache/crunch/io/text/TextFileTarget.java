@@ -17,23 +17,22 @@
  */
 package org.apache.crunch.io.text;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class TextFileTarget extends FileTargetImpl {
   public TextFileTarget(String path) {
     this(new Path(path));
   }
-  
+
   public TextFileTarget(Path path) {
     super(path, TextOutputFormat.class);
   }
-  
+
   @Override
   public Path getPath() {
     return path;

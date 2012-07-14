@@ -25,64 +25,62 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import org.junit.Test;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
+import org.junit.Test;
 
 public class DoTableImplTest {
 
-	@Test
-	public void testGetSizeInternal_NoScaleFactor() {
-		runScaleTest(100L, 1.0f, 100L);
-	}
+  @Test
+  public void testGetSizeInternal_NoScaleFactor() {
+    runScaleTest(100L, 1.0f, 100L);
+  }
 
-	@Test
-	public void testGetSizeInternal_ScaleFactorBelowZero() {
-		runScaleTest(100L, 0.5f, 50L);
-	}
+  @Test
+  public void testGetSizeInternal_ScaleFactorBelowZero() {
+    runScaleTest(100L, 0.5f, 50L);
+  }
 
-	@Test
-	public void testGetSizeInternal_ScaleFactorAboveZero() {
-		runScaleTest(100L, 1.5f, 150L);
-	}
+  @Test
+  public void testGetSizeInternal_ScaleFactorAboveZero() {
+    runScaleTest(100L, 1.5f, 150L);
+  }
 
-	private void runScaleTest(long inputSize, float scaleFactor, long expectedScaledSize) {
-		
-		@SuppressWarnings("unchecked")
-		PCollectionImpl<String> parentCollection = (PCollectionImpl<String>) mock(PCollectionImpl.class);
-		
-		when(parentCollection.getSize()).thenReturn(inputSize);
+  private void runScaleTest(long inputSize, float scaleFactor, long expectedScaledSize) {
 
-		DoTableImpl<String, String> doTableImpl = new DoTableImpl<String, String>("Scalled table collection",
-				parentCollection, new TableScaledFunction(scaleFactor), tableOf(strings(),
-						strings()));
+    @SuppressWarnings("unchecked")
+    PCollectionImpl<String> parentCollection = (PCollectionImpl<String>) mock(PCollectionImpl.class);
 
-		assertEquals(expectedScaledSize, doTableImpl.getSizeInternal());
-		
-		verify(parentCollection).getSize();
-		
-		verifyNoMoreInteractions(parentCollection);
-	}
+    when(parentCollection.getSize()).thenReturn(inputSize);
 
-	static class TableScaledFunction extends DoFn<String, Pair<String, String>> {
+    DoTableImpl<String, String> doTableImpl = new DoTableImpl<String, String>("Scalled table collection",
+        parentCollection, new TableScaledFunction(scaleFactor), tableOf(strings(), strings()));
 
-		private float scaleFactor;
+    assertEquals(expectedScaledSize, doTableImpl.getSizeInternal());
 
-		public TableScaledFunction(float scaleFactor) {
-			this.scaleFactor = scaleFactor;
-		}
+    verify(parentCollection).getSize();
 
-		@Override
-		public float scaleFactor() {
-			return scaleFactor;
-		}
+    verifyNoMoreInteractions(parentCollection);
+  }
 
-		@Override
-		public void process(String input, Emitter<Pair<String, String>> emitter) {
-			emitter.emit(Pair.of(input, input));
+  static class TableScaledFunction extends DoFn<String, Pair<String, String>> {
 
-		}
-	}
+    private float scaleFactor;
+
+    public TableScaledFunction(float scaleFactor) {
+      this.scaleFactor = scaleFactor;
+    }
+
+    @Override
+    public float scaleFactor() {
+      return scaleFactor;
+    }
+
+    @Override
+    public void process(String input, Emitter<Pair<String, String>> emitter) {
+      emitter.emit(Pair.of(input, input));
+
+    }
+  }
 }

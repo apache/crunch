@@ -55,8 +55,8 @@ public class AvroFileSourceTest {
   @Test
   public void testConfigureJob_SpecificData() throws IOException {
     AvroType<Person> avroSpecificType = Avros.records(Person.class);
-    AvroFileSource<Person> personFileSource = new AvroFileSource<Person>(new Path(
-        tempFile.getAbsolutePath()), avroSpecificType);
+    AvroFileSource<Person> personFileSource = new AvroFileSource<Person>(new Path(tempFile.getAbsolutePath()),
+        avroSpecificType);
 
     personFileSource.configureSource(job, -1);
 
@@ -67,8 +67,8 @@ public class AvroFileSourceTest {
   @Test
   public void testConfigureJob_GenericData() throws IOException {
     AvroType<Record> avroGenericType = Avros.generics(Person.SCHEMA$);
-    AvroFileSource<Record> personFileSource = new AvroFileSource<Record>(new Path(
-        tempFile.getAbsolutePath()), avroGenericType);
+    AvroFileSource<Record> personFileSource = new AvroFileSource<Record>(new Path(tempFile.getAbsolutePath()),
+        avroGenericType);
 
     personFileSource.configureSource(job, -1);
 

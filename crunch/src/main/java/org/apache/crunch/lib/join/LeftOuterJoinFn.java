@@ -22,17 +22,21 @@ import java.util.List;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.Lists;
 
 /**
  * Used to perform the last step of an left outer join.
- *
- * @param <K> Type of the keys.
- * @param <U> Type of the first {@link org.apache.crunch.PTable}'s values
- * @param <V> Type of the second {@link org.apache.crunch.PTable}'s values
+ * 
+ * @param <K>
+ *          Type of the keys.
+ * @param <U>
+ *          Type of the first {@link org.apache.crunch.PTable}'s values
+ * @param <V>
+ *          Type of the second {@link org.apache.crunch.PTable}'s values
  */
 public class LeftOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
-  
+
   private transient int lastId;
   private transient K lastKey;
   private transient List<U> leftValues;
@@ -51,8 +55,7 @@ public class LeftOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
 
   /** {@inheritDoc} */
   @Override
-  public void join(K key, int id, Iterable<Pair<U, V>> pairs,
-      Emitter<Pair<K, Pair<U, V>>> emitter) {
+  public void join(K key, int id, Iterable<Pair<U, V>> pairs, Emitter<Pair<K, Pair<U, V>>> emitter) {
     if (!key.equals(lastKey)) {
       // Make sure that left side always gets emitted.
       if (0 == lastId && 0 == id) {
@@ -91,5 +94,7 @@ public class LeftOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
 
   /** {@inheritDoc} */
   @Override
-  public String getJoinType() { return "leftOuterJoin"; }
+  public String getJoinType() {
+    return "leftOuterJoin";
+  }
 }

@@ -24,68 +24,74 @@ import org.apache.hadoop.conf.Configuration;
  * 
  */
 public interface Pipeline {
-  
+
   /**
    * Set the {@code Configuration} to use with this pipeline.
    */
   void setConfiguration(Configuration conf);
-  
+
   /**
    * Returns the name of this pipeline.
+   * 
    * @return Name of the pipeline
    */
   String getName();
-  
+
   /**
    * Returns the {@code Configuration} instance associated with this pipeline.
    */
   Configuration getConfiguration();
-  
+
   /**
    * Converts the given {@code Source} into a {@code PCollection} that is
    * available to jobs run using this {@code Pipeline} instance.
    * 
-   * @param source The source of data
+   * @param source
+   *          The source of data
    * @return A PCollection that references the given source
    */
   <T> PCollection<T> read(Source<T> source);
 
   /**
-   * A version of the read method for {@code TableSource} instances that
-   * map to {@code PTable}s.
-   * @param tableSource The source of the data
+   * A version of the read method for {@code TableSource} instances that map to
+   * {@code PTable}s.
+   * 
+   * @param tableSource
+   *          The source of the data
    * @return A PTable that references the given source
    */
   <K, V> PTable<K, V> read(TableSource<K, V> tableSource);
-  
+
   /**
-   * Write the given collection to the given target on the next
-   * pipeline run.
+   * Write the given collection to the given target on the next pipeline run.
    * 
-   * @param collection The collection
-   * @param target The output target
+   * @param collection
+   *          The collection
+   * @param target
+   *          The output target
    */
   void write(PCollection<?> collection, Target target);
 
   /**
-   * Create the given PCollection and read the data it contains
-   * into the returned Collection instance for client use.
-   *
-   * @param pcollection The PCollection to materialize
+   * Create the given PCollection and read the data it contains into the
+   * returned Collection instance for client use.
+   * 
+   * @param pcollection
+   *          The PCollection to materialize
    * @return the data from the PCollection as a read-only Collection
    */
   <T> Iterable<T> materialize(PCollection<T> pcollection);
-  
+
   /**
-   * Constructs and executes a series of MapReduce jobs in order
-   * to write data to the output targets.
+   * Constructs and executes a series of MapReduce jobs in order to write data
+   * to the output targets.
    */
   PipelineResult run();
 
   /**
-   * Run any remaining jobs required to generate outputs and then
-   * clean up any intermediate data files that were created in
-   * this run or previous calls to {@code run}.
+   * Run any remaining jobs required to generate outputs and then clean up any
+   * intermediate data files that were created in this run or previous calls to
+   * {@code run}.
    */
   PipelineResult done();
 
@@ -98,7 +104,7 @@ public interface Pipeline {
    * A convenience method for writing a text file.
    */
   <T> void writeTextFile(PCollection<T> collection, String pathName);
-  
+
   /**
    * Turn on debug logging for jobs that are run from this pipeline.
    */

@@ -21,8 +21,6 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.hadoop.io.Writable;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -34,10 +32,11 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.PTypeUtils;
+import org.apache.hadoop.io.Writable;
 
 /**
- * The {@link Writable}-based implementation of the {@link org.apache.crunch.types.PTypeFamily}
- * interface.
+ * The {@link Writable}-based implementation of the
+ * {@link org.apache.crunch.types.PTypeFamily} interface.
  */
 public class WritableTypeFamily implements PTypeFamily {
 
@@ -78,11 +77,11 @@ public class WritableTypeFamily implements PTypeFamily {
   public PType<Boolean> booleans() {
     return Writables.booleans();
   }
-  
+
   public PType<ByteBuffer> bytes() {
     return Writables.bytes();
   }
-  
+
   public <T> PType<T> records(Class<T> clazz) {
     return Writables.records(clazz);
   }
@@ -99,13 +98,11 @@ public class WritableTypeFamily implements PTypeFamily {
     return Writables.pairs(p1, p2);
   }
 
-  public <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3) {
+  public <V1, V2, V3> PType<Tuple3<V1, V2, V3>> triples(PType<V1> p1, PType<V2> p2, PType<V3> p3) {
     return Writables.triples(p1, p2, p3);
   }
 
-  public <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1,
-      PType<V2> p2, PType<V3> p3, PType<V4> p4) {
+  public <V1, V2, V3, V4> PType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1, PType<V2> p2, PType<V3> p3, PType<V4> p4) {
     return Writables.quads(p1, p2, p3, p4);
   }
 
@@ -118,13 +115,13 @@ public class WritableTypeFamily implements PTypeFamily {
   }
 
   public <T> PType<Map<String, T>> maps(PType<T> ptype) {
-	return Writables.maps(ptype);
+    return Writables.maps(ptype);
   }
-  
+
   @Override
   public <T> PType<T> as(PType<T> ptype) {
-    if (ptype instanceof WritableType || ptype instanceof WritableTableType ||
-        ptype instanceof WritableGroupedTableType) {
+    if (ptype instanceof WritableType || ptype instanceof WritableTableType
+        || ptype instanceof WritableGroupedTableType) {
       return ptype;
     }
     if (ptype instanceof PGroupedTableType) {
@@ -144,8 +141,7 @@ public class WritableTypeFamily implements PTypeFamily {
   }
 
   @Override
-  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn,
-      MapFn<T, S> outputFn, PType<S> base) {
+  public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {
     return Writables.derived(clazz, inputFn, outputFn, base);
   }
 }

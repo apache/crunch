@@ -34,13 +34,13 @@ public class TaskAttemptContextFactory {
   private static final Log LOG = LogFactory.getLog(TaskAttemptContextFactory.class);
 
   private static final TaskAttemptContextFactory INSTANCE = new TaskAttemptContextFactory();
-  
+
   public static TaskAttemptContext create(Configuration conf, TaskAttemptID taskAttemptId) {
     return INSTANCE.createInternal(conf, taskAttemptId);
   }
-  
+
   private Constructor taskAttemptConstructor;
-  
+
   private TaskAttemptContextFactory() {
     Class implClass = TaskAttemptContext.class;
     if (implClass.isInterface()) {
@@ -56,7 +56,7 @@ public class TaskAttemptContextFactory {
       LOG.fatal("Could not access TaskAttemptContext constructor, exiting", e);
     }
   }
-  
+
   private TaskAttemptContext createInternal(Configuration conf, TaskAttemptID taskAttemptId) {
     try {
       return (TaskAttemptContext) taskAttemptConstructor.newInstance(conf, taskAttemptId);

@@ -25,13 +25,12 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.types.avro.Avros;
+import org.junit.Before;
+import org.junit.Test;
 
 public class MRPipelineTest {
 

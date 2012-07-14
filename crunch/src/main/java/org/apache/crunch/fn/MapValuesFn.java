@@ -22,7 +22,7 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
 
 public abstract class MapValuesFn<K, V1, V2> extends DoFn<Pair<K, V1>, Pair<K, V2>> {
-  
+
   @Override
   public void process(Pair<K, V1> input, Emitter<Pair<K, V2>> emitter) {
     emitter.emit(Pair.of(input.first(), map(input.second())));

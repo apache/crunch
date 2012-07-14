@@ -18,9 +18,9 @@
 package org.apache.crunch;
 
 /**
- * A fixed-size collection of Objects, used in Crunch for representing
- * joins between {@code PCollection}s.
- *
+ * A fixed-size collection of Objects, used in Crunch for representing joins
+ * between {@code PCollection}s.
+ * 
  */
 public interface Tuple {
 

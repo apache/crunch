@@ -17,11 +17,10 @@
  */
 package org.apache.crunch;
 
-
 /**
- * An interface for classes that implement both the {@code Source} and
- * the {@code Target} interfaces.
- *
+ * An interface for classes that implement both the {@code Source} and the
+ * {@code Target} interfaces.
+ * 
  */
 public interface SourceTarget<T> extends Source<T>, Target {
 }

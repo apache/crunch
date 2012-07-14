@@ -26,17 +26,16 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.ImmutableList;
 
-public class DoTableImpl<K, V> extends PTableBase<K, V> implements
-    PTable<K, V> {
+public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> {
 
   private final PCollectionImpl<?> parent;
   private final DoFn<?, Pair<K, V>> fn;
   private final PTableType<K, V> type;
 
-  <S> DoTableImpl(String name, PCollectionImpl<S> parent,
-      DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype) {
+  <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype) {
     super(name);
     this.parent = parent;
     this.fn = fn;
@@ -72,7 +71,7 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements
   public DoNode createDoNode() {
     return DoNode.createFnNode(getName(), fn, type);
   }
-  
+
   public boolean hasCombineFn() {
     return fn instanceof CombineFn;
   }

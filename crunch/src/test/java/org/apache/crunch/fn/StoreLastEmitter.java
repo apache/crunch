@@ -26,15 +26,15 @@ class StoreLastEmitter<T> implements Emitter<T> {
   public void emit(T emitted) {
     last = emitted;
   }
-  
+
   public T getLast() {
     return last;
   }
-  
+
   @Override
   public void flush() {
   }
-  
+
   public static <T> StoreLastEmitter<T> create() {
     return new StoreLastEmitter<T>();
   }

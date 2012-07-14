@@ -47,9 +47,8 @@ public class CrunchInputSplit extends InputSplit implements Configurable, Writab
     // default constructor
   }
 
-  public CrunchInputSplit(InputSplit inputSplit,
-      Class<? extends InputFormat> inputFormatClass, Map<String, String> extraConf,
-      int nodeIndex, Configuration conf) {
+  public CrunchInputSplit(InputSplit inputSplit, Class<? extends InputFormat> inputFormatClass,
+      Map<String, String> extraConf, int nodeIndex, Configuration conf) {
     this.inputSplit = inputSplit;
     this.inputFormatClass = inputFormatClass;
     this.extraConf = extraConf;
@@ -87,10 +86,9 @@ public class CrunchInputSplit extends InputSplit implements Configurable, Writab
         conf.set(in.readUTF(), in.readUTF());
       }
     }
-    inputFormatClass = (Class<? extends InputFormat<?,?>>) readClass(in);
+    inputFormatClass = (Class<? extends InputFormat<?, ?>>) readClass(in);
     Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
-    inputSplit = (InputSplit) ReflectionUtils
-        .newInstance(inputSplitClass, conf);
+    inputSplit = (InputSplit) ReflectionUtils.newInstance(inputSplitClass, conf);
     SerializationFactory factory = new SerializationFactory(conf);
     Deserializer deserializer = factory.getDeserializer(inputSplitClass);
     deserializer.open((DataInputStream) in);

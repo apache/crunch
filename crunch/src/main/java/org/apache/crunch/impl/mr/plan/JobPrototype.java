@@ -23,10 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.collect.DoTableImpl;
@@ -40,6 +36,10 @@ import org.apache.crunch.impl.mr.run.CrunchReducer;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
 import org.apache.crunch.util.DistCache;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -49,29 +49,26 @@ import com.google.common.collect.Sets;
 
 public class JobPrototype {
 
-  public static JobPrototype createMapReduceJob(PGroupedTableImpl<?,?> group,
-      Set<NodePath> inputs, Path workingPath) {
+  public static JobPrototype createMapReduceJob(PGroupedTableImpl<?, ?> group, Set<NodePath> inputs, Path workingPath) {
     return new JobPrototype(inputs, group, workingPath);
   }
 
-  public static JobPrototype createMapOnlyJob(
-      HashMultimap<Target, NodePath> mapNodePaths, Path workingPath) {
+  public static JobPrototype createMapOnlyJob(HashMultimap<Target, NodePath> mapNodePaths, Path workingPath) {
     return new JobPrototype(mapNodePaths, workingPath);
   }
 
   private final Set<NodePath> mapNodePaths;
-  private final PGroupedTableImpl<?,?> group;
+  private final PGroupedTableImpl<?, ?> group;
   private final Set<JobPrototype> dependencies = Sets.newHashSet();
   private final Map<PCollectionImpl<?>, DoNode> nodes = Maps.newHashMap();
   private final Path workingPath;
-  
+
   private HashMultimap<Target, NodePath> targetsToNodePaths;
-  private DoTableImpl<?,?> combineFnTable;
+  private DoTableImpl<?, ?> combineFnTable;
 
   private CrunchJob job;
 
-  private JobPrototype(Set<NodePath> inputs, PGroupedTableImpl<?,?> group,
-      Path workingPath) {
+  private JobPrototype(Set<NodePath> inputs, PGroupedTableImpl<?, ?> group, Path workingPath) {
     this.mapNodePaths = ImmutableSet.copyOf(inputs);
     this.group = group;
     this.workingPath = workingPath;
@@ -87,8 +84,7 @@ public class JobPrototype {
 
   public void addReducePaths(HashMultimap<Target, NodePath> outputPaths) {
     if (group == null) {
-      throw new IllegalStateException(
-          "Cannot add a reduce phase to a map-only job");
+      throw new IllegalStateException("Cannot add a reduce phase to a map-only job");
     }
     this.targetsToNodePaths = outputPaths;
   }
@@ -112,12 +108,11 @@ public class JobPrototype {
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
     job.setJarByClass(jarClass);
-    
+
     Set<DoNode> outputNodes = Sets.newHashSet();
     Set<Target> targets = targetsToNodePaths.keySet();
     Path outputPath = new Path(workingPath, "output");
-    MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath,
-        group == null);
+    MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath, group == null);
     for (Target target : targets) {
       DoNode node = null;
       for (NodePath nodePath : targetsToNodePaths.get(target)) {
@@ -145,13 +140,12 @@ public class JobPrototype {
         DoNode combineNode = combineFnTable.createDoNode();
         combineNode.addChild(group.getGroupingNode());
         combinerInputNode.addChild(combineNode);
-        serialize(ImmutableList.of(combinerInputNode), conf, workingPath,
-            NodeContext.COMBINE);
+        serialize(ImmutableList.of(combinerInputNode), conf, workingPath, NodeContext.COMBINE);
       }
 
       group.configureShuffle(job);
 
-      DoNode mapOutputNode = group.getGroupingNode();      
+      DoNode mapOutputNode = group.getGroupingNode();
       Set<DoNode> mapNodes = Sets.newHashSet();
       for (NodePath nodePath : mapNodePaths) {
         // Advance these one step, since we've already configured
@@ -179,12 +173,12 @@ public class JobPrototype {
       job.setInputFormatClass(CrunchInputFormat.class);
     }
     job.setJobName(createJobName(pipeline.getName(), inputNodes, reduceNode));
-    
+
     return new CrunchJob(job, outputPath, outputHandler);
   }
 
-  private void serialize(List<DoNode> nodes, Configuration conf, Path workingPath,
-      NodeContext context) throws IOException {
+  private void serialize(List<DoNode> nodes, Configuration conf, Path workingPath, NodeContext context)
+      throws IOException {
     List<RTNode> rtNodes = Lists.newArrayList();
     for (DoNode node : nodes) {
       rtNodes.add(node.toRTNode(true, conf, context));
@@ -201,16 +195,14 @@ public class JobPrototype {
     }
     return builder.build();
   }
-  
+
   private DoNode walkPath(Iterator<PCollectionImpl<?>> iter, DoNode working) {
     while (iter.hasNext()) {
       PCollectionImpl<?> collect = iter.next();
-      if (combineFnTable != null &&
-          !(collect instanceof PGroupedTableImpl)) {
+      if (combineFnTable != null && !(collect instanceof PGroupedTableImpl)) {
         combineFnTable = null;
-      } else if (collect instanceof DoTableImpl &&
-          ((DoTableImpl<?,?>) collect).hasCombineFn()) {
-        combineFnTable = (DoTableImpl<?,?>) collect;
+      } else if (collect instanceof DoTableImpl && ((DoTableImpl<?, ?>) collect).hasCombineFn()) {
+        combineFnTable = (DoTableImpl<?, ?>) collect;
       }
       if (!nodes.containsKey(collect)) {
         nodes.put(collect, collect.createDoNode());

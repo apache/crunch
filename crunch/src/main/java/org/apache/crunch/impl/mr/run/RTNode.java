@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.emit.IntermediateEmitter;
@@ -31,9 +30,9 @@ import org.apache.crunch.impl.mr.emit.OutputEmitter;
 import org.apache.crunch.types.Converter;
 
 public class RTNode implements Serializable {
-  
+
   private static final Log LOG = LogFactory.getLog(RTNode.class);
-  
+
   private final String nodeName;
   private DoFn<Object, Object> fn;
   private final List<RTNode> children;
@@ -43,8 +42,8 @@ public class RTNode implements Serializable {
 
   private transient Emitter<Object> emitter;
 
-  public RTNode(DoFn<Object, Object> fn, String name, List<RTNode> children,
-      Converter inputConverter, Converter outputConverter, String outputName) {
+  public RTNode(DoFn<Object, Object> fn, String name, List<RTNode> children, Converter inputConverter,
+      Converter outputConverter, String outputName) {
     this.fn = fn;
     this.nodeName = name;
     this.children = children;
@@ -58,7 +57,7 @@ public class RTNode implements Serializable {
       // Already initialized
       return;
     }
-    
+
     fn.setContext(ctxt.getContext());
     for (RTNode child : children) {
       child.initialize(ctxt);
@@ -66,11 +65,9 @@ public class RTNode implements Serializable {
 
     if (outputConverter != null) {
       if (outputName != null) {
-        this.emitter = new MultipleOutputEmitter(
-            outputConverter, ctxt.getMultipleOutputs(), outputName);
+        this.emitter = new MultipleOutputEmitter(outputConverter, ctxt.getMultipleOutputs(), outputName);
       } else {
-        this.emitter = new OutputEmitter(
-            outputConverter, ctxt.getContext());
+        this.emitter = new OutputEmitter(outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
       this.emitter = new IntermediateEmitter(children);
@@ -88,8 +85,7 @@ public class RTNode implements Serializable {
       fn.process(input, emitter);
     } catch (CrunchRuntimeException e) {
       if (!e.wasLogged()) {
-        LOG.info(String.format("Crunch exception in '%s' for input: %s",
-            nodeName, input.toString()), e);
+        LOG.info(String.format("Crunch exception in '%s' for input: %s", nodeName, input.toString()), e);
         e.markLogged();
       }
       throw e;
@@ -103,7 +99,7 @@ public class RTNode implements Serializable {
   public void processIterable(Object key, Iterable values) {
     process(inputConverter.convertIterableInput(key, values));
   }
-  
+
   public void cleanup() {
     fn.cleanup(emitter);
     emitter.flush();
@@ -114,9 +110,7 @@ public class RTNode implements Serializable {
 
   @Override
   public String toString() {
-    return "RTNode [nodeName=" + nodeName + ", fn=" + fn + ", children="
-        + children + ", inputConverter=" + inputConverter
-        + ", outputConverter=" + outputConverter + ", outputName=" + outputName
-        + "]";
+    return "RTNode [nodeName=" + nodeName + ", fn=" + fn + ", children=" + children + ", inputConverter="
+        + inputConverter + ", outputConverter=" + outputConverter + ", outputName=" + outputName + "]";
   }
 }

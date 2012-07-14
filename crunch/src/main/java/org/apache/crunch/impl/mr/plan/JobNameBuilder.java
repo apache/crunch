@@ -23,30 +23,29 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 /**
- * Visitor that traverses the {@code DoNode} instances in a job and builds
- * a String that identifies the stages of the pipeline that belong to
- * this job.
+ * Visitor that traverses the {@code DoNode} instances in a job and builds a
+ * String that identifies the stages of the pipeline that belong to this job.
  */
 public class JobNameBuilder {
-  
+
   private static final Joiner JOINER = Joiner.on("+");
   private static final Joiner CHILD_JOINER = Joiner.on("/");
-  
+
   private String pipelineName;
   List<String> rootStack = Lists.newArrayList();
-  
-  public JobNameBuilder(final String pipelineName){
+
+  public JobNameBuilder(final String pipelineName) {
     this.pipelineName = pipelineName;
   }
-  
+
   public void visit(DoNode node) {
     visit(node, rootStack);
   }
-  
+
   public void visit(List<DoNode> nodes) {
     visit(nodes, rootStack);
   }
-  
+
   private void visit(List<DoNode> nodes, List<String> stack) {
     if (nodes.size() == 1) {
       visit(nodes.get(0), stack);
@@ -65,7 +64,7 @@ public class JobNameBuilder {
       }
     }
   }
-  
+
   private void visit(DoNode node, List<String> stack) {
     String name = node.getName();
     if (!name.isEmpty()) {
@@ -73,7 +72,7 @@ public class JobNameBuilder {
     }
     visit(node.getChildren(), stack);
   }
-  
+
   public String build() {
     return String.format("%s: %s", pipelineName, JOINER.join(rootStack));
   }

@@ -34,21 +34,22 @@ import org.apache.crunch.lib.PTables;
 import org.apache.crunch.materialize.MaterializableMap;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.Lists;
 
 public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<K, V> {
 
   private PTableType<K, V> ptype;
-  
+
   public MemTable(Iterable<Pair<K, V>> collect) {
     this(collect, null, null);
   }
-  
+
   public MemTable(Iterable<Pair<K, V>> collect, PTableType<K, V> ptype, String name) {
     super(collect, ptype, name);
     this.ptype = ptype;
   }
-  
+
   @Override
   public PTable<K, V> union(PTable<K, V>... others) {
     List<Pair<K, V>> values = Lists.newArrayList();
@@ -81,7 +82,7 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
     super.write(target);
     return this;
   }
-  
+
   @Override
   public PTableType<K, V> getPTableType() {
     return ptype;
@@ -105,32 +106,32 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
 
   @Override
   public PTable<K, V> top(int count) {
-	return Aggregate.top(this, count, true);
+    return Aggregate.top(this, count, true);
   }
 
   @Override
   public PTable<K, V> bottom(int count) {
-	return Aggregate.top(this, count, false);
+    return Aggregate.top(this, count, false);
   }
 
   @Override
   public PTable<K, Collection<V>> collectValues() {
-	return Aggregate.collectValues(this);
+    return Aggregate.collectValues(this);
   }
 
   @Override
   public <U> PTable<K, Pair<V, U>> join(PTable<K, U> other) {
-	return Join.join(this, other);
+    return Join.join(this, other);
   }
-  
+
   @Override
   public <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other) {
-	return Cogroup.cogroup(this, other);
+    return Cogroup.cogroup(this, other);
   }
-  
+
   @Override
   public PCollection<K> keys() {
-	return PTables.keys(this);
+    return PTables.keys(this);
   }
 
   @Override

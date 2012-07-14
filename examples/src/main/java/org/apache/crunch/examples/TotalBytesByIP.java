@@ -21,12 +21,6 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.util.GenericOptionsParser;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
-
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -36,16 +30,23 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 @SuppressWarnings("serial")
 public class TotalBytesByIP extends Configured implements Tool, Serializable {
-  static enum COUNTERS  {
+  static enum COUNTERS {
     NO_MATCH,
     CORRUPT_SIZE
   }
+
   static final String logRegex = "^([\\d.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
+
   public int run(String[] args) throws Exception {
-    if(args.length != 2) {
+    if (args.length != 2) {
       System.err.println();
       System.err.println("Two and only two arguments are accepted.");
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
@@ -60,34 +61,34 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
 
     // Combiner used for summing up response size
     CombineFn<String, Long> longSumCombiner = CombineFn.SUM_LONGS();
-    
+
     // Table of (ip, sum(response size))
-    PTable<String, Long> ipAddrResponseSize = 
-      lines.parallelDo(extractIPResponseSize, 
-        Writables.tableOf(Writables.strings(),Writables.longs()))
-            .groupByKey()
-            .combineValues(longSumCombiner);
-    
+    PTable<String, Long> ipAddrResponseSize = lines
+        .parallelDo(extractIPResponseSize, Writables.tableOf(Writables.strings(), Writables.longs())).groupByKey()
+        .combineValues(longSumCombiner);
+
     pipeline.writeTextFile(ipAddrResponseSize, args[1]);
     // Execute the pipeline as a MapReduce.
     pipeline.done();
     return 0;
   }
-  
+
   // Function to parse apache log records
-  // Given a standard apache log line, extract the ip address and 
+  // Given a standard apache log line, extract the ip address and
   // request size. Outputs the ip and response size.
-  //    
-  // Input: 55.1.3.2  ...... 200 512 ....
-  // Output: (55.1.3.2, 512)  
+  //
+  // Input: 55.1.3.2 ...... 200 512 ....
+  // Output: (55.1.3.2, 512)
   DoFn<String, Pair<String, Long>> extractIPResponseSize = new DoFn<String, Pair<String, Long>>() {
     transient Pattern pattern;
+
     public void initialize() {
       pattern = Pattern.compile(logRegex);
     }
+
     public void process(String line, Emitter<Pair<String, Long>> emitter) {
       Matcher matcher = pattern.matcher(line);
-      if(matcher.matches()) {
+      if (matcher.matches()) {
         try {
           Long requestSize = Long.parseLong(matcher.group(7));
           String remoteAddr = matcher.group(1);
@@ -99,7 +100,6 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
     }
   };
 
-  
   public static void main(String[] args) throws Exception {
     ToolRunner.run(new Configuration(), new TotalBytesByIP(), args);
   }

@@ -23,20 +23,20 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.junit.Test;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.types.writable.Writables;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 
 public class CartesianTest {
 
   @Test
   public void testCartesianCollection() {
-    ImmutableList<ImmutableList<Integer>> testCases = ImmutableList.of(
-        ImmutableList.of(1, 2, 3, 4, 5), ImmutableList.<Integer>of(1, 2, 3), ImmutableList.<Integer>of());
+    ImmutableList<ImmutableList<Integer>> testCases = ImmutableList.of(ImmutableList.of(1, 2, 3, 4, 5),
+        ImmutableList.<Integer> of(1, 2, 3), ImmutableList.<Integer> of());
 
     for (int t1 = 0; t1 < testCases.size(); t1++) {
       ImmutableList<Integer> testCase1 = testCases.get(t1);
@@ -46,9 +46,9 @@ public class CartesianTest {
         PCollection<Integer> X = MemPipeline.typedCollectionOf(Writables.ints(), testCase1);
         PCollection<Integer> Y = MemPipeline.typedCollectionOf(Writables.ints(), testCase2);
 
-        PCollection<Pair<Integer,Integer>> cross = Cartesian.cross(X, Y);
+        PCollection<Pair<Integer, Integer>> cross = Cartesian.cross(X, Y);
         HashSet<Pair<Integer, Integer>> crossSet = new HashSet<Pair<Integer, Integer>>();
-        for (Iterator<Pair<Integer, Integer>> i = cross.materialize().iterator(); i.hasNext(); ) {
+        for (Iterator<Pair<Integer, Integer>> i = cross.materialize().iterator(); i.hasNext();) {
           crossSet.add(i.next());
         }
         assertEquals(crossSet.size(), testCase1.size() * testCase2.size());
@@ -61,5 +61,5 @@ public class CartesianTest {
       }
     }
   }
-	
+
 }

@@ -56,8 +56,7 @@ public class AvroType<T> implements PType<T> {
     this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), ptypes);
   }
 
-  public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn,
-      PType... ptypes) {
+  public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn, PType... ptypes) {
     this.typeClass = typeClass;
     this.schema = Preconditions.checkNotNull(schema);
     this.schemaString = schema.toString();
@@ -126,8 +125,7 @@ public class AvroType<T> implements PType<T> {
       return false;
     }
 
-    return !(typeClass.equals(GenericData.Record.class) || SpecificRecord.class
-        .isAssignableFrom(typeClass));
+    return !(typeClass.equals(GenericData.Record.class) || SpecificRecord.class.isAssignableFrom(typeClass));
   }
 
   public MapFn<Object, T> getInputMapFn() {

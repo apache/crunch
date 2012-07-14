@@ -20,25 +20,27 @@ package org.apache.crunch.test;
 import java.util.List;
 
 import org.apache.crunch.Emitter;
+
 import com.google.common.collect.Lists;
 
 /**
- * An {@code Emitter} instance that writes emitted records to a backing {@code List}.
- *
+ * An {@code Emitter} instance that writes emitted records to a backing
+ * {@code List}.
+ * 
  * @param <T>
  */
 public class InMemoryEmitter<T> implements Emitter<T> {
-  
+
   private final List<T> output;
-  
+
   public InMemoryEmitter() {
-    this(Lists.<T>newArrayList());
+    this(Lists.<T> newArrayList());
   }
-  
+
   public InMemoryEmitter(List<T> output) {
     this.output = output;
   }
-  
+
   @Override
   public void emit(T emitted) {
     output.add(emitted);

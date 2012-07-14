@@ -19,17 +19,16 @@ package org.apache.crunch;
 
 import java.io.IOException;
 
+import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
-import org.apache.crunch.types.PType;
-
 /**
- * A {@code Source} represents an input data set that is an input to one
- * or more MapReduce jobs.
- *
+ * A {@code Source} represents an input data set that is an input to one or more
+ * MapReduce jobs.
+ * 
  */
-public interface Source<T> { 
+public interface Source<T> {
   /**
    * Returns the {@code PType} for this source.
    */
@@ -38,8 +37,10 @@ public interface Source<T> {
   /**
    * Configure the given job to use this source as an input.
    * 
-   * @param job The job to configure
-   * @param inputId For a multi-input job, an identifier for this input to the job
+   * @param job
+   *          The job to configure
+   * @param inputId
+   *          For a multi-input job, an identifier for this input to the job
    * @throws IOException
    */
   void configureSource(Job job, int inputId) throws IOException;
@@ -47,5 +48,5 @@ public interface Source<T> {
   /**
    * Returns the number of bytes in this {@code Source}.
    */
-  long getSize(Configuration configuration);  
+  long getSize(Configuration configuration);
 }

@@ -24,10 +24,6 @@ import java.util.Collection;
 
 import org.apache.avro.Schema;
 import org.apache.avro.util.Utf8;
-import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.types.avro.AvroType;
@@ -35,6 +31,9 @@ import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.io.Text;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PTypeUtilsTest {
   @Test
@@ -42,11 +41,11 @@ public class PTypeUtilsTest {
     assertEquals(Avros.strings(), AvroTypeFamily.getInstance().as(Writables.strings()));
     Assert.assertEquals(Writables.doubles(), WritableTypeFamily.getInstance().as(Avros.doubles()));
   }
-  
+
   @Test
   public void testTuple3() {
-    PType<Tuple3<String, Float, Integer>> t = Writables.triples(Writables.strings(),
-        Writables.floats(), Writables.ints());
+    PType<Tuple3<String, Float, Integer>> t = Writables.triples(Writables.strings(), Writables.floats(),
+        Writables.ints());
     PType<Tuple3<String, Float, Integer>> at = AvroTypeFamily.getInstance().as(t);
     assertEquals(Avros.strings(), at.getSubTypes().get(0));
     assertEquals(Avros.floats(), at.getSubTypes().get(1));
@@ -55,8 +54,7 @@ public class PTypeUtilsTest {
 
   @Test
   public void testTupleN() {
-    PType<TupleN> t = Avros.tuples(Avros.strings(),
-        Avros.floats(), Avros.ints());
+    PType<TupleN> t = Avros.tuples(Avros.strings(), Avros.floats(), Avros.ints());
     PType<TupleN> wt = WritableTypeFamily.getInstance().as(t);
     assertEquals(Writables.strings(), wt.getSubTypes().get(0));
     assertEquals(Writables.floats(), wt.getSubTypes().get(1));
@@ -83,7 +81,7 @@ public class PTypeUtilsTest {
     Avros.register(Utf8.class, at);
     assertEquals(at, Avros.records(Utf8.class));
   }
-  
+
   @Test
   public void testWritableBuiltin() {
     assertNotNull(Writables.records(Text.class));

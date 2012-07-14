@@ -27,9 +27,9 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 
 /**
- * Utilities for converting between {@code PType}s from different {@code PTypeFamily}
- * implementations.
- *
+ * Utilities for converting between {@code PType}s from different
+ * {@code PTypeFamily} implementations.
+ * 
  */
 public class PTypeUtils {
 
@@ -46,8 +46,7 @@ public class PTypeUtils {
       } else if (Tuple3.class.equals(typeClass)) {
         return tf.triples(tf.as(subTypes.get(0)), tf.as(subTypes.get(1)), tf.as(subTypes.get(2)));
       } else if (Tuple4.class.equals(typeClass)) {
-        return tf.quads(tf.as(subTypes.get(0)), tf.as(subTypes.get(1)),
-            tf.as(subTypes.get(2)), tf.as(subTypes.get(3)));
+        return tf.quads(tf.as(subTypes.get(0)), tf.as(subTypes.get(1)), tf.as(subTypes.get(2)), tf.as(subTypes.get(3)));
       } else if (TupleN.class.equals(typeClass)) {
         PType[] newPTypes = subTypes.toArray(new PType[0]);
         for (int i = 0; i < newPTypes.length; i++) {
@@ -61,6 +60,7 @@ public class PTypeUtils {
     }
     return tf.records(typeClass);
   }
-  
-  private PTypeUtils() {}
+
+  private PTypeUtils() {
+  }
 }

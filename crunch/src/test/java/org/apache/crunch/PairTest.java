@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 public class PairTest {
-  
+
   @Test
   public void testPairConstructor() {
     Pair<String, Integer> pair = new Pair<String, Integer>("brock", 45);
@@ -39,11 +39,11 @@ public class PairTest {
 
   protected void test(Pair<String, Integer> pair) {
     assertTrue(pair.size() == 2);
-    
+
     assertEquals("brock", pair.first());
     assertEquals(new Integer(45), pair.second());
     assertEquals(Pair.of("brock", 45), pair);
-    
+
     assertEquals("brock", pair.get(0));
     assertEquals(new Integer(45), pair.get(1));
 
@@ -54,7 +54,7 @@ public class PairTest {
       // expected
     }
   }
-  
+
   @Test
   public void testPairComparisons() {
     assertEquals(0, Pair.of(null, null).compareTo(Pair.of(null, null)));

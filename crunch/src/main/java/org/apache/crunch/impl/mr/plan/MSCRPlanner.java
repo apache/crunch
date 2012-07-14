@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.hadoop.conf.Configuration;
-
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -39,6 +37,8 @@ import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.collect.UnionCollection;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
+import org.apache.hadoop.conf.Configuration;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -46,33 +46,33 @@ import com.google.common.collect.Sets;
 
 public class MSCRPlanner {
 
-  // Used to ensure that we always build pipelines starting from the deepest outputs, which
+  // Used to ensure that we always build pipelines starting from the deepest
+  // outputs, which
   // helps ensure that we handle intermediate outputs correctly.
   private static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
     @Override
     public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
-      int cmp = right.getDepth() - left.getDepth();   
-      if (cmp == 0){
-          // Ensure we don't throw away two output collections at the same depth.
-          // Using the collection name would be nicer here, but names aren't necessarily unique
-          cmp = new Integer(right.hashCode()).compareTo(left.hashCode());
+      int cmp = right.getDepth() - left.getDepth();
+      if (cmp == 0) {
+        // Ensure we don't throw away two output collections at the same depth.
+        // Using the collection name would be nicer here, but names aren't
+        // necessarily unique
+        cmp = new Integer(right.hashCode()).compareTo(left.hashCode());
       }
       return cmp;
     }
   };
-  
+
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
 
-  public MSCRPlanner(MRPipeline pipeline,
-      Map<PCollectionImpl<?>, Set<Target>> outputs) {
+  public MSCRPlanner(MRPipeline pipeline, Map<PCollectionImpl<?>, Set<Target>> outputs) {
     this.pipeline = pipeline;
     this.outputs = new TreeMap<PCollectionImpl<?>, Set<Target>>(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
   }
 
-  public MRExecutor plan(Class<?> jarClass, Configuration conf)
-      throws IOException {
+  public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
     // Constructs all of the node paths, which either start w/an input
     // or a GBK and terminate in an output collection of any type.
     NodeVisitor visitor = new NodeVisitor();
@@ -86,17 +86,15 @@ public class MSCRPlanner {
     // Keeps track of the dependencies from collections -> jobs and then
     // between different jobs.
     Map<PCollectionImpl<?>, JobPrototype> assignments = Maps.newHashMap();
-    Map<PCollectionImpl<?>, Set<JobPrototype>> jobDependencies =
-        new HashMap<PCollectionImpl<?>, Set<JobPrototype>>();
+    Map<PCollectionImpl<?>, Set<JobPrototype>> jobDependencies = new HashMap<PCollectionImpl<?>, Set<JobPrototype>>();
 
     // Find the set of GBKs that DO NOT depend on any other GBK.
-    Set<PGroupedTableImpl<?,?>> workingGroupings = null;
+    Set<PGroupedTableImpl<?, ?>> workingGroupings = null;
     while (!(workingGroupings = getWorkingGroupings(nodePaths)).isEmpty()) {
 
-      for (PGroupedTableImpl<?,?> grouping : workingGroupings) {
+      for (PGroupedTableImpl<?, ?> grouping : workingGroupings) {
         Set<NodePath> mapInputPaths = nodePaths.get(grouping);
-        JobPrototype proto = JobPrototype.createMapReduceJob(grouping,
-            mapInputPaths, pipeline.createTempPath());
+        JobPrototype proto = JobPrototype.createMapReduceJob(grouping, mapInputPaths, pipeline.createTempPath());
         assignments.put(grouping, proto);
         if (jobDependencies.containsKey(grouping)) {
           for (JobPrototype dependency : jobDependencies.get(grouping)) {
@@ -105,10 +103,9 @@ public class MSCRPlanner {
         }
       }
 
-      Map<PGroupedTableImpl<?,?>, Set<NodePath>> dependencyPaths = getDependencyPaths(
-          workingGroupings, nodePaths);
-      for (Map.Entry<PGroupedTableImpl<?,?>, Set<NodePath>> entry : dependencyPaths.entrySet()) {
-        PGroupedTableImpl<?,?> grouping = entry.getKey();
+      Map<PGroupedTableImpl<?, ?>, Set<NodePath>> dependencyPaths = getDependencyPaths(workingGroupings, nodePaths);
+      for (Map.Entry<PGroupedTableImpl<?, ?>, Set<NodePath>> entry : dependencyPaths.entrySet()) {
+        PGroupedTableImpl<?, ?> grouping = entry.getKey();
         Set<NodePath> currentNodePaths = entry.getValue();
 
         JobPrototype proto = assignments.get(grouping);
@@ -118,7 +115,7 @@ public class MSCRPlanner {
           if (tail instanceof PGroupedTableImpl) {
             gbkPaths.add(nodePath);
             if (!jobDependencies.containsKey(tail)) {
-              jobDependencies.put(tail, Sets.<JobPrototype>newHashSet());
+              jobDependencies.put(tail, Sets.<JobPrototype> newHashSet());
             }
             jobDependencies.get(tail).add(proto);
           }
@@ -129,7 +126,8 @@ public class MSCRPlanner {
         }
 
         // At this point, all of the dependencies for the working groups will be
-        // file outputs, and so we can add them all to the JobPrototype-- we now have
+        // file outputs, and so we can add them all to the JobPrototype-- we now
+        // have
         // a complete job.
         HashMultimap<Target, NodePath> reduceOutputs = HashMultimap.create();
         for (NodePath nodePath : currentNodePaths) {
@@ -148,8 +146,7 @@ public class MSCRPlanner {
 
     // Process any map-only jobs that are remaining.
     if (!nodePaths.isEmpty()) {
-      for (Map.Entry<PCollectionImpl<?>, Set<NodePath>> entry : nodePaths
-          .entrySet()) {
+      for (Map.Entry<PCollectionImpl<?>, Set<NodePath>> entry : nodePaths.entrySet()) {
         PCollectionImpl<?> collect = entry.getKey();
         if (!assignments.containsKey(collect)) {
           HashMultimap<Target, NodePath> mapOutputs = HashMultimap.create();
@@ -158,9 +155,8 @@ public class MSCRPlanner {
               mapOutputs.put(target, nodePath);
             }
           }
-          JobPrototype proto = JobPrototype.createMapOnlyJob(mapOutputs,
-              pipeline.createTempPath());
-          
+          JobPrototype proto = JobPrototype.createMapOnlyJob(mapOutputs, pipeline.createTempPath());
+
           if (jobDependencies.containsKey(collect)) {
             for (JobPrototype dependency : jobDependencies.get(collect)) {
               proto.addDependency(dependency);
@@ -178,11 +174,10 @@ public class MSCRPlanner {
     return exec;
   }
 
-  private Map<PGroupedTableImpl<?,?>, Set<NodePath>> getDependencyPaths(
-      Set<PGroupedTableImpl<?,?>> workingGroupings,
+  private Map<PGroupedTableImpl<?, ?>, Set<NodePath>> getDependencyPaths(Set<PGroupedTableImpl<?, ?>> workingGroupings,
       Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
-    Map<PGroupedTableImpl<?,?>, Set<NodePath>> dependencyPaths = Maps.newHashMap();
-    for (PGroupedTableImpl<?,?> grouping : workingGroupings) {
+    Map<PGroupedTableImpl<?, ?>, Set<NodePath>> dependencyPaths = Maps.newHashMap();
+    for (PGroupedTableImpl<?, ?> grouping : workingGroupings) {
       dependencyPaths.put(grouping, Sets.<NodePath> newHashSet());
     }
 
@@ -237,15 +232,13 @@ public class MSCRPlanner {
     return splitIndex;
   }
 
-  private void handleGroupingDependencies(Set<NodePath> gbkPaths,
-      Set<NodePath> currentNodePaths) throws IOException {
+  private void handleGroupingDependencies(Set<NodePath> gbkPaths, Set<NodePath> currentNodePaths) throws IOException {
     int splitIndex = getSplitIndex(currentNodePaths);
-    PCollectionImpl<?> splitTarget = currentNodePaths.iterator().next()
-        .get(splitIndex);
+    PCollectionImpl<?> splitTarget = currentNodePaths.iterator().next().get(splitIndex);
     if (!outputs.containsKey(splitTarget)) {
-      outputs.put(splitTarget, Sets.<Target>newHashSet());
+      outputs.put(splitTarget, Sets.<Target> newHashSet());
     }
-    
+
     SourceTarget srcTarget = null;
     Target targetToReplace = null;
     for (Target t : outputs.get(splitTarget)) {
@@ -272,18 +265,17 @@ public class MSCRPlanner {
     Set<NodePath> nextNodePaths = Sets.newHashSet();
     for (NodePath nodePath : currentNodePaths) {
       if (gbkPaths.contains(nodePath)) {
-    	nextNodePaths.add(nodePath.splitAt(splitIndex, inputNode));
+        nextNodePaths.add(nodePath.splitAt(splitIndex, inputNode));
       } else {
-    	nextNodePaths.add(nodePath);
+        nextNodePaths.add(nodePath);
       }
     }
     currentNodePaths.clear();
     currentNodePaths.addAll(nextNodePaths);
   }
 
-  private Set<PGroupedTableImpl<?,?>> getWorkingGroupings(
-      Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
-    Set<PGroupedTableImpl<?,?>> gbks = Sets.newHashSet();
+  private Set<PGroupedTableImpl<?, ?>> getWorkingGroupings(Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
+    Set<PGroupedTableImpl<?, ?>> gbks = Sets.newHashSet();
     for (PCollectionImpl<?> target : nodePaths.keySet()) {
       if (target instanceof PGroupedTableImpl) {
         boolean hasGBKDependency = false;
@@ -294,7 +286,7 @@ public class MSCRPlanner {
           }
         }
         if (!hasGBKDependency) {
-          gbks.add((PGroupedTableImpl<?,?>) target);
+          gbks.add((PGroupedTableImpl<?, ?>) target);
         }
       }
     }

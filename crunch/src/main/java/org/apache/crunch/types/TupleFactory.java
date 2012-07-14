@@ -29,10 +29,11 @@ import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 
 public abstract class TupleFactory<T extends Tuple> implements Serializable {
 
-  public void initialize() { }
-  
-  public abstract T makeTuple(Object...values);
-  
+  public void initialize() {
+  }
+
+  public abstract T makeTuple(Object... values);
+
   public static final TupleFactory<Pair> PAIR = new TupleFactory<Pair>() {
     @Override
     public Pair makeTuple(Object... values) {
@@ -46,7 +47,7 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
       return Tuple3.of(values[0], values[1], values[2]);
     }
   };
-  
+
   public static final TupleFactory<Tuple4> TUPLE4 = new TupleFactory<Tuple4>() {
     @Override
     public Tuple4 makeTuple(Object... values) {
@@ -64,19 +65,19 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
   public static <T extends Tuple> TupleFactory<T> create(Class<T> clazz, Class... typeArgs) {
     return new CustomTupleFactory<T>(clazz, typeArgs);
   }
-  
+
   private static class CustomTupleFactory<T extends Tuple> extends TupleFactory<T> {
 
     private final Class<T> clazz;
     private final Class[] typeArgs;
-    
+
     private transient Constructor<T> constructor;
-    
+
     public CustomTupleFactory(Class<T> clazz, Class[] typeArgs) {
       this.clazz = clazz;
       this.typeArgs = typeArgs;
     }
-    
+
     @Override
     public void initialize() {
       try {
@@ -85,7 +86,7 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
         throw new CrunchRuntimeException(e);
       }
     }
-    
+
     @Override
     public T makeTuple(Object... values) {
       try {

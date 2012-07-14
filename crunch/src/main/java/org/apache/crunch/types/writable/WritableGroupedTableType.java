@@ -17,37 +17,34 @@
  */
 package org.apache.crunch.types.writable;
 
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.hadoop.mapreduce.Job;
 
 public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
   private final MapFn inputFn;
   private final MapFn outputFn;
   private final Converter converter;
-  
+
   public WritableGroupedTableType(WritableTableType<K, V> tableType) {
     super(tableType);
     WritableType keyType = (WritableType) tableType.getKeyType();
     WritableType valueType = (WritableType) tableType.getValueType();
-    this.inputFn =  new PairIterableMapFn(keyType.getInputMapFn(),
-        valueType.getInputMapFn());
+    this.inputFn = new PairIterableMapFn(keyType.getInputMapFn(), valueType.getInputMapFn());
     this.outputFn = tableType.getOutputMapFn();
-    this.converter = new WritablePairConverter(keyType.getSerializationClass(),
-        valueType.getSerializationClass());
+    this.converter = new WritablePairConverter(keyType.getSerializationClass(), valueType.getSerializationClass());
   }
-  
+
   @Override
   public Class<Pair<K, Iterable<V>>> getTypeClass() {
-    return (Class<Pair<K, Iterable<V>>>) Pair.of(null, null).getClass();  
+    return (Class<Pair<K, Iterable<V>>>) Pair.of(null, null).getClass();
   }
-  
+
   @Override
   public Converter getGroupingConverter() {
     return converter;
@@ -57,12 +54,12 @@ public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   public MapFn getInputMapFn() {
     return inputFn;
   }
-  
+
   @Override
   public MapFn getOutputMapFn() {
     return outputFn;
   }
-  
+
   @Override
   public Pair<K, Iterable<V>> getDetachedValue(Pair<K, Iterable<V>> value) {
     return PTables.getGroupedDetachedValue(this, value);

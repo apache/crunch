@@ -17,11 +17,10 @@
  */
 package org.apache.crunch.io;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.Target;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
 
 public interface MapReduceTarget extends Target {
   void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name);

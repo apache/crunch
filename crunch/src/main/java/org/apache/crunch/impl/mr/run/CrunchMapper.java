@@ -27,11 +27,11 @@ import org.apache.hadoop.mapreduce.Mapper;
 public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
 
   private static final Log LOG = LogFactory.getLog(CrunchMapper.class);
-  
+
   private RTNode node;
   private CrunchTaskContext ctxt;
   private boolean debug;
-  
+
   @Override
   protected void setup(Mapper<Object, Object, Object, Object>.Context context) {
     List<RTNode> nodes;
@@ -52,8 +52,7 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
   }
 
   @Override
-  protected void map(Object k, Object v,
-      Mapper<Object, Object, Object, Object>.Context context) {
+  protected void map(Object k, Object v, Mapper<Object, Object, Object, Object>.Context context) {
     if (debug) {
       try {
         node.process(k, v);

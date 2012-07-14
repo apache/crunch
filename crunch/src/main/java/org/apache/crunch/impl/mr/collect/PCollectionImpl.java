@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
@@ -41,6 +40,7 @@ import org.apache.crunch.lib.Sort;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+
 import com.google.common.collect.Lists;
 
 public abstract class PCollectionImpl<S> implements PCollection<S> {
@@ -217,8 +217,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   public void accept(Visitor visitor) {
     if (materializedAt != null) {
-      visitor.visitInputCollection(new InputCollection<S>(materializedAt,
-          (MRPipeline) getPipeline()));
+      visitor.visitInputCollection(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()));
     } else {
       acceptInternal(visitor);
     }

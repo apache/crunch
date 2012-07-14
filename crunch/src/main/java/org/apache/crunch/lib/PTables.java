@@ -28,6 +28,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.Lists;
 
 /**
@@ -65,8 +66,8 @@ public class PTables {
    * @see PType#getDetachedValue(Object)
    */
   public static <K, V> Pair<K, V> getDetachedValue(PTableType<K, V> tableType, Pair<K, V> value) {
-    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()), tableType.getValueType()
-        .getDetachedValue(value.second()));
+    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()),
+        tableType.getValueType().getDetachedValue(value.second()));
   }
 
   /**
@@ -80,8 +81,8 @@ public class PTables {
    * @return The detached value
    * @see PType#getDetachedValue(Object)
    */
-  public static <K, V> Pair<K, Iterable<V>> getGroupedDetachedValue(
-      PGroupedTableType<K, V> groupedTableType, Pair<K, Iterable<V>> value) {
+  public static <K, V> Pair<K, Iterable<V>> getGroupedDetachedValue(PGroupedTableType<K, V> groupedTableType,
+      Pair<K, Iterable<V>> value) {
 
     PTableType<K, V> tableType = groupedTableType.getTableType();
     List<V> detachedIterable = Lists.newArrayList();
@@ -89,7 +90,6 @@ public class PTables {
     for (V v : value.second()) {
       detachedIterable.add(valueType.getDetachedValue(v));
     }
-    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()),
-        (Iterable<V>) detachedIterable);
+    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()), (Iterable<V>) detachedIterable);
   }
 }

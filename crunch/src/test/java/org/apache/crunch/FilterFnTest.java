@@ -38,7 +38,7 @@ public class FilterFnTest {
       return false;
     }
   };
-  
+
   @Test
   public void testAnd() {
     assertTrue(FilterFn.and(TRUE).accept("foo"));
@@ -46,7 +46,7 @@ public class FilterFnTest {
     assertFalse(FilterFn.and(TRUE, FALSE).accept("foo"));
     assertFalse(FilterFn.and(FALSE, FALSE, FALSE).accept("foo"));
   }
-  
+
   @Test
   public void testOr() {
     assertFalse(FilterFn.or(FALSE).accept("foo"));

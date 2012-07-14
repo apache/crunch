@@ -25,6 +25,12 @@ import java.util.Collection;
 
 import junit.framework.Assert;
 
+import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.io.At;
+import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,76 +38,62 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.io.At;
-import org.apache.crunch.test.FileHelper;
-import org.apache.crunch.types.PTypeFamily;
-import org.apache.crunch.types.avro.AvroTypeFamily;
-import org.apache.crunch.types.writable.WritableTypeFamily;
 import com.google.common.collect.Lists;
 
 @RunWith(value = Parameterized.class)
 public class PTableKeyValueIT implements Serializable {
 
-	private static final long serialVersionUID = 4374227704751746689L;
+  private static final long serialVersionUID = 4374227704751746689L;
 
-	private transient PTypeFamily typeFamily;
-	private transient MRPipeline pipeline;
-	private transient String inputFile;
+  private transient PTypeFamily typeFamily;
+  private transient MRPipeline pipeline;
+  private transient String inputFile;
 
-	@Before
-	public void setUp() throws IOException {
-		pipeline = new MRPipeline(PTableKeyValueIT.class);
-		inputFile = FileHelper.createTempCopyOf("set1.txt");
-	}
+  @Before
+  public void setUp() throws IOException {
+    pipeline = new MRPipeline(PTableKeyValueIT.class);
+    inputFile = FileHelper.createTempCopyOf("set1.txt");
+  }
 
-	@After
-	public void tearDown() {
-		pipeline.done();
-	}
+  @After
+  public void tearDown() {
+    pipeline.done();
+  }
 
-	public PTableKeyValueIT(PTypeFamily typeFamily) {
-		this.typeFamily = typeFamily;
-	}
+  public PTableKeyValueIT(PTypeFamily typeFamily) {
+    this.typeFamily = typeFamily;
+  }
 
-	@Parameters
-	public static Collection<Object[]> data() {
-		Object[][] data = new Object[][] {
-				{ WritableTypeFamily.getInstance() },
-				{ AvroTypeFamily.getInstance() } };
-		return Arrays.asList(data);
-	}
+  @Parameters
+  public static Collection<Object[]> data() {
+    Object[][] data = new Object[][] { { WritableTypeFamily.getInstance() }, { AvroTypeFamily.getInstance() } };
+    return Arrays.asList(data);
+  }
 
-	@Test
-	public void testKeysAndValues() throws Exception {
+  @Test
+  public void testKeysAndValues() throws Exception {
 
-		PCollection<String> collection = pipeline.read(At.textFile(inputFile,
-				typeFamily.strings()));
+    PCollection<String> collection = pipeline.read(At.textFile(inputFile, typeFamily.strings()));
 
-		PTable<String, String> table = collection.parallelDo(
-				new DoFn<String, Pair<String, String>>() {
+    PTable<String, String> table = collection.parallelDo(new DoFn<String, Pair<String, String>>() {
 
-					@Override
-					public void process(String input,
-							Emitter<Pair<String, String>> emitter) {
-						emitter.emit(Pair.of(input.toUpperCase(), input));
+      @Override
+      public void process(String input, Emitter<Pair<String, String>> emitter) {
+        emitter.emit(Pair.of(input.toUpperCase(), input));
 
-					}
-				}, typeFamily.tableOf(typeFamily.strings(),
-						typeFamily.strings()));
+      }
+    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.strings()));
 
-		PCollection<String> keys = table.keys();
-		PCollection<String> values = table.values();
+    PCollection<String> keys = table.keys();
+    PCollection<String> values = table.values();
 
-		ArrayList<String> keyList = Lists.newArrayList(keys.materialize()
-				.iterator());
-		ArrayList<String> valueList = Lists.newArrayList(values.materialize()
-				.iterator());
+    ArrayList<String> keyList = Lists.newArrayList(keys.materialize().iterator());
+    ArrayList<String> valueList = Lists.newArrayList(values.materialize().iterator());
 
-		Assert.assertEquals(keyList.size(), valueList.size());
-		for (int i = 0; i < keyList.size(); i++) {
-			Assert.assertEquals(keyList.get(i), valueList.get(i).toUpperCase());
-		}
-	}
+    Assert.assertEquals(keyList.size(), valueList.size());
+    for (int i = 0; i < keyList.size(); i++) {
+      Assert.assertEquals(keyList.get(i), valueList.get(i).toUpperCase());
+    }
+  }
 
 }

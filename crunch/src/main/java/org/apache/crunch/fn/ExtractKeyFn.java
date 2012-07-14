@@ -21,22 +21,22 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 
 /**
- * Wrapper function for converting a {@code MapFn} into a key-value pair that
- * is used to convert from a {@code PCollection<V>} to a {@code PTable<K, V>}.
+ * Wrapper function for converting a {@code MapFn} into a key-value pair that is
+ * used to convert from a {@code PCollection<V>} to a {@code PTable<K, V>}.
  */
 public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
-  
+
   private final MapFn<V, K> mapFn;
-  
+
   public ExtractKeyFn(MapFn<V, K> mapFn) {
     this.mapFn = mapFn;
   }
-  
+
   @Override
   public void initialize() {
     this.mapFn.setContext(getContext());
   }
-  
+
   @Override
   public Pair<K, V> map(V input) {
     return Pair.of(mapFn.map(input), input);

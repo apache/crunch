@@ -19,9 +19,8 @@ package org.apache.crunch.io;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-
 import org.apache.crunch.Source;
+import org.apache.hadoop.conf.Configuration;
 
 public interface ReadableSource<T> extends Source<T> {
   Iterable<T> read(Configuration conf) throws IOException;

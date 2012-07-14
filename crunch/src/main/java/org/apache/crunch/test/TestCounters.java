@@ -26,16 +26,16 @@ import org.apache.hadoop.mapreduce.Counters;
 public class TestCounters {
 
   private static Counters COUNTERS = new Counters();
-  
+
   public static Counter getCounter(Enum<?> e) {
     return COUNTERS.findCounter(e);
   }
-  
+
   public static Counter getCounter(String group, String name) {
     return COUNTERS.findCounter(group, name);
   }
-  
+
   public static void clearCounters() {
-	  COUNTERS = new Counters();
-  }   
+    COUNTERS = new Counters();
+  }
 }

@@ -59,11 +59,10 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
     // and the next character was not Line Feed ('\n')
     private boolean CRFollowedByNonLF = false;
 
-    // in the case where a Carriage Return ('\r') was not followed by a 
+    // in the case where a Carriage Return ('\r') was not followed by a
     // Line Feed ('\n'), this variable will hold that non Line Feed character
     // that was read from the underlying stream.
     private byte nonLFChar;
-
 
     /**
      * Provide a bridge to get the bytes from the ByteArrayOutputStream without
@@ -110,15 +109,14 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
     }
 
     /*
-     * LineRecordReader.readLine() is depricated in HAdoop 0.17. So it is added here
-     * locally.
+     * LineRecordReader.readLine() is depricated in HAdoop 0.17. So it is added
+     * here locally.
      */
-    private long readLine(InputStream in, 
-        OutputStream out) throws IOException {
+    private long readLine(InputStream in, OutputStream out) throws IOException {
       long bytes = 0;
       while (true) {
         int b = -1;
-        if(CRFollowedByNonLF) {
+        if (CRFollowedByNonLF) {
           // In the previous call, a Carriage Return ('\r') was followed
           // by a non Line Feed ('\n') character - in that call we would
           // have not returned the non Line Feed character but would have
@@ -134,13 +132,13 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
         }
         bytes += 1;
 
-        byte c = (byte)b;
+        byte c = (byte) b;
         if (c == '\n') {
           break;
         }
 
         if (c == '\r') {
-          byte nextC = (byte)in.read();
+          byte nextC = (byte) in.read();
           if (nextC != '\n') {
             CRFollowedByNonLF = true;
             nonLFChar = nextC;
@@ -158,14 +156,13 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
     }
 
     /** Read a line. */
-    public  boolean next(LongWritable key, Text value)
-        throws IOException {
+    public boolean next(LongWritable key, Text value) throws IOException {
       if (pos > end)
         return false;
 
       key.set(pos); // key is position
       buffer.reset();
-      // long bytesRead = LineRecordReader.readLine(in, buffer); 
+      // long bytesRead = LineRecordReader.readLine(in, buffer);
       long bytesRead = readLine(in, buffer);
       if (bytesRead == 0) {
         return false;
@@ -173,7 +170,7 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
       pos = in.getPos();
       // if we have read ahead because we encountered a carriage return
       // char followed by a non line feed char, decrement the pos
-      if(CRFollowedByNonLF) {
+      if (CRFollowedByNonLF) {
         pos--;
       }
 
@@ -195,13 +192,12 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
     }
 
     @Override
-    public  void close() throws IOException {
+    public void close() throws IOException {
       in.close();
     }
 
     @Override
-    public LongWritable getCurrentKey() throws IOException,
-    InterruptedException {
+    public LongWritable getCurrentKey() throws IOException, InterruptedException {
       return key;
     }
 
@@ -211,9 +207,8 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
     }
 
     @Override
-    public void initialize(InputSplit split, TaskAttemptContext context)
-        throws IOException, InterruptedException {
-      // no op        
+    public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+      // no op
     }
 
     @Override
@@ -224,16 +219,14 @@ public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
   }
 
   @Override
-  protected boolean isSplitable(JobContext context, Path file)  {
-    return true;  
+  protected boolean isSplitable(JobContext context, Path file) {
+    return true;
   }
 
   @Override
-  public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
-      TaskAttemptContext context) {
+  public RecordReader<LongWritable, Text> createRecordReader(InputSplit split, TaskAttemptContext context) {
     try {
-      return new BZip2LineRecordReader(context.getConfiguration(), 
-          (FileSplit) split);
+      return new BZip2LineRecordReader(context.getConfiguration(), (FileSplit) split);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

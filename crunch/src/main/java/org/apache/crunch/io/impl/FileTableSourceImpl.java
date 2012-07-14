@@ -17,23 +17,20 @@
  */
 package org.apache.crunch.io.impl;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
 import org.apache.crunch.Pair;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.types.PTableType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-public class FileTableSourceImpl<K, V> extends FileSourceImpl<Pair<K, V>>
-	implements TableSource<K, V> {
+public class FileTableSourceImpl<K, V> extends FileSourceImpl<Pair<K, V>> implements TableSource<K, V> {
 
-  public FileTableSourceImpl(Path path, PTableType<K, V> tableType,
-	  Class<? extends FileInputFormat> formatClass) {
-	super(path, tableType, formatClass);
+  public FileTableSourceImpl(Path path, PTableType<K, V> tableType, Class<? extends FileInputFormat> formatClass) {
+    super(path, tableType, formatClass);
   }
-  
+
   @Override
   public PTableType<K, V> getTableType() {
-	return (PTableType<K, V>) getType();
+    return (PTableType<K, V>) getType();
   }
 }

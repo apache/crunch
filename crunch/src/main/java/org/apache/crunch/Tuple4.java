@@ -32,7 +32,7 @@ public class Tuple4<V1, V2, V3, V4> implements Tuple {
   public static <A, B, C, D> Tuple4<A, B, C, D> of(A a, B b, C c, D d) {
     return new Tuple4<A, B, C, D>(a, b, c, d);
   }
-  
+
   public Tuple4(V1 first, V2 second, V3 third, V4 fourth) {
     this.first = first;
     this.second = second;
@@ -74,12 +74,11 @@ public class Tuple4<V1, V2, V3, V4> implements Tuple {
   public int size() {
     return 4;
   }
-  
+
   @Override
   public int hashCode() {
     HashCodeBuilder hcb = new HashCodeBuilder();
-    return hcb.append(first).append(second).append(third)
-    	.append(fourth).toHashCode();
+    return hcb.append(first).append(second).append(third).append(fourth).toHashCode();
   }
 
   @Override
@@ -91,16 +90,16 @@ public class Tuple4<V1, V2, V3, V4> implements Tuple {
     if (getClass() != obj.getClass())
       return false;
     Tuple4<?, ?, ?, ?> other = (Tuple4<?, ?, ?, ?>) obj;
-    return (first == other.first || (first != null && first.equals(other.first))) &&
-    	(second == other.second || (second != null && second.equals(other.second))) &&
-    	(third == other.third || (third != null && third.equals(other.third))) &&
-    	(fourth == other.fourth || (fourth != null && fourth.equals(other.fourth)));
+    return (first == other.first || (first != null && first.equals(other.first)))
+        && (second == other.second || (second != null && second.equals(other.second)))
+        && (third == other.third || (third != null && third.equals(other.third)))
+        && (fourth == other.fourth || (fourth != null && fourth.equals(other.fourth)));
   }
 
   @Override
   public String toString() {
-	StringBuilder sb = new StringBuilder("Tuple4[");
-	sb.append(first).append(",").append(second).append(",").append(third);
-	return sb.append(",").append(fourth).append("]").toString();
+    StringBuilder sb = new StringBuilder("Tuple4[");
+    sb.append(first).append(",").append(second).append(",").append(third);
+    return sb.append(",").append(fourth).append("]").toString();
   }
 }

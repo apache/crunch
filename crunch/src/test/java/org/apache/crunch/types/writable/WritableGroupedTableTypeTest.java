@@ -23,11 +23,11 @@ import static org.junit.Assert.assertSame;
 
 import java.util.List;
 
+import org.apache.crunch.Pair;
+import org.apache.crunch.types.PGroupedTableType;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
-import org.apache.crunch.Pair;
-import org.apache.crunch.types.PGroupedTableType;
 import com.google.common.collect.Lists;
 
 public class WritableGroupedTableTypeTest {
@@ -39,16 +39,16 @@ public class WritableGroupedTableTypeTest {
     Iterable<Text> inputTextIterable = Lists.newArrayList(textValue);
     Pair<Integer, Iterable<Text>> pair = Pair.of(integerValue, inputTextIterable);
 
-    PGroupedTableType<Integer, Text> groupedTableType = Writables.tableOf(Writables.ints(), Writables.writables(Text.class))
-        .getGroupedTableType();
-    
+    PGroupedTableType<Integer, Text> groupedTableType = Writables.tableOf(Writables.ints(),
+        Writables.writables(Text.class)).getGroupedTableType();
+
     Pair<Integer, Iterable<Text>> detachedPair = groupedTableType.getDetachedValue(pair);
-    
+
     assertSame(integerValue, detachedPair.first());
     List<Text> textList = Lists.newArrayList(detachedPair.second());
     assertEquals(inputTextIterable, textList);
     assertNotSame(textValue, textList.get(0));
-    
+
   }
 
 }

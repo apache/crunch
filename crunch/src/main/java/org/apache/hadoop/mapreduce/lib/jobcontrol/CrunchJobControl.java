@@ -41,15 +41,19 @@ import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
  * state changes of their depending jobs states. The class provides APIs for
  * suspending/resuming the thread, and for stopping the thread.
  * 
- * TODO This is mostly a copy of the JobControl class in Hadoop MapReduce core. 
- * Once the location and interface of the class are more stable in CDH, this class 
- * should be removed completely and be based on the hadoop-core class.
+ * TODO This is mostly a copy of the JobControl class in Hadoop MapReduce core.
+ * Once the location and interface of the class are more stable in CDH, this
+ * class should be removed completely and be based on the hadoop-core class.
  */
 public class CrunchJobControl implements Runnable {
 
   // The thread can be in one of the following state
   public static enum ThreadState {
-    RUNNING, SUSPENDED, STOPPED, STOPPING, READY
+    RUNNING,
+    SUSPENDED,
+    STOPPED,
+    STOPPING,
+    READY
   };
 
   private ThreadState runnerState; // the thread state
@@ -127,8 +131,7 @@ public class CrunchJobControl implements Runnable {
     return this.groupName + this.nextJobID;
   }
 
-  private static void addToQueue(CrunchControlledJob aJob,
-      Map<String, CrunchControlledJob> queue) {
+  private static void addToQueue(CrunchControlledJob aJob, Map<String, CrunchControlledJob> queue) {
     synchronized (queue) {
       queue.put(aJob.getJobID(), aJob);
     }
@@ -213,8 +216,7 @@ public class CrunchJobControl implements Runnable {
     }
   }
 
-  synchronized private void checkRunningJobs() throws IOException,
-      InterruptedException {
+  synchronized private void checkRunningJobs() throws IOException, InterruptedException {
 
     Map<String, CrunchControlledJob> oldJobs = null;
     oldJobs = this.runningJobs;
@@ -226,8 +228,7 @@ public class CrunchJobControl implements Runnable {
     }
   }
 
-  synchronized private void checkWaitingJobs() throws IOException,
-      InterruptedException {
+  synchronized private void checkWaitingJobs() throws IOException, InterruptedException {
     Map<String, CrunchControlledJob> oldJobs = null;
     oldJobs = this.waitingJobs;
     this.waitingJobs = new Hashtable<String, CrunchControlledJob>();
@@ -251,8 +252,7 @@ public class CrunchJobControl implements Runnable {
   }
 
   synchronized public boolean allFinished() {
-    return this.waitingJobs.size() == 0 && this.readyJobs.size() == 0
-        && this.runningJobs.size() == 0;
+    return this.waitingJobs.size() == 0 && this.readyJobs.size() == 0 && this.runningJobs.size() == 0;
   }
 
   /**
@@ -277,8 +277,7 @@ public class CrunchJobControl implements Runnable {
       } catch (Exception e) {
         this.runnerState = ThreadState.STOPPED;
       }
-      if (this.runnerState != ThreadState.RUNNING
-          && this.runnerState != ThreadState.SUSPENDED) {
+      if (this.runnerState != ThreadState.RUNNING && this.runnerState != ThreadState.SUSPENDED) {
         break;
       }
       try {
@@ -286,8 +285,7 @@ public class CrunchJobControl implements Runnable {
       } catch (Exception e) {
 
       }
-      if (this.runnerState != ThreadState.RUNNING
-          && this.runnerState != ThreadState.SUSPENDED) {
+      if (this.runnerState != ThreadState.RUNNING && this.runnerState != ThreadState.SUSPENDED) {
         break;
       }
     }

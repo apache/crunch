@@ -20,12 +20,12 @@ package org.apache.crunch.impl.mr.run;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.crunch.io.impl.InputBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 
-import org.apache.crunch.io.impl.InputBundle;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -37,18 +37,15 @@ public class CrunchInputs {
   private static final char FIELD_SEP = ';';
   private static final Joiner JOINER = Joiner.on(FIELD_SEP);
   private static final Splitter SPLITTER = Splitter.on(FIELD_SEP);
-  
-  public static void addInputPath(Job job, Path path,
-      InputBundle inputBundle, int nodeIndex) {
+
+  public static void addInputPath(Job job, Path path, InputBundle inputBundle, int nodeIndex) {
     Configuration conf = job.getConfiguration();
     String inputs = JOINER.join(inputBundle.serialize(), String.valueOf(nodeIndex), path.toString());
     String existing = conf.get(RuntimeParameters.MULTI_INPUTS);
-    conf.set(RuntimeParameters.MULTI_INPUTS, existing == null ? inputs : existing + RECORD_SEP
-        + inputs);
+    conf.set(RuntimeParameters.MULTI_INPUTS, existing == null ? inputs : existing + RECORD_SEP + inputs);
   }
 
-  public static Map<InputBundle, Map<Integer, List<Path>>> getFormatNodeMap(
-      JobContext job) {
+  public static Map<InputBundle, Map<Integer, List<Path>>> getFormatNodeMap(JobContext job) {
     Map<InputBundle, Map<Integer, List<Path>>> formatNodeMap = Maps.newHashMap();
     Configuration conf = job.getConfiguration();
     for (String input : Splitter.on(RECORD_SEP).split(conf.get(RuntimeParameters.MULTI_INPUTS))) {
@@ -59,11 +56,9 @@ public class CrunchInputs {
       }
       Integer nodeIndex = Integer.valueOf(fields.get(1));
       if (!formatNodeMap.get(inputBundle).containsKey(nodeIndex)) {
-        formatNodeMap.get(inputBundle).put(nodeIndex,
-            Lists.<Path> newLinkedList());
+        formatNodeMap.get(inputBundle).put(nodeIndex, Lists.<Path> newLinkedList());
       }
-      formatNodeMap.get(inputBundle).get(nodeIndex)
-          .add(new Path(fields.get(2)));
+      formatNodeMap.get(inputBundle).get(nodeIndex).add(new Path(fields.get(2)));
     }
     return formatNodeMap;
   }

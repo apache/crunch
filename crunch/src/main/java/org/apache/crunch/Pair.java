@@ -58,7 +58,7 @@ public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>> {
   public int size() {
     return 2;
   }
-  
+
   @Override
   public int hashCode() {
     HashCodeBuilder hcb = new HashCodeBuilder();
@@ -74,15 +74,15 @@ public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>> {
     if (getClass() != obj.getClass())
       return false;
     Pair<?, ?> other = (Pair<?, ?>) obj;
-    return (first == other.first || (first != null && first.equals(other.first))) &&
-    	(second == other.second || (second != null && second.equals(other.second)));
+    return (first == other.first || (first != null && first.equals(other.first)))
+        && (second == other.second || (second != null && second.equals(other.second)));
   }
 
   @Override
   public String toString() {
-	StringBuilder sb = new StringBuilder("[");
-	sb.append(first).append(",").append(second).append("]");
-	return sb.toString();
+    StringBuilder sb = new StringBuilder("[");
+    sb.append(first).append(",").append(second).append("]");
+    return sb.toString();
   }
 
   private int cmp(Object lhs, Object rhs) {
@@ -93,8 +93,8 @@ public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>> {
     }
     return (lhs == null ? 0 : lhs.hashCode()) - (rhs == null ? 0 : rhs.hashCode());
   }
-  
-  @Override  
+
+  @Override
   public int compareTo(Pair<K, V> o) {
     int diff = cmp(first, o.first);
     if (diff == 0) {

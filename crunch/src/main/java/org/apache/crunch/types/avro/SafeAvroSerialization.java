@@ -43,56 +43,54 @@ import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.hadoop.util.ReflectionUtils;
 
 /** The {@link Serialization} used by jobs configured with {@link AvroJob}. */
-public class SafeAvroSerialization<T> extends Configured 
-  implements Serialization<AvroWrapper<T>> {
+public class SafeAvroSerialization<T> extends Configured implements Serialization<AvroWrapper<T>> {
 
   public boolean accept(Class<?> c) {
     return AvroWrapper.class.isAssignableFrom(c);
   }
-  
-  /** Returns the specified map output deserializer.  Defaults to the final
-   * output deserializer if no map output schema was specified. */
+
+  /**
+   * Returns the specified map output deserializer. Defaults to the final output
+   * deserializer if no map output schema was specified.
+   */
   public Deserializer<AvroWrapper<T>> getDeserializer(Class<AvroWrapper<T>> c) {
     boolean isKey = AvroKey.class.isAssignableFrom(c);
     Configuration conf = getConf();
-    Schema schema = isKey 
-        ? Pair.getKeySchema(AvroJob.getMapOutputSchema(conf))
-            : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf));
+    Schema schema = isKey ? Pair.getKeySchema(AvroJob.getMapOutputSchema(conf)) : Pair.getValueSchema(AvroJob
+        .getMapOutputSchema(conf));
 
     DatumReader<T> datumReader = null;
-    if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {        
-        ReflectDataFactory factory = (ReflectDataFactory) ReflectionUtils.newInstance(
-            conf.getClass("crunch.reflectdatafactory", ReflectDataFactory.class), conf);
-        datumReader = factory.getReader(schema);
+    if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {
+      ReflectDataFactory factory = (ReflectDataFactory) ReflectionUtils.newInstance(
+          conf.getClass("crunch.reflectdatafactory", ReflectDataFactory.class), conf);
+      datumReader = factory.getReader(schema);
     } else {
-        datumReader = new SpecificDatumReader<T>(schema);
+      datumReader = new SpecificDatumReader<T>(schema);
     }
     return new AvroWrapperDeserializer(datumReader, isKey);
   }
-  
+
   private static final DecoderFactory FACTORY = DecoderFactory.get();
 
-  private class AvroWrapperDeserializer
-    implements Deserializer<AvroWrapper<T>> {
+  private class AvroWrapperDeserializer implements Deserializer<AvroWrapper<T>> {
 
     private DatumReader<T> reader;
     private BinaryDecoder decoder;
     private boolean isKey;
-    
+
     public AvroWrapperDeserializer(DatumReader<T> reader, boolean isKey) {
       this.reader = reader;
       this.isKey = isKey;
     }
-    
+
     public void open(InputStream in) {
       this.decoder = FACTORY.directBinaryDecoder(in, decoder);
     }
-    
-    public AvroWrapper<T> deserialize(AvroWrapper<T> wrapper)
-      throws IOException {
+
+    public AvroWrapper<T> deserialize(AvroWrapper<T> wrapper) throws IOException {
       T datum = reader.read(wrapper == null ? null : wrapper.datum(), decoder);
       if (wrapper == null) {
-        wrapper = isKey? new AvroKey<T>(datum) : new AvroValue<T>(datum);
+        wrapper = isKey ? new AvroKey<T>(datum) : new AvroValue<T>(datum);
       } else {
         wrapper.datum(datum);
       }
@@ -103,16 +101,14 @@ public class SafeAvroSerialization<T> extends Configured
       decoder.inputStream().close();
     }
   }
-  
+
   /** Returns the specified output serializer. */
   public Serializer<AvroWrapper<T>> getSerializer(Class<AvroWrapper<T>> c) {
     // AvroWrapper used for final output, AvroKey or AvroValue for map output
     boolean isFinalOutput = c.equals(AvroWrapper.class);
     Configuration conf = getConf();
-    Schema schema = isFinalOutput ? AvroJob.getOutputSchema(conf)
-        : (AvroKey.class.isAssignableFrom(c)
-            ? Pair.getKeySchema(AvroJob.getMapOutputSchema(conf))
-                : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
+    Schema schema = isFinalOutput ? AvroJob.getOutputSchema(conf) : (AvroKey.class.isAssignableFrom(c) ? Pair
+        .getKeySchema(AvroJob.getMapOutputSchema(conf)) : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
 
     ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
     ReflectDatumWriter<T> writer = factory.getWriter();
@@ -124,15 +120,14 @@ public class SafeAvroSerialization<T> extends Configured
     private DatumWriter<T> writer;
     private OutputStream out;
     private BinaryEncoder encoder;
-    
+
     public AvroWrapperSerializer(DatumWriter<T> writer) {
       this.writer = writer;
     }
 
     public void open(OutputStream out) {
       this.out = out;
-      this.encoder = new EncoderFactory().configureBlockSize(512)
-          .binaryEncoder(out, null);
+      this.encoder = new EncoderFactory().configureBlockSize(512).binaryEncoder(out, null);
     }
 
     public void serialize(AvroWrapper<T> wrapper) throws IOException {

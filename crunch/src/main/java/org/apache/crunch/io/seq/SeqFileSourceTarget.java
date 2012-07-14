@@ -17,20 +17,19 @@
  */
 package org.apache.crunch.io.seq;
 
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
 
 public class SeqFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public SeqFileSourceTarget(String path, PType<T> ptype) {
     this(new Path(path), ptype);
   }
-  
+
   public SeqFileSourceTarget(Path path, PType<T> ptype) {
     super(new SeqFileSource<T>(path, ptype), new SeqFileTarget(path));
   }
-  
+
   @Override
   public String toString() {
     return target.toString();

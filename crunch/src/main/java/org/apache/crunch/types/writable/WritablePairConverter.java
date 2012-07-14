@@ -21,15 +21,15 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.types.Converter;
 
 public class WritablePairConverter<K, V> implements Converter<K, V, Pair<K, V>, Pair<K, Iterable<V>>> {
-  
+
   private final Class<K> keyClass;
   private final Class<V> valueClass;
-  
+
   public WritablePairConverter(Class<K> keyClass, Class<V> valueClass) {
     this.keyClass = keyClass;
     this.valueClass = valueClass;
   }
-  
+
   @Override
   public Pair<K, V> convertInput(K key, V value) {
     return Pair.of(key, value);

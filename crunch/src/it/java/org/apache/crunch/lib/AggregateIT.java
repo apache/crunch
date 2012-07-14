@@ -26,9 +26,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.hadoop.io.Text;
-import org.junit.Test;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -36,7 +33,6 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.Employee;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.PTableType;
@@ -45,13 +41,17 @@ import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.io.Text;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 public class AggregateIT {
 
-  @Test public void testWritables() throws Exception {
+  @Test
+  public void testWritables() throws Exception {
     Pipeline pipeline = new MRPipeline(AggregateIT.class);
     String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
@@ -59,7 +59,8 @@ public class AggregateIT {
     pipeline.done();
   }
 
-  @Test public void testAvro() throws Exception {
+  @Test
+  public void testAvro() throws Exception {
     Pipeline pipeline = new MRPipeline(AggregateIT.class);
     String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
@@ -67,12 +68,12 @@ public class AggregateIT {
     pipeline.done();
   }
 
-  @Test public void testInMemoryAvro() throws Exception {
-    PCollection<String> someText = MemPipeline.collectionOf(
-        "first line", "second line", "third line");
+  @Test
+  public void testInMemoryAvro() throws Exception {
+    PCollection<String> someText = MemPipeline.collectionOf("first line", "second line", "third line");
     runMinMax(someText, AvroTypeFamily.getInstance());
   }
-  
+
   public static void runMinMax(PCollection<String> shakes, PTypeFamily family) throws Exception {
     PCollection<Integer> lengths = shakes.parallelDo(new MapFn<String, Integer>() {
       @Override
@@ -92,21 +93,21 @@ public class AggregateIT {
     assertTrue(minLengths != null);
     assertEquals(maxLengths.intValue(), -minLengths.intValue());
   }
-  
+
   private static class SplitFn extends MapFn<String, Pair<String, String>> {
     @Override
     public Pair<String, String> map(String input) {
       String[] p = input.split("\\s+");
       return Pair.of(p[0], p[1]);
-    }  
+    }
   }
-  
-  @Test public void testCollectUrls() throws Exception {
+
+  @Test
+  public void testCollectUrls() throws Exception {
     Pipeline p = new MRPipeline(AggregateIT.class);
     String urlsInputPath = FileHelper.createTempCopyOf("urls.txt");
-    PTable<String, Collection<String>> urls = Aggregate.collectValues(
-        p.readTextFile(urlsInputPath)
-        .parallelDo(new SplitFn(), tableOf(strings(), strings())));
+    PTable<String, Collection<String>> urls = Aggregate.collectValues(p.readTextFile(urlsInputPath).parallelDo(
+        new SplitFn(), tableOf(strings(), strings())));
     for (Pair<String, Collection<String>> e : urls.materialize()) {
       String key = e.first();
       int expectedSize = 0;
@@ -121,14 +122,15 @@ public class AggregateIT {
       p.done();
     }
   }
-  
-  @Test public void testTopN() throws Exception {
+
+  @Test
+  public void testTopN() throws Exception {
     PTableType<String, Integer> ptype = Avros.tableOf(Avros.strings(), Avros.ints());
     PTable<String, Integer> counts = MemPipeline.typedTableOf(ptype, "foo", 12, "bar", 17, "baz", 29);
-    
+
     PTable<String, Integer> top2 = Aggregate.top(counts, 2, true);
     assertEquals(ImmutableList.of(Pair.of("baz", 29), Pair.of("bar", 17)), top2.materialize());
-    
+
     PTable<String, Integer> bottom2 = Aggregate.top(counts, 2, false);
     assertEquals(ImmutableList.of(Pair.of("foo", 12), Pair.of("bar", 17)), bottom2.materialize());
   }
@@ -136,16 +138,13 @@ public class AggregateIT {
   @Test
   public void testCollectValues_Writables() throws IOException {
     Pipeline pipeline = new MRPipeline(AggregateIT.class);
-    Map<Integer, Collection<Text>> collectionMap = pipeline
-        .readTextFile(FileHelper.createTempCopyOf("set2.txt"))
-        .parallelDo(new MapStringToTextPair(),
-            Writables.tableOf(Writables.ints(), Writables.writables(Text.class))
-        ).collectValues().materializeToMap();
+    Map<Integer, Collection<Text>> collectionMap = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+        .parallelDo(new MapStringToTextPair(), Writables.tableOf(Writables.ints(), Writables.writables(Text.class)))
+        .collectValues().materializeToMap();
 
     assertEquals(1, collectionMap.size());
 
-    assertEquals(Lists.newArrayList(new Text("c"), new Text("d"), new Text("a")),
-        collectionMap.get(1));
+    assertEquals(Lists.newArrayList(new Text("c"), new Text("d"), new Text("a")), collectionMap.get(1));
   }
 
   @Test
@@ -153,10 +152,8 @@ public class AggregateIT {
 
     MapStringToEmployeePair mapFn = new MapStringToEmployeePair();
     Pipeline pipeline = new MRPipeline(AggregateIT.class);
-    Map<Integer, Collection<Employee>> collectionMap = pipeline
-        .readTextFile(FileHelper.createTempCopyOf("set2.txt"))
-        .parallelDo(mapFn,
-            Avros.tableOf(Avros.ints(), Avros.records(Employee.class))).collectValues()
+    Map<Integer, Collection<Employee>> collectionMap = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+        .parallelDo(mapFn, Avros.tableOf(Avros.ints(), Avros.records(Employee.class))).collectValues()
         .materializeToMap();
 
     assertEquals(1, collectionMap.size());
@@ -165,8 +162,7 @@ public class AggregateIT {
     Employee empD = mapFn.map("d").second();
     Employee empA = mapFn.map("a").second();
 
-    assertEquals(Lists.newArrayList(empC, empD, empA),
-        collectionMap.get(1));
+    assertEquals(Lists.newArrayList(empC, empD, empA), collectionMap.get(1));
   }
 
   private static class MapStringToTextPair extends MapFn<String, Pair<Integer, Text>> {
@@ -210,7 +206,6 @@ public class AggregateIT {
     public String toString() {
       return String.format("PojoText<%s>", this.value);
     }
-
 
     @Override
     public boolean equals(Object obj) {

@@ -22,10 +22,10 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 
 /**
- * Options that can be passed to a {@code groupByKey} operation in order to exercise
- * finer control over how the partitioning, grouping, and sorting of keys is
- * performed.
- *
+ * Options that can be passed to a {@code groupByKey} operation in order to
+ * exercise finer control over how the partitioning, grouping, and sorting of
+ * keys is performed.
+ * 
  */
 public class GroupingOptions {
 
@@ -35,8 +35,8 @@ public class GroupingOptions {
   private final int numReducers;
 
   private GroupingOptions(Class<? extends Partitioner> partitionerClass,
-      Class<? extends RawComparator> groupingComparatorClass,
-      Class<? extends RawComparator> sortComparatorClass, int numReducers) {
+      Class<? extends RawComparator> groupingComparatorClass, Class<? extends RawComparator> sortComparatorClass,
+      int numReducers) {
     this.partitionerClass = partitionerClass;
     this.groupingComparatorClass = groupingComparatorClass;
     this.sortComparatorClass = sortComparatorClass;
@@ -46,11 +46,11 @@ public class GroupingOptions {
   public int getNumReducers() {
     return numReducers;
   }
-  
+
   public Class<? extends RawComparator> getSortComparatorClass() {
     return sortComparatorClass;
   }
-  
+
   public void configure(Job job) {
     if (partitionerClass != null) {
       job.setPartitionerClass(partitionerClass);
@@ -85,7 +85,7 @@ public class GroupingOptions {
 
   /**
    * Builder class for creating {@code GroupingOptions} instances.
-   *
+   * 
    */
   public static class Builder {
     private Class<? extends Partitioner> partitionerClass;
@@ -96,20 +96,17 @@ public class GroupingOptions {
     public Builder() {
     }
 
-    public Builder partitionerClass(
-        Class<? extends Partitioner> partitionerClass) {
+    public Builder partitionerClass(Class<? extends Partitioner> partitionerClass) {
       this.partitionerClass = partitionerClass;
       return this;
     }
 
-    public Builder groupingComparatorClass(
-        Class<? extends RawComparator> groupingComparatorClass) {
+    public Builder groupingComparatorClass(Class<? extends RawComparator> groupingComparatorClass) {
       this.groupingComparatorClass = groupingComparatorClass;
       return this;
     }
 
-    public Builder sortComparatorClass(
-        Class<? extends RawComparator> sortComparatorClass) {
+    public Builder sortComparatorClass(Class<? extends RawComparator> sortComparatorClass) {
       this.sortComparatorClass = sortComparatorClass;
       return this;
     }
@@ -123,8 +120,7 @@ public class GroupingOptions {
     }
 
     public GroupingOptions build() {
-      return new GroupingOptions(partitionerClass, groupingComparatorClass,
-          sortComparatorClass, numReducers);
+      return new GroupingOptions(partitionerClass, groupingComparatorClass, sortComparatorClass, numReducers);
     }
   }
 }

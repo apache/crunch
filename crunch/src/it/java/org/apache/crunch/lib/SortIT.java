@@ -39,7 +39,6 @@ import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.lib.Sort;
 import org.apache.crunch.lib.Sort.ColumnOrder;
 import org.apache.crunch.lib.Sort.Order;
 import org.apache.crunch.test.FileHelper;
@@ -70,32 +69,32 @@ public class SortIT implements Serializable {
 
   @Test
   public void testWritableSortAscDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), "A", "this doc has this text");
+    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
+        "this doc has this text");
   }
 
   @Test
   public void testWritableSortSecondDescFirstDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(2, DESCENDING),
-        by(1, ASCENDING), "A", "this doc has this text");
+    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
+        "this doc has this text");
   }
 
   @Test
   public void testWritableSortTripleAscDescAsc() throws Exception {
-    runTriple(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), by(3, ASCENDING), "A", "this", "doc");
+    runTriple(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+        by(3, ASCENDING), "A", "this", "doc");
   }
 
   @Test
   public void testWritableSortQuadAscDescAscDesc() throws Exception {
-    runQuad(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
+    runQuad(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+        by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
   }
 
   @Test
   public void testWritableSortTupleNAscDesc() throws Exception {
-    runTupleN(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), new ColumnOrder[] {
-        by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A", "this doc has this text" });
+    runTupleN(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(),
+        new ColumnOrder[] { by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A", "this doc has this text" });
   }
 
   @Test
@@ -105,53 +104,49 @@ public class SortIT implements Serializable {
 
   @Test
   public void testAvroSortAsc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.ASCENDING,
-        "A\tand this text as well");
+    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.ASCENDING, "A\tand this text as well");
   }
 
   @Test
   public void testAvroSortDesc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.DESCENDING,
-        "B\tthis doc has some text");
+    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.DESCENDING, "B\tthis doc has some text");
   }
 
   @Test
   public void testAvroSortPairAscAsc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), "A", "this doc has this text");
+    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
+        "this doc has this text");
   }
 
   @Test
   @Ignore("Avro sorting only works in field order at the moment")
   public void testAvroSortPairSecondAscFirstDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(2, DESCENDING),
-        by(1, ASCENDING), "A", "this doc has this text");
+    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
+        "this doc has this text");
   }
 
   @Test
   public void testAvroSortTripleAscDescAsc() throws Exception {
-    runTriple(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), by(3, ASCENDING), "A", "this", "doc");
+    runTriple(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+        by(3, ASCENDING), "A", "this", "doc");
   }
 
   @Test
   public void testAvroSortQuadAscDescAscDesc() throws Exception {
-    runQuad(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING),
-        by(2, DESCENDING), by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
+    runQuad(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+        by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
   }
 
   @Test
   public void testAvroSortTupleNAscDesc() throws Exception {
     runTupleN(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(),
-        new ColumnOrder[] { by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A",
-            "this doc has this text" });
+        new ColumnOrder[] { by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A", "this doc has this text" });
   }
 
   @Test
   public void testAvroReflectSortPair() throws IOException {
     Pipeline pipeline = new MRPipeline(SortIT.class);
-    PCollection<Pair<String, StringWrapper>> sorted = pipeline
-        .readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+    PCollection<Pair<String, StringWrapper>> sorted = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
         .parallelDo(new MapFn<String, Pair<String, StringWrapper>>() {
 
           @Override
@@ -171,8 +166,7 @@ public class SortIT implements Serializable {
   @Test
   public void testAvroReflectSortTable() throws IOException {
     Pipeline pipeline = new MRPipeline(SortIT.class);
-    PTable<String, StringWrapper> unsorted = pipeline.readTextFile(
-        FileHelper.createTempCopyOf("set2.txt")).parallelDo(
+    PTable<String, StringWrapper> unsorted = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt")).parallelDo(
         new MapFn<String, Pair<String, StringWrapper>>() {
 
           @Override
@@ -196,8 +190,7 @@ public class SortIT implements Serializable {
     runTable(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), "A");
   }
 
-  private void runSingle(Pipeline pipeline, PTypeFamily typeFamily, Order order, String firstLine)
-      throws IOException {
+  private void runSingle(Pipeline pipeline, PTypeFamily typeFamily, Order order, String firstLine) throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
@@ -215,19 +208,18 @@ public class SortIT implements Serializable {
     pipeline.done(); // TODO: finally
   }
 
-  private void runPair(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first,
-      ColumnOrder second, String firstField, String secondField) throws IOException {
+  private void runPair(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
+      String firstField, String secondField) throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
-    PCollection<Pair<String, String>> kv = input.parallelDo(
-        new DoFn<String, Pair<String, String>>() {
-          @Override
-          public void process(String input, Emitter<Pair<String, String>> emitter) {
-            String[] split = input.split("[\t]+");
-            emitter.emit(Pair.of(split[0], split[1]));
-          }
-        }, typeFamily.pairs(typeFamily.strings(), typeFamily.strings()));
+    PCollection<Pair<String, String>> kv = input.parallelDo(new DoFn<String, Pair<String, String>>() {
+      @Override
+      public void process(String input, Emitter<Pair<String, String>> emitter) {
+        String[] split = input.split("[\t]+");
+        emitter.emit(Pair.of(split[0], split[1]));
+      }
+    }, typeFamily.pairs(typeFamily.strings(), typeFamily.strings()));
     PCollection<Pair<String, String>> sorted = Sort.sortPairs(kv, first, second);
     Iterable<Pair<String, String>> lines = sorted.materialize();
     Pair<String, String> l = lines.iterator().next();
@@ -236,9 +228,8 @@ public class SortIT implements Serializable {
     pipeline.done();
   }
 
-  private void runTriple(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first,
-      ColumnOrder second, ColumnOrder third, String firstField, String secondField,
-      String thirdField) throws IOException {
+  private void runTriple(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
+      ColumnOrder third, String firstField, String secondField, String thirdField) throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
@@ -260,9 +251,9 @@ public class SortIT implements Serializable {
     pipeline.done();
   }
 
-  private void runQuad(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first,
-      ColumnOrder second, ColumnOrder third, ColumnOrder fourth, String firstField,
-      String secondField, String thirdField, String fourthField) throws IOException {
+  private void runQuad(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
+      ColumnOrder third, ColumnOrder fourth, String firstField, String secondField, String thirdField,
+      String fourthField) throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
@@ -274,10 +265,8 @@ public class SortIT implements Serializable {
             int len = split.length;
             emitter.emit(Tuple4.of(split[0], split[1 % len], split[2 % len], split[3 % len]));
           }
-        }, typeFamily.quads(typeFamily.strings(), typeFamily.strings(), typeFamily.strings(),
-            typeFamily.strings()));
-    PCollection<Tuple4<String, String, String, String>> sorted = Sort.sortQuads(kv, first, second,
-        third, fourth);
+        }, typeFamily.quads(typeFamily.strings(), typeFamily.strings(), typeFamily.strings(), typeFamily.strings()));
+    PCollection<Tuple4<String, String, String, String>> sorted = Sort.sortQuads(kv, first, second, third, fourth);
     Iterable<Tuple4<String, String, String, String>> lines = sorted.materialize();
     Tuple4<String, String, String, String> l = lines.iterator().next();
     assertEquals(firstField, l.first());
@@ -287,8 +276,8 @@ public class SortIT implements Serializable {
     pipeline.done();
   }
 
-  private void runTupleN(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder[] orders,
-      String[] fields) throws IOException {
+  private void runTupleN(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder[] orders, String[] fields)
+      throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
@@ -311,8 +300,7 @@ public class SortIT implements Serializable {
     pipeline.done();
   }
 
-  private void runTable(Pipeline pipeline, PTypeFamily typeFamily, String firstKey)
-      throws IOException {
+  private void runTable(Pipeline pipeline, PTypeFamily typeFamily, String firstKey) throws IOException {
     String inputPath = FileHelper.createTempCopyOf("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);

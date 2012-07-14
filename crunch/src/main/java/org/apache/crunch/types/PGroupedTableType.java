@@ -20,20 +20,19 @@ package org.apache.crunch.types;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
 
 /**
- * The {@code PType} instance for {@link PGroupedTable} instances. Its settings are
- * derived from the {@code PTableType} that was grouped to create the
+ * The {@code PType} instance for {@link PGroupedTable} instances. Its settings
+ * are derived from the {@code PTableType} that was grouped to create the
  * {@code PGroupedTable} instance.
- *
+ * 
  */
 public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<V>>> {
 
@@ -65,8 +64,7 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
     }
   }
 
-  public static class PairIterableMapFn<K, V> extends
-      MapFn<Pair<Object, Iterable<Object>>, Pair<K, Iterable<V>>> {    
+  public static class PairIterableMapFn<K, V> extends MapFn<Pair<Object, Iterable<Object>>, Pair<K, Iterable<V>>> {
     private final MapFn<Object, K> keys;
     private final MapFn<Object, V> values;
 
@@ -83,13 +81,12 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
 
     @Override
     public Pair<K, Iterable<V>> map(Pair<Object, Iterable<Object>> input) {
-      return Pair.<K, Iterable<V>>of(keys.map(input.first()),
-          new PTypeIterable(values, input.second()));
+      return Pair.<K, Iterable<V>> of(keys.map(input.first()), new PTypeIterable(values, input.second()));
     }
   }
 
   protected final PTableType<K, V> tableType;
-  
+
   public PGroupedTableType(PTableType<K, V> tableType) {
     this.tableType = tableType;
   }
@@ -97,7 +94,7 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
   public PTableType<K, V> getTableType() {
     return tableType;
   }
-  
+
   @Override
   public PTypeFamily getFamily() {
     return tableType.getFamily();
@@ -107,16 +104,16 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
   public List<PType> getSubTypes() {
     return tableType.getSubTypes();
   }
-  
+
   @Override
   public Converter getConverter() {
     return tableType.getConverter();
   }
-  
+
   public abstract Converter getGroupingConverter();
-  
+
   public abstract void configureShuffle(Job job, GroupingOptions options);
-  
+
   @Override
   public SourceTarget<Pair<K, Iterable<V>>> getDefaultFileSource(Path path) {
     throw new UnsupportedOperationException("Grouped tables cannot be written out directly");

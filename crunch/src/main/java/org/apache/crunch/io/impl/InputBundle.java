@@ -35,14 +35,14 @@ import com.google.common.collect.Maps;
 /**
  * A combination of an InputFormat and any configuration information that
  * InputFormat needs to run properly. InputBundles allow us to let different
- * InputFormats pretend as if they are the only InputFormat that exists in
- * a particular MapReduce job.
+ * InputFormats pretend as if they are the only InputFormat that exists in a
+ * particular MapReduce job.
  */
 public class InputBundle implements Serializable {
 
   private Class<? extends InputFormat> inputFormatClass;
   private Map<String, String> extraConf;
-  
+
   public static InputBundle fromSerialized(String serialized) {
     ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(serialized));
     try {
@@ -56,32 +56,32 @@ public class InputBundle implements Serializable {
       throw new RuntimeException(e);
     }
   }
-  
+
   public InputBundle(Class<? extends InputFormat> inputFormatClass) {
     this.inputFormatClass = inputFormatClass;
     this.extraConf = Maps.newHashMap();
   }
-  
+
   public InputBundle set(String key, String value) {
     this.extraConf.put(key, value);
     return this;
   }
-  
+
   public Class<? extends InputFormat> getInputFormatClass() {
     return inputFormatClass;
   }
-  
+
   public Map<String, String> getExtraConfiguration() {
     return extraConf;
   }
-  
+
   public Configuration configure(Configuration conf) {
     for (Map.Entry<String, String> e : extraConf.entrySet()) {
       conf.set(e.getKey(), e.getValue());
     }
     return conf;
   }
-  
+
   public String serialize() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
@@ -93,16 +93,16 @@ public class InputBundle implements Serializable {
       throw new RuntimeException(e);
     }
   }
-  
+
   public String getName() {
     return inputFormatClass.getSimpleName();
   }
-  
+
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(inputFormatClass).append(extraConf).toHashCode();
   }
-  
+
   @Override
   public boolean equals(Object other) {
     if (other == null || !(other instanceof InputBundle)) {

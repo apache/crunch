@@ -22,6 +22,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.impl.mr.plan.MSCROutputHandler;
+import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
@@ -29,33 +31,30 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.hadoop.util.StringUtils;
 
-import org.apache.crunch.impl.mr.plan.MSCROutputHandler;
-import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import com.google.common.collect.Lists;
 
 public class CrunchJob extends CrunchControlledJob {
 
   private final Log log = LogFactory.getLog(CrunchJob.class);
-  
+
   private final Path workingPath;
   private final List<Path> multiPaths;
   private final boolean mapOnlyJob;
-  
+
   public CrunchJob(Job job, Path workingPath, MSCROutputHandler handler) throws IOException {
-    super(job, Lists.<CrunchControlledJob>newArrayList());
+    super(job, Lists.<CrunchControlledJob> newArrayList());
     this.workingPath = workingPath;
     this.multiPaths = handler.getMultiPaths();
     this.mapOnlyJob = handler.isMapOnlyJob();
-  }  
-  
+  }
+
   private synchronized void handleMultiPaths() throws IOException {
     if (!multiPaths.isEmpty()) {
       // Need to handle moving the data from the output directory of the
       // job to the output locations specified in the paths.
       FileSystem fs = FileSystem.get(job.getConfiguration());
       for (int i = 0; i < multiPaths.size(); i++) {
-        Path src = new Path(workingPath,
-            PlanningParameters.MULTI_OUTPUT_PREFIX + i + "-*");
+        Path src = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + i + "-*");
         Path[] srcs = FileUtil.stat2Paths(fs.globStatus(src), src);
         Path dst = multiPaths.get(i);
         if (!fs.exists(dst)) {
@@ -68,7 +67,7 @@ public class CrunchJob extends CrunchControlledJob {
       }
     }
   }
-  
+
   private Path getDestFile(Path src, Path dir, int index) {
     String form = "part-%s-%05d";
     if (src.getName().endsWith(org.apache.avro.mapred.AvroOutputFormat.EXT)) {
@@ -76,12 +75,12 @@ public class CrunchJob extends CrunchControlledJob {
     }
     return new Path(dir, String.format(form, mapOnlyJob ? "m" : "r", index));
   }
-  
+
   private int getMinPartIndex(Path path, FileSystem fs) throws IOException {
     // Quick and dirty way to ensure unique naming in the directory
     return fs.listStatus(path).length;
   }
-  
+
   @Override
   protected void checkRunningState() throws IOException, InterruptedException {
     try {

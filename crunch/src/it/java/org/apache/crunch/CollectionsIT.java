@@ -22,57 +22,56 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.junit.Test;
-
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 @SuppressWarnings("serial")
 public class CollectionsIT {
-  
+
   public static class AggregateStringListFn implements CombineFn.Aggregator<Collection<String>> {
     private final Collection<String> rtn = Lists.newArrayList();
-    
+
     @Override
     public void reset() {
       rtn.clear();
     }
-    
+
     @Override
     public void update(Collection<String> values) {
       rtn.addAll(values);
-    }      
-    
+    }
+
     @Override
     public Iterable<Collection<String>> results() {
       return ImmutableList.of(rtn);
     }
   }
-  
+
   public static PTable<String, Collection<String>> listOfCharcters(PCollection<String> lines, PTypeFamily typeFamily) {
-     
+
     return lines.parallelDo(new DoFn<String, Pair<String, Collection<String>>>() {
       @Override
       public void process(String line, Emitter<Pair<String, Collection<String>>> emitter) {
         for (String word : line.split("\\s+")) {
           Collection<String> characters = Lists.newArrayList();
-          for(char c : word.toCharArray()) {
+          for (char c : word.toCharArray()) {
             characters.add(String.valueOf(c));
           }
           emitter.emit(Pair.of(word, characters));
         }
       }
-    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings())))
-    .groupByKey()
-    .combineValues(CombineFn.<String, Collection<String>>aggregator(new AggregateStringListFn()));
+    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings()))).groupByKey()
+        .combineValues(CombineFn.<String, Collection<String>> aggregator(new AggregateStringListFn()));
   }
-  
+
   @Test
   public void testWritables() throws IOException {
     run(new MRPipeline(CollectionsIT.class), WritableTypeFamily.getInstance());
@@ -92,21 +91,21 @@ public class CollectionsIT {
   public void testInMemoryAvro() throws IOException {
     run(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
   }
-  
+
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-	String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
-    
+    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Iterable<Pair<String, Collection<String>>> lines = listOfCharcters(shakespeare, typeFamily).materialize();
-    
+
     boolean passed = false;
     for (Pair<String, Collection<String>> line : lines) {
-      if(line.first().startsWith("yellow")) {
+      if (line.first().startsWith("yellow")) {
         passed = true;
         break;
       }
     }
     pipeline.done();
     assertTrue(passed);
-  }  
+  }
 }

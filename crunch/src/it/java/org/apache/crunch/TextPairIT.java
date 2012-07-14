@@ -21,27 +21,26 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.junit.Test;
-
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.types.writable.Writables;
+import org.junit.Test;
 
-public class TextPairIT  {
+public class TextPairIT {
 
   @Test
   public void testWritables() throws IOException {
     run(new MRPipeline(TextPairIT.class));
   }
-  
+
   private static final String CANARY = "Writables.STRING_TO_TEXT";
-  
+
   public static PCollection<Pair<String, String>> wordDuplicate(PCollection<String> words) {
     return words.parallelDo("my word duplicator", new DoFn<String, Pair<String, String>>() {
       public void process(String line, Emitter<Pair<String, String>> emitter) {
         for (String word : line.split("\\W+")) {
-          if(word.length() > 0) {
+          if (word.length() > 0) {
             Pair<String, String> pair = Pair.of(CANARY, word);
             emitter.emit(pair);
           }
@@ -49,12 +48,12 @@ public class TextPairIT  {
       }
     }, Writables.pairs(Writables.strings(), Writables.strings()));
   }
-  
+
   public void run(Pipeline pipeline) throws IOException {
     String input = FileHelper.createTempCopyOf("shakes.txt");
-        
+
     PCollection<String> shakespeare = pipeline.read(From.textFile(input));
-    Iterable<Pair<String, String>> lines = pipeline.materialize(wordDuplicate(shakespeare));    
+    Iterable<Pair<String, String>> lines = pipeline.materialize(wordDuplicate(shakespeare));
     boolean passed = false;
     for (Pair<String, String> line : lines) {
       if (line.first().contains(CANARY)) {
@@ -62,8 +61,8 @@ public class TextPairIT  {
         break;
       }
     }
-    
+
     pipeline.done();
     assertTrue(passed);
-  }  
+  }
 }

@@ -34,8 +34,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWritable> {
 
   @Override
-  public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(
-      TaskAttemptContext context) throws IOException, InterruptedException {
+  public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(TaskAttemptContext context) throws IOException,
+      InterruptedException {
 
     Configuration conf = context.getConfiguration();
     Schema schema = null;
@@ -45,24 +45,21 @@ public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWr
     } else {
       schema = AvroJob.getOutputSchema(context.getConfiguration());
     }
-    
-    ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
-    final DataFileWriter<T> WRITER = new DataFileWriter<T>(factory.<T>getWriter());
 
-    Path path = getDefaultWorkFile(context,
-        org.apache.avro.mapred.AvroOutputFormat.EXT);
-    WRITER.create(schema,
-        path.getFileSystem(context.getConfiguration()).create(path));
+    ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
+    final DataFileWriter<T> WRITER = new DataFileWriter<T>(factory.<T> getWriter());
+
+    Path path = getDefaultWorkFile(context, org.apache.avro.mapred.AvroOutputFormat.EXT);
+    WRITER.create(schema, path.getFileSystem(context.getConfiguration()).create(path));
 
     return new RecordWriter<AvroWrapper<T>, NullWritable>() {
       @Override
-      public void write(AvroWrapper<T> wrapper, NullWritable ignore)
-        throws IOException {
+      public void write(AvroWrapper<T> wrapper, NullWritable ignore) throws IOException {
         WRITER.append(wrapper.datum());
       }
+
       @Override
-      public void close(TaskAttemptContext context) throws IOException,
-          InterruptedException {
+      public void close(TaskAttemptContext context) throws IOException, InterruptedException {
         WRITER.close();
       }
     };

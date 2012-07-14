@@ -18,12 +18,12 @@
 package org.apache.crunch;
 
 /**
- * A {@link DoFn} for the common case of emitting exactly one value
- * for each input record.
- *
+ * A {@link DoFn} for the common case of emitting exactly one value for each
+ * input record.
+ * 
  */
 public abstract class MapFn<S, T> extends DoFn<S, T> {
-  
+
   /**
    * Maps the given input into an instance of the output type.
    */

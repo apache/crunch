@@ -26,34 +26,32 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+
 import com.google.common.collect.Lists;
 
 public class Cogroup {
-  
+
   /**
    * Co-groups the two {@link PTable} arguments.
    * 
    * @return a {@code PTable} representing the co-grouped tables.
    */
-  public static <K, U, V> PTable<K, Pair<Collection<U>, Collection<V>>> cogroup(
-      PTable<K, U> left, PTable<K, V> right) {
+  public static <K, U, V> PTable<K, Pair<Collection<U>, Collection<V>>> cogroup(PTable<K, U> left, PTable<K, V> right) {
     PTypeFamily ptf = left.getTypeFamily();
     PType<K> keyType = left.getPTableType().getKeyType();
     PType<U> leftType = left.getPTableType().getValueType();
     PType<V> rightType = right.getPTableType().getValueType();
     PType<Pair<U, V>> itype = ptf.pairs(leftType, rightType);
 
-    PTable<K, Pair<U, V>> cgLeft = left.parallelDo("coGroupTag1",
-        new CogroupFn1<K, U, V>(), ptf.tableOf(keyType, itype));
-    PTable<K, Pair<U, V>> cgRight = right.parallelDo("coGroupTag2",
-        new CogroupFn2<K, U, V>(), ptf.tableOf(keyType, itype));
-    
+    PTable<K, Pair<U, V>> cgLeft = left.parallelDo("coGroupTag1", new CogroupFn1<K, U, V>(),
+        ptf.tableOf(keyType, itype));
+    PTable<K, Pair<U, V>> cgRight = right.parallelDo("coGroupTag2", new CogroupFn2<K, U, V>(),
+        ptf.tableOf(keyType, itype));
+
     PTable<K, Pair<U, V>> both = cgLeft.union(cgRight);
 
-    PType<Pair<Collection<U>, Collection<V>>> otype = ptf.pairs(
-        ptf.collections(leftType), ptf.collections(rightType));
-    return both.groupByKey().parallelDo("cogroup",
-        new PostGroupFn<K, U, V>(), ptf.tableOf(keyType, otype));
+    PType<Pair<Collection<U>, Collection<V>>> otype = ptf.pairs(ptf.collections(leftType), ptf.collections(rightType));
+    return both.groupByKey().parallelDo("cogroup", new PostGroupFn<K, U, V>(), ptf.tableOf(keyType, otype));
   }
 
   private static class CogroupFn1<K, V, U> extends MapValuesFn<K, V, Pair<V, U>> {

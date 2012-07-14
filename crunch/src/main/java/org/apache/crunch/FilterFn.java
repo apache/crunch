@@ -22,9 +22,9 @@ import java.util.List;
 import com.google.common.collect.ImmutableList;
 
 /**
- * A {@link DoFn} for the common case of filtering the members of
- * a {@link PCollection} based on a boolean condition.
- *
+ * A {@link DoFn} for the common case of filtering the members of a
+ * {@link PCollection} based on a boolean condition.
+ * 
  */
 public abstract class FilterFn<T> extends DoFn<T, T> {
 
@@ -44,19 +44,19 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
   public float scaleFactor() {
     return 0.5f;
   }
-  
-  public static <S> FilterFn<S> and(FilterFn<S>...fns) {
+
+  public static <S> FilterFn<S> and(FilterFn<S>... fns) {
     return new AndFn<S>(fns);
   }
-  
+
   public static class AndFn<S> extends FilterFn<S> {
-    
+
     private final List<FilterFn<S>> fns;
-    
+
     public AndFn(FilterFn<S>... fns) {
-      this.fns = ImmutableList.<FilterFn<S>>copyOf(fns);
+      this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
     }
-    
+
     @Override
     public boolean accept(S input) {
       for (FilterFn<S> fn : fns) {
@@ -66,7 +66,7 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       return true;
     }
-    
+
     @Override
     public float scaleFactor() {
       float scaleFactor = 1.0f;
@@ -74,21 +74,21 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
         scaleFactor *= fn.scaleFactor();
       }
       return scaleFactor;
-    }    
+    }
   }
-  
-  public static <S> FilterFn<S> or(FilterFn<S>...fns) {
+
+  public static <S> FilterFn<S> or(FilterFn<S>... fns) {
     return new OrFn<S>(fns);
   }
-  
+
   public static class OrFn<S> extends FilterFn<S> {
-    
+
     private final List<FilterFn<S>> fns;
-    
+
     public OrFn(FilterFn<S>... fns) {
-      this.fns = ImmutableList.<FilterFn<S>>copyOf(fns);
+      this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
     }
-    
+
     @Override
     public boolean accept(S input) {
       for (FilterFn<S> fn : fns) {
@@ -98,7 +98,7 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       return false;
     }
-    
+
     @Override
     public float scaleFactor() {
       float scaleFactor = 0.0f;
@@ -106,26 +106,26 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
         scaleFactor += fn.scaleFactor();
       }
       return Math.min(1.0f, scaleFactor);
-    }    
+    }
   }
-  
+
   public static <S> FilterFn<S> not(FilterFn<S> fn) {
     return new NotFn<S>(fn);
   }
-  
+
   public static class NotFn<S> extends FilterFn<S> {
-    
+
     private final FilterFn<S> base;
-    
+
     public NotFn(FilterFn<S> base) {
       this.base = base;
     }
-    
+
     @Override
     public boolean accept(S input) {
       return !base.accept(input);
     }
-    
+
     @Override
     public float scaleFactor() {
       return 1.0f - base.scaleFactor();

@@ -24,14 +24,6 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -55,6 +47,14 @@ import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Appender;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -164,8 +164,8 @@ public class MRPipeline implements Pipeline {
     if (pcollection instanceof PGroupedTableImpl) {
       pcollection = ((PGroupedTableImpl<?, ?>) pcollection).ungroup();
     } else if (pcollection instanceof UnionCollection || pcollection instanceof UnionTable) {
-      pcollection = pcollection.parallelDo("UnionCollectionWrapper",
-          (MapFn) IdentityFn.<Object> getInstance(), pcollection.getPType());
+      pcollection = pcollection.parallelDo("UnionCollectionWrapper", (MapFn) IdentityFn.<Object> getInstance(),
+          pcollection.getPType());
     }
     addOutput((PCollectionImpl<?>) pcollection, target);
   }
@@ -236,8 +236,11 @@ public class MRPipeline implements Pipeline {
   }
 
   /**
-   * Safely cast a PCollection into a PCollectionImpl, including handling the case of UnionCollections.
-   * @param pcollection The PCollection to be cast/transformed
+   * Safely cast a PCollection into a PCollectionImpl, including handling the
+   * case of UnionCollections.
+   * 
+   * @param pcollection
+   *          The PCollection to be cast/transformed
    * @return The PCollectionImpl representation
    */
   private <T> PCollectionImpl<T> toPcollectionImpl(PCollection<T> pcollection) {
@@ -274,8 +277,8 @@ public class MRPipeline implements Pipeline {
   @Override
   public <T> void writeTextFile(PCollection<T> pcollection, String pathName) {
     // Ensure that this is a writable pcollection instance.
-    pcollection = pcollection.parallelDo("asText", IdentityFn.<T> getInstance(), WritableTypeFamily
-        .getInstance().as(pcollection.getPType()));
+    pcollection = pcollection.parallelDo("asText", IdentityFn.<T> getInstance(),
+        WritableTypeFamily.getInstance().as(pcollection.getPType()));
     write(pcollection, At.textFile(pathName));
   }
 

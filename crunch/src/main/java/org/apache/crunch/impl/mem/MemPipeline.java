@@ -22,12 +22,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -43,35 +37,40 @@ import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 public class MemPipeline implements Pipeline {
 
   private static final Log LOG = LogFactory.getLog(MemPipeline.class);
-  
+
   private static final MemPipeline INSTANCE = new MemPipeline();
-  
+
   public static Pipeline getInstance() {
     return INSTANCE;
   }
-  
-  public static <T> PCollection<T> collectionOf(T...ts) {
-    return new MemCollection<T>(ImmutableList.copyOf(ts));  
+
+  public static <T> PCollection<T> collectionOf(T... ts) {
+    return new MemCollection<T>(ImmutableList.copyOf(ts));
   }
-  
+
   public static <T> PCollection<T> collectionOf(Iterable<T> collect) {
     return new MemCollection<T>(collect);
   }
-  
+
   public static <T> PCollection<T> typedCollectionOf(PType<T> ptype, T... ts) {
-    return new MemCollection<T>(ImmutableList.copyOf(ts), ptype, null);  
+    return new MemCollection<T>(ImmutableList.copyOf(ts), ptype, null);
   }
-  
+
   public static <T> PCollection<T> typedCollectionOf(PType<T> ptype, Iterable<T> collect) {
-    return new MemCollection<T>(collect, ptype, null);  
+    return new MemCollection<T>(collect, ptype, null);
   }
-  
+
   public static <S, T> PTable<S, T> tableOf(S s, T t, Object... more) {
     List<Pair<S, T>> pairs = Lists.newArrayList();
     pairs.add(Pair.of(s, t));
@@ -80,7 +79,7 @@ public class MemPipeline implements Pipeline {
     }
     return new MemTable<S, T>(pairs);
   }
-  
+
   public static <S, T> PTable<S, T> typedTableOf(PTableType<S, T> ptype, S s, T t, Object... more) {
     List<Pair<S, T>> pairs = Lists.newArrayList();
     pairs.add(Pair.of(s, t));
@@ -89,20 +88,20 @@ public class MemPipeline implements Pipeline {
     }
     return new MemTable<S, T>(pairs, ptype, null);
   }
-  
+
   public static <S, T> PTable<S, T> tableOf(Iterable<Pair<S, T>> pairs) {
     return new MemTable<S, T>(pairs);
   }
-  
+
   public static <S, T> PTable<S, T> typedTableOf(PTableType<S, T> ptype, Iterable<Pair<S, T>> pairs) {
     return new MemTable<S, T>(pairs, ptype, null);
   }
-  
+
   private Configuration conf = new Configuration();
 
   private MemPipeline() {
   }
-  
+
   @Override
   public void setConfiguration(Configuration conf) {
     this.conf = conf;
@@ -199,11 +198,11 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public void enableDebug() {
-	LOG.info("Note: in-memory pipelines do not have debug logging");
+    LOG.info("Note: in-memory pipelines do not have debug logging");
   }
-  
+
   @Override
   public String getName() {
-	  return "Memory Pipeline";
+    return "Memory Pipeline";
   }
 }

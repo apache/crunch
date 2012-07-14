@@ -18,11 +18,6 @@
 package org.apache.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.impl.FileTargetImpl;
@@ -30,21 +25,25 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroOutputFormat;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.Job;
 
 public class AvroFileTarget extends FileTargetImpl {
   public AvroFileTarget(String path) {
     this(new Path(path));
   }
-  
+
   public AvroFileTarget(Path path) {
     super(path, AvroOutputFormat.class);
   }
-    
+
   @Override
   public String toString() {
     return "Avro(" + path.toString() + ")";
   }
-  
+
   @Override
   public boolean accept(OutputHandler handler, PType<?> ptype) {
     if (!(ptype instanceof AvroType)) {
@@ -55,8 +54,7 @@ public class AvroFileTarget extends FileTargetImpl {
   }
 
   @Override
-  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath,
-      String name) {
+  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     AvroType<?> atype = (AvroType<?>) ptype;
     Configuration conf = job.getConfiguration();
     String schemaParam = null;
@@ -72,8 +70,7 @@ public class AvroFileTarget extends FileTargetImpl {
       throw new IllegalStateException("Avro targets must use the same output schema");
     }
     Avros.configureReflectDataFactory(conf);
-    configureForMapReduce(job, AvroWrapper.class, NullWritable.class,
-        outputPath, name);
+    configureForMapReduce(job, AvroWrapper.class, NullWritable.class, outputPath, name);
   }
 
   @Override

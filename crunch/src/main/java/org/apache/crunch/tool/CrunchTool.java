@@ -19,10 +19,6 @@ package org.apache.crunch.tool;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.util.Tool;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
@@ -34,71 +30,74 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.util.Tool;
 
 /**
  * An extension of the {@code Tool} interface that creates a {@code Pipeline}
  * instance and provides methods for working with the Pipeline from inside of
  * the Tool's run method.
- *
+ * 
  */
 public abstract class CrunchTool extends Configured implements Tool {
 
   protected static final From from = new From();
   protected static final To to = new To();
   protected static final At at = new At();
-  
+
   private Pipeline pipeline;
 
   public CrunchTool() throws IOException {
-	this(false);
+    this(false);
   }
-  
+
   public CrunchTool(boolean inMemory) throws IOException {
-    this.pipeline = inMemory ? MemPipeline.getInstance() : new MRPipeline(getClass());  
+    this.pipeline = inMemory ? MemPipeline.getInstance() : new MRPipeline(getClass());
   }
-  
+
   @Override
   public void setConf(Configuration conf) {
-	super.setConf(conf);
-	if (conf != null && pipeline != null) {
-	  pipeline.setConfiguration(conf);
-	}
+    super.setConf(conf);
+    if (conf != null && pipeline != null) {
+      pipeline.setConfiguration(conf);
+    }
   }
-  
+
   @Override
   public Configuration getConf() {
-	return pipeline.getConfiguration();
+    return pipeline.getConfiguration();
   }
-  
+
   public void enableDebug() {
     pipeline.enableDebug();
   }
-  
+
   public <T> PCollection<T> read(Source<T> source) {
-	return pipeline.read(source);
+    return pipeline.read(source);
   }
-  
+
   public <K, V> PTable<K, V> read(TableSource<K, V> tableSource) {
-	return pipeline.read(tableSource);
+    return pipeline.read(tableSource);
   }
-  
+
   public PCollection<String> readTextFile(String pathName) {
-	return pipeline.readTextFile(pathName);
+    return pipeline.readTextFile(pathName);
   }
-  
+
   public void write(PCollection<?> pcollection, Target target) {
-	pipeline.write(pcollection, target);
+    pipeline.write(pcollection, target);
   }
-  
+
   public void writeTextFile(PCollection<?> pcollection, String pathName) {
-	pipeline.writeTextFile(pcollection, pathName);
+    pipeline.writeTextFile(pcollection, pathName);
   }
-  
+
   public void run() {
-	pipeline.run();
+    pipeline.run();
   }
-  
+
   public void done() {
-	pipeline.done();
+    pipeline.done();
   }
 }

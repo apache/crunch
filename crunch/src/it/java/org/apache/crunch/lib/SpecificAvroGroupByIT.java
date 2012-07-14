@@ -28,10 +28,6 @@ import java.util.List;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.specific.SpecificDatumWriter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -42,6 +38,10 @@ import org.apache.crunch.test.Person;
 import org.apache.crunch.test.Person.Builder;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.avro.SafeAvroSerialization;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Lists;
 
 /**
@@ -49,91 +49,83 @@ import com.google.common.collect.Lists;
  */
 public class SpecificAvroGroupByIT implements Serializable {
 
-	private static final long serialVersionUID = 1344118240353796561L;
+  private static final long serialVersionUID = 1344118240353796561L;
 
-	private transient File avroFile;
+  private transient File avroFile;
 
-	@Before
-	public void setUp() throws IOException {
-		avroFile = File.createTempFile("avrotest", ".avro");
-	}
+  @Before
+  public void setUp() throws IOException {
+    avroFile = File.createTempFile("avrotest", ".avro");
+  }
 
-	@After
-	public void tearDown() {
-		avroFile.delete();
-	}
-
-	@Test
-	public void testGrouByWithSpecificAvroType() throws Exception {
-
-		MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
-
-		testSpecificAvro(pipeline);
-	}
+  @After
+  public void tearDown() {
+    avroFile.delete();
+  }
 
   @Test
-  public void testGrouByOnSpecificAvroButReflectionDatumReader()
-      throws Exception {
-    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
+  public void testGrouByWithSpecificAvroType() throws Exception {
 
-    // https://issues.apache.org/jira/browse/AVRO-1046  resolves 
-    // the ClassCastException when reading specific Avro types with 
-    // ReflectDatumReader
-    
-    pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT,
-        true);
+    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
 
     testSpecificAvro(pipeline);
   }
 
-	public void testSpecificAvro(MRPipeline pipeline) throws Exception {
+  @Test
+  public void testGrouByOnSpecificAvroButReflectionDatumReader() throws Exception {
+    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
 
-		createPersonAvroFile(avroFile);
+    // https://issues.apache.org/jira/browse/AVRO-1046 resolves
+    // the ClassCastException when reading specific Avro types with
+    // ReflectDatumReader
 
-		PCollection<Person> unsorted = pipeline.read(At.avroFile(
-				avroFile.getAbsolutePath(), Avros.records(Person.class)));
+    pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
 
-		PTable<String, Person> sorted = unsorted
-				.parallelDo(new MapFn<Person, Pair<String, Person>>() {
+    testSpecificAvro(pipeline);
+  }
 
-					@Override
-					public Pair<String, Person> map(Person input) {
-						String key = input.getName().toString();
-						return Pair.of(key, input);
+  public void testSpecificAvro(MRPipeline pipeline) throws Exception {
 
-					}
-				}, Avros.tableOf(Avros.strings(), Avros.records(Person.class)))
-				.groupByKey().ungroup();
+    createPersonAvroFile(avroFile);
 
-		List<Pair<String, Person>> outputPersonList = Lists.newArrayList(sorted
-				.materialize());
+    PCollection<Person> unsorted = pipeline.read(At.avroFile(avroFile.getAbsolutePath(), Avros.records(Person.class)));
 
-		assertEquals(1, outputPersonList.size());
-		assertEquals(String.class, outputPersonList.get(0).first().getClass());
-		assertEquals(Person.class, outputPersonList.get(0).second().getClass());
-		
-		pipeline.done();
-	}
+    PTable<String, Person> sorted = unsorted.parallelDo(new MapFn<Person, Pair<String, Person>>() {
 
-	private void createPersonAvroFile(File avroFile) throws IOException {
+      @Override
+      public Pair<String, Person> map(Person input) {
+        String key = input.getName().toString();
+        return Pair.of(key, input);
 
-		Builder person = Person.newBuilder();
-		person.setAge(40);
-		person.setName("Bob");
-		List<CharSequence> siblingNames = Lists.newArrayList();
-		siblingNames.add("Bob" + "1");
-		siblingNames.add("Bob" + "2");
-		person.setSiblingnames(siblingNames);
+      }
+    }, Avros.tableOf(Avros.strings(), Avros.records(Person.class))).groupByKey().ungroup();
 
-		FileOutputStream outputStream = new FileOutputStream(avroFile);
-		SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(
-				Person.class);
+    List<Pair<String, Person>> outputPersonList = Lists.newArrayList(sorted.materialize());
 
-		DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(
-				writer);
-		dataFileWriter.create(Person.SCHEMA$, outputStream);
-		dataFileWriter.append(person.build());
-		dataFileWriter.close();
-		outputStream.close();
-	}
+    assertEquals(1, outputPersonList.size());
+    assertEquals(String.class, outputPersonList.get(0).first().getClass());
+    assertEquals(Person.class, outputPersonList.get(0).second().getClass());
+
+    pipeline.done();
+  }
+
+  private void createPersonAvroFile(File avroFile) throws IOException {
+
+    Builder person = Person.newBuilder();
+    person.setAge(40);
+    person.setName("Bob");
+    List<CharSequence> siblingNames = Lists.newArrayList();
+    siblingNames.add("Bob" + "1");
+    siblingNames.add("Bob" + "2");
+    person.setSiblingnames(siblingNames);
+
+    FileOutputStream outputStream = new FileOutputStream(avroFile);
+    SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(Person.class);
+
+    DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(writer);
+    dataFileWriter.create(Person.SCHEMA$, outputStream);
+    dataFileWriter.append(person.build());
+    dataFileWriter.close();
+    outputStream.close();
+  }
 }

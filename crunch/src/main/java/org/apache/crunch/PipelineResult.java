@@ -25,50 +25,51 @@ import org.apache.hadoop.mapreduce.Counters;
 import com.google.common.collect.ImmutableList;
 
 /**
- * Container for the results of a call to {@code run} or {@code done} on the Pipeline interface that includes
- * details and statistics about the component stages of the data pipeline.
+ * Container for the results of a call to {@code run} or {@code done} on the
+ * Pipeline interface that includes details and statistics about the component
+ * stages of the data pipeline.
  */
 public class PipelineResult {
 
   public static class StageResult {
-    
+
     private final String stageName;
     private final Counters counters;
-    
+
     public StageResult(String stageName, Counters counters) {
       this.stageName = stageName;
       this.counters = counters;
     }
-    
+
     public String getStageName() {
       return stageName;
     }
-    
+
     public Counters getCounters() {
       return counters;
     }
-    
+
     public Counter findCounter(Enum<?> key) {
       return counters.findCounter(key);
     }
-    
+
     public long getCounterValue(Enum<?> key) {
       return findCounter(key).getValue();
     }
   }
-  
-  public static final PipelineResult EMPTY = new PipelineResult(ImmutableList.<StageResult>of());
-  
+
+  public static final PipelineResult EMPTY = new PipelineResult(ImmutableList.<StageResult> of());
+
   private final List<StageResult> stageResults;
-  
+
   public PipelineResult(List<StageResult> stageResults) {
     this.stageResults = ImmutableList.copyOf(stageResults);
   }
-  
+
   public boolean succeeded() {
     return !stageResults.isEmpty();
   }
-  
+
   public List<StageResult> getStageResults() {
     return stageResults;
   }

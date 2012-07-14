@@ -17,13 +17,14 @@
  */
 package org.apache.crunch.examples;
 
+import java.io.Serializable;
+
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -31,11 +32,9 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import java.io.Serializable;
-
 public class WordCount extends Configured implements Tool, Serializable {
   public int run(String[] args) throws Exception {
-    if(args.length != 3) {
+    if (args.length != 3) {
       System.err.println();
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
       System.err.println();
@@ -47,7 +46,8 @@ public class WordCount extends Configured implements Tool, Serializable {
     // Reference a given text file as a collection of Strings.
     PCollection<String> lines = pipeline.readTextFile(args[1]);
 
-    // Define a function that splits each line in a PCollection of Strings into a
+    // Define a function that splits each line in a PCollection of Strings into
+    // a
     // PCollection made up of the individual words in the file.
     PCollection<String> words = lines.parallelDo(new DoFn<String, String>() {
       public void process(String line, Emitter<String> emitter) {

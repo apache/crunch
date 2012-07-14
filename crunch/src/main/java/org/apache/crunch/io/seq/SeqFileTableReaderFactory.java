@@ -22,24 +22,24 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.MapFn;
+import org.apache.crunch.Pair;
+import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
-import org.apache.crunch.MapFn;
-import org.apache.crunch.Pair;
-import org.apache.crunch.io.FileReaderFactory;
-import org.apache.crunch.types.PTableType;
-import org.apache.crunch.types.PType;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
 public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K, V>> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableReaderFactory.class);
-  
+
   private final MapFn<Object, K> keyMapFn;
   private final MapFn<Object, V> valueMapFn;
   private final Writable key;
@@ -47,29 +47,29 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
   private final Configuration conf;
 
   public SeqFileTableReaderFactory(PTableType<K, V> tableType, Configuration conf) {
-	PType<K> keyType = tableType.getKeyType();
-	PType<V> valueType = tableType.getValueType();
-	this.keyMapFn = SeqFileHelper.getInputMapFn(keyType);
-	this.valueMapFn = SeqFileHelper.getInputMapFn(valueType);
-	this.key = SeqFileHelper.newInstance(keyType, conf);
-	this.value = SeqFileHelper.newInstance(valueType, conf);
-	this.conf = conf;
+    PType<K> keyType = tableType.getKeyType();
+    PType<V> valueType = tableType.getValueType();
+    this.keyMapFn = SeqFileHelper.getInputMapFn(keyType);
+    this.valueMapFn = SeqFileHelper.getInputMapFn(valueType);
+    this.key = SeqFileHelper.newInstance(keyType, conf);
+    this.value = SeqFileHelper.newInstance(valueType, conf);
+    this.conf = conf;
   }
-  
+
   @Override
   public Iterator<Pair<K, V>> read(FileSystem fs, final Path path) {
     keyMapFn.setConfigurationForTest(conf);
     keyMapFn.initialize();
     valueMapFn.setConfigurationForTest(conf);
     valueMapFn.initialize();
-	try {
-	  final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-	  return new UnmodifiableIterator<Pair<K, V>>() {
-	    boolean nextChecked = false;
-	    boolean hasNext = false;
+    try {
+      final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+      return new UnmodifiableIterator<Pair<K, V>>() {
+        boolean nextChecked = false;
+        boolean hasNext = false;
 
-		@Override
-		public boolean hasNext() {
+        @Override
+        public boolean hasNext() {
           if (nextChecked == true) {
             return hasNext;
           }
@@ -83,18 +83,18 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
           }
         }
 
-		@Override
-		public Pair<K, V> next() {
-		  if (!nextChecked && !hasNext()) {
+        @Override
+        public Pair<K, V> next() {
+          if (!nextChecked && !hasNext()) {
             return null;
           }
           nextChecked = false;
-		  return Pair.of(keyMapFn.map(key), valueMapFn.map(value));
-		}
-	  };
-	} catch (IOException e) {
-	  LOG.info("Could not read seqfile at path: " + path, e);
-	  return Iterators.emptyIterator();
-	}
+          return Pair.of(keyMapFn.map(key), valueMapFn.map(value));
+        }
+      };
+    } catch (IOException e) {
+      LOG.info("Could not read seqfile at path: " + path, e);
+      return Iterators.emptyIterator();
+    }
   }
 }

@@ -22,6 +22,7 @@ import java.util.Random;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
+
 import com.google.common.base.Preconditions;
 
 public class Sample {
@@ -50,13 +51,13 @@ public class Sample {
       }
     }
   }
-  
+
   public static <S> PCollection<S> sample(PCollection<S> input, double probability) {
-	return sample(input, System.currentTimeMillis(), probability);
+    return sample(input, System.currentTimeMillis(), probability);
   }
-  
+
   public static <S> PCollection<S> sample(PCollection<S> input, long seed, double probability) {
     String stageName = String.format("sample(%.2f)", probability);
-	return input.parallelDo(stageName, new SamplerFn<S>(seed, probability), input.getPType());
+    return input.parallelDo(stageName, new SamplerFn<S>(seed, probability), input.getPType());
   }
 }

@@ -19,16 +19,15 @@ package org.apache.crunch.io.seq;
 
 import java.io.IOException;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
-
 import org.apache.crunch.Pair;
 import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.types.PTableType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
 /**
  *
@@ -38,7 +37,7 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
   public SeqFileTableSource(String path, PTableType<K, V> ptype) {
     this(new Path(path), ptype);
   }
-  
+
   public SeqFileTableSource(Path path, PTableType<K, V> ptype) {
     super(path, ptype, SequenceFileInputFormat.class);
   }
@@ -46,8 +45,7 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
   @Override
   public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
     FileSystem fs = FileSystem.get(path.toUri(), conf);
-    return CompositePathIterable.create(fs, path, 
-        new SeqFileTableReaderFactory<K, V>((PTableType<K, V>) ptype, conf));
+    return CompositePathIterable.create(fs, path, new SeqFileTableReaderFactory<K, V>((PTableType<K, V>) ptype, conf));
   }
 
   @Override
@@ -55,4 +53,3 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
     return "SeqFile(" + path.toString() + ")";
   }
 }
- 

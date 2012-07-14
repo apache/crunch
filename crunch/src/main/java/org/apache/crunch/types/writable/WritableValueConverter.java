@@ -17,18 +17,17 @@
  */
 package org.apache.crunch.types.writable;
 
+import org.apache.crunch.types.Converter;
 import org.apache.hadoop.io.NullWritable;
 
-import org.apache.crunch.types.Converter;
-
 class WritableValueConverter<W> implements Converter<Object, W, W, Iterable<W>> {
-  
+
   private final Class<W> serializationClass;
-  
+
   public WritableValueConverter(Class<W> serializationClass) {
     this.serializationClass = serializationClass;
   }
-  
+
   @Override
   public W convertInput(Object key, W value) {
     return value;

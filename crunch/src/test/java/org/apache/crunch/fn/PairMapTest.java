@@ -19,28 +19,27 @@ package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class PairMapTest {
-  
+
   static final MapFn<String, Integer> one = new MapFn<String, Integer>() {
     @Override
     public Integer map(String input) {
       return 1;
     }
   };
-  
+
   static final MapFn<String, Integer> two = new MapFn<String, Integer>() {
     @Override
     public Integer map(String input) {
       return 2;
     }
   };
-  
+
   @Test
   public void testPairMap() {
     StoreLastEmitter<Pair<Integer, Integer>> emitter = StoreLastEmitter.create();

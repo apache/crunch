@@ -27,15 +27,15 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
 
   private static final Log LOG = LogFactory.getLog(CrunchReducer.class);
-  
+
   private RTNode node;
   private CrunchTaskContext ctxt;
   private boolean debug;
-  
+
   protected NodeContext getNodeContext() {
     return NodeContext.REDUCE;
   }
-  
+
   @Override
   protected void setup(Reducer<Object, Object, Object, Object>.Context context) {
     this.ctxt = new CrunchTaskContext(context, getNodeContext());
@@ -50,8 +50,7 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
   }
 
   @Override
-  protected void reduce(Object key, Iterable<Object> values,
-      Reducer<Object, Object, Object, Object>.Context context) {
+  protected void reduce(Object key, Iterable<Object> values, Reducer<Object, Object, Object, Object>.Context context) {
     if (debug) {
       try {
         node.processIterable(key, values);

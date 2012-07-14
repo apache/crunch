@@ -28,12 +28,12 @@ import com.google.common.io.Files;
 public class FileHelper {
 
   public static String createTempCopyOf(String fileResource) throws IOException {
-	File tmpFile = File.createTempFile("tmp", "");
-	tmpFile.deleteOnExit();
-	Files.copy(newInputStreamSupplier(getResource(fileResource)), tmpFile);
-	return tmpFile.getAbsolutePath();
+    File tmpFile = File.createTempFile("tmp", "");
+    tmpFile.deleteOnExit();
+    Files.copy(newInputStreamSupplier(getResource(fileResource)), tmpFile);
+    return tmpFile.getAbsolutePath();
   }
-  
+
   public static File createOutputPath() throws IOException {
     File output = File.createTempFile("output", "");
     output.delete();

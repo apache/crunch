@@ -40,16 +40,16 @@ public class TupleN implements Tuple {
   public int size() {
     return values.length;
   }
-  
+
   @Override
   public int hashCode() {
-  	HashCodeBuilder hcb = new HashCodeBuilder();
-  	for (Object v : values) {
-  	  hcb.append(v);
-  	}
-  	return hcb.toHashCode();
+    HashCodeBuilder hcb = new HashCodeBuilder();
+    for (Object v : values) {
+      hcb.append(v);
+    }
+    return hcb.toHashCode();
   }
-  
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)

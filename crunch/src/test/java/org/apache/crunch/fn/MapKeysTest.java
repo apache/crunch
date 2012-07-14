@@ -19,28 +19,26 @@ package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
 import org.apache.crunch.Pair;
-
+import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class MapKeysTest {
-  
+
   protected static final MapKeysFn<String, Integer, Integer> one = new MapKeysFn<String, Integer, Integer>() {
     @Override
     public Integer map(String input) {
       return 1;
     }
   };
-  
+
   protected static final MapKeysFn<String, Integer, Integer> two = new MapKeysFn<String, Integer, Integer>() {
     @Override
     public Integer map(String input) {
       return 2;
     }
   };
-  
+
   @Test
   public void test() {
     StoreLastEmitter<Pair<Integer, Integer>> emitter = StoreLastEmitter.create();

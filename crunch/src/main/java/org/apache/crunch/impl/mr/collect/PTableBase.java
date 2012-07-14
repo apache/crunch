@@ -32,10 +32,10 @@ import org.apache.crunch.lib.Join;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.materialize.MaterializableMap;
 import org.apache.crunch.types.PType;
+
 import com.google.common.collect.Lists;
 
-public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
-    implements PTable<K, V> {
+public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements PTable<K, V> {
 
   public PTableBase(String name) {
     super(name);
@@ -44,20 +44,19 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
   public PType<K> getKeyType() {
     return getPTableType().getKeyType();
   }
-  
+
   public PType<V> getValueType() {
     return getPTableType().getValueType();
   }
-  
+
   public PGroupedTableImpl<K, V> groupByKey() {
     return new PGroupedTableImpl<K, V>(this);
   }
 
   public PGroupedTableImpl<K, V> groupByKey(int numReduceTasks) {
-    return new PGroupedTableImpl<K, V>(this,
-        GroupingOptions.builder().numReducers(numReduceTasks).build());
+    return new PGroupedTableImpl<K, V>(this, GroupingOptions.builder().numReducers(numReduceTasks).build());
   }
-  
+
   public PGroupedTableImpl<K, V> groupByKey(GroupingOptions groupingOptions) {
     return new PGroupedTableImpl<K, V>(this, groupingOptions);
   }
@@ -71,43 +70,43 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>>
     }
     return new UnionTable<K, V>(internal);
   }
-  
+
   @Override
   public PTable<K, V> write(Target target) {
     getPipeline().write(this, target);
     return this;
   }
-  
+
   @Override
   public PTable<K, V> top(int count) {
-	return Aggregate.top(this, count, true);
+    return Aggregate.top(this, count, true);
   }
 
   @Override
   public PTable<K, V> bottom(int count) {
-	return Aggregate.top(this, count, false);
+    return Aggregate.top(this, count, false);
   }
-  
+
   @Override
   public PTable<K, Collection<V>> collectValues() {
-	return Aggregate.collectValues(this);
+    return Aggregate.collectValues(this);
   }
-  
+
   @Override
   public <U> PTable<K, Pair<V, U>> join(PTable<K, U> other) {
-	return Join.join(this, other);
+    return Join.join(this, other);
   }
-  
+
   @Override
   public <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other) {
-	return Cogroup.cogroup(this, other);
+    return Cogroup.cogroup(this, other);
   }
-  
+
   @Override
   public PCollection<K> keys() {
-	return PTables.keys(this);
+    return PTables.keys(this);
   }
- 
+
   @Override
   public PCollection<V> values() {
     return PTables.values(this);

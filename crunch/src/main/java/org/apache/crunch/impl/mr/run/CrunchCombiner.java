@@ -23,5 +23,5 @@ public class CrunchCombiner extends CrunchReducer {
   protected NodeContext getNodeContext() {
     return NodeContext.COMBINE;
   }
-  
+
 }

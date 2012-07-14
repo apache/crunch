@@ -19,13 +19,14 @@ package org.apache.crunch;
 
 /**
  * The Crunch representation of a grouped {@link PTable}.
- *
+ * 
  */
 public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
   /**
    * Combines the values of this grouping using the given {@code CombineFn}.
    * 
-   * @param combineFn The combiner function
+   * @param combineFn
+   *          The combiner function
    * @return A {@code PTable} where each key has a single value
    */
   PTable<K, V> combineValues(CombineFn<K, V> combineFn);

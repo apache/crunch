@@ -106,8 +106,8 @@ public class AvrosTest {
     Collection<String> j = Lists.newArrayList();
     j.add("a");
     j.add("b");
-    Schema collectionSchema = Schema.createArray(Schema.createUnion(ImmutableList.of(Avros
-        .strings().getSchema(), Schema.create(Type.NULL))));
+    Schema collectionSchema = Schema.createArray(Schema.createUnion(ImmutableList.of(Avros.strings().getSchema(),
+        Schema.create(Type.NULL))));
     GenericData.Array<Utf8> w = new GenericData.Array<Utf8>(2, collectionSchema);
     w.add(new Utf8("a"));
     w.add(new Utf8("b"));
@@ -167,8 +167,7 @@ public class AvrosTest {
   @Test
   @SuppressWarnings("rawtypes")
   public void testTupleN() throws Exception {
-    AvroType at = Avros.tuples(Avros.strings(), Avros.strings(), Avros.strings(), Avros.strings(),
-        Avros.strings());
+    AvroType at = Avros.tuples(Avros.strings(), Avros.strings(), Avros.strings(), Avros.strings(), Avros.strings());
     TupleN j = new TupleN("a", "b", "c", "d", "e");
     GenericData.Record w = new GenericData.Record(at.getSchema());
     w.put(0, new Utf8("a"));
@@ -199,8 +198,7 @@ public class AvrosTest {
     // TODO update this after resolving the o.a.a.m.Pair.equals issue
     initialize(at);
     assertEquals(j, at.getInputMapFn().map(w));
-    org.apache.avro.mapred.Pair converted = (org.apache.avro.mapred.Pair) at.getOutputMapFn()
-        .map(j);
+    org.apache.avro.mapred.Pair converted = (org.apache.avro.mapred.Pair) at.getOutputMapFn().map(j);
     assertEquals(w.key(), converted.key());
     assertEquals(w.value(), converted.value());
   }
@@ -234,8 +232,7 @@ public class AvrosTest {
     GenericData.Record recordA = new GenericData.Record(schema);
     GenericData.Record recordB = new GenericData.Record(schema);
 
-    AvroType<Pair<Record, Record>> pairType = Avros.pairs(Avros.generics(schema),
-        Avros.generics(schema));
+    AvroType<Pair<Record, Record>> pairType = Avros.pairs(Avros.generics(schema), Avros.generics(schema));
     Pair<Record, Record> pair = Pair.of(recordA, recordB);
     pairType.getOutputMapFn().initialize();
     pairType.getInputMapFn().initialize();
@@ -251,8 +248,8 @@ public class AvrosTest {
     IntWritable intWritableA = new IntWritable(1);
     IntWritable intWritableB = new IntWritable(2);
 
-    AvroType<Pair<IntWritable, IntWritable>> pairType = Avros.pairs(
-        Avros.reflects(IntWritable.class), Avros.reflects(IntWritable.class));
+    AvroType<Pair<IntWritable, IntWritable>> pairType = Avros.pairs(Avros.reflects(IntWritable.class),
+        Avros.reflects(IntWritable.class));
     Pair<IntWritable, IntWritable> pair = Pair.of(intWritableA, intWritableB);
     pairType.getOutputMapFn().initialize();
     pairType.getInputMapFn().initialize();
@@ -276,8 +273,7 @@ public class AvrosTest {
     personB.setName("B");
     personB.setSiblingnames(Collections.<CharSequence> emptyList());
 
-    AvroType<Pair<Person, Person>> pairType = Avros.pairs(Avros.records(Person.class),
-        Avros.records(Person.class));
+    AvroType<Pair<Person, Person>> pairType = Avros.pairs(Avros.records(Person.class), Avros.records(Person.class));
 
     Pair<Person, Person> pair = Pair.of(personA, personB);
     pairType.getOutputMapFn().initialize();

@@ -19,14 +19,14 @@ package org.apache.crunch.impl.mr.plan;
 
 import java.util.List;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
-
 import org.apache.crunch.Target;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
+
 import com.google.common.collect.Lists;
 
 public class MSCROutputHandler implements OutputHandler {
@@ -34,22 +34,22 @@ public class MSCROutputHandler implements OutputHandler {
   private final Job job;
   private final Path path;
   private final boolean mapOnlyJob;
-  
+
   private DoNode workingNode;
   private List<Path> multiPaths;
-  
+
   public MSCROutputHandler(Job job, Path outputPath, boolean mapOnlyJob) {
     this.job = job;
     this.path = outputPath;
     this.mapOnlyJob = mapOnlyJob;
     this.multiPaths = Lists.newArrayList();
   }
-  
+
   public void configureNode(DoNode node, Target target) {
     workingNode = node;
     target.accept(this, node.getPType());
   }
-  
+
   public boolean configure(Target target, PType<?> ptype) {
     if (target instanceof MapReduceTarget && target instanceof PathTarget) {
       String name = PlanningParameters.MULTI_OUTPUT_PREFIX + multiPaths.size();
@@ -68,7 +68,7 @@ public class MSCROutputHandler implements OutputHandler {
   public boolean isMapOnlyJob() {
     return mapOnlyJob;
   }
-  
+
   public List<Path> getMultiPaths() {
     return multiPaths;
   }

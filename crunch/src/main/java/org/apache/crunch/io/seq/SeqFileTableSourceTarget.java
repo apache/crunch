@@ -17,30 +17,30 @@
  */
 package org.apache.crunch.io.seq;
 
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.Pair;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.PTableType;
+import org.apache.hadoop.fs.Path;
 
-public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl<Pair<K,V>> implements TableSource<K, V> {
+public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl<Pair<K, V>> implements
+    TableSource<K, V> {
   private final PTableType<K, V> tableType;
-  
+
   public SeqFileTableSourceTarget(String path, PTableType<K, V> tableType) {
     this(new Path(path), tableType);
   }
-  
+
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
     super(new SeqFileTableSource<K, V>(path, tableType), new SeqFileTarget(path));
     this.tableType = tableType;
   }
-  
+
   @Override
   public PTableType<K, V> getTableType() {
     return tableType;
   }
-  
+
   @Override
   public String toString() {
     return target.toString();

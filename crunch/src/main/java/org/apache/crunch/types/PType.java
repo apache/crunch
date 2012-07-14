@@ -20,12 +20,11 @@ package org.apache.crunch.types;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.DoFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.fs.Path;
 
 /**
  * A {@code PType} defines a mapping between a data type that is used in a

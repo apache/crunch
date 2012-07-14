@@ -17,14 +17,13 @@
  */
 package org.apache.crunch.fn;
 
-import org.apache.hadoop.conf.Configuration;
-
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.hadoop.conf.Configuration;
 
 public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
-  
+
   private MapFn<K, S> keys;
   private MapFn<V, T> values;
 
@@ -38,7 +37,7 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
     keys.configure(conf);
     values.configure(conf);
   }
-  
+
   @Override
   public void initialize() {
     keys.setContext(getContext());
@@ -49,7 +48,7 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
   public Pair<S, T> map(Pair<K, V> input) {
     return Pair.of(keys.map(input.first()), values.map(input.second()));
   }
-  
+
   @Override
   public void cleanup(Emitter<Pair<S, T>> emitter) {
     keys.cleanup(null);

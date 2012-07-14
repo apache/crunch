@@ -35,7 +35,6 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
-
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 
 /**
@@ -128,8 +127,7 @@ public abstract class AvroDeepCopier<T> implements Serializable {
     try {
       datumWriter.write(source, binaryEncoder);
       binaryEncoder.flush();
-      binaryDecoder = DecoderFactory.get()
-          .binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
+      binaryDecoder = DecoderFactory.get().binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
       datumReader.read(target, binaryDecoder);
     } catch (Exception e) {
       throw new CrunchRuntimeException("Error while deep copying avro value " + source, e);

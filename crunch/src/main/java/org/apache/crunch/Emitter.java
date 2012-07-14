@@ -19,19 +19,19 @@ package org.apache.crunch;
 
 /**
  * Interface for writing outputs from a {@link DoFn}.
- *
+ * 
  */
 public interface Emitter<T> {
   /**
    * Write the emitted value to the next stage of the pipeline.
    * 
-   * @param emitted The value to write
+   * @param emitted
+   *          The value to write
    */
   void emit(T emitted);
 
   /**
-   * Flushes any values cached by this emitter. Called during the
-   * cleanup stage.
+   * Flushes any values cached by this emitter. Called during the cleanup stage.
    */
   void flush();
 }

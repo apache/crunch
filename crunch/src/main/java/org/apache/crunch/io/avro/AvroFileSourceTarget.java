@@ -17,16 +17,15 @@
  */
 package org.apache.crunch.io.avro;
 
-import org.apache.hadoop.fs.Path;
-
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.avro.AvroType;
+import org.apache.hadoop.fs.Path;
 
 public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public AvroFileSourceTarget(Path path, AvroType<T> atype) {
-	super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path));
+    super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path));
   }
-  
+
   @Override
   public String toString() {
     return target.toString();

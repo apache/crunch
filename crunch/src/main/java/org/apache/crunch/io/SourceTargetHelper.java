@@ -33,36 +33,36 @@ import org.apache.hadoop.fs.Path;
  */
 public class SourceTargetHelper {
 
-	private static final Log LOG = LogFactory.getLog(SourceTargetHelper.class);
+  private static final Log LOG = LogFactory.getLog(SourceTargetHelper.class);
 
-	public static long getPathSize(Configuration conf, Path path) throws IOException {
-		return getPathSize(FileSystem.get(conf), path);
-	}
+  public static long getPathSize(Configuration conf, Path path) throws IOException {
+    return getPathSize(FileSystem.get(conf), path);
+  }
 
-	public static long getPathSize(FileSystem fs, Path path) throws IOException {
+  public static long getPathSize(FileSystem fs, Path path) throws IOException {
 
-		if (!fs.exists(path)) {
-			return -1L;
-		}
+    if (!fs.exists(path)) {
+      return -1L;
+    }
 
-		FileStatus[] stati = null;
-		try {
-			stati = fs.listStatus(path);
-			if (stati == null) {
-				throw new FileNotFoundException(path + " doesn't exist");
-			}
-		} catch (FileNotFoundException e) {
-			LOG.warn("Returning 0 for getPathSize on non-existant path '" + path + "'");
-			return 0L;
-		}
+    FileStatus[] stati = null;
+    try {
+      stati = fs.listStatus(path);
+      if (stati == null) {
+        throw new FileNotFoundException(path + " doesn't exist");
+      }
+    } catch (FileNotFoundException e) {
+      LOG.warn("Returning 0 for getPathSize on non-existant path '" + path + "'");
+      return 0L;
+    }
 
-		if (stati.length == 0) {
-			return 0L;
-		}
-		long size = 0;
-		for (FileStatus status : stati) {
-			size += status.getLen();
-		}
-		return size;
-	}
+    if (stati.length == 0) {
+      return 0L;
+    }
+    long size = 0;
+    for (FileStatus status : stati) {
+      size += status.getLen();
+    }
+    return size;
+  }
 }

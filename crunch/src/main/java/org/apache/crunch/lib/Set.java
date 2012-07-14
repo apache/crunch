@@ -37,16 +37,14 @@ public class Set {
   /**
    * Compute the set difference between two sets of elements.
    * 
-   * @return a collection containing elements that are in <code>coll1</code>
-   * but not in <code>coll2</code>
+   * @return a collection containing elements that are in <code>coll1</code> but
+   *         not in <code>coll2</code>
    */
-  public static <T> PCollection<T> difference(PCollection<T> coll1,
-      PCollection<T> coll2) {
-    return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
+  public static <T> PCollection<T> difference(PCollection<T> coll1, PCollection<T> coll2) {
+    return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
           @Override
-          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
-              Emitter<T> emitter) {
+          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input, Emitter<T> emitter) {
             Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
             if (!groups.first().isEmpty() && groups.second().isEmpty()) {
               emitter.emit(input.first());
@@ -54,20 +52,18 @@ public class Set {
           }
         }, coll1.getPType());
   }
-  
+
   /**
    * Compute the intersection of two sets of elements.
    * 
    * @return a collection containing elements that common to both sets
-   * <code>coll1</code> and <code>coll2</code>
+   *         <code>coll1</code> and <code>coll2</code>
    */
-  public static <T> PCollection<T> intersection(PCollection<T> coll1,
-      PCollection<T> coll2) {
-    return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
+  public static <T> PCollection<T> intersection(PCollection<T> coll1, PCollection<T> coll2) {
+    return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
           @Override
-          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
-              Emitter<T> emitter) {
+          public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input, Emitter<T> emitter) {
             Pair<Collection<Boolean>, Collection<Boolean>> groups = input.second();
             if (!groups.first().isEmpty() && !groups.second().isEmpty()) {
               emitter.emit(input.first());
@@ -75,12 +71,13 @@ public class Set {
           }
         }, coll1.getPType());
   }
-  
+
   /**
-   * Find the elements that are common to two sets, like the Unix <code>comm</code>
-   * utility. This method returns a {@link PCollection} of {@link Tuple3} objects,
-   * and the position in the tuple that an element appears is determined by
-   * the collections that it is a member of, as follows:
+   * Find the elements that are common to two sets, like the Unix
+   * <code>comm</code> utility. This method returns a {@link PCollection} of
+   * {@link Tuple3} objects, and the position in the tuple that an element
+   * appears is determined by the collections that it is a member of, as
+   * follows:
    * <ol>
    * <li>elements only in <code>coll1</code>,</li>
    * <li>elements only in <code>coll2</code>, or</li>
@@ -90,13 +87,11 @@ public class Set {
    * 
    * @return a collection of {@link Tuple3} objects
    */
-  public static <T> PCollection<Tuple3<T, T, T>> comm(PCollection<T> coll1,
-      PCollection<T> coll2) {
+  public static <T> PCollection<Tuple3<T, T, T>> comm(PCollection<T> coll1, PCollection<T> coll2) {
     PTypeFamily typeFamily = coll1.getTypeFamily();
     PType<T> type = coll1.getPType();
-    return Cogroup.cogroup(toTable(coll1), toTable(coll2))
-        .parallelDo(new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>,
-            Tuple3<T, T, T>>() {
+    return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, Tuple3<T, T, T>>() {
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,
               Emitter<Tuple3<T, T, T>> emitter) {
@@ -104,14 +99,12 @@ public class Set {
             boolean inFirst = !groups.first().isEmpty();
             boolean inSecond = !groups.second().isEmpty();
             T t = input.first();
-            emitter.emit(Tuple3.of(
-                inFirst && !inSecond ? t : null,
-                    !inFirst && inSecond ? t : null,
-                        inFirst && inSecond ? t : null));
+            emitter.emit(Tuple3.of(inFirst && !inSecond ? t : null, !inFirst && inSecond ? t : null, inFirst
+                && inSecond ? t : null));
           }
         }, typeFamily.triples(type, type, type));
   }
-  
+
   private static <T> PTable<T, Boolean> toTable(PCollection<T> coll) {
     PTypeFamily typeFamily = coll.getTypeFamily();
     return coll.parallelDo(new DoFn<T, Pair<T, Boolean>>() {

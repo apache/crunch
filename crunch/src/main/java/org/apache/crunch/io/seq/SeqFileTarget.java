@@ -17,19 +17,18 @@
  */
 package org.apache.crunch.io.seq;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
-
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 
 public class SeqFileTarget extends FileTargetImpl {
   public SeqFileTarget(String path) {
     this(new Path(path));
   }
-  
+
   public SeqFileTarget(Path path) {
     super(path, SequenceFileOutputFormat.class);
   }
@@ -38,7 +37,7 @@ public class SeqFileTarget extends FileTargetImpl {
   public String toString() {
     return "SeqFile(" + path.toString() + ")";
   }
-  
+
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof PTableType) {

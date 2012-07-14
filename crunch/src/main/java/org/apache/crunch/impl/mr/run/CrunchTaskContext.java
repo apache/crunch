@@ -20,13 +20,12 @@ package org.apache.crunch.impl.mr.run;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.crunch.impl.mr.plan.PlanningParameters;
+import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
-
-import org.apache.crunch.impl.mr.plan.PlanningParameters;
-import org.apache.crunch.util.DistCache;
 
 public class CrunchTaskContext {
 
@@ -34,9 +33,7 @@ public class CrunchTaskContext {
   private final NodeContext nodeContext;
   private CrunchMultipleOutputs<Object, Object> multipleOutputs;
 
-  public CrunchTaskContext(
-      TaskInputOutputContext<Object, Object, Object, Object> taskContext,
-      NodeContext nodeContext) {
+  public CrunchTaskContext(TaskInputOutputContext<Object, Object, Object, Object> taskContext, NodeContext nodeContext) {
     this.taskContext = taskContext;
     this.nodeContext = nodeContext;
   }
@@ -61,12 +58,12 @@ public class CrunchTaskContext {
     }
     return nodes;
   }
-  
+
   public boolean isDebugRun() {
     Configuration conf = taskContext.getConfiguration();
     return conf.getBoolean(RuntimeParameters.DEBUG, false);
   }
-  
+
   public void cleanup() {
     if (multipleOutputs != null) {
       try {

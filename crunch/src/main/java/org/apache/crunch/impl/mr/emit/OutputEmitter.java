@@ -19,19 +19,17 @@ package org.apache.crunch.impl.mr.emit;
 
 import java.io.IOException;
 
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.types.Converter;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 public class OutputEmitter<T, K, V> implements Emitter<T> {
 
   private final Converter<K, V, Object, Object> converter;
   private final TaskInputOutputContext<?, ?, K, V> context;
 
-  public OutputEmitter(Converter<K, V, Object, Object> converter,
-      TaskInputOutputContext<?, ?, K, V> context) {
+  public OutputEmitter(Converter<K, V, Object, Object> converter, TaskInputOutputContext<?, ?, K, V> context) {
     this.converter = converter;
     this.context = context;
   }

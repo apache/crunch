@@ -36,30 +36,30 @@ import org.apache.crunch.test.InMemoryEmitter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
 
 public class MemCollection<S> implements PCollection<S> {
 
   private final Collection<S> collect;
   private final PType<S> ptype;
   private String name;
-  
+
   public MemCollection(Iterable<S> collect) {
     this(collect, null, null);
   }
-  
+
   public MemCollection(Iterable<S> collect, PType<S> ptype) {
     this(collect, ptype, null);
   }
-  
+
   public MemCollection(Iterable<S> collect, PType<S> ptype, String name) {
     this.collect = ImmutableList.copyOf(collect);
     this.ptype = ptype;
     this.name = name;
   }
-  
+
   @Override
   public Pipeline getPipeline() {
     return MemPipeline.getInstance();
@@ -67,7 +67,7 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public PCollection<S> union(PCollection<S>... collections) {
-    Collection<S> output = Lists.newArrayList();    
+    Collection<S> output = Lists.newArrayList();
     for (PCollection<S> pcollect : collections) {
       for (S s : pcollect.materialize()) {
         output.add(s);
@@ -99,8 +99,7 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
-  public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn,
-      PTableType<K, V> type) {
+  public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type) {
     InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
     doFn.initialize();
     for (S s : collect) {
@@ -124,7 +123,7 @@ public class MemCollection<S> implements PCollection<S> {
   public Collection<S> getCollection() {
     return collect;
   }
-  
+
   @Override
   public PType<S> getPType() {
     return ptype;
@@ -147,7 +146,7 @@ public class MemCollection<S> implements PCollection<S> {
   public String getName() {
     return name;
   }
-  
+
   @Override
   public String toString() {
     return collect.toString();
@@ -155,44 +154,44 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public PTable<S, Long> count() {
-	return Aggregate.count(this);
+    return Aggregate.count(this);
   }
 
   @Override
   public PCollection<S> sample(double acceptanceProbability) {
-	return Sample.sample(this, acceptanceProbability);
+    return Sample.sample(this, acceptanceProbability);
   }
 
   @Override
   public PCollection<S> sample(double acceptanceProbability, long seed) {
-	return Sample.sample(this, seed, acceptanceProbability);
+    return Sample.sample(this, seed, acceptanceProbability);
   }
 
   @Override
   public PCollection<S> max() {
-	return Aggregate.max(this);
+    return Aggregate.max(this);
   }
 
   @Override
   public PCollection<S> min() {
-	return Aggregate.min(this);
+    return Aggregate.min(this);
   }
 
   @Override
   public PCollection<S> sort(boolean ascending) {
-	return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
+    return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
   }
 
   @Override
   public PCollection<S> filter(FilterFn<S> filterFn) {
     return parallelDo(filterFn, getPType());
   }
-  
+
   @Override
   public PCollection<S> filter(String name, FilterFn<S> filterFn) {
     return parallelDo(name, filterFn, getPType());
   }
-  
+
   @Override
   public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
     return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));

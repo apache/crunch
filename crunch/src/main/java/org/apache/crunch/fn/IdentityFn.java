@@ -20,7 +20,7 @@ package org.apache.crunch.fn;
 import org.apache.crunch.MapFn;
 
 public class IdentityFn<T> extends MapFn<T, T> {
-  
+
   private static final IdentityFn<Object> INSTANCE = new IdentityFn<Object>();
 
   @SuppressWarnings("unchecked")
