@@ -207,6 +207,7 @@ under the License.
         <version>2.12</version>
         <configuration>
           <testSourceDirectory>src/it/java</testSourceDirectory>
+          <argLine>-Xmx512m</argLine>
         </configuration>
         <executions>
           <execution>
