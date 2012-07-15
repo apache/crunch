@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch</artifactId>
-  <name>Apache Incubator Crunch</name>
+  <name>Apache Incubator Crunch Core</name>
 
   <dependencies>
     <dependency>
@@ -150,6 +150,7 @@ under the License.
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
@@ -171,7 +172,6 @@ under the License.
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.7</version>
         <executions>
           <execution>
             <id>add-test-source</id>
@@ -181,7 +181,7 @@ under the License.
             </goals>
             <configuration>
               <sources>
-                <source>src/it/java</source>
+                <source>${basedir}/src/it/java</source>
               </sources>
             </configuration>
           </execution>
@@ -194,7 +194,7 @@ under the License.
             <configuration>
               <resources>
                   <resource>
-                    <directory>src/it/resources</directory>
+                    <directory>${basedir}/src/it/resources</directory>
                   </resource>
               </resources>
             </configuration>
@@ -204,10 +204,8 @@ under the License.
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.12</version>
         <configuration>
-          <testSourceDirectory>src/it/java</testSourceDirectory>
-          <argLine>-Xmx512m</argLine>
+          <testSourceDirectory>${basedir}/src/it/java</testSourceDirectory>
         </configuration>
         <executions>
           <execution>
