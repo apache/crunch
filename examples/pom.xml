@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch-examples</artifactId>
-  <name>Apache Incubator Crunch Examples</name>
+  <name>Crunch Examples</name>
 
   <dependencies>
     <dependency>

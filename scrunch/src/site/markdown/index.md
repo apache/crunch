@@ -1,4 +1,4 @@
-# Scrunch - A Scala Wrapper for Crunch
+## Scrunch - A Scala Wrapper for Crunch
 
 ## Introduction
 
