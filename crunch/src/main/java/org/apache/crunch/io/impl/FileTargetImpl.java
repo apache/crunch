@@ -19,13 +19,13 @@ package org.apache.crunch.io.impl;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class FileTargetImpl implements PathTarget {

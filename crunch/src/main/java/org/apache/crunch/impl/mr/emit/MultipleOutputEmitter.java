@@ -22,7 +22,7 @@ import java.io.IOException;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.types.Converter;
-import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
 public class MultipleOutputEmitter<T, K, V> implements Emitter<T> {
 

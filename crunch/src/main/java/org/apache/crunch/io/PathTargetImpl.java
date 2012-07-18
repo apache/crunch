@@ -18,10 +18,10 @@
 package org.apache.crunch.io;
 
 import org.apache.crunch.types.PType;
+import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.OutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public abstract class PathTargetImpl implements PathTarget {

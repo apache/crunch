@@ -25,7 +25,7 @@ import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
 public class CrunchTaskContext {
 
