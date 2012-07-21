@@ -17,35 +17,30 @@
  */
 package org.apache.crunch.lib.join;
 
-import static org.junit.Assert.assertTrue;
+import static org.apache.crunch.test.StringWrapper.wrap;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
-import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.types.avro.Avros;
 
-public class InnerJoinIT extends JoinTester {
+public class LeftOuterJoinTest extends JoinFnTestBase {
+
   @Override
-  public void assertPassed(Iterable<Pair<String, Long>> lines) {
-    boolean passed1 = false;
-    boolean passed2 = true;
-    boolean passed3 = true;
-    for (Pair<String, Long> line : lines) {
-      if ("wretched".equals(line.first()) && 24 == line.second()) {
-        passed1 = true;
-      }
-      if ("againe".equals(line.first())) {
-        passed2 = false;
-      }
-      if ("Montparnasse.".equals(line.first())) {
-        passed3 = false;
-      }
-    }
-    assertTrue(passed1);
-    assertTrue(passed2);
-    assertTrue(passed3);
+  protected void checkOutput(Emitter<Pair<StringWrapper, Pair<StringWrapper, String>>> emitter) {
+    verify(emitter)
+        .emit(Pair.of(wrap("left-only"), Pair.of(wrap("left-only-left"), (String) null)));
+    verify(emitter).emit(Pair.of(wrap("both"), Pair.of(wrap("both-left"), "both-right")));
+    verifyNoMoreInteractions(emitter);
   }
 
   @Override
-  protected JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily) {
-    return new InnerJoinFn<String, Long, Long>(typeFamily.strings(), typeFamily.longs());
+  protected JoinFn<StringWrapper, StringWrapper, String> getJoinFn() {
+    return new LeftOuterJoinFn<StringWrapper, StringWrapper, String>(
+        Avros.reflects(StringWrapper.class),
+        Avros.reflects(StringWrapper.class));
   }
+
 }

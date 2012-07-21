@@ -40,8 +40,8 @@ public class RightOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   private transient K lastKey;
   private transient List<U> leftValues;
 
-  public RightOuterJoinFn(PType<U> leftValueType) {
-    super(leftValueType);
+  public RightOuterJoinFn(PType<K> keyType, PType<U> leftValueType) {
+    super(keyType, leftValueType);
   }
 
   /** {@inheritDoc} */
@@ -55,7 +55,7 @@ public class RightOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   @Override
   public void join(K key, int id, Iterable<Pair<U, V>> pairs, Emitter<Pair<K, Pair<U, V>>> emitter) {
     if (!key.equals(lastKey)) {
-      lastKey = key;
+      lastKey = keyType.getDetachedValue(key);
       leftValues.clear();
     }
     if (id == 0) {

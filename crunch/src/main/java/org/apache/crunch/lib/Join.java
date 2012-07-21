@@ -75,7 +75,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> innerJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new InnerJoinFn<K, U, V>(left.getValueType()));
+    return join(left, right, new InnerJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
   }
 
   /**
@@ -97,7 +97,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> leftJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new LeftOuterJoinFn<K, U, V>(left.getValueType()));
+    return join(left, right, new LeftOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
   }
 
   /**
@@ -120,7 +120,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> rightJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new RightOuterJoinFn<K, U, V>(left.getValueType()));
+    return join(left, right, new RightOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
   }
 
   /**
@@ -141,7 +141,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> fullJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new FullOuterJoinFn<K, U, V>(left.getValueType()));
+    return join(left, right, new FullOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
   }
 
   public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinFn<K, U, V> joinFn) {

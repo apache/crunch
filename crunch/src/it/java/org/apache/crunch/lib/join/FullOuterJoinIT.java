@@ -46,6 +46,6 @@ public class FullOuterJoinIT extends JoinTester {
 
   @Override
   protected JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily) {
-    return new FullOuterJoinFn<String, Long, Long>(typeFamily.longs());
+    return new FullOuterJoinFn<String, Long, Long>(typeFamily.strings(), typeFamily.longs());
   }
 }

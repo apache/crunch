@@ -34,16 +34,20 @@ import org.apache.crunch.types.PType;
  */
 public abstract class JoinFn<K, U, V> extends DoFn<Pair<Pair<K, Integer>, Iterable<Pair<U, V>>>, Pair<K, Pair<U, V>>> {
 
+  protected PType<K> keyType;
   protected PType<U> leftValueType;
 
   /**
    * Instantiate with the PType of the value of the left side of the join (used
    * for creating deep copies of values).
    * 
+   * @param keyType
+   *          The PType of the value used as the key of the join
    * @param leftValueType
    *          The PType of the value type of the left side of the join
    */
-  public JoinFn(PType<U> leftValueType) {
+  public JoinFn(PType<K> keyType, PType<U> leftValueType) {
+    this.keyType = keyType;
     this.leftValueType = leftValueType;
   }
 

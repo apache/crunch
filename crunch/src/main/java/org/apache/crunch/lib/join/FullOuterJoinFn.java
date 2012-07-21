@@ -41,8 +41,8 @@ public class FullOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   private transient K lastKey;
   private transient List<U> leftValues;
 
-  public FullOuterJoinFn(PType<U> leftValueType) {
-    super(leftValueType);
+  public FullOuterJoinFn(PType<K> keyType, PType<U> leftValueType) {
+    super(keyType, leftValueType);
   }
 
   /** {@inheritDoc} */
@@ -63,7 +63,7 @@ public class FullOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
           emitter.emit(Pair.of(lastKey, Pair.of(u, (V) null)));
         }
       }
-      lastKey = key;
+      lastKey = keyType.getDetachedValue(key);
       leftValues.clear();
     }
     if (id == 0) {
