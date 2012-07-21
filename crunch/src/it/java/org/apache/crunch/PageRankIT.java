@@ -89,23 +89,9 @@ public class PageRankIT {
   }
 
   @Test
-  public void testAvroBSON() throws Exception {
-    PTypeFamily tf = AvroTypeFamily.getInstance();
-    PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
-    run(new MRPipeline(PageRankIT.class), prType, tf);
-  }
-
-  @Test
   public void testWritablesJSON() throws Exception {
     PTypeFamily tf = WritableTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    run(new MRPipeline(PageRankIT.class), prType, tf);
-  }
-
-  @Test
-  public void testWritablesBSON() throws Exception {
-    PTypeFamily tf = WritableTypeFamily.getInstance();
-    PType<PageRankData> prType = PTypes.smile(PageRankData.class, tf);
     run(new MRPipeline(PageRankIT.class), prType, tf);
   }
 

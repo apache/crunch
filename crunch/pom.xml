@@ -66,11 +66,6 @@ under the License.
       <artifactId>jackson-mapper-asl</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-smile</artifactId>
-    </dependency>
-
     <!-- Both Protobufs and Thrift are supported as
          derived serialization types, and you can use
          (almost) any version of them you like, Crunch
