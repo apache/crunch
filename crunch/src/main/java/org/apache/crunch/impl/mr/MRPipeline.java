@@ -264,14 +264,18 @@ public class MRPipeline implements Pipeline {
   }
 
   private static Path createTempDirectory(Configuration conf) {
-    Path dir = new Path("/tmp/crunch" + RANDOM.nextInt());
+    Path dir = createTemporaryPath(conf);
     try {
       FileSystem.get(conf).mkdirs(dir);
     } catch (IOException e) {
-      LOG.error("Exception creating job output directory", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Cannot create job output directory " + dir, e);
     }
     return dir;
+  }
+
+  private static Path createTemporaryPath(Configuration conf) {
+    String baseDir = conf.get(RuntimeParameters.TMP_DIR, "/tmp");
+    return new Path(baseDir, "crunch-" + (RANDOM.nextInt() & Integer.MAX_VALUE));
   }
 
   @Override

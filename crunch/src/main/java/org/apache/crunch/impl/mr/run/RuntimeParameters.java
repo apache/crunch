@@ -29,6 +29,8 @@ public class RuntimeParameters {
 
   public static final String DEBUG = "crunch.debug";
 
+  public static final String TMP_DIR = "crunch.tmp.dir";
+
   // Not instantiated
   private RuntimeParameters() {
   }

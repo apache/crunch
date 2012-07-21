@@ -19,7 +19,6 @@ package org.apache.crunch.impl.mr;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -27,34 +26,47 @@ import java.io.IOException;
 
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+
+@RunWith(MockitoJUnitRunner.class)
 public class MRPipelineTest {
-
+  @Rule
+  public TemporaryFolder tempDir = new TemporaryFolder();
+  @Mock
+  private PCollectionImpl<String> pcollection;
+  @Mock
+  private ReadableSourceTarget<String> readableSourceTarget;
+  @Mock
+  private SourceTarget<String> nonReadableSourceTarget;
   private MRPipeline pipeline;
 
   @Before
   public void setUp() throws IOException {
-    pipeline = spy(new MRPipeline(MRPipelineTest.class));
+    Configuration conf = new Configuration();
+    conf.set(RuntimeParameters.TMP_DIR, tempDir.getRoot().getAbsolutePath());
+    pipeline = spy(new MRPipeline(MRPipelineTest.class, conf));
   }
 
   @Test
   public void testGetMaterializeSourceTarget_AlreadyMaterialized() {
-    PCollectionImpl<String> materializedPcollection = mock(PCollectionImpl.class);
-    ReadableSourceTarget<String> readableSourceTarget = mock(ReadableSourceTarget.class);
-    when(materializedPcollection.getMaterializedAt()).thenReturn(readableSourceTarget);
+    when(pcollection.getMaterializedAt()).thenReturn(readableSourceTarget);
 
-    assertEquals(readableSourceTarget, pipeline.getMaterializeSourceTarget(materializedPcollection));
+    assertEquals(readableSourceTarget, pipeline.getMaterializeSourceTarget(pcollection));
   }
 
   @Test
   public void testGetMaterializeSourceTarget_NotMaterialized_HasOutput() {
-
-    PCollectionImpl<String> pcollection = mock(PCollectionImpl.class);
-    ReadableSourceTarget<String> readableSourceTarget = mock(ReadableSourceTarget.class);
     when(pcollection.getPType()).thenReturn(Avros.strings());
     doReturn(readableSourceTarget).when(pipeline).createIntermediateOutput(Avros.strings());
     when(pcollection.getMaterializedAt()).thenReturn(null);
@@ -64,8 +76,6 @@ public class MRPipelineTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testGetMaterializeSourceTarget_NotMaterialized_NotReadableSourceTarget() {
-    PCollectionImpl<String> pcollection = mock(PCollectionImpl.class);
-    SourceTarget<String> nonReadableSourceTarget = mock(SourceTarget.class);
     when(pcollection.getPType()).thenReturn(Avros.strings());
     doReturn(nonReadableSourceTarget).when(pipeline).createIntermediateOutput(Avros.strings());
     when(pcollection.getMaterializedAt()).thenReturn(null);
