@@ -28,12 +28,11 @@ import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.hbase.HBaseTarget;
 import org.apache.crunch.lib.Aggregate;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -52,12 +51,14 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.io.ByteStreams;
 
 public class WordCountHBaseIT {
-  protected static final Log LOG = LogFactory.getLog(WordCountHBaseIT.class);
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   private static final byte[] COUNTS_COLFAM = Bytes.toBytes("cf");
   private static final byte[] WORD_COLFAM = Bytes.toBytes("cf");
@@ -88,15 +89,10 @@ public class WordCountHBaseIT {
     }, Writables.writables(Put.class));
   }
 
-  @SuppressWarnings("deprecation")
   @Before
   public void setUp() throws Exception {
     Configuration conf = hbaseTestUtil.getConfiguration();
-    File tmpDir = File.createTempFile("logdir", "");
-    tmpDir.delete();
-    tmpDir.mkdir();
-    tmpDir.deleteOnExit();
-    conf.set("hadoop.log.dir", tmpDir.getAbsolutePath());
+    conf.set("hadoop.log.dir", tmpDir.getRootFileName());
     conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
     conf.setInt("hbase.master.info.port", -1);
     conf.setInt("hbase.regionserver.info.port", -1);

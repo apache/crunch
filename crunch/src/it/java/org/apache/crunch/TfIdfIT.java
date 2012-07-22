@@ -17,8 +17,6 @@
  */
 package org.apache.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -33,9 +31,11 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Join;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.fs.Path;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -43,6 +43,9 @@ import com.google.common.io.Files;
 
 @SuppressWarnings("serial")
 public class TfIdfIT implements Serializable {
+  @Rule
+  public transient TemporaryPath tmpDir = new TemporaryPath();
+
   // total number of documents, should calculate
   protected static final double N = 2;
 
@@ -169,16 +172,13 @@ public class TfIdfIT implements Serializable {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean singleRun) throws IOException {
-    File input = File.createTempFile("docs", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("docs.txt")), input);
+    String inputFile = tmpDir.copyResourceFileName("docs.txt");
+    String outputPath1 = tmpDir.getFileName("output1");
+    String outputPath2 = tmpDir.getFileName("output2");
 
-    String outputPath1 = getOutput();
-    String outputPath2 = getOutput();
+    Path tfPath = tmpDir.getPath("termfreq");
 
-    Path tfPath = new Path(getOutput("termfreq"));
-
-    PCollection<String> docs = pipeline.readTextFile(input.getAbsolutePath());
+    PCollection<String> docs = pipeline.readTextFile(inputFile);
 
     PTable<String, Collection<Pair<String, Double>>> results = generateTFIDF(docs, tfPath, typeFamily);
     pipeline.writeTextFile(results, outputPath1);
@@ -198,7 +198,6 @@ public class TfIdfIT implements Serializable {
 
     // Check the lowercase version...
     File outputFile = new File(outputPath1, "part-r-00000");
-    outputFile.deleteOnExit();
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
@@ -211,7 +210,6 @@ public class TfIdfIT implements Serializable {
 
     // ...and the uppercase version
     outputFile = new File(outputPath2, "part-r-00000");
-    outputFile.deleteOnExit();
     lines = Files.readLines(outputFile, Charset.defaultCharset());
     passed = false;
     for (String line : lines) {
@@ -221,16 +219,5 @@ public class TfIdfIT implements Serializable {
       }
     }
     assertTrue(passed);
-  }
-
-  public static String getOutput() throws IOException {
-    return getOutput("output");
-  }
-
-  public static String getOutput(String prefix) throws IOException {
-    File output = File.createTempFile(prefix, "");
-    String path = output.getAbsolutePath();
-    output.delete();
-    return path;
   }
 }

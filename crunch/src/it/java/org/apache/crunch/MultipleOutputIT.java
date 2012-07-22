@@ -27,15 +27,18 @@ import java.util.List;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.io.Files;
 
 public class MultipleOutputIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   public static PCollection<String> evenCountLetters(PCollection<String> words, PTypeFamily typeFamily) {
     return words.parallelDo("even", new FilterFn<String>() {
@@ -79,11 +82,9 @@ public class MultipleOutputIT {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("letters.txt");
-    File outputEven = FileHelper.createOutputPath();
-    File outputOdd = FileHelper.createOutputPath();
-    String outputPathEven = outputEven.getAbsolutePath();
-    String outputPathOdd = outputOdd.getAbsolutePath();
+    String inputPath = tmpDir.copyResourceFileName("letters.txt");
+    String outputPathEven = tmpDir.getFileName("even");
+    String outputPathOdd = tmpDir.getFileName("odd");
 
     PCollection<String> words = pipeline.read(At.textFile(inputPath, typeFamily.strings()));
 
@@ -96,9 +97,6 @@ public class MultipleOutputIT {
 
     checkFileContents(outputPathEven, Arrays.asList("bb"));
     checkFileContents(outputPathOdd, Arrays.asList("a"));
-
-    outputEven.deleteOnExit();
-    outputOdd.deleteOnExit();
   }
 
   private void checkFileContents(String filePath, List<String> expected) throws IOException {

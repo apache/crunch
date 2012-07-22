@@ -36,13 +36,14 @@ import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -52,6 +53,8 @@ import com.google.common.collect.Lists;
 
 @RunWith(value = Parameterized.class)
 public class UnionCollectionIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   private static final Log LOG = LogFactory.getLog(UnionCollectionIT.class);
 
@@ -64,8 +67,8 @@ public class UnionCollectionIT {
   @Before
   @SuppressWarnings("unchecked")
   public void setUp() throws IOException {
-    String inputFile1 = FileHelper.createTempCopyOf("set1.txt");
-    String inputFile2 = FileHelper.createTempCopyOf("set2.txt");
+    String inputFile1 = tmpDir.copyResourceFileName("set1.txt");
+    String inputFile2 = tmpDir.copyResourceFileName("set2.txt");
 
     PCollection<String> firstCollection = pipeline.read(At.textFile(inputFile1, typeFamily.strings()));
     PCollection<String> secondCollection = pipeline.read(At.textFile(inputFile2, typeFamily.strings()));
@@ -114,30 +117,30 @@ public class UnionCollectionIT {
   @Test
   public void unionWriteShouldNotThrowNPE() throws IOException {
 
-    File outputPath1 = FileHelper.createOutputPath();
-    File outputPath2 = FileHelper.createOutputPath();
-    File outputPath3 = FileHelper.createOutputPath();
+    String outputPath1 = tmpDir.getFileName("output1");
+    String outputPath2 = tmpDir.getFileName("output2");
+    String outputPath3 = tmpDir.getFileName("output3");
 
     if (typeFamily == AvroTypeFamily.getInstance()) {
-      union.write(To.avroFile(outputPath1.getAbsolutePath()));
-      pipeline.write(union, To.avroFile(outputPath2.getAbsolutePath()));
+      union.write(To.avroFile(outputPath1));
+      pipeline.write(union, To.avroFile(outputPath2));
 
       pipeline.run();
 
-      checkFileContents(outputPath1.getAbsolutePath());
-      checkFileContents(outputPath2.getAbsolutePath());
+      checkFileContents(outputPath1);
+      checkFileContents(outputPath2);
 
     } else {
 
-      union.write(To.textFile(outputPath1.getAbsolutePath()));
-      pipeline.write(union, To.textFile(outputPath2.getAbsolutePath()));
-      pipeline.writeTextFile(union, outputPath3.getAbsolutePath());
+      union.write(To.textFile(outputPath1));
+      pipeline.write(union, To.textFile(outputPath2));
+      pipeline.writeTextFile(union, outputPath3);
 
       pipeline.run();
 
-      checkFileContents(outputPath1.getAbsolutePath());
-      checkFileContents(outputPath2.getAbsolutePath());
-      checkFileContents(outputPath3.getAbsolutePath());
+      checkFileContents(outputPath1);
+      checkFileContents(outputPath2);
+      checkFileContents(outputPath3);
     }
 
   }

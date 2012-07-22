@@ -36,17 +36,20 @@ import org.apache.crunch.fn.MapKeysFn;
 import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
 import com.google.common.io.Files;
 
 public class CogroupIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   private static class WordSplit extends DoFn<String, Pair<String, Long>> {
     @Override
@@ -99,9 +102,9 @@ public class CogroupIT {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
-    String maughamInputPath = FileHelper.createTempCopyOf("maugham.txt");
-    File output = FileHelper.createOutputPath();
+    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
+    String maughamInputPath = tmpDir.copyResourceFileName("maugham.txt");
+    File output = tmpDir.getFile("output");
 
     PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInputPath));
     PCollection<String> maugham = pipeline.read(From.textFile(maughamInputPath));
@@ -118,7 +121,5 @@ public class CogroupIT {
       }
     }
     assertTrue(passed);
-
-    output.deleteOnExit();
   }
 }

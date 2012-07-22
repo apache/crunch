@@ -28,12 +28,15 @@ import java.io.IOException;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class PCollectionGetSizeIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   private String emptyInputPath;
   private String nonEmptyInputPath;
@@ -51,9 +54,9 @@ public class PCollectionGetSizeIT {
 
   @Before
   public void setUp() throws IOException {
-    emptyInputPath = FileHelper.createTempCopyOf("emptyTextFile.txt");
-    nonEmptyInputPath = FileHelper.createTempCopyOf("set1.txt");
-    outputPath = FileHelper.createOutputPath().getAbsolutePath();
+    emptyInputPath = tmpDir.copyResourceFileName("emptyTextFile.txt");
+    nonEmptyInputPath = tmpDir.copyResourceFileName("set1.txt");
+    outputPath = tmpDir.getFileName("output");
   }
 
   @Test

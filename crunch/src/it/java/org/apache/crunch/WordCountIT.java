@@ -29,10 +29,11 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
 import org.apache.crunch.lib.Aggregate;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -40,6 +41,8 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class WordCountIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   enum WordCountStats {
     ANDS
@@ -113,9 +116,9 @@ public class WordCountIT {
     runWithTop(AvroTypeFamily.getInstance());
   }
 
-  public static void runWithTop(PTypeFamily tf) throws IOException {
+  public void runWithTop(PTypeFamily tf) throws IOException {
     Pipeline pipeline = new MRPipeline(WordCountIT.class);
-    String inputPath = FileHelper.createTempCopyOf("shakes.txt");
+    String inputPath = tmpDir.copyResourceFileName("shakes.txt");
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, tf.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, tf);
@@ -126,9 +129,8 @@ public class WordCountIT {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("shakes.txt");
-    File output = FileHelper.createOutputPath();
-    String outputPath = output.getAbsolutePath();
+    String inputPath = tmpDir.copyResourceFileName("shakes.txt");
+    String outputPath = tmpDir.getFileName("output");
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, typeFamily.strings()));
     PTable<String, Long> wordCount = wordCount(shakespeare, typeFamily);
@@ -139,9 +141,7 @@ public class WordCountIT {
     }
 
     if (runSecond) {
-      File substrCount = File.createTempFile("substr", "");
-      String substrPath = substrCount.getAbsolutePath();
-      substrCount.delete();
+      String substrPath = tmpDir.getFileName("substr");
       PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(CombineFn.<String> SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
@@ -165,6 +165,5 @@ public class WordCountIT {
       }
     }
     assertTrue(passed);
-    output.deleteOnExit();
   }
 }

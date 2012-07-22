@@ -29,13 +29,16 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.lib.Aggregate;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Rule;
 import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class TermFrequencyIT implements Serializable {
+  @Rule
+  public transient TemporaryPath tmpDir = new TemporaryPath();
 
   @Test
   public void testTermFrequencyWithNoTransform() throws IOException {
@@ -58,10 +61,10 @@ public class TermFrequencyIT implements Serializable {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean transformTF) throws IOException {
-    String input = FileHelper.createTempCopyOf("docs.txt");
+    String input = tmpDir.copyResourceFileName("docs.txt");
 
-    File transformedOutput = FileHelper.createOutputPath();
-    File tfOutput = FileHelper.createOutputPath();
+    File transformedOutput = tmpDir.getFile("transformed-output");
+    File tfOutput = tmpDir.getFile("tf-output");
 
     PCollection<String> docs = pipeline.readTextFile(input);
 

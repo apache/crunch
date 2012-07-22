@@ -17,8 +17,6 @@
  */
 package org.apache.crunch;
 
-import static com.google.common.io.Resources.getResource;
-import static com.google.common.io.Resources.newInputStreamSupplier;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -27,14 +25,19 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.io.Files;
 
+
 public class TupleNClassCastBugIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   public static PCollection<TupleN> mapGroupDo(PCollection<String> lines, PTypeFamily ptf) {
     PTable<String, TupleN> mapped = lines.parallelDo(new MapFn<String, Pair<String, TupleN>>() {
@@ -68,15 +71,10 @@ public class TupleNClassCastBugIT {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    File input = File.createTempFile("docs", "txt");
-    input.deleteOnExit();
-    Files.copy(newInputStreamSupplier(getResource("docs.txt")), input);
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
+    String outputPath = tmpDir.getFileName("output");
 
-    File output = File.createTempFile("output", "");
-    String outputPath = output.getAbsolutePath();
-    output.delete();
-
-    PCollection<String> docLines = pipeline.readTextFile(input.getAbsolutePath());
+    PCollection<String> docLines = pipeline.readTextFile(inputPath);
     pipeline.writeTextFile(mapGroupDo(docLines, typeFamily), outputPath);
     pipeline.done();
 
@@ -85,13 +83,12 @@ public class TupleNClassCastBugIT {
     // *** which is thrown in a different thread during the reduce phase. If all
     // is well
     // *** the file will exist and have six lines. Otherwise the bug is present.
-    File outputFile = new File(output, "part-r-00000");
+    File outputFile = new File(outputPath, "part-r-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     int lineCount = 0;
     for (String line : lines) {
       lineCount++;
     }
     assertEquals(6, lineCount);
-    output.deleteOnExit();
   }
 }
