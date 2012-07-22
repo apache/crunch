@@ -25,7 +25,10 @@ import java.util.Map;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -63,10 +66,12 @@ public class MaterializeToMapIT {
       return Pair.of(k, input);
     }
   }
+  @Rule
+  public TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test
   public void testMRMaterializeToMap() throws IOException {
-    Pipeline p = new MRPipeline(MaterializeToMapIT.class);
+    Pipeline p = new MRPipeline(MaterializeToMapIT.class, temporaryPath.setTempLoc(new Configuration()));
     String inputFile = FileHelper.createTempCopyOf("set1.txt");
     PCollection<String> c = p.readTextFile(inputFile);
     PTypeFamily tf = c.getTypeFamily();

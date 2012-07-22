@@ -34,6 +34,7 @@ import org.apache.crunch.lib.Join;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,12 +52,12 @@ public class TfIdfIT implements Serializable {
 
   @Test
   public void testWritablesSingleRun() throws IOException {
-    run(new MRPipeline(TfIdfIT.class), WritableTypeFamily.getInstance(), true);
+    run(new MRPipeline(TfIdfIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), true);
   }
 
   @Test
   public void testWritablesMultiRun() throws IOException {
-    run(new MRPipeline(TfIdfIT.class), WritableTypeFamily.getInstance(), false);
+    run(new MRPipeline(TfIdfIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), false);
   }
 
   /**

@@ -43,109 +43,114 @@ import org.apache.crunch.lib.Sort.ColumnOrder;
 import org.apache.crunch.lib.Sort.Order;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
 public class SortIT implements Serializable {
+  @Rule
+  public transient TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test
   public void testWritableSortAsc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), Order.ASCENDING,
+    runSingle(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), Order.ASCENDING,
         "A\tand this text as well");
   }
 
   @Test
   public void testWritableSortDesc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), Order.DESCENDING,
+    runSingle(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), Order.DESCENDING,
         "B\tthis doc has some text");
   }
 
   @Test
   public void testWritableSortAscDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
+    runPair(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
         "this doc has this text");
   }
 
   @Test
   public void testWritableSortSecondDescFirstDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
+    runPair(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
         "this doc has this text");
   }
 
   @Test
   public void testWritableSortTripleAscDescAsc() throws Exception {
-    runTriple(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+    runTriple(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
         by(3, ASCENDING), "A", "this", "doc");
   }
 
   @Test
   public void testWritableSortQuadAscDescAscDesc() throws Exception {
-    runQuad(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+    runQuad(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
         by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
   }
 
   @Test
   public void testWritableSortTupleNAscDesc() throws Exception {
-    runTupleN(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(),
+    runTupleN(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(),
         new ColumnOrder[] { by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A", "this doc has this text" });
   }
 
   @Test
   public void testWritableSortTable() throws Exception {
-    runTable(new MRPipeline(SortIT.class), WritableTypeFamily.getInstance(), "A");
+    runTable(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), "A");
   }
 
   @Test
   public void testAvroSortAsc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.ASCENDING, "A\tand this text as well");
+    runSingle(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), Order.ASCENDING, "A\tand this text as well");
   }
 
   @Test
   public void testAvroSortDesc() throws Exception {
-    runSingle(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), Order.DESCENDING, "B\tthis doc has some text");
+    runSingle(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), Order.DESCENDING, "B\tthis doc has some text");
   }
 
   @Test
   public void testAvroSortPairAscAsc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
+    runPair(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
         "this doc has this text");
   }
 
   @Test
   @Ignore("Avro sorting only works in field order at the moment")
   public void testAvroSortPairSecondAscFirstDesc() throws Exception {
-    runPair(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
+    runPair(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
         "this doc has this text");
   }
 
   @Test
   public void testAvroSortTripleAscDescAsc() throws Exception {
-    runTriple(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+    runTriple(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
         by(3, ASCENDING), "A", "this", "doc");
   }
 
   @Test
   public void testAvroSortQuadAscDescAscDesc() throws Exception {
-    runQuad(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
+    runQuad(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING),
         by(3, ASCENDING), by(4, DESCENDING), "A", "this", "doc", "has");
   }
 
   @Test
   public void testAvroSortTupleNAscDesc() throws Exception {
-    runTupleN(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(),
+    runTupleN(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(),
         new ColumnOrder[] { by(1, ASCENDING), by(2, DESCENDING) }, new String[] { "A", "this doc has this text" });
   }
 
   @Test
   public void testAvroReflectSortPair() throws IOException {
-    Pipeline pipeline = new MRPipeline(SortIT.class);
+    Pipeline pipeline = new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration()));
     PCollection<Pair<String, StringWrapper>> sorted = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
         .parallelDo(new MapFn<String, Pair<String, StringWrapper>>() {
 
@@ -165,7 +170,7 @@ public class SortIT implements Serializable {
 
   @Test
   public void testAvroReflectSortTable() throws IOException {
-    Pipeline pipeline = new MRPipeline(SortIT.class);
+    Pipeline pipeline = new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration()));
     PTable<String, StringWrapper> unsorted = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt")).parallelDo(
         new MapFn<String, Pair<String, StringWrapper>>() {
 
@@ -187,7 +192,7 @@ public class SortIT implements Serializable {
 
   @Test
   public void testAvroSortTable() throws Exception {
-    runTable(new MRPipeline(SortIT.class), AvroTypeFamily.getInstance(), "A");
+    runTable(new MRPipeline(SortIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance(), "A");
   }
 
   private void runSingle(Pipeline pipeline, PTypeFamily typeFamily, Order order, String firstLine) throws IOException {

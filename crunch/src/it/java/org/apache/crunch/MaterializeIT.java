@@ -26,9 +26,12 @@ import java.util.List;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -45,14 +48,19 @@ public class MaterializeIT {
     }
   }
 
+  @Rule
+  public TemporaryPath temporaryPath= new TemporaryPath();
+
   @Test
   public void testMaterializeInput_Writables() throws IOException {
-    runMaterializeInput(new MRPipeline(MaterializeIT.class), WritableTypeFamily.getInstance());
+    runMaterializeInput(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+        WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testMaterializeInput_Avro() throws IOException {
-    runMaterializeInput(new MRPipeline(MaterializeIT.class), AvroTypeFamily.getInstance());
+    runMaterializeInput(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+        AvroTypeFamily.getInstance());
   }
 
   @Test
@@ -67,12 +75,14 @@ public class MaterializeIT {
 
   @Test
   public void testMaterializeEmptyIntermediate_Writables() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class), WritableTypeFamily.getInstance());
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+        WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testMaterializeEmptyIntermediate_Avro() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class), AvroTypeFamily.getInstance());
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+        AvroTypeFamily.getInstance());
   }
 
   @Test

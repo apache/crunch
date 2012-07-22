@@ -37,8 +37,11 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.Employee;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.TemporaryPath;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +51,8 @@ public class MultiAvroSchemaJoinIT {
 
   private File personFile;
   private File employeeFile;
+  @Rule
+  public TemporaryPath temporaryPath= new TemporaryPath();
 
   @Before
   public void setUp() throws Exception {
@@ -102,7 +107,7 @@ public class MultiAvroSchemaJoinIT {
 
   @Test
   public void testJoin() throws Exception {
-    Pipeline p = new MRPipeline(MultiAvroSchemaJoinIT.class);
+    Pipeline p = new MRPipeline(MultiAvroSchemaJoinIT.class, temporaryPath.setTempLoc(new Configuration()));
     PCollection<Person> people = p.read(From.avroFile(personFile.getAbsolutePath(), records(Person.class)));
     PCollection<Employee> employees = p.read(From.avroFile(employeeFile.getAbsolutePath(), records(Employee.class)));
 

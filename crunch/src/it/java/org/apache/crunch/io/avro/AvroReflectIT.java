@@ -28,7 +28,10 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -85,10 +88,12 @@ public class AvroReflectIT implements Serializable {
     }
 
   }
+  @Rule
+  public transient TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test
   public void testReflection() throws IOException {
-    Pipeline pipeline = new MRPipeline(AvroReflectIT.class);
+    Pipeline pipeline = new MRPipeline(AvroReflectIT.class, temporaryPath.setTempLoc(new Configuration()));
     PCollection<StringWrapper> stringWrapperCollection = pipeline.readTextFile(FileHelper.createTempCopyOf("set1.txt"))
         .parallelDo(new MapFn<String, StringWrapper>() {
 

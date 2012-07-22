@@ -32,6 +32,7 @@ import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -42,12 +43,12 @@ public class TermFrequencyIT implements Serializable {
 
   @Test
   public void testTermFrequencyWithNoTransform() throws IOException {
-    run(new MRPipeline(TermFrequencyIT.class), WritableTypeFamily.getInstance(), false);
+    run(new MRPipeline(TermFrequencyIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), false);
   }
 
   @Test
   public void testTermFrequencyWithTransform() throws IOException {
-    run(new MRPipeline(TermFrequencyIT.class), WritableTypeFamily.getInstance(), true);
+    run(new MRPipeline(TermFrequencyIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), true);
   }
 
   @Test

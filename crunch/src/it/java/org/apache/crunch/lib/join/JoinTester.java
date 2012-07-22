@@ -30,10 +30,13 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Join;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 public abstract class JoinTester implements Serializable {
@@ -78,15 +81,17 @@ public abstract class JoinTester implements Serializable {
 
     pipeline.done();
   }
+  @Rule
+  public transient TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test
   public void testWritableJoin() throws Exception {
-    run(new MRPipeline(InnerJoinIT.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(InnerJoinIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvroJoin() throws Exception {
-    run(new MRPipeline(InnerJoinIT.class), AvroTypeFamily.getInstance());
+    run(new MRPipeline(InnerJoinIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
   }
 
   /**

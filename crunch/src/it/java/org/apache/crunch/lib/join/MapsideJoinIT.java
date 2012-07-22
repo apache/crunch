@@ -33,7 +33,10 @@ import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -58,6 +61,8 @@ public class MapsideJoinIT {
     }
 
   }
+  @Rule
+  public TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test(expected = CrunchRuntimeException.class)
   public void testNonMapReducePipeline() {
@@ -66,7 +71,7 @@ public class MapsideJoinIT {
 
   @Test
   public void testMapsideJoin_RightSideIsEmpty() throws IOException {
-    MRPipeline pipeline = new MRPipeline(MapsideJoinIT.class);
+    MRPipeline pipeline = new MRPipeline(MapsideJoinIT.class, temporaryPath.setTempLoc(new Configuration()));
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
 
@@ -83,7 +88,7 @@ public class MapsideJoinIT {
 
   @Test
   public void testMapsideJoin() throws IOException {
-    runMapsideJoin(new MRPipeline(MapsideJoinIT.class));
+    runMapsideJoin(new MRPipeline(MapsideJoinIT.class, temporaryPath.setTempLoc(new Configuration())));
   }
 
   private void runMapsideJoin(Pipeline pipeline) {

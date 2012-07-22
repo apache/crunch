@@ -33,6 +33,7 @@ import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -79,31 +80,31 @@ public class WordCountIT {
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(WordCountIT.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testWritablesWithSecond() throws IOException {
     runSecond = true;
-    run(new MRPipeline(WordCountIT.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testWritablesWithSecondUseToOutput() throws IOException {
     runSecond = true;
     useToOutput = true;
-    run(new MRPipeline(WordCountIT.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(WordCountIT.class), AvroTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
   }
 
   @Test
   public void testAvroWithSecond() throws IOException {
     runSecond = true;
-    run(new MRPipeline(WordCountIT.class), AvroTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
   }
 
   @Test
@@ -117,7 +118,7 @@ public class WordCountIT {
   }
 
   public void runWithTop(PTypeFamily tf) throws IOException {
-    Pipeline pipeline = new MRPipeline(WordCountIT.class);
+    Pipeline pipeline = new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration()));
     String inputPath = tmpDir.copyResourceFileName("shakes.txt");
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, tf.strings()));

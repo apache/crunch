@@ -24,14 +24,19 @@ import java.io.IOException;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class TextPairIT {
+  @Rule
+  public TemporaryPath temporaryPath= new TemporaryPath();
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(TextPairIT.class));
+    run(new MRPipeline(TextPairIT.class, temporaryPath.setTempLoc(new Configuration())));
   }
 
   private static final String CANARY = "Writables.STRING_TO_TEXT";

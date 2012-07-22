@@ -29,6 +29,7 @@ import java.io.IOException;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -61,7 +62,7 @@ public class PCollectionGetSizeIT {
 
   @Test
   public void testGetSizeOfEmptyInput_MRPipeline() throws IOException {
-    testCollectionGetSizeOfEmptyInput(new MRPipeline(this.getClass()));
+    testCollectionGetSizeOfEmptyInput(new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())));
   }
 
   @Test
@@ -76,7 +77,7 @@ public class PCollectionGetSizeIT {
 
   @Test
   public void testMaterializeEmptyInput_MRPipeline() throws IOException {
-    testMaterializeEmptyInput(new MRPipeline(this.getClass()));
+    testMaterializeEmptyInput(new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())));
   }
 
   @Test
@@ -91,7 +92,7 @@ public class PCollectionGetSizeIT {
   @Test
   public void testGetSizeOfEmptyIntermediatePCollection_MRPipeline() throws IOException {
 
-    PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(new MRPipeline(this.getClass()));
+    PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())));
 
     assertThat(emptyIntermediate.getSize(), is(0L));
   }
@@ -100,7 +101,7 @@ public class PCollectionGetSizeIT {
   @Ignore("GetSize of a DoCollection is only an estimate based on scale factor, so we can't count on it being reported as 0")
   public void testGetSizeOfEmptyIntermediatePCollection_NoSave_MRPipeline() throws IOException {
 
-    PCollection<String> data = new MRPipeline(this.getClass()).readTextFile(nonEmptyInputPath);
+    PCollection<String> data = new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())).readTextFile(nonEmptyInputPath);
 
     PCollection<String> emptyPCollection = data.filter(new FalseFilterFn());
 
@@ -118,7 +119,7 @@ public class PCollectionGetSizeIT {
   @Test
   public void testMaterializeOfEmptyIntermediatePCollection_MRPipeline() throws IOException {
 
-    PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(new MRPipeline(this.getClass()));
+    PCollection<String> emptyIntermediate = createPesistentEmptyIntermediate(new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())));
 
     assertThat(newArrayList(emptyIntermediate.materialize()).size(), is(0));
   }
@@ -146,7 +147,7 @@ public class PCollectionGetSizeIT {
 
   @Test(expected = IllegalStateException.class)
   public void testExpectExceptionForGettingSizeOfNonExistingFile_MRPipeline() throws IOException {
-    new MRPipeline(this.getClass()).readTextFile("non_existing.file").getSize();
+    new MRPipeline(this.getClass(), tmpDir.setTempLoc(new Configuration())).readTextFile("non_existing.file").getSize();
   }
 
   @Test(expected = IllegalStateException.class)

@@ -41,6 +41,7 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,12 +65,18 @@ public class UnionCollectionIT {
 
   private ArrayList<String> EXPECTED = Lists.newArrayList("a", "a", "b", "c", "c", "d", "e");
 
+  private Class pipelineClass;
+
   @Before
   @SuppressWarnings("unchecked")
   public void setUp() throws IOException {
     String inputFile1 = tmpDir.copyResourceFileName("set1.txt");
     String inputFile2 = tmpDir.copyResourceFileName("set2.txt");
-
+    if (pipelineClass == null) {
+      pipeline = MemPipeline.getInstance();
+    } else {
+      pipeline = new MRPipeline(pipelineClass, tmpDir.setTempLoc(new Configuration()));
+    }
     PCollection<String> firstCollection = pipeline.read(At.textFile(inputFile1, typeFamily.strings()));
     PCollection<String> secondCollection = pipeline.read(At.textFile(inputFile2, typeFamily.strings()));
 
@@ -80,27 +87,21 @@ public class UnionCollectionIT {
     union = secondCollection.union(firstCollection);
   }
 
-  @After
-  public void tearDown() {
-    pipeline.done();
-  }
-
   @Parameters
   public static Collection<Object[]> data() throws IOException {
-    Object[][] data = new Object[][] { { WritableTypeFamily.getInstance(), new MRPipeline(PTableKeyValueIT.class) },
-        { WritableTypeFamily.getInstance(), MemPipeline.getInstance() },
-        { AvroTypeFamily.getInstance(), new MRPipeline(PTableKeyValueIT.class) },
-        { AvroTypeFamily.getInstance(), MemPipeline.getInstance() } };
+    Object[][] data = new Object[][] { { WritableTypeFamily.getInstance(), PTableKeyValueIT.class },
+        { WritableTypeFamily.getInstance(), null }, { AvroTypeFamily.getInstance(), PTableKeyValueIT.class },
+        { AvroTypeFamily.getInstance(), null } };
     return Arrays.asList(data);
   }
 
-  public UnionCollectionIT(PTypeFamily typeFamily, Pipeline pipeline) {
+  public UnionCollectionIT(PTypeFamily typeFamily, Class pipelineClass) {
     this.typeFamily = typeFamily;
-    this.pipeline = pipeline;
+    this.pipelineClass = pipelineClass;
   }
 
   @Test
-  public void unionMaterializeShouldNotThrowNPE() {
+  public void unionMaterializeShouldNotThrowNPE() throws Exception {
     checkMaterialized(union.materialize());
     checkMaterialized(pipeline.materialize(union));
   }
@@ -116,7 +117,6 @@ public class UnionCollectionIT {
 
   @Test
   public void unionWriteShouldNotThrowNPE() throws IOException {
-
     String outputPath1 = tmpDir.getFileName("output1");
     String outputPath2 = tmpDir.getFileName("output2");
     String outputPath3 = tmpDir.getFileName("output3");
@@ -142,7 +142,6 @@ public class UnionCollectionIT {
       checkFileContents(outputPath2);
       checkFileContents(outputPath3);
     }
-
   }
 
   private void checkFileContents(String filePath) throws IOException {

@@ -35,8 +35,11 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.TemporaryPath;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -49,6 +52,8 @@ public class AvroTypeSortIT implements Serializable {
   private static final long serialVersionUID = 1344118240353796561L;
 
   private transient File avroFile;
+  @Rule
+  public transient TemporaryPath temporaryPath= new TemporaryPath();
 
   @Before
   public void setUp() throws IOException {
@@ -63,7 +68,7 @@ public class AvroTypeSortIT implements Serializable {
   @Test
   public void testSortAvroTypesBySelectedFields() throws Exception {
 
-    MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class);
+    MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class, temporaryPath.setTempLoc(new Configuration()));
 
     Person ccc10 = createPerson("CCC", 10);
     Person bbb20 = createPerson("BBB", 20);

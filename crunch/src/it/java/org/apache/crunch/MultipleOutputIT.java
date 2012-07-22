@@ -31,6 +31,7 @@ import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -73,12 +74,12 @@ public class MultipleOutputIT {
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(MultipleOutputIT.class), WritableTypeFamily.getInstance());
+    run(new MRPipeline(MultipleOutputIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(MultipleOutputIT.class), AvroTypeFamily.getInstance());
+    run(new MRPipeline(MultipleOutputIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {

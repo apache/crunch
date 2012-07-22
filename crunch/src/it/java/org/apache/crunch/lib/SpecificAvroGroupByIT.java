@@ -36,10 +36,13 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.Person.Builder;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.avro.SafeAvroSerialization;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -52,6 +55,9 @@ public class SpecificAvroGroupByIT implements Serializable {
   private static final long serialVersionUID = 1344118240353796561L;
 
   private transient File avroFile;
+  @Rule
+  public transient TemporaryPath temporaryPath= new TemporaryPath();
+
 
   @Before
   public void setUp() throws IOException {
@@ -66,14 +72,14 @@ public class SpecificAvroGroupByIT implements Serializable {
   @Test
   public void testGrouByWithSpecificAvroType() throws Exception {
 
-    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
+    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class, temporaryPath.setTempLoc(new Configuration()));
 
     testSpecificAvro(pipeline);
   }
 
   @Test
   public void testGrouByOnSpecificAvroButReflectionDatumReader() throws Exception {
-    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class);
+    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class, temporaryPath.setTempLoc(new Configuration()));
 
     // https://issues.apache.org/jira/browse/AVRO-1046 resolves
     // the ClassCastException when reading specific Avro types with

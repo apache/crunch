@@ -68,7 +68,7 @@ public class MRPipeline implements Pipeline {
   private final String name;
   private final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   private final Map<PCollectionImpl<?>, MaterializableIterable<?>> outputTargetsToMaterialize;
-  private final Path tempDirectory;
+  private Path tempDirectory;
   private int tempFileIndex;
   private int nextAnonymousStageId;
 
@@ -105,6 +105,7 @@ public class MRPipeline implements Pipeline {
   @Override
   public void setConfiguration(Configuration conf) {
     this.conf = conf;
+    this.tempDirectory = createTempDirectory(conf);
   }
 
   @Override
