@@ -36,12 +36,33 @@ import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
 public class MapsideJoinIT {
+  
+  private static String saveTempDir;
+  
+  @BeforeClass
+  public static void setUpClass(){
+    
+    // Ensure a consistent temporary directory for use of the DistributedCache.
+    
+    // The DistributedCache technically isn't supported when running in local mode, and the default
+    // temporary directiory "/tmp" is used as its location. This typically only causes an issue when 
+    // running integration tests on Mac OS X, as OS X doesn't use "/tmp" as it's default temporary
+    // directory. The following call ensures that "/tmp" is used as the temporary directory on all platforms.
+    saveTempDir = System.setProperty("java.io.tmpdir", "/tmp");
+  }
+  
+  @AfterClass
+  public static void tearDownClass(){
+    System.setProperty("java.io.tmpdir", saveTempDir);
+  }
 
   private static class LineSplitter extends MapFn<String, Pair<Integer, String>> {
 
