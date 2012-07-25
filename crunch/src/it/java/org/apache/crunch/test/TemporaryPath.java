@@ -103,7 +103,8 @@ public final class TemporaryPath extends ExternalResource {
   }
 
   public Configuration setTempLoc(Configuration config) throws IOException {
-    config.set(RuntimeParameters.TMP_DIR, tmp.newFolder().getAbsolutePath());
+    config.set(RuntimeParameters.TMP_DIR, getRootFileName());
+    config.set("hadoop.tmp.dir", getFileName("hadoop-tmp"));
     return config;
   }
 }

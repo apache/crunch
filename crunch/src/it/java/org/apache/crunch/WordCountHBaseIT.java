@@ -92,7 +92,8 @@ public class WordCountHBaseIT {
   @Before
   public void setUp() throws Exception {
     Configuration conf = hbaseTestUtil.getConfiguration();
-    conf.set("hadoop.log.dir", tmpDir.getRootFileName());
+    conf.set("hadoop.log.dir", tmpDir.getFileName("logs"));
+    conf.set("hadoop.tmp.dir", tmpDir.getFileName("hadoop-tmp"));
     conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
     conf.setInt("hbase.master.info.port", -1);
     conf.setInt("hbase.regionserver.info.port", -1);

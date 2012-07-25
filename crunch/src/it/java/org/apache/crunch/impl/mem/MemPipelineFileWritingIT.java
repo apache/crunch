@@ -25,6 +25,8 @@ import java.util.List;
 
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.test.TemporaryPath;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.base.Charsets;
@@ -32,10 +34,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 public class MemPipelineFileWritingIT {
+  @Rule
+  public TemporaryPath baseTmpDir = new TemporaryPath();
+
   @Test
   public void testMemPipelineFileWriter() throws Exception {
-    File tmpDir = Files.createTempDir();
-    tmpDir.delete();
+    File tmpDir = baseTmpDir.getRootFile();
     Pipeline p = MemPipeline.getInstance();
     PCollection<String> lines = MemPipeline.collectionOf("hello", "world");
     p.writeTextFile(lines, tmpDir.getAbsolutePath());

@@ -17,41 +17,38 @@
  */
 package org.apache.crunch;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.impl.mr.run.RuntimeParameters;
-import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 public class MapsIT {
   @Rule
-  public TemporaryFolder temporaryFolder = new TemporaryFolder();
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   @Test
   public void testWritables() throws Exception {
-    run(WritableTypeFamily.getInstance(), temporaryFolder.newFolder().getAbsolutePath());
+    run(WritableTypeFamily.getInstance(), tmpDir);
   }
 
   @Test
   public void testAvros() throws Exception {
-    run(AvroTypeFamily.getInstance(), temporaryFolder.newFolder().getAbsolutePath());
+    run(AvroTypeFamily.getInstance(), tmpDir);
   }
 
-  public static void run(PTypeFamily typeFamily, String path) throws Exception {
-    Configuration config = new Configuration();
-    config.set(RuntimeParameters.TMP_DIR, path);
-    Pipeline pipeline = new MRPipeline(MapsIT.class, config);
-    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+  public static void run(PTypeFamily typeFamily, TemporaryPath tmpDir) throws Exception {
+    Pipeline pipeline = new MRPipeline(MapsIT.class, tmpDir.setTempLoc(new Configuration()));
+    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Iterable<Pair<String, Map<String, Long>>> output = shakespeare
         .parallelDo(new DoFn<String, Pair<String, Map<String, Long>>>() {

@@ -24,7 +24,6 @@ import java.util.Collection;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.PTypeFamily;
@@ -33,7 +32,6 @@ import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

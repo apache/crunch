@@ -26,17 +26,20 @@ import java.io.IOException;
 
 import org.apache.crunch.io.text.TextFileReaderFactory;
 import org.apache.crunch.test.FileHelper;
+import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 
 public class CompositePathIterableIT {
+  @Rule
+  public TemporaryPath tmpDir = new TemporaryPath();
 
   @Test
   public void testCreate_FilePresent() throws IOException {
@@ -53,12 +56,12 @@ public class CompositePathIterableIT {
 
   @Test
   public void testCreate_DirectoryPresentButNoFiles() throws IOException {
-    String inputFilePath = Files.createTempDir().getAbsolutePath();
+    Path emptyInputDir = tmpDir.getRootPath();
 
     Configuration conf = new Configuration();
     LocalFileSystem local = FileSystem.getLocal(conf);
 
-    Iterable<String> iterable = CompositePathIterable.create(local, new Path(inputFilePath),
+    Iterable<String> iterable = CompositePathIterable.create(local, emptyInputDir,
         new TextFileReaderFactory<String>(Writables.strings(), conf));
 
     assertTrue(Lists.newArrayList(iterable).isEmpty());
@@ -66,16 +69,15 @@ public class CompositePathIterableIT {
 
   @Test(expected = IOException.class)
   public void testCreate_DirectoryNotPresent() throws IOException {
-    File inputFileDir = Files.createTempDir();
-    inputFileDir.delete();
+    File nonExistentDir = tmpDir.getFile("not-there");
 
     // Sanity check
-    assertFalse(inputFileDir.exists());
+    assertFalse(nonExistentDir.exists());
 
     Configuration conf = new Configuration();
     LocalFileSystem local = FileSystem.getLocal(conf);
 
-    CompositePathIterable.create(local, new Path(inputFileDir.getAbsolutePath()), new TextFileReaderFactory<String>(
+    CompositePathIterable.create(local, new Path(nonExistentDir.getAbsolutePath()), new TextFileReaderFactory<String>(
         Writables.strings(), conf));
   }
 
