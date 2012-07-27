@@ -23,7 +23,7 @@ import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
 class JoinTest extends ScrunchTestSupport with JUnitSuite {
-  val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
+  lazy val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
 
   def wordCount(fileName: String) = {
     pipeline.read(from.textFile(fileName))

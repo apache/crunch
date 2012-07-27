@@ -49,7 +49,7 @@ class CachingPageRankFn extends DoFn[P[String, (Float, Float, List[String])], P[
 }
 
 class PageRankTest extends ScrunchTestSupport with JUnitSuite {
-  val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
+  lazy val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
 
   def initialInput(fileName: String) = {
     pipeline.read(from.textFile(fileName))

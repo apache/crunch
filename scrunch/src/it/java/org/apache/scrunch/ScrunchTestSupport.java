@@ -20,13 +20,8 @@ package org.apache.scrunch;
 import org.apache.crunch.test.TemporaryPath;
 
 import org.junit.Rule;
-import org.scalatest.junit.JUnitSuite;
 
 public class ScrunchTestSupport {
   @Rule
-  private final TemporaryPath tempDir = new TemporaryPath();
-
-  public TemporaryPath tempDir() {
-    return tempDir;
-  }
+  public TemporaryPath tempDir = new TemporaryPath();
 }
