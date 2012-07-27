@@ -88,7 +88,7 @@ public class MapsideJoin {
     Path path = sourcePathTarget.getPath();
     DistributedCache.addCacheFile(path.toUri(), pipeline.getConfiguration());
 
-    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.toString(), right.getPType());
+    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.getName(), right.getPType());
     PTypeFamily typeFamily = left.getTypeFamily();
     return left.parallelDo("mapjoin", mapJoinDoFn,
         typeFamily.tableOf(left.getKeyType(), typeFamily.pairs(left.getValueType(), right.getValueType())));

@@ -98,6 +98,7 @@ public class WordCountHBaseIT {
     conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
     conf.setInt("hbase.master.info.port", -1);
     conf.setInt("hbase.regionserver.info.port", -1);
+    conf.set("dfs.datanode.data.dir.perm", "775");
 
     hbaseTestUtil.startMiniZKCluster();
     hbaseTestUtil.startMiniCluster();
@@ -116,16 +117,16 @@ public class WordCountHBaseIT {
       }
 
       // Create a programmatic container for this jar.
-      JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseTest.jar"));
+      JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseIT.jar"));
       File baseDir = new File("target/test-classes");
       String prefix = "org/apache/crunch/";
-      jarUp(jos, baseDir, prefix + "WordCountHBaseTest.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseTest$1.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseTest$2.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseIT.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$1.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$2.class");
       jos.close();
 
-      Path target = new Path(tmpPath, "WordCountHBaseTest.jar");
-      fs.copyFromLocalFile(true, new Path("WordCountHBaseTest.jar"), target);
+      Path target = new Path(tmpPath, "WordCountHBaseIT.jar");
+      fs.copyFromLocalFile(true, new Path("WordCountHBaseIT.jar"), target);
       DistributedCache.addFileToClassPath(target, conf, fs);
     }
   }

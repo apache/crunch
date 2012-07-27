@@ -148,7 +148,7 @@ public class AggregateIT {
 
     assertEquals(1, collectionMap.size());
 
-    assertEquals(Lists.newArrayList(new Text("c"), new Text("d"), new Text("a")), collectionMap.get(1));
+    assertTrue(collectionMap.get(1).containsAll(Lists.newArrayList(new Text("c"), new Text("d"), new Text("a"))));
   }
 
   @Test
@@ -166,7 +166,7 @@ public class AggregateIT {
     Employee empD = mapFn.map("d").second();
     Employee empA = mapFn.map("a").second();
 
-    assertEquals(Lists.newArrayList(empC, empD, empA), collectionMap.get(1));
+    assertTrue(collectionMap.get(1).containsAll(Lists.newArrayList(empC, empD, empA)));
   }
 
   private static class MapStringToTextPair extends MapFn<String, Pair<Integer, Text>> {
