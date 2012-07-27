@@ -106,6 +106,13 @@ under the License.
       </dependency>
 
       <dependency>
+        <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch</artifactId>
+        <type>test-jar</type>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>11.0.2</version>

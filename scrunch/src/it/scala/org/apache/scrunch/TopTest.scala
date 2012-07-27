@@ -18,12 +18,11 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
-import org.apache.crunch.test.FileHelper
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class TopTest extends JUnitSuite {
+class TopTest extends ScrunchTestSupport with JUnitSuite {
 
   @Test def topInMem {
     val ptable = Mem.tableOf(("foo", 17), ("bar", 29), ("baz", 1729))
@@ -31,8 +30,8 @@ class TopTest extends JUnitSuite {
   }
 
   @Test def top2 {
-    val pipeline = Pipeline.mapReduce[TopTest]
-    val input = FileHelper.createTempCopyOf("shakes.txt")
+    val pipeline = Pipeline.mapReduce[TopTest](tempDir.getDefaultConfiguration)
+    val input = tempDir.copyResourceFileName("shakes.txt")
 
     val wc = pipeline.read(from.textFile(input))
         .flatMap(_.toLowerCase.split("\\s+"))

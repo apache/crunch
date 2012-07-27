@@ -18,15 +18,14 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from}
-import org.apache.crunch.test.FileHelper
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class UnionTest extends JUnitSuite {
-  val pipeline = Pipeline.mapReduce[UnionTest]
-  val shakespeare = FileHelper.createTempCopyOf("shakes.txt")
-  val maugham = FileHelper.createTempCopyOf("maugham.txt")
+class UnionTest extends ScrunchTestSupport with JUnitSuite {
+  val pipeline = Pipeline.mapReduce[UnionTest](tempDir.getDefaultConfiguration)
+  val shakespeare = tempDir.copyResourceFileName("shakes.txt")
+  val maugham = tempDir.copyResourceFileName("maugham.txt")
 
   def wordCount(col: PCollection[String]) = {
     col.flatMap(_.toLowerCase.split("\\W+")).count

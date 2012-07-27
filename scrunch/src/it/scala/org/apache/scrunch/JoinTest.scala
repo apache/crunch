@@ -18,13 +18,12 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
-import org.apache.crunch.test.FileHelper
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class JoinTest extends JUnitSuite {
-  val pipeline = Pipeline.mapReduce[CogroupTest]
+class JoinTest extends ScrunchTestSupport with JUnitSuite {
+  val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
 
   def wordCount(fileName: String) = {
     pipeline.read(from.textFile(fileName))
@@ -32,10 +31,9 @@ class JoinTest extends JUnitSuite {
   }
 
   @Test def join {
-    val shakespeare = FileHelper.createTempCopyOf("shakes.txt")
-    val maugham = FileHelper.createTempCopyOf("maugham.txt")
-    val output = FileHelper.createOutputPath()
-    output.deleteOnExit()
+    val shakespeare = tempDir.copyResourceFileName("shakes.txt")
+    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val output = tempDir.getFile("output")
     val filtered = wordCount(shakespeare).join(wordCount(maugham))
         .map((k, v) => (k, v._1 - v._2))
         .write(to.textFile(output.getAbsolutePath()))

@@ -21,7 +21,6 @@ import Avros._
 
 import org.apache.crunch.{DoFn, Emitter, Pair => P}
 import org.apache.crunch.io.{From => from}
-import org.apache.crunch.test.FileHelper
 
 import scala.collection.mutable.HashMap
 
@@ -49,8 +48,8 @@ class CachingPageRankFn extends DoFn[P[String, (Float, Float, List[String])], P[
   }
 }
 
-class PageRankTest extends JUnitSuite {
-  val pipeline = Pipeline.mapReduce[PageRankTest]
+class PageRankTest extends ScrunchTestSupport with JUnitSuite {
+  val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
 
   def initialInput(fileName: String) = {
     pipeline.read(from.textFile(fileName))
@@ -82,7 +81,7 @@ class PageRankTest extends JUnitSuite {
   }
 
   @Test def testPageRank {
-    var prev = initialInput(FileHelper.createTempCopyOf("urls.txt"))
+    var prev = initialInput(tempDir.copyResourceFileName("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = update(prev, 0.5f)
@@ -93,7 +92,7 @@ class PageRankTest extends JUnitSuite {
   }
 
   @Test def testFastPageRank {
-    var prev = initialInput(FileHelper.createTempCopyOf("urls.txt"))
+    var prev = initialInput(tempDir.copyResourceFileName("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = fastUpdate(prev, 0.5f)

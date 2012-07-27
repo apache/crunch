@@ -6,7 +6,6 @@ import java.io.IOException;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.filter.Filter.ReturnCode;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
@@ -102,6 +101,10 @@ public final class TemporaryPath extends ExternalResource {
     return new Path(file.getAbsolutePath());
   }
 
+  public Configuration getDefaultConfiguration() throws IOException {
+    return setTempLoc(new Configuration());
+  }
+  
   public Configuration setTempLoc(Configuration config) throws IOException {
     config.set(RuntimeParameters.TMP_DIR, getRootFileName());
     config.set("hadoop.tmp.dir", getFileName("hadoop-tmp"));

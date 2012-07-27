@@ -15,27 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.scrunch
+package org.apache.scrunch;
 
-import org.apache.crunch.io.{From => from}
+import org.apache.crunch.test.TemporaryPath;
 
-import org.scalatest.junit.JUnitSuite
-import _root_.org.junit.Test
+import org.junit.Rule;
+import org.scalatest.junit.JUnitSuite;
 
-class CogroupTest extends ScrunchTestSupport with JUnitSuite {
-  val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
+public class ScrunchTestSupport {
+  @Rule
+  private final TemporaryPath tempDir = new TemporaryPath();
 
-  def wordCount(fileName: String) = {
-    pipeline.read(from.textFile(fileName))
-        .flatMap(_.toLowerCase.split("\\W+")).count
-  }
-
-  @Test def cogroup {
-    val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
-    val diffs = wordCount(shakespeare).cogroup(wordCount(maugham))
-        .map((k, v) => (k, (v._1.sum - v._2.sum))).materialize
-    assert(diffs.exists(_ == ("the", -11390)))
-    pipeline.done
+  public TemporaryPath tempDir() {
+    return tempDir;
   }
 }

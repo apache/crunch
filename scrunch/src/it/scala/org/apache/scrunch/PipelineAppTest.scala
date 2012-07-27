@@ -15,8 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.apache.crunch.test.FileHelper
-import org.apache.scrunch.PipelineApp
+package org.apache.scrunch
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
@@ -36,12 +35,12 @@ object WordCount extends PipelineApp {
   cogroup(w1, w2).write(to.textFile(args(2)))
 }
 
-class PipelineAppTest extends JUnitSuite {
+class PipelineAppTest extends ScrunchTestSupport with JUnitSuite {
   @Test def run {
     val args = new Array[String](3)
-    args(0) = FileHelper.createTempCopyOf("shakes.txt")
-    args(1) = FileHelper.createTempCopyOf("maugham.txt")
-    args(2) = FileHelper.createOutputPath.getAbsolutePath
+    args(0) = tempDir.copyResourceFileName("shakes.txt")
+    args(1) = tempDir.copyResourceFileName("maugham.txt")
+    args(2) = tempDir.getFileName("output")
     WordCount.main(args)
   }
 }

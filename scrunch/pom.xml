@@ -70,6 +70,12 @@ under the License.
       <artifactId>scalatest_${scala.version}</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.crunch</groupId>
+      <artifactId>crunch</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -152,6 +158,7 @@ under the License.
             </goals>
             <configuration>
               <sources>
+                <source>${basedir}/src/it/java</source>
                 <source>${basedir}/src/it/scala</source>
               </sources>
             </configuration>

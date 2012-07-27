@@ -18,28 +18,24 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
-import org.apache.crunch.test.FileHelper
-
-import java.io.File
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class WordCountTest extends JUnitSuite {
+class WordCountTest extends ScrunchTestSupport with JUnitSuite {
   @Test def wordCount {
-    val pipeline = Pipeline.mapReduce[WordCountTest]
-    val input = FileHelper.createTempCopyOf("shakes.txt")
-    val wordCountOut = FileHelper.createOutputPath
+    val pipeline = Pipeline.mapReduce[WordCountTest](tempDir.getDefaultConfiguration)
+    val input = tempDir.copyResourceFileName("shakes.txt")
+    val wordCountOut = tempDir.getFileName("output")
 
     val fcc = pipeline.read(from.textFile(input))
         .flatMap(_.toLowerCase.split("\\s+"))
         .filter(!_.isEmpty()).count
-        .write(to.textFile(wordCountOut.getAbsolutePath)) // Word counts
+        .write(to.textFile(wordCountOut)) // Word counts
         .map((w, c) => (w.slice(0, 1), c))
         .groupByKey.combine(v => v.sum).materialize
     assert(fcc.exists(_ == ("w", 1404)))
 
     pipeline.done
-    wordCountOut.delete()
   }
 }
