@@ -41,6 +41,7 @@ class PipelineAppTest extends ScrunchTestSupport with JUnitSuite {
     args(0) = tempDir.copyResourceFileName("shakes.txt")
     args(1) = tempDir.copyResourceFileName("maugham.txt")
     args(2) = tempDir.getFileName("output")
+    tempDir.setTempLoc(WordCount.configuration)
     WordCount.main(args)
   }
 }

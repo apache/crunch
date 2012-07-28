@@ -27,12 +27,13 @@ import scala.tools.nsc.io.VirtualDirectory
 import com.google.common.io.Files
 import org.junit.Assert.assertNotNull
 import org.junit.Test
+import org.apache.scrunch.ScrunchTestSupport
 import org.scalatest.junit.JUnitSuite
 
 /**
  * Tests creating jars from a {@link scala.tools.nsc.io.VirtualDirectory}.
  */
-class InterpreterJarTest extends JUnitSuite {
+class InterpreterJarTest extends ScrunchTestSupport with JUnitSuite {
 
   /**
    * Tests transforming a virtual directory into a temporary jar file.
@@ -50,9 +51,7 @@ class InterpreterJarTest extends JUnitSuite {
     }
 
     // Now generate a jar file from the virtual directory.
-    val tempDir = Files.createTempDir()
-    tempDir.deleteOnExit()
-    val tempJar = new File(tempDir, "replJar.jar")
+    val tempJar = new File(tempDir.getRootFile(), "replJar.jar")
     val jarStream = new JarOutputStream(new FileOutputStream(tempJar))
     InterpreterRunner.addVirtualDirectoryToJar(root, "top/pack/name/", jarStream)
     jarStream.close()
