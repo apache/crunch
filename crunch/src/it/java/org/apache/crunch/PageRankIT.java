@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PType;
@@ -128,8 +127,8 @@ public class PageRankIT {
         }, input.getPTableType());
   }
 
-  public static void run(Pipeline pipeline, PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
-    String urlInput = FileHelper.createTempCopyOf("urls.txt");
+  public void run(Pipeline pipeline, PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
+    String urlInput = tmpDir.copyResourceFileName("urls.txt");
     PTable<String, PageRankData> scores = pipeline.readTextFile(urlInput)
         .parallelDo(new MapFn<String, Pair<String, String>>() {
           @Override

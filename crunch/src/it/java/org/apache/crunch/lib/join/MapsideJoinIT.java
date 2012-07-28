@@ -32,7 +32,6 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
@@ -130,9 +129,9 @@ public class MapsideJoinIT {
     assertEquals(expectedJoinResult, joinedResultList);
   }
 
-  private static PTable<Integer, String> readTable(Pipeline pipeline, String filename) {
+  private PTable<Integer, String> readTable(Pipeline pipeline, String filename) {
     try {
-      return pipeline.readTextFile(FileHelper.createTempCopyOf(filename)).parallelDo("asTable", new LineSplitter(),
+      return pipeline.readTextFile(tmpDir.copyResourceFileName(filename)).parallelDo("asTable", new LineSplitter(),
           Writables.tableOf(Writables.ints(), Writables.strings()));
     } catch (IOException e) {
       throw new RuntimeException(e);

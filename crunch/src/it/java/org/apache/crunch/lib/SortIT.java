@@ -41,7 +41,6 @@ import org.apache.crunch.TupleN;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Sort.ColumnOrder;
 import org.apache.crunch.lib.Sort.Order;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
@@ -196,7 +195,7 @@ public class SortIT implements Serializable {
   }
 
   private void runSingle(Pipeline pipeline, PTypeFamily typeFamily, Order order, String firstLine) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     // following turns the input from Writables to required type family
@@ -215,7 +214,7 @@ public class SortIT implements Serializable {
 
   private void runPair(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
       String firstField, String secondField) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     PCollection<Pair<String, String>> kv = input.parallelDo(new DoFn<String, Pair<String, String>>() {
@@ -235,7 +234,7 @@ public class SortIT implements Serializable {
 
   private void runTriple(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
       ColumnOrder third, String firstField, String secondField, String thirdField) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     PCollection<Tuple3<String, String, String>> kv = input.parallelDo(
@@ -259,7 +258,7 @@ public class SortIT implements Serializable {
   private void runQuad(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder first, ColumnOrder second,
       ColumnOrder third, ColumnOrder fourth, String firstField, String secondField, String thirdField,
       String fourthField) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     PCollection<Tuple4<String, String, String, String>> kv = input.parallelDo(
@@ -283,7 +282,7 @@ public class SortIT implements Serializable {
 
   private void runTupleN(Pipeline pipeline, PTypeFamily typeFamily, ColumnOrder[] orders, String[] fields)
       throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     PType[] types = new PType[orders.length];
@@ -306,7 +305,7 @@ public class SortIT implements Serializable {
   }
 
   private void runTable(Pipeline pipeline, PTypeFamily typeFamily, String firstKey) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("docs.txt");
+    String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
     PTable<String, String> table = input.parallelDo(new DoFn<String, Pair<String, String>>() {

@@ -17,11 +17,12 @@
  */
 package org.apache.scrunch;
 
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.test.TemporaryPath;
 
 import org.junit.Rule;
 
 public class ScrunchTestSupport {
   @Rule
-  public TemporaryPath tempDir = new TemporaryPath();
+  public TemporaryPath tempDir = new TemporaryPath(RuntimeParameters.TMP_DIR, "hadoop.tmp.dir");
 }
