@@ -38,7 +38,7 @@ import org.apache.crunch.io.From;
 import org.apache.crunch.test.Employee;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.crunch.test.TemporaryPaths;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,7 +52,7 @@ public class MultiAvroSchemaJoinIT {
   private File personFile;
   private File employeeFile;
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Before
   public void setUp() throws Exception {
@@ -107,7 +107,7 @@ public class MultiAvroSchemaJoinIT {
 
   @Test
   public void testJoin() throws Exception {
-    Pipeline p = new MRPipeline(MultiAvroSchemaJoinIT.class, temporaryPath.setTempLoc(new Configuration()));
+    Pipeline p = new MRPipeline(MultiAvroSchemaJoinIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Person> people = p.read(From.avroFile(personFile.getAbsolutePath(), records(Person.class)));
     PCollection<Employee> employees = p.read(From.avroFile(employeeFile.getAbsolutePath(), records(Employee.class)));
 

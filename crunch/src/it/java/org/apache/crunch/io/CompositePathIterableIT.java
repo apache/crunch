@@ -25,8 +25,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.crunch.io.text.TextFileReaderFactory;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,11 +39,11 @@ import com.google.common.collect.Lists;
 
 public class CompositePathIterableIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testCreate_FilePresent() throws IOException {
-    String inputFilePath = FileHelper.createTempCopyOf("set1.txt");
+    String inputFilePath = tmpDir.copyResourceFileName("set1.txt");
     Configuration conf = new Configuration();
     LocalFileSystem local = FileSystem.getLocal(conf);
 

@@ -36,7 +36,7 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.crunch.test.TemporaryPaths;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +53,7 @@ public class AvroTypeSortIT implements Serializable {
 
   private transient File avroFile;
   @Rule
-  public transient TemporaryPath temporaryPath= new TemporaryPath();
+  public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Before
   public void setUp() throws IOException {
@@ -68,7 +68,7 @@ public class AvroTypeSortIT implements Serializable {
   @Test
   public void testSortAvroTypesBySelectedFields() throws Exception {
 
-    MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class, temporaryPath.setTempLoc(new Configuration()));
+    MRPipeline pipeline = new MRPipeline(AvroTypeSortIT.class, tmpDir.getDefaultConfiguration());
 
     Person ccc10 = createPerson("CCC", 10);
     Person bbb20 = createPerson("BBB", 20);

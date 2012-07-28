@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ import com.google.common.io.Files;
 
 public class MemPipelineFileWritingIT {
   @Rule
-  public TemporaryPath baseTmpDir = new TemporaryPath();
+  public TemporaryPath baseTmpDir = TemporaryPaths.create();
 
   @Test
   public void testMemPipelineFileWriter() throws Exception {

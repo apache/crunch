@@ -23,20 +23,19 @@ import java.io.IOException;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
 public class TextPairIT {
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(TextPairIT.class, temporaryPath.setTempLoc(new Configuration())));
+    run(new MRPipeline(TextPairIT.class, tmpDir.getDefaultConfiguration()));
   }
 
   private static final String CANARY = "Writables.STRING_TO_TEXT";
@@ -55,7 +54,7 @@ public class TextPairIT {
   }
 
   public void run(Pipeline pipeline) throws IOException {
-    String input = FileHelper.createTempCopyOf("shakes.txt");
+    String input = tmpDir.copyResourceFileName("shakes.txt");
 
     PCollection<String> shakespeare = pipeline.read(From.textFile(input));
     Iterable<Pair<String, String>> lines = pipeline.materialize(wordDuplicate(shakespeare));

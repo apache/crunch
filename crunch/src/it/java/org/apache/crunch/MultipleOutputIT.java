@@ -28,10 +28,10 @@ import java.util.List;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -39,7 +39,7 @@ import com.google.common.io.Files;
 
 public class MultipleOutputIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   public static PCollection<String> evenCountLetters(PCollection<String> words, PTypeFamily typeFamily) {
     return words.parallelDo("even", new FilterFn<String>() {
@@ -74,12 +74,12 @@ public class MultipleOutputIT {
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(MultipleOutputIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(MultipleOutputIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
+    run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {

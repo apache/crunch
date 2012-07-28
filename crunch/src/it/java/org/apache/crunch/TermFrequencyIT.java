@@ -30,25 +30,25 @@ import org.apache.crunch.io.At;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
 @SuppressWarnings("serial")
 public class TermFrequencyIT implements Serializable {
   @Rule
-  public transient TemporaryPath tmpDir = new TemporaryPath();
+  public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testTermFrequencyWithNoTransform() throws IOException {
-    run(new MRPipeline(TermFrequencyIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), false);
+    run(new MRPipeline(TermFrequencyIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance(), false);
   }
 
   @Test
   public void testTermFrequencyWithTransform() throws IOException {
-    run(new MRPipeline(TermFrequencyIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), true);
+    run(new MRPipeline(TermFrequencyIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance(), true);
   }
 
   @Test

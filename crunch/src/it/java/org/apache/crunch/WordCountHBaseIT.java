@@ -33,6 +33,7 @@ import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.hbase.HBaseTarget;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -58,7 +59,7 @@ import com.google.common.io.ByteStreams;
 
 public class WordCountHBaseIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   private static final byte[] COUNTS_COLFAM = Bytes.toBytes("cf");
   private static final byte[] WORD_COLFAM = Bytes.toBytes("cf");

@@ -30,12 +30,11 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,7 +59,7 @@ public class SetIT {
   }
   
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -70,9 +69,9 @@ public class SetIT {
 
   @Before
   public void setUp() throws IOException {
-    String set1InputPath = FileHelper.createTempCopyOf("set1.txt");
-    String set2InputPath = FileHelper.createTempCopyOf("set2.txt");
-    pipeline = new MRPipeline(SetIT.class, temporaryPath.setTempLoc(new Configuration()));
+    String set1InputPath = tmpDir.copyResourceFileName("set1.txt");
+    String set2InputPath = tmpDir.copyResourceFileName("set2.txt");
+    pipeline = new MRPipeline(SetIT.class, tmpDir.getDefaultConfiguration());
     set1 = pipeline.read(At.textFile(set1InputPath, typeFamily.strings()));
     set2 = pipeline.read(At.textFile(set2InputPath, typeFamily.strings()));
   }

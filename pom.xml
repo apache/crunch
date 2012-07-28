@@ -34,12 +34,14 @@ under the License.
 
   <modules>
     <module>crunch</module>
+    <module>crunch-test</module>
     <module>examples</module>
     <module>scrunch</module>
   </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.source.version>1.6</java.source.version>
     <java.target.version>1.6</java.target.version>
     <scala.version>2.9.2</scala.version>
@@ -107,8 +109,7 @@ under the License.
 
       <dependency>
         <groupId>org.apache.crunch</groupId>
-        <artifactId>crunch</artifactId>
-        <type>test-jar</type>
+        <artifactId>crunch-test</artifactId>
         <version>${project.version}</version>
       </dependency>
 

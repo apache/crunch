@@ -34,15 +34,14 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.Employee;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.types.writable.Writables;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,12 +52,12 @@ import com.google.common.collect.Lists;
 
 public class AggregateIT {
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testWritables() throws Exception {
-    Pipeline pipeline = new MRPipeline(AggregateIT.class, temporaryPath.setTempLoc(new Configuration()));
-    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    Pipeline pipeline = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
     runMinMax(shakes, WritableTypeFamily.getInstance());
     pipeline.done();
@@ -66,8 +65,8 @@ public class AggregateIT {
 
   @Test
   public void testAvro() throws Exception {
-    Pipeline pipeline = new MRPipeline(AggregateIT.class, temporaryPath.setTempLoc(new Configuration()));
-    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    Pipeline pipeline = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
     runMinMax(shakes, AvroTypeFamily.getInstance());
     pipeline.done();
@@ -109,8 +108,8 @@ public class AggregateIT {
 
   @Test
   public void testCollectUrls() throws Exception {
-    Pipeline p = new MRPipeline(AggregateIT.class, temporaryPath.setTempLoc(new Configuration()));
-    String urlsInputPath = FileHelper.createTempCopyOf("urls.txt");
+    Pipeline p = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    String urlsInputPath = tmpDir.copyResourceFileName("urls.txt");
     PTable<String, Collection<String>> urls = Aggregate.collectValues(p.readTextFile(urlsInputPath).parallelDo(
         new SplitFn(), tableOf(strings(), strings())));
     for (Pair<String, Collection<String>> e : urls.materialize()) {
@@ -142,8 +141,8 @@ public class AggregateIT {
 
   @Test
   public void testCollectValues_Writables() throws IOException {
-    Pipeline pipeline = new MRPipeline(AggregateIT.class, temporaryPath.setTempLoc(new Configuration()));
-    Map<Integer, Collection<Text>> collectionMap = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+    Pipeline pipeline = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    Map<Integer, Collection<Text>> collectionMap = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
         .parallelDo(new MapStringToTextPair(), Writables.tableOf(Writables.ints(), Writables.writables(Text.class)))
         .collectValues().materializeToMap();
 
@@ -156,8 +155,8 @@ public class AggregateIT {
   public void testCollectValues_Avro() throws IOException {
 
     MapStringToEmployeePair mapFn = new MapStringToEmployeePair();
-    Pipeline pipeline = new MRPipeline(AggregateIT.class, temporaryPath.setTempLoc(new Configuration()));
-    Map<Integer, Collection<Employee>> collectionMap = pipeline.readTextFile(FileHelper.createTempCopyOf("set2.txt"))
+    Pipeline pipeline = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    Map<Integer, Collection<Employee>> collectionMap = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
         .parallelDo(mapFn, Avros.tableOf(Avros.ints(), Avros.records(Employee.class))).collectValues()
         .materializeToMap();
 

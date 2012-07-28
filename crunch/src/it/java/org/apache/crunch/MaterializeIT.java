@@ -25,12 +25,11 @@ import java.util.List;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -49,17 +48,17 @@ public class MaterializeIT {
   }
 
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testMaterializeInput_Writables() throws IOException {
-    runMaterializeInput(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+    runMaterializeInput(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testMaterializeInput_Avro() throws IOException {
-    runMaterializeInput(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+    runMaterializeInput(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         AvroTypeFamily.getInstance());
   }
 
@@ -75,13 +74,13 @@ public class MaterializeIT {
 
   @Test
   public void testMaterializeEmptyIntermediate_Writables() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testMaterializeEmptyIntermediate_Avro() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, temporaryPath.setTempLoc(new Configuration())),
+    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         AvroTypeFamily.getInstance());
   }
 
@@ -97,7 +96,7 @@ public class MaterializeIT {
 
   public void runMaterializeInput(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     List<String> expectedContent = Lists.newArrayList("b", "c", "a", "e");
-    String inputPath = FileHelper.createTempCopyOf("set1.txt");
+    String inputPath = tmpDir.copyResourceFileName("set1.txt");
 
     PCollection<String> lines = pipeline.readTextFile(inputPath);
     assertEquals(expectedContent, Lists.newArrayList(lines.materialize()));
@@ -105,7 +104,7 @@ public class MaterializeIT {
   }
 
   public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String inputPath = FileHelper.createTempCopyOf("set1.txt");
+    String inputPath = tmpDir.copyResourceFileName("set1.txt");
     PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FalseFilterFn());
 
     assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());

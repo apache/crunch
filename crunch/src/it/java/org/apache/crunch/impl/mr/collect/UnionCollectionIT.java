@@ -19,7 +19,6 @@ package org.apache.crunch.impl.mr.collect;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,12 +36,11 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,7 +53,7 @@ import com.google.common.collect.Lists;
 @RunWith(value = Parameterized.class)
 public class UnionCollectionIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   private static final Log LOG = LogFactory.getLog(UnionCollectionIT.class);
 
@@ -75,7 +73,7 @@ public class UnionCollectionIT {
     if (pipelineClass == null) {
       pipeline = MemPipeline.getInstance();
     } else {
-      pipeline = new MRPipeline(pipelineClass, tmpDir.setTempLoc(new Configuration()));
+      pipeline = new MRPipeline(pipelineClass, tmpDir.getDefaultConfiguration());
     }
     PCollection<String> firstCollection = pipeline.read(At.textFile(inputFile1, typeFamily.strings()));
     PCollection<String> secondCollection = pipeline.read(At.textFile(inputFile2, typeFamily.strings()));

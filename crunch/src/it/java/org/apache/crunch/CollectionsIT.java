@@ -24,12 +24,11 @@ import java.util.Collection;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -76,16 +75,16 @@ public class CollectionsIT {
   }
 
   @Rule
-  public TemporaryPath temporaryPath= new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(CollectionsIT.class, temporaryPath.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(CollectionsIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(CollectionsIT.class, temporaryPath.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
+    run(new MRPipeline(CollectionsIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
   @Test
@@ -99,7 +98,7 @@ public class CollectionsIT {
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String shakesInputPath = FileHelper.createTempCopyOf("shakes.txt");
+    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
 
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Iterable<Pair<String, Collection<String>>> lines = listOfCharcters(shakespeare, typeFamily).materialize();

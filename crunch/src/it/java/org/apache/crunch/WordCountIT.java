@@ -30,10 +30,10 @@ import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ import com.google.common.io.Files;
 
 public class WordCountIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   enum WordCountStats {
     ANDS
@@ -80,31 +80,31 @@ public class WordCountIT {
 
   @Test
   public void testWritables() throws IOException {
-    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testWritablesWithSecond() throws IOException {
     runSecond = true;
-    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testWritablesWithSecondUseToOutput() throws IOException {
     runSecond = true;
     useToOutput = true;
-    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvro() throws IOException {
-    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
   @Test
   public void testAvroWithSecond() throws IOException {
     runSecond = true;
-    run(new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
   @Test
@@ -118,7 +118,7 @@ public class WordCountIT {
   }
 
   public void runWithTop(PTypeFamily tf) throws IOException {
-    Pipeline pipeline = new MRPipeline(WordCountIT.class, tmpDir.setTempLoc(new Configuration()));
+    Pipeline pipeline = new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration());
     String inputPath = tmpDir.copyResourceFileName("shakes.txt");
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, tf.strings()));

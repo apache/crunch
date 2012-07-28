@@ -39,8 +39,8 @@ import org.apache.crunch.io.At;
 import org.apache.crunch.io.avro.AvroFileReaderFactoryTest.PojoPerson;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,7 +53,7 @@ public class AvroFileSourceTargetIT implements Serializable {
 
   private transient File avroFile;
   @Rule
-  public transient TemporaryPath temporaryPath= new TemporaryPath();
+  public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Before
   public void setUp() throws IOException {
@@ -89,7 +89,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
     populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
-    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, temporaryPath.setTempLoc(new Configuration()));
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Person> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
         Avros.records(Person.class)));
 
@@ -117,7 +117,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
     populateGenericFile(Lists.newArrayList(savedRecord), genericPersonSchema);
 
-    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, temporaryPath.setTempLoc(new Configuration()));
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Record> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
         Avros.generics(genericPersonSchema)));
 
@@ -133,7 +133,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("name", "John Doe");
     populateGenericFile(Lists.newArrayList(savedRecord), pojoPersonSchema);
 
-    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, temporaryPath.setTempLoc(new Configuration()));
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<PojoPerson> personCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
         Avros.reflects(PojoPerson.class)));
 

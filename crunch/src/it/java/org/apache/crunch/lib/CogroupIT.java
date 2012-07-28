@@ -37,11 +37,11 @@ import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ import com.google.common.io.Files;
 
 public class CogroupIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   private static class WordSplit extends DoFn<String, Pair<String, Long>> {
     @Override
@@ -94,12 +94,12 @@ public class CogroupIT {
 
   @Test
   public void testWritableJoin() throws Exception {
-    run(new MRPipeline(CogroupIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance());
+    run(new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvroJoin() throws Exception {
-    run(new MRPipeline(CogroupIT.class, tmpDir.setTempLoc(new Configuration())), AvroTypeFamily.getInstance());
+    run(new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {

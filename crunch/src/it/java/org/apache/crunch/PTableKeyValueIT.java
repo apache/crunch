@@ -27,12 +27,11 @@ import junit.framework.Assert;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
-import org.apache.crunch.test.FileHelper;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,12 +51,12 @@ public class PTableKeyValueIT implements Serializable {
   private transient MRPipeline pipeline;
   private transient String inputFile;
   @Rule
-  public transient TemporaryPath temporaryPath = new TemporaryPath();
+  public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Before
   public void setUp() throws IOException {
-    pipeline = new MRPipeline(PTableKeyValueIT.class, temporaryPath.setTempLoc(new Configuration()));
-    inputFile = FileHelper.createTempCopyOf("set1.txt");
+    pipeline = new MRPipeline(PTableKeyValueIT.class, tmpDir.getDefaultConfiguration());
+    inputFile = tmpDir.copyResourceFileName("set1.txt");
   }
 
   @After

@@ -17,15 +17,14 @@
  */
 package org.apache.crunch;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -34,7 +33,7 @@ import com.google.common.collect.Maps;
 
 public class MapsIT {
   @Rule
-  public TemporaryPath tmpDir = new TemporaryPath();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testWritables() throws Exception {
@@ -47,7 +46,7 @@ public class MapsIT {
   }
 
   public static void run(PTypeFamily typeFamily, TemporaryPath tmpDir) throws Exception {
-    Pipeline pipeline = new MRPipeline(MapsIT.class, tmpDir.setTempLoc(new Configuration()));
+    Pipeline pipeline = new MRPipeline(MapsIT.class, tmpDir.getDefaultConfiguration());
     String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Iterable<Pair<String, Map<String, Long>>> output = shakespeare

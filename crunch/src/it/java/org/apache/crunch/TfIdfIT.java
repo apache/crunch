@@ -32,9 +32,9 @@ import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Join;
 import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,19 +45,19 @@ import com.google.common.io.Files;
 @SuppressWarnings("serial")
 public class TfIdfIT implements Serializable {
   @Rule
-  public transient TemporaryPath tmpDir = new TemporaryPath();
+  public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   // total number of documents, should calculate
   protected static final double N = 2;
 
   @Test
   public void testWritablesSingleRun() throws IOException {
-    run(new MRPipeline(TfIdfIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), true);
+    run(new MRPipeline(TfIdfIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance(), true);
   }
 
   @Test
   public void testWritablesMultiRun() throws IOException {
-    run(new MRPipeline(TfIdfIT.class, tmpDir.setTempLoc(new Configuration())), WritableTypeFamily.getInstance(), false);
+    run(new MRPipeline(TfIdfIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance(), false);
   }
 
   /**
