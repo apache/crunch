@@ -71,33 +71,40 @@ public class PageRankIT {
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
-
+  
   @Test
   public void testAvroReflect() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = Avros.reflects(PageRankData.class);
-    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()), prType, tf);
+    String urlInput = tmpDir.copyResourceFileName("urls.txt");
+    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
+        urlInput, prType, tf);
   }
 
   @Test
   public void testAvroMReflectInMemory() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = Avros.reflects(PageRankData.class);
-    run(MemPipeline.getInstance(), prType, tf);
+    String urlInput = tmpDir.copyResourceFileName("urls.txt");
+    run(MemPipeline.getInstance(), urlInput, prType, tf);
   }
 
   @Test
   public void testAvroJSON() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()), prType, tf);
+    String urlInput = tmpDir.copyResourceFileName("urls.txt");
+    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
+        urlInput, prType, tf);
   }
 
   @Test
   public void testWritablesJSON() throws Exception {
     PTypeFamily tf = WritableTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()), prType, tf);
+    String urlInput = tmpDir.copyResourceFileName("urls.txt");
+    run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
+        urlInput, prType, tf);
   }
 
   public static PTable<String, PageRankData> pageRank(PTable<String, PageRankData> input, final float d) {
@@ -127,8 +134,8 @@ public class PageRankIT {
         }, input.getPTableType());
   }
 
-  public void run(Pipeline pipeline, PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
+  public static void run(Pipeline pipeline, String urlInput,
+      PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
     PTable<String, PageRankData> scores = pipeline.readTextFile(urlInput)
         .parallelDo(new MapFn<String, Pair<String, String>>() {
           @Override
