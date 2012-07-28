@@ -137,6 +137,7 @@ under the License.
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <excludeArtifactIds>crunch-test</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>
