@@ -323,6 +323,10 @@ under the License.
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
         <inherited>false</inherited> 
@@ -366,6 +370,30 @@ under the License.
 
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.8</version>
+	  <configuration>
+	    <excludes>
+	      <exclude>.git/**</exclude>
+	      <exclude>.gitignore</exclude>
+	      <exclude>.repository/</exclude>
+	      <exclude>**/resources/*.txt</exclude>
+	      <exclude>**/resources/*.avro</exclude>
+	      <exclude>**/scripts/scrunch</exclude> <!-- FIXME! -->
+	    </excludes>
+	  </configuration>
+          <executions>
+            <execution>
+              <id>rat-check</id>
+              <phase>test</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
