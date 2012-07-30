@@ -1,5 +1,5 @@
 {
-"namespace": "com.cloudera.crunch.test",
+"namespace": "org.apache.crunch.test",
 "name": "Person",
 "type": "record",
 "fields": [
