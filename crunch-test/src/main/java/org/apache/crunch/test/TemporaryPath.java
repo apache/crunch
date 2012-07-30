@@ -23,12 +23,12 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.thirdparty.guava.common.collect.ImmutableSet;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 
