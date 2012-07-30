@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch</artifactId>
-  <name>Crunch Core</name>
+  <name>Apache Crunch Core</name>
 
   <dependencies>
     <dependency>

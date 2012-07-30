@@ -20,6 +20,12 @@ under the License.
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>10</version>
+  </parent>
+
   <groupId>org.apache.crunch</groupId>
   <artifactId>crunch-parent</artifactId>
   <version>0.3.0-incubating-SNAPSHOT</version>
@@ -27,6 +33,12 @@ under the License.
 
   <name>Apache Crunch</name>
   <url>http://incubator.apache.org/crunch/</url>
+  <description>
+    Apache Crunch (Incubating) is a Java library for writing, testing,
+    and running Hadoop MapReduce pipelines, based on Google's FlumeJava.
+    Its goal is to make pipelines that are composed of many user-defined
+    functions simple to write, easy to test, and efficient to run.
+  </description>
 
   <prerequisites>
     <maven>2.2.1</maven>
@@ -58,20 +70,6 @@ under the License.
     <system>JIRA</system>
     <url>http://issues.apache.org/jira/browse/CRUNCH</url>
   </issueManagement>
-
-  <licenses>
-    <license>
-      <name>Apache 2</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-      <comments>A business-friendly OSS license</comments>
-    </license>
-  </licenses>
-
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
 
   <mailingLists>
     <mailingList>
@@ -240,6 +238,8 @@ under the License.
     
   </dependencyManagement>
 
+  <!-- TODO: After changing our Hadoop/HBase dependencies to Apache
+             releases we no longer need this section. -->
   <repositories>
     <repository>
       <id>maven-hadoop</id>
@@ -247,15 +247,6 @@ under the License.
       <url>https://repository.cloudera.com/content/repositories/releases/</url>
     </repository>
   </repositories>
-
-  <distributionManagement>
-    <site>
-      <id>apache.website</id>
-      <url>
-        scpexe://people.apache.invalid/www/crunch.apache.org/docs/${project.version}
-      </url>
-    </site>
-  </distributionManagement>
 
   <profiles>
     <profile>
@@ -408,9 +399,40 @@ under the License.
         </dependencies>
       </dependencyManagement>
     </profile>
+    <profile>
+      <id>apache-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>2.3</version>
+            <!-- Override source-release-assembly from parent POM to
+                 change the name of the release artifact. -->
+            <executions>
+              <execution>
+                <id>source-release-assembly</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <configuration combine.self="override">
+                  <runOnlyAtExecutionRoot>true</runOnlyAtExecutionRoot>
+                  <descriptors>
+                    <descriptor>src/main/assembly/crunch-release.xml</descriptor>
+                  </descriptors>
+                  <tarLongFileFormat>gnu</tarLongFileFormat>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
   <build>
+    <finalName>apache-crunch-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.rat</groupId>
@@ -474,6 +496,16 @@ under the License.
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <tagNameFormat>apache-crunch-@{project.version}</tagNameFormat>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <pushChanges>false</pushChanges>
+        </configuration>
+      </plugin>
     </plugins>
 
     <pluginManagement>
@@ -482,16 +514,17 @@ under the License.
           <groupId>org.apache.rat</groupId>
           <artifactId>apache-rat-plugin</artifactId>
           <version>0.8</version>
-	  <configuration>
-	    <excludes>
-	      <exclude>.git/**</exclude>
-	      <exclude>.gitignore</exclude>
-	      <exclude>.repository/</exclude>
-	      <exclude>**/resources/*.txt</exclude>
-	      <exclude>**/resources/*.avro</exclude>
-	      <exclude>**/scripts/scrunch</exclude> <!-- FIXME! -->
-	    </excludes>
-	  </configuration>
+          <configuration>
+            <excludes>
+            <exclude>DEPENDENCIES</exclude> <!-- added to source dist -->
+            <exclude>.git/**</exclude>
+            <exclude>.gitignore</exclude>
+            <exclude>.repository/</exclude>
+            <exclude>**/resources/*.txt</exclude>
+            <exclude>**/resources/*.avro</exclude>
+            <exclude>**/scripts/scrunch</exclude>
+            </excludes>
+          </configuration>
           <executions>
             <execution>
               <id>rat-check</id>
@@ -505,11 +538,6 @@ under the License.
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>2.5</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-resources-plugin</artifactId>
           <version>2.5</version>
         </plugin>
         <plugin>
@@ -568,18 +596,8 @@ under the License.
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-install-plugin</artifactId>
-          <version>2.3.1</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.7</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.3</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -694,4 +712,5 @@ under the License.
       </plugins>
     </pluginManagement>
   </build>
+
 </project>

@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch-examples</artifactId>
-  <name>Crunch Examples</name>
+  <name>Apache Crunch Examples</name>
 
   <dependencies>
     <dependency>

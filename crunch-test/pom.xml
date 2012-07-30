@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch-test</artifactId>
-  <name>Crunch Test</name>
+  <name>Apache Crunch Test</name>
   <description>
     Provides test dependencies and utilities.
   </description>

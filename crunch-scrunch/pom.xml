@@ -27,7 +27,7 @@ under the License.
   </parent>
 
   <artifactId>crunch-scrunch</artifactId>
-  <name>Crunch for Scala</name>
+  <name>Apache Crunch for Scala</name>
 
   <dependencies>
     <dependency>

@@ -1,0 +1,26 @@
+Welcome to Apache Crunch (Incubating)!
+======================================
+
+Apache Crunch is a Java library for writing, testing, and running Hadoop
+MapReduce pipelines, based on Google's FlumeJava. Its goal is to make
+pipelines that are composed of many user-defined functions simple to write,
+easy to test, and efficient to run.
+
+For more information please see the website:
+
+  http://incubator.apache.org/crunch/
+
+
+Building the Source Code
+------------------------
+
+We recommend Maven 3 and JDK 6 for building Crunch. To build the project
+run the following Maven command:
+
+  mvn package
+
+To run the integration test suite and to install the created JARs in your
+local Maven cache:
+
+  mvn install
+
