@@ -25,6 +25,7 @@ import java.util.SortedSet;
 
 import org.apache.crunch.util.Tuples;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -332,6 +333,22 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
 
   public static final <K, V> CombineFn<K, V> LAST_N(int n) {
     return aggregator(new LastNAggregator<V>(n));
+  }
+
+
+  /**
+   * Used to concatenate strings, with a separator between each strings.
+   * 
+   * @param separator
+   *            the separator which will be appended between each string
+   * @param skipNull
+   *            define if we should skip null values. Throw
+   *            NullPointerException if set to false and there is a null
+   *            value.
+   * @return
+   */
+  public static final <K> CombineFn<K, String> STRING_CONCAT(final String separator, final boolean skipNull) {
+    return aggregator(new StringConcatAggregator(separator, skipNull));
   }
 
   public static class SumLongs implements Aggregator<Long> {
@@ -847,6 +864,37 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     @Override
     public Iterable<V> results() {
       return ImmutableList.copyOf(elements);
+    }
+  }
+
+  public static class StringConcatAggregator implements Aggregator<String> {
+    private final String separator;
+    private final boolean skipNulls;
+    private final LinkedList<String> list = new LinkedList<String>();
+
+    private transient Joiner joiner;
+    
+    public StringConcatAggregator(final String separator, final boolean skipNulls) {
+      this.separator = separator;
+      this.skipNulls = skipNulls;
+    }
+
+    @Override
+    public void reset() {
+      if (joiner == null) {
+        joiner = skipNulls ? Joiner.on(separator).skipNulls() : Joiner.on(separator);
+      }
+      list.clear();
+    }
+
+    @Override
+    public void update(final String next) {
+      list.add(next);
+    }
+
+    @Override
+    public Iterable<String> results() {
+      return ImmutableList.of(joiner.join(list));
     }
   }
 }

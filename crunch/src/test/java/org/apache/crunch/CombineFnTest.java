@@ -35,6 +35,7 @@ import static org.apache.crunch.CombineFn.SUM_LONGS;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.crunch.CombineFn.Aggregator;
@@ -45,6 +46,7 @@ import org.apache.crunch.CombineFn.MaxNAggregator;
 import org.apache.crunch.CombineFn.MinNAggregator;
 import org.apache.crunch.CombineFn.PairAggregator;
 import org.apache.crunch.CombineFn.QuadAggregator;
+import org.apache.crunch.CombineFn.StringConcatAggregator;
 import org.apache.crunch.CombineFn.TripAggregator;
 import org.apache.crunch.CombineFn.TupleNAggregator;
 import org.junit.Test;
@@ -182,5 +184,26 @@ public class CombineFnTest {
     Aggregator<TupleN> a = new TupleNAggregator(MIN_INTS.create(), SUM_DOUBLES.create(), MAX_INTS.create(),
         MIN_DOUBLES.create(), MAX_LONGS.create());
     assertEquals(new TupleN(1, 20.0, 1, 2.0, 12L), Iterables.getOnlyElement(applyAggregator(a, input)));
+  }
+
+  @Test
+  public void testConcatenation() {
+    String[] arrayNull = new String[] { null, "" };
+    assertEquals(ImmutableList.of("foofoobarbar"), applyAggregator(
+        new StringConcatAggregator("", true), ImmutableList.of("foo", "foobar", "bar")));
+
+    assertEquals(ImmutableList.of("foo/foobar/bar"), applyAggregator(
+        new StringConcatAggregator("/", false), ImmutableList.of("foo", "foobar", "bar")));
+    assertEquals(ImmutableList.of("  "), applyAggregator(
+        new StringConcatAggregator(" ", true), ImmutableList.of(" ", "")));
+    assertEquals(ImmutableList.of(""), applyAggregator(
+        new StringConcatAggregator(" ", true), Arrays.asList(arrayNull)));
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testConcatenationNullException() {
+    String[] arrayNull = new String[] { null, "" };
+    assertEquals(ImmutableList.of(""), applyAggregator(
+        new StringConcatAggregator(" ", false), Arrays.asList(arrayNull)));
   }
 }
