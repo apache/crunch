@@ -22,7 +22,7 @@ under the License.
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.crunch</groupId>
   <artifactId>crunch-parent</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.3.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Crunch</name>
@@ -366,6 +366,24 @@ under the License.
           </reportPlugins>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.8.1</version>
+        <configuration>
+          <show>public</show>
+          <nohelp>true</nohelp>
+        </configuration>
+        <executions>
+          <execution>
+            <id>aggregate</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+            <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
 
     <pluginManagement>
@@ -576,7 +594,7 @@ under the License.
                  <reportSets><reportSet>
                     <id>generate-javadoc</id>
                     <reports>
-                       <report>javadoc</report>
+                       <report>aggregate</report>
                   </reports>
                 </reportSet></reportSets>
             </plugin>

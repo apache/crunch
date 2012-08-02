@@ -23,17 +23,17 @@
 
   <skin>
     <groupId>org.apache.maven.skins</groupId>
-    <artifactId>maven-stylus-skin</artifactId>
-    <version>1.4</version>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>1.2.2</version>
   </skin>
 
   <bannerLeft>
-    <name>${project.name}</name>
+    <name></name> <!-- Leave this empty until we have a logo -->
   </bannerLeft>
 
   <bannerRight>
-    <src>http://www.apache.org/images/asf_logo_wide.png</src>
-    <href>http://www.apache.org/</href>
+    <src>http://incubator.apache.org/images/apache-incubator-logo.png</src>
+    <href>http://incubator.apache.org/</href>
   </bannerRight>
 
   <publishDate position="right"/>
@@ -43,26 +43,23 @@
     <!-- Note: Breadcrumbs for Doxia's Markdown parser are currently broken,
                see https://jira.codehaus.org/browse/DOXIA-472 -->
     <breadcrumbs>
-      <item name="Apache" href="http://www.apache.org/index.html" />
+      <item name="Apache Incubator" href="http://incubator.apache.org/" />
     </breadcrumbs>
 
-    <menu name="Crunch" inherit="top">
-      <item name="About" href="http://incubator.apache.org/crunch/"/>
-      <item name="Wiki" href="https://cwiki.apache.org/confluence/display/CRUNCH/" />
-    </menu>
-
-    <!--menu name="Project Information">
+    <menu name="Apache Crunch" inherit="top">
+      <item name="About" href="index.html" />
+      <item name="API" href="apidocs/" />
       <item name="Mailing Lists" href="mail-lists.html" />
       <item name="Source Code" href="source-repository.html" />
       <item name="Issue Tracking" href="issue-tracking.html" />
-      <item name="Continuous Integration" href="integration.html" />
-      <item name="Team" href="team-list.html" />
       <item name="License" href="license.html" />
-    </menu-->
+      <item name="Wiki" href="https://cwiki.apache.org/confluence/display/CRUNCH/" />
+    </menu>
     
+    <!--
     <menu ref="modules" />
     <menu ref="reports" inherit="bottom" />
-
+    -->
   </body>
 
 </project>
