@@ -35,8 +35,8 @@ under the License.
   <modules>
     <module>crunch</module>
     <module>crunch-test</module>
-    <module>examples</module>
-    <module>scrunch</module>
+    <module>crunch-examples</module>
+    <module>crunch-scrunch</module>
   </modules>
 
   <properties>

@@ -32,9 +32,9 @@ a mixture of functional and object-oriented programming styles and has powerful 
 capabilities, allowing us to create complex pipelines using very few keystrokes. Here is
 the Scrunch analogue of the classic WordCount problem:
 
-	import com.cloudera.crunch.io.{From => from}
-	import com.cloudera.scrunch._
-	import com.cloudera.scrunch.Conversions_  # For implicit type conversions
+	import org.apache.crunch.io.{From => from}
+	import org.apache.crunch.scrunch._
+	import org.apache.crunch.scrunch.Conversions_  # For implicit type conversions
 
 	class WordCountExample {
 	  val pipeline = new Pipeline[WordCountExample]
@@ -80,7 +80,6 @@ the output of a Crunch pipeline into the client:
 Scrunch is alpha-quality code, written by someone who was learning Scala on the fly. There will be bugs,
 rough edges, and non-idiomatic Scala usage all over the place. This will improve with time, and we welcome
 contributions from Scala experts who are interested in helping us make Scrunch into a first-class project.
-The Crunch developers mailing list is [here](https://groups.google.com/a/cloudera.org/group/crunch-dev/topics).
 
 Scrunch emerged out of conversations with [Dmitriy Ryaboy](http://twitter.com/#!/squarecog),
 [Oscar Boykin](http://twitter.com/#!/posco), and [Avi Bryant](http://twitter.com/#!/avibryant) from Twitter.
