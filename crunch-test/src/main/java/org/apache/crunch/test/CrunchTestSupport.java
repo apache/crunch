@@ -15,14 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.scrunch;
-
-import org.apache.crunch.impl.mr.run.RuntimeParameters;
-import org.apache.crunch.test.TemporaryPath;
+package org.apache.crunch.test;
 
 import org.junit.Rule;
 
-public class ScrunchTestSupport {
+/**
+ * A temporary workaround for Scala tests to use when working with Rule annotations
+ * until it gets fixed in JUnit 4.11.
+ */
+public class CrunchTestSupport {
   @Rule
-  public TemporaryPath tempDir = new TemporaryPath(RuntimeParameters.TMP_DIR, "hadoop.tmp.dir");
+  public TemporaryPath tempDir = new TemporaryPath(
+      "crunch.tmp.dir", "hadoop.tmp.dir");
 }

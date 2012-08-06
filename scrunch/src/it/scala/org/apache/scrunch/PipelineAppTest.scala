@@ -17,6 +17,8 @@
  */
 package org.apache.scrunch
 
+import org.apache.crunch.test.CrunchTestSupport
+
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
@@ -35,7 +37,7 @@ object WordCount extends PipelineApp {
   cogroup(w1, w2).write(to.textFile(args(2)))
 }
 
-class PipelineAppTest extends ScrunchTestSupport with JUnitSuite {
+class PipelineAppTest extends CrunchTestSupport with JUnitSuite {
   @Test def run {
     val args = new Array[String](3)
     args(0) = tempDir.copyResourceFileName("shakes.txt")

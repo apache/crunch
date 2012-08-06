@@ -18,11 +18,12 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from}
+import org.apache.crunch.test.CrunchTestSupport
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class UnionTest extends ScrunchTestSupport with JUnitSuite {
+class UnionTest extends CrunchTestSupport with JUnitSuite {
   lazy val pipeline = Pipeline.mapReduce[UnionTest](tempDir.getDefaultConfiguration)
 
   def wordCount(col: PCollection[String]) = {

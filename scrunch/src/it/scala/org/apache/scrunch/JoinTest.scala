@@ -18,11 +18,12 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
+import org.apache.crunch.test.CrunchTestSupport
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class JoinTest extends ScrunchTestSupport with JUnitSuite {
+class JoinTest extends CrunchTestSupport with JUnitSuite {
   lazy val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
 
   def wordCount(fileName: String) = {

@@ -21,6 +21,7 @@ import Avros._
 
 import org.apache.crunch.{DoFn, Emitter, Pair => P}
 import org.apache.crunch.io.{From => from}
+import org.apache.crunch.test.CrunchTestSupport
 
 import scala.collection.mutable.HashMap
 
@@ -60,7 +61,7 @@ class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Flo
   }
 }
 
-class PageRankClassTest extends ScrunchTestSupport with JUnitSuite {
+class PageRankClassTest extends CrunchTestSupport with JUnitSuite {
 
   lazy val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
 

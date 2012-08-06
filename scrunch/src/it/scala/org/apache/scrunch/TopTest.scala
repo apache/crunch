@@ -18,11 +18,12 @@
 package org.apache.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
+import org.apache.crunch.test.CrunchTestSupport
 
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class TopTest extends ScrunchTestSupport with JUnitSuite {
+class TopTest extends CrunchTestSupport with JUnitSuite {
 
   @Test def topInMem {
     val ptable = Mem.tableOf(("foo", 17), ("bar", 29), ("baz", 1729))
