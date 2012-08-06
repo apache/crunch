@@ -21,7 +21,7 @@ import scala.collection.JavaConversions
 
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, Target}
-import org.apache.crunch.lib.Aggregate
+import org.apache.crunch.lib.{Aggregate, Cartesian}
 import org.apache.scrunch.Conversions._
 import org.apache.scrunch.interpreter.InterpreterRunner
 
@@ -54,6 +54,12 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     by(f).groupByKey
   }
 
+  def cross[S2](other: PCollection[S2]): PCollection[(S, S2)] = {
+    val inter = Cartesian.cross(this.native, other.native)
+    val f = (in: CPair[S, S2]) => (in.first(), in.second())
+    inter.parallelDo(mapFn(f), getTypeFamily().tuple2(pType, other.pType))
+  }
+
   def materialize() = {
     InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
     JavaConversions.iterableAsScalaIterable[S](native.materialize)
@@ -67,6 +73,8 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def max() = wrap(Aggregate.max(native))
+
+  def pType = native.getPType()
 }
 
 trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
