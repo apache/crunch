@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.scrunch
+package org.apache.crunch.scrunch
 
 import _root_.org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
