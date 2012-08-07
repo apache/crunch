@@ -20,12 +20,14 @@ package org.apache.crunch.types.avro;
 import java.io.IOException;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -49,9 +51,26 @@ public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWr
     ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
     final DataFileWriter<T> WRITER = new DataFileWriter<T>(factory.<T> getWriter());
 
+    JobConf jc = new JobConf(conf);
+    /* copied from org.apache.avro.mapred.AvroOutputFormat */
+    
+    if (org.apache.hadoop.mapred.FileOutputFormat.getCompressOutput(jc)) {
+      int level = conf.getInt(org.apache.avro.mapred.AvroOutputFormat.DEFLATE_LEVEL_KEY,
+          org.apache.avro.mapred.AvroOutputFormat.DEFAULT_DEFLATE_LEVEL);
+      String codecName = conf.get(AvroJob.OUTPUT_CODEC, 
+          org.apache.avro.file.DataFileConstants.DEFLATE_CODEC);
+      CodecFactory codec = codecName.equals(org.apache.avro.file.DataFileConstants.DEFLATE_CODEC)
+          ? CodecFactory.deflateCodec(level)
+          : CodecFactory.fromString(codecName);
+      WRITER.setCodec(codec);
+    }
+
+    WRITER.setSyncInterval(jc.getInt(org.apache.avro.mapred.AvroOutputFormat.SYNC_INTERVAL_KEY, 
+        org.apache.avro.file.DataFileConstants.DEFAULT_SYNC_INTERVAL));
+
     Path path = getDefaultWorkFile(context, org.apache.avro.mapred.AvroOutputFormat.EXT);
     WRITER.create(schema, path.getFileSystem(context.getConfiguration()).create(path));
-
+    
     return new RecordWriter<AvroWrapper<T>, NullWritable>() {
       @Override
       public void write(AvroWrapper<T> wrapper, NullWritable ignore) throws IOException {
