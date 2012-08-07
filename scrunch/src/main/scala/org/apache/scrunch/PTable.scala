@@ -44,6 +44,12 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     parallelDo(mapValuesFn[K, V, T](f), ptype)
   }
 
+  def mapKeys[T](f: K => T)(implicit pt: PTypeH[T]) = {
+    val ptf = getTypeFamily()
+    val ptype = ptf.tableOf(pt.get(ptf), native.getValueType())
+    parallelDo(mapKeysFn[K, V, T](f), ptype)
+  }
+
   def flatMap[T, To](f: (K, V) => Traversable[T])
       (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
     b(this, flatMapFn(f), pt.get(getTypeFamily()))
@@ -158,6 +164,10 @@ trait SMapTableValuesFn[K, V, T] extends MapFn[CPair[K, V], CPair[K, T]] with Fu
   override def map(input: CPair[K, V]) = CPair.of(input.first(), apply(input.second()))
 }
 
+trait SMapTableKeysFn[K, V, T] extends MapFn[CPair[K, V], CPair[T, V]] with Function1[K, T] {
+  override def map(input: CPair[K, V]) = CPair.of(apply(input.first()), input.second())
+}
+
 object PTable {
   def filterFn[K, V](fn: (K, V) => Boolean) = {
     new SFilterTableFn[K, V] { def apply(k: K, v: V) = fn(k, v) }
@@ -165,6 +175,10 @@ object PTable {
 
   def mapValuesFn[K, V, T](fn: V => T) = {
     new SMapTableValuesFn[K, V, T] { def apply(v: V) = fn(v) }
+  }
+
+  def mapKeysFn[K, V, T](fn: K => T) = {
+    new SMapTableKeysFn[K, V, T] { def apply(k: K) = fn(k) }
   }
 
   def mapFn[K, V, T](fn: (K, V) => T) = {
