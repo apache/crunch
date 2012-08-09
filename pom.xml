@@ -341,7 +341,10 @@ under the License.
       </activation>
       <properties>
         <hadoop.version>2.0.0-alpha</hadoop.version>
-        <hbase.version>0.92.1-cdh4.0.0</hbase.version>
+        <!-- NOTE: You must build HBase 0.94.1 from source using:
+             mvn clean install -Dhadoop.profile=2.0
+             for this to work. -->
+        <hbase.version>0.94.1</hbase.version>
       </properties>
       <dependencyManagement>
         <dependencies>
