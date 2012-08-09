@@ -36,7 +36,8 @@ public class AvroDeepCopierTest {
     person.setAge(42);
     person.setSiblingnames(Lists.<CharSequence> newArrayList());
 
-    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$).deepCopy(person);
+    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
+        .deepCopy(person);
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);
@@ -49,7 +50,8 @@ public class AvroDeepCopierTest {
     record.put("age", 42);
     record.put("siblingnames", Lists.newArrayList());
 
-    Record deepCopyRecord = new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$).deepCopy(record);
+    Record deepCopyRecord = new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$)
+        .deepCopy(record);
 
     assertEquals(record, deepCopyRecord);
     assertNotSame(record, deepCopyRecord);
@@ -62,8 +64,8 @@ public class AvroDeepCopierTest {
     person.setAge(42);
     person.setSiblingnames(Lists.<CharSequence> newArrayList());
 
-    Person deepCopyPerson = new AvroDeepCopier.AvroReflectDeepCopier<Person>(Person.class, Person.SCHEMA$)
-        .deepCopy(person);
+    Person deepCopyPerson = new AvroDeepCopier.AvroReflectDeepCopier<Person>(Person.class,
+        Person.SCHEMA$).deepCopy(person);
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);

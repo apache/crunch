@@ -34,6 +34,28 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
 
   public abstract T makeTuple(Object... values);
 
+  /**
+   * Get the {@link TupleFactory} for a given Tuple implementation. Only
+   * standard Tuple implementations are supported.
+   * 
+   * @param tupleClass
+   *          The class for which the factory is to be retrieved
+   * @return The appropriate TupleFactory
+   */
+  public static <T extends Tuple> TupleFactory<T> getTupleFactory(Class<T> tupleClass) {
+    if (tupleClass == Pair.class) {
+      return (TupleFactory<T>) PAIR;
+    } else if (tupleClass == Tuple3.class) {
+      return (TupleFactory<T>) TUPLE3;
+    } else if (tupleClass == Tuple4.class) {
+      return (TupleFactory<T>) TUPLE4;
+    } else if (tupleClass == TupleN.class) {
+      return (TupleFactory<T>) TUPLEN;
+    } else {
+      throw new IllegalArgumentException("Can't create TupleFactory for " + tupleClass);
+    }
+  }
+
   public static final TupleFactory<Pair> PAIR = new TupleFactory<Pair>() {
     @Override
     public Pair makeTuple(Object... values) {
@@ -96,4 +118,5 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
       }
     }
   }
+
 }

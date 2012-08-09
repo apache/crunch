@@ -23,8 +23,12 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
+import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.junit.Test;
@@ -152,15 +156,19 @@ public class AvroTypeTest {
     assertEquals(record, detachedRecord);
     assertNotSame(record, detachedRecord);
   }
-
-  @Test
-  public void testGetDetachedValue_SpecificAvroType() {
-    AvroType<Person> specificType = Avros.records(Person.class);
+  
+  private Person createPerson(){
     Person person = new Person();
     person.setName("name value");
     person.setAge(42);
     person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    return person;
+  }
 
+  @Test
+  public void testGetDetachedValue_SpecificAvroType() {
+    AvroType<Person> specificType = Avros.records(Person.class);
+    Person person = createPerson();
     Person detachedPerson = specificType.getDetachedValue(person);
     assertEquals(person, detachedPerson);
     assertNotSame(person, detachedPerson);
@@ -169,13 +177,37 @@ public class AvroTypeTest {
   @Test
   public void testGetDetachedValue_ReflectAvroType() {
     AvroType<Person> reflectType = Avros.reflects(Person.class);
-    Person person = new Person();
-    person.setName("name value");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
-
+    Person person = createPerson();
     Person detachedPerson = reflectType.getDetachedValue(person);
     assertEquals(person, detachedPerson);
+    assertNotSame(person, detachedPerson);
+  }
+
+  @Test
+  public void testGetDetachedValue_Pair() {
+    Person person = createPerson();
+    AvroType<Pair<Integer, Person>> pairType = Avros.pairs(Avros.ints(),
+        Avros.records(Person.class));
+
+    Pair<Integer, Person> inputPair = Pair.of(1, person);
+    Pair<Integer, Person> detachedPair = pairType.getDetachedValue(inputPair);
+
+    assertEquals(inputPair, detachedPair);
+    assertNotSame(inputPair.second(), detachedPair.second());
+  }
+  
+  @Test
+  public void testGetDetachedValue_Collection(){
+    Person person = createPerson();
+    List<Person> personList = Lists.newArrayList(person);
+    
+    AvroType<Collection<Person>> collectionType = Avros.collections(Avros.records(Person.class));
+    
+    Collection<Person> detachedCollection = collectionType.getDetachedValue(personList);
+    
+    assertEquals(personList, detachedCollection);
+    Person detachedPerson = detachedCollection.iterator().next();
+    
     assertNotSame(person, detachedPerson);
   }
 

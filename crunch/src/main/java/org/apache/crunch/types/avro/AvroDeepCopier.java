@@ -36,6 +36,7 @@ import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.types.DeepCopier;
 
 /**
  * Performs deep copies of Avro-serializable objects.
@@ -45,7 +46,7 @@ import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
  * running in its own JVM, but it may well be a problem in any other kind of
  * multi-threaded context.
  */
-public abstract class AvroDeepCopier<T> implements Serializable {
+public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
   private BinaryEncoder binaryEncoder;
   private BinaryDecoder binaryDecoder;
@@ -67,7 +68,7 @@ public abstract class AvroDeepCopier<T> implements Serializable {
     private Class<T> valueClass;
 
     public AvroSpecificDeepCopier(Class<T> valueClass, Schema schema) {
-      super(new SpecificDatumWriter<T>(schema), new SpecificDatumReader(schema));
+      super(new SpecificDatumWriter<T>(schema), new SpecificDatumReader<T>(schema));
       this.valueClass = valueClass;
     }
 
@@ -113,6 +114,10 @@ public abstract class AvroDeepCopier<T> implements Serializable {
     }
   }
 
+  public static class AvroTupleDeepCopier {
+
+  }
+
   /**
    * Create a deep copy of an Avro value.
    * 
@@ -120,6 +125,7 @@ public abstract class AvroDeepCopier<T> implements Serializable {
    *          The value to be copied
    * @return The deep copy of the value
    */
+  @Override
   public T deepCopy(T source) {
     ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
     binaryEncoder = EncoderFactory.get().binaryEncoder(byteOutStream, binaryEncoder);
@@ -127,7 +133,8 @@ public abstract class AvroDeepCopier<T> implements Serializable {
     try {
       datumWriter.write(source, binaryEncoder);
       binaryEncoder.flush();
-      binaryDecoder = DecoderFactory.get().binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
+      binaryDecoder = DecoderFactory.get()
+          .binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
       datumReader.read(target, binaryDecoder);
     } catch (Exception e) {
       throw new CrunchRuntimeException("Error while deep copying avro value " + source, e);
