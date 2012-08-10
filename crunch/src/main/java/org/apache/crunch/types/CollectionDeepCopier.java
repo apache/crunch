@@ -20,7 +20,7 @@ package org.apache.crunch.types;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.hadoop.thirdparty.guava.common.collect.Lists;
+import com.google.common.collect.Lists;
 
 /**
  * Performs deep copies (based on underlying PType deep copying) of Collections.
@@ -28,9 +28,8 @@ import org.apache.hadoop.thirdparty.guava.common.collect.Lists;
  * @param <T>
  *          The type of Tuple implementation being copied
  */
-public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>>  {
+public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>> {
 
-  
   private PType<T> elementType;
 
   public CollectionDeepCopier(PType<T> elementType) {
@@ -40,7 +39,7 @@ public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>>  {
   @Override
   public Collection<T> deepCopy(Collection<T> source) {
     List<T> copiedCollection = Lists.newArrayListWithCapacity(source.size());
-    for (T value : source){
+    for (T value : source) {
       copiedCollection.add(elementType.getDetachedValue(value));
     }
     return copiedCollection;
