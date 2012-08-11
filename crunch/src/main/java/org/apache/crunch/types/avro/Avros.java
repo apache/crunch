@@ -458,9 +458,8 @@ public class Avros {
     private final List<AvroType> avroTypes;
     private final String jsonSchema;
     private final boolean isReflect;
-
-    private transient GenericRecord record;
-
+    private transient Schema schema;
+    
     public TupleToGenericRecord(Schema schema, PType<?>... ptypes) {
       this.fns = Lists.newArrayList();
       this.avroTypes = Lists.newArrayList();
@@ -493,19 +492,23 @@ public class Avros {
 
     @Override
     public void initialize() {
-      Schema schema = new Schema.Parser().parse(jsonSchema);
-      if (isReflect) {
-        this.record = new ReflectGenericRecord(schema);
-      } else {
-        this.record = new GenericData.Record(schema);
-      }
+      this.schema = new Schema.Parser().parse(jsonSchema);
       for (MapFn fn : fns) {
         fn.setContext(getContext());
       }
     }
+    
+    private GenericRecord createRecord(){
+      if (isReflect) {
+        return new ReflectGenericRecord(schema);
+      } else {
+        return new GenericData.Record(schema);
+      }      
+    }
 
     @Override
     public GenericRecord map(Tuple input) {
+      GenericRecord record = createRecord();
       for (int i = 0; i < input.size(); i++) {
         Object v = input.get(i);
         if (v == null) {
