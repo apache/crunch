@@ -137,7 +137,7 @@ public class Avros {
   }
 
   static <T> boolean isPrimitive(AvroType<T> avroType) {
-    return PRIMITIVES.containsKey(avroType.getTypeClass());
+    return avroType.getTypeClass().isPrimitive() || PRIMITIVES.containsKey(avroType.getTypeClass());
   }
 
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {

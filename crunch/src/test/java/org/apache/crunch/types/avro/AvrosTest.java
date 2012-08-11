@@ -216,8 +216,14 @@ public class AvrosTest {
   }
 
   @Test
-  public void testIsPrimitive_True() {
+  public void testIsPrimitive_PrimitiveMappedType() {
     assertTrue(Avros.isPrimitive(Avros.ints()));
+  }
+  
+  @Test
+  public void testIsPrimitive_TruePrimitiveValue(){
+    AvroType truePrimitiveAvroType = new AvroType(int.class, Schema.create(Type.INT));
+    assertTrue(Avros.isPrimitive(truePrimitiveAvroType));
   }
 
   @Test
