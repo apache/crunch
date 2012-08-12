@@ -19,6 +19,7 @@ package org.apache.crunch.types.avro;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -32,6 +33,7 @@ import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.types.CollectionDeepCopier;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
+import org.apache.crunch.types.MapDeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.TupleDeepCopier;
@@ -157,6 +159,8 @@ public class AvroType<T> implements PType<T> {
     if (deepCopier == null) {
       if (Tuple.class.isAssignableFrom(this.typeClass)) {
         deepCopier = new TupleDeepCopier(this);
+      } else if (Map.class.isAssignableFrom(this.typeClass)){
+        deepCopier = new MapDeepCopier(this.subTypes.get(0));
       } else if (Collection.class.isAssignableFrom(this.typeClass)){
         deepCopier = new CollectionDeepCopier(this.subTypes.get(0));
       } else if (isSpecific()) {

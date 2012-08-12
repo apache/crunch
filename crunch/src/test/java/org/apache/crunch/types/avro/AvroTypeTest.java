@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
@@ -34,6 +35,7 @@ import org.apache.crunch.test.StringWrapper;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class AvroTypeTest {
 
@@ -209,6 +211,22 @@ public class AvroTypeTest {
     Person detachedPerson = detachedCollection.iterator().next();
     
     assertNotSame(person, detachedPerson);
+  }
+  
+  @Test
+  public void testGetDetachedValue_Map(){
+    String key = "key";
+    Person value = createPerson();
+    
+    Map<String,Person> stringPersonMap = Maps.newHashMap();
+    stringPersonMap.put(key, value);
+    
+    AvroType<Map<String, Person>> mapType = Avros.maps(Avros.records(Person.class));
+    
+    Map<String, Person> detachedMap = mapType.getDetachedValue(stringPersonMap);
+    
+    assertEquals(stringPersonMap, detachedMap);
+    assertNotSame(value, detachedMap.get(key));
   }
 
 }
