@@ -20,7 +20,6 @@ package org.apache.crunch.io;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.io.avro.AvroFileSource;
-import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.io.seq.SeqFileSource;
 import org.apache.crunch.io.seq.SeqFileTableSourceTarget;
@@ -31,9 +30,6 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
@@ -59,14 +55,6 @@ public class From {
 
   public static <T> Source<T> avroFile(Path path, AvroType<T> avroType) {
     return new AvroFileSource<T>(path, avroType);
-  }
-
-  public static TableSource<ImmutableBytesWritable, Result> hbaseTable(String table) {
-    return hbaseTable(table, new Scan());
-  }
-
-  public static TableSource<ImmutableBytesWritable, Result> hbaseTable(String table, Scan scan) {
-    return new HBaseSourceTarget(table, scan);
   }
 
   public static <T> Source<T> sequenceFile(String pathName, PType<T> ptype) {

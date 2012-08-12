@@ -19,7 +19,6 @@ package org.apache.crunch.io;
 
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
-import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.io.seq.SeqFileTableSourceTarget;
 import org.apache.crunch.io.text.TextFileSourceTarget;
@@ -28,7 +27,6 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.client.Scan;
 
 /**
  * Static factory methods for creating various {@link SourceTarget} types.
@@ -41,14 +39,6 @@ public class At {
 
   public static <T> AvroFileSourceTarget<T> avroFile(Path path, AvroType<T> avroType) {
     return new AvroFileSourceTarget<T>(path, avroType);
-  }
-
-  public static HBaseSourceTarget hbaseTable(String table) {
-    return hbaseTable(table, new Scan());
-  }
-
-  public static HBaseSourceTarget hbaseTable(String table, Scan scan) {
-    return new HBaseSourceTarget(table, scan);
   }
 
   public static <T> SeqFileSourceTarget<T> sequenceFile(String pathName, PType<T> ptype) {

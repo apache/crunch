@@ -19,7 +19,6 @@ package org.apache.crunch.io;
 
 import org.apache.crunch.Target;
 import org.apache.crunch.io.avro.AvroFileTarget;
-import org.apache.crunch.io.hbase.HBaseTarget;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.io.seq.SeqFileTarget;
 import org.apache.crunch.io.text.TextFileTarget;
@@ -46,10 +45,6 @@ public class To {
 
   public static Target avroFile(Path path) {
     return new AvroFileTarget(path);
-  }
-
-  public static Target hbaseTable(String table) {
-    return new HBaseTarget(table);
   }
 
   public static Target sequenceFile(String pathName) {

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.io.hbase;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +30,12 @@ import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+import org.apache.crunch.DoFn;
+import org.apache.crunch.Emitter;
+import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
+import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.hbase.HBaseTarget;
@@ -141,7 +147,7 @@ public class WordCountHBaseIT {
       // Create a programmatic container for this jar.
       JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseIT.jar"));
       File baseDir = new File("target/test-classes");
-      String prefix = "org/apache/crunch/";
+      String prefix = "org/apache/crunch/io/hbase/";
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$1.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$2.class");

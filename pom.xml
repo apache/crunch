@@ -46,6 +46,7 @@ under the License.
 
   <modules>
     <module>crunch</module>
+    <module>crunch-hbase</module>
     <module>crunch-test</module>
     <module>crunch-examples</module>
     <module>crunch-scrunch</module>
@@ -105,6 +106,12 @@ under the License.
 
       <dependency>
         <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch-hbase</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.crunch</groupId>
         <artifactId>crunch-test</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -131,6 +138,24 @@ under the License.
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>2.2</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>1.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-lang</groupId>
+        <artifactId>commons-lang</artifactId>
+        <version>2.4</version>
+      </dependency>
+
+      <dependency>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
+        <version>3.0.1</version>
       </dependency>
 
       <dependency>
@@ -207,8 +232,14 @@ under the License.
 
       <dependency>
         <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.4.3</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.6.1</version>
+        <version>1.4.3</version>
       </dependency>
 
       <dependency>
