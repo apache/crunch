@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -62,6 +63,7 @@ public class CrunchJobControl implements Runnable {
 
   private long nextJobID;
   private String groupName;
+  private int jobPollInterval;
 
   /**
    * Construct a job control for a group of jobs.
@@ -78,6 +80,7 @@ public class CrunchJobControl implements Runnable {
     this.nextJobID = -1;
     this.groupName = groupName;
     this.runnerState = ThreadState.READY;
+    this.jobPollInterval = isLocalMode() ? 500 : 5000;
   }
 
   private static List<CrunchControlledJob> toList(Map<String, CrunchControlledJob> jobs) {
@@ -282,7 +285,7 @@ public class CrunchJobControl implements Runnable {
         break;
       }
       try {
-        Thread.sleep(5000);
+        Thread.sleep(jobPollInterval);
       } catch (Exception e) {
 
       }
@@ -292,6 +295,13 @@ public class CrunchJobControl implements Runnable {
       }
     }
     this.runnerState = ThreadState.STOPPED;
+  }
+  
+  private boolean isLocalMode() {
+    Configuration conf = new Configuration();
+    // Try to handle MapReduce version 0.20 or 0.22
+    String jobTrackerAddress = conf.get("mapreduce.jobtracker.address", conf.get("mapred.job.tracker", "local"));
+    return "local".equals(jobTrackerAddress);
   }
 
 }
