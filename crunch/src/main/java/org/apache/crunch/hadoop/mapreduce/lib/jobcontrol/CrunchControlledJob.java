@@ -316,12 +316,12 @@ public class CrunchControlledJob {
     try {
       Configuration conf = job.getConfiguration();
       if (conf.getBoolean(CREATE_DIR, false)) {
-        FileSystem fs = FileSystem.get(conf);
-        Path inputPaths[] = FileInputFormat.getInputPaths(job);
-        for (int i = 0; i < inputPaths.length; i++) {
-          if (!fs.exists(inputPaths[i])) {
+        Path[] inputPaths = FileInputFormat.getInputPaths(job);
+        for (Path inputPath : inputPaths) {
+          FileSystem fs = inputPath.getFileSystem(conf);
+          if (!fs.exists(inputPath)) {
             try {
-              fs.mkdirs(inputPaths[i]);
+              fs.mkdirs(inputPath);
             } catch (IOException e) {
 
             }

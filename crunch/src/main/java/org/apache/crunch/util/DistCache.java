@@ -51,7 +51,7 @@ public class DistCache {
   private static final String TMPJARS_KEY = "tmpjars";
 
   public static void write(Configuration conf, Path path, Object value) throws IOException {
-    ObjectOutputStream oos = new ObjectOutputStream(FileSystem.get(conf).create(path));
+    ObjectOutputStream oos = new ObjectOutputStream(path.getFileSystem(conf).create(path));
     oos.writeObject(value);
     oos.close();
 

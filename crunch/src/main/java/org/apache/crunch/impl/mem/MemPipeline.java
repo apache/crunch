@@ -147,7 +147,7 @@ public class MemPipeline implements Pipeline {
     if (target instanceof PathTarget) {
       Path path = ((PathTarget) target).getPath();
       try {
-        FileSystem fs = FileSystem.get(conf);
+        FileSystem fs = path.getFileSystem(conf);
         FSDataOutputStream os = fs.create(new Path(path, "out"));
         if (collection instanceof PTable) {
           for (Object o : collection.materialize()) {

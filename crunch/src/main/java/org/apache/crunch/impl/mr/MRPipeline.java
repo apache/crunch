@@ -267,7 +267,7 @@ public class MRPipeline implements Pipeline {
   private static Path createTempDirectory(Configuration conf) {
     Path dir = createTemporaryPath(conf);
     try {
-      FileSystem.get(conf).mkdirs(dir);
+      dir.getFileSystem(conf).mkdirs(dir);
     } catch (IOException e) {
       throw new RuntimeException("Cannot create job output directory " + dir, e);
     }
@@ -293,7 +293,7 @@ public class MRPipeline implements Pipeline {
       return;
     }
     try {
-      FileSystem fs = FileSystem.get(conf);
+      FileSystem fs = tempDirectory.getFileSystem(conf);
       if (fs.exists(tempDirectory)) {
         fs.delete(tempDirectory, true);
       }

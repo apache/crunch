@@ -36,7 +36,7 @@ public class SeqFileSource<T> extends FileSourceImpl<T> implements ReadableSourc
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    FileSystem fs = FileSystem.get(path.toUri(), conf);
+    FileSystem fs = path.getFileSystem(conf);
     return CompositePathIterable.create(fs, path, new SeqFileReaderFactory<T>(ptype, conf));
   }
 

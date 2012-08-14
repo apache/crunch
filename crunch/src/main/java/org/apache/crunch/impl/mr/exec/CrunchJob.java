@@ -52,19 +52,35 @@ public class CrunchJob extends CrunchControlledJob {
     if (!multiPaths.isEmpty()) {
       // Need to handle moving the data from the output directory of the
       // job to the output locations specified in the paths.
-      FileSystem fs = FileSystem.get(job.getConfiguration());
+      FileSystem srcFs = workingPath.getFileSystem(job.getConfiguration());
       for (int i = 0; i < multiPaths.size(); i++) {
         Path src = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + i + "-*");
-        Path[] srcs = FileUtil.stat2Paths(fs.globStatus(src), src);
+        Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(src), src);
         Path dst = multiPaths.get(i);
-        if (!fs.exists(dst)) {
-          fs.mkdirs(dst);
+        FileSystem dstFs = dst.getFileSystem(job.getConfiguration());
+        if (!dstFs.exists(dst)) {
+          dstFs.mkdirs(dst);
         }
-        int minPartIndex = getMinPartIndex(dst, fs);
+        boolean sameFs = isCompatible(srcFs, dst);
+        int minPartIndex = getMinPartIndex(dst, dstFs);
         for (Path s : srcs) {
-          fs.rename(s, getDestFile(s, dst, minPartIndex++));
+          Path d = getDestFile(s, dst, minPartIndex++);
+          if (sameFs) {
+            srcFs.rename(s, d);
+          } else {
+            FileUtil.copy(srcFs, s, dstFs, d, true, true, job.getConfiguration());
+          }
         }
       }
+    }
+  }
+
+  private boolean isCompatible(FileSystem fs, Path path) {
+    try {
+      fs.makeQualified(path);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
     }
   }
 

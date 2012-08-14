@@ -26,7 +26,6 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.AvroUtf8InputFormat;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -68,7 +67,7 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(FileSystem.get(path.toUri(), conf), path, new TextFileReaderFactory<T>(ptype,
+    return CompositePathIterable.create(path.getFileSystem(conf), path, new TextFileReaderFactory<T>(ptype,
         conf));
   }
 }

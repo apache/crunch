@@ -36,7 +36,7 @@ public class SourceTargetHelper {
   private static final Log LOG = LogFactory.getLog(SourceTargetHelper.class);
 
   public static long getPathSize(Configuration conf, Path path) throws IOException {
-    return getPathSize(FileSystem.get(conf), path);
+    return getPathSize(path.getFileSystem(conf), path);
   }
 
   public static long getPathSize(FileSystem fs, Path path) throws IOException {
