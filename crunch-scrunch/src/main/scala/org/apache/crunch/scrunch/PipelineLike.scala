@@ -82,7 +82,10 @@ trait PipelineLike {
    * clean up any intermediate data files that were created in
    * this run or previous calls to `run`.
    */
-  def done(): Unit = jpipeline.done()
+  def done(): Unit =  {
+    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    jpipeline.done()
+  }
 
   /**
    * Turn on debug logging for jobs that are run from this pipeline.
