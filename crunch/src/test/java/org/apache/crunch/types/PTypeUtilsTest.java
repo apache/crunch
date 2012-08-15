@@ -77,7 +77,7 @@ public class PTypeUtilsTest {
 
   @Test
   public void testAvroRegistered() {
-    AvroType<Utf8> at = new AvroType<Utf8>(Utf8.class, Schema.create(Schema.Type.STRING));
+    AvroType<Utf8> at = new AvroType<Utf8>(Utf8.class, Schema.create(Schema.Type.STRING), new DeepCopier.NoOpDeepCopier<Utf8>());
     Avros.register(Utf8.class, at);
     assertEquals(at, Avros.records(Utf8.class));
   }

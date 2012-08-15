@@ -37,8 +37,8 @@ public class TupleDeepCopierTest {
     person.setSiblingnames(Lists.<CharSequence> newArrayList());
 
     Pair<Integer, Person> inputPair = Pair.of(1, person);
-    DeepCopier<Pair<Integer, Person>> deepCopier = new TupleDeepCopier<Pair<Integer, Person>>(
-        Avros.pairs(Avros.ints(), Avros.records(Person.class)));
+    DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(
+        Pair.class, Avros.ints(), Avros.records(Person.class));
 
     Pair<Integer, Person> deepCopyPair = deepCopier.deepCopy(inputPair);
 

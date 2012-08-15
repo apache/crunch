@@ -15,34 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.types;
+package org.apache.crunch.types.writable;
 
-import java.io.Serializable;
+import static org.junit.Assert.*;
 
-/**
- * Performs deep copies of values.
- * 
- * @param <T>
- *          The type of value that will be copied
- */
-public interface DeepCopier<T> extends Serializable {
+import org.apache.hadoop.io.Text;
+import org.junit.Before;
+import org.junit.Test;
 
-  /**
-   * Create a deep copy of a value.
-   * 
-   * @param source
-   *          The value to be copied
-   * @return The deep copy of the value
-   */
-  T deepCopy(T source);
+
+public class WritableDeepCopierTest {
+
+  private WritableDeepCopier<Text> deepCopier;
   
-  static class NoOpDeepCopier<V> implements DeepCopier<V> {
-
-    @Override
-    public V deepCopy(V source) {
-      return source;
-    }
-    
+  @Before
+  public void setUp(){
+    deepCopier = new WritableDeepCopier<Text>(Text.class);
   }
+  
+  @Test
+  public void testDeepCopy(){
+    Text text = new Text("value");
+    Text deepCopy = deepCopier.deepCopy(text);
+    
+    assertEquals(text, deepCopy);
+    assertNotSame(text, deepCopy);
+  }
+  
   
 }

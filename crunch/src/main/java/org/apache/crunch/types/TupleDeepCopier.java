@@ -21,6 +21,8 @@ import java.util.List;
 
 import org.apache.crunch.Tuple;
 
+import com.google.common.collect.Lists;
+
 /**
  * Performs deep copies (based on underlying PType deep copying) of Tuple-based
  * objects.
@@ -33,9 +35,9 @@ public class TupleDeepCopier<T extends Tuple> implements DeepCopier<T> {
   private final TupleFactory<T> tupleFactory;
   private final List<PType> elementTypes;
 
-  public TupleDeepCopier(PType<T> ptype) {
-    tupleFactory = TupleFactory.getTupleFactory(ptype.getTypeClass());
-    elementTypes = ptype.getSubTypes();
+  public TupleDeepCopier(Class<T> tupleClass, PType...elementTypes) {
+    tupleFactory = TupleFactory.getTupleFactory(tupleClass);
+    this.elementTypes = Lists.newArrayList(elementTypes);
   }
 
   @Override

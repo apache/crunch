@@ -20,18 +20,20 @@ package org.apache.crunch.types.writable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
+import java.util.Collection;
+import java.util.Map;
+
+import org.apache.crunch.Pair;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
-public class WritableTypeTest {
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-  @Test
-  public void testGetDetachedValue_AlreadyMappedWritable() {
-    WritableType<String, Text> stringType = Writables.strings();
-    String value = "test";
-    assertSame(value, stringType.getDetachedValue(value));
-  }
+public class WritableTypeTest {
 
   @Test
   public void testGetDetachedValue_CustomWritable() {
@@ -41,6 +43,43 @@ public class WritableTypeTest {
     Text detachedValue = textWritableType.getDetachedValue(value);
     assertEquals(value, detachedValue);
     assertNotSame(value, detachedValue);
+  }
+
+  @Test
+  public void testGetDetachedValue_Collection() {
+    Collection<Text> textCollection = Lists.newArrayList(new Text("value"));
+    WritableType<Collection<Text>, GenericArrayWritable<Text>> ptype = Writables.collections(Writables
+        .writables(Text.class));
+
+    Collection<Text> detachedCollection = ptype.getDetachedValue(textCollection);
+    assertEquals(textCollection, detachedCollection);
+    assertNotSame(textCollection.iterator().next(), detachedCollection.iterator().next());
+  }
+
+  @Test
+  public void testGetDetachedValue_Tuple() {
+    Pair<Text, Text> textPair = Pair.of(new Text("one"), new Text("two"));
+    WritableType<Pair<Text, Text>, TupleWritable> ptype = Writables.pairs(Writables.writables(Text.class),
+        Writables.writables(Text.class));
+    ptype.getOutputMapFn().initialize();
+    ptype.getInputMapFn().initialize();
+
+    Pair<Text, Text> detachedPair = ptype.getDetachedValue(textPair);
+    assertEquals(textPair, detachedPair);
+    assertNotSame(textPair.first(), detachedPair.first());
+    assertNotSame(textPair.second(), detachedPair.second());
+  }
+
+  @Test
+  public void testGetDetachedValue_Map() {
+    Map<String, Text> stringTextMap = Maps.newHashMap();
+    stringTextMap.put("key", new Text("value"));
+
+    WritableType<Map<String, Text>, MapWritable> ptype = Writables.maps(Writables.writables(Text.class));
+    Map<String, Text> detachedMap = ptype.getDetachedValue(stringTextMap);
+
+    assertEquals(stringTextMap, detachedMap);
+    assertNotSame(stringTextMap.get("key"), detachedMap.get("key"));
   }
 
 }

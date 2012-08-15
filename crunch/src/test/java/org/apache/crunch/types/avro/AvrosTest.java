@@ -17,10 +17,10 @@
  */
 package org.apache.crunch.types.avro;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
@@ -39,6 +39,7 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.io.IntWritable;
@@ -224,7 +225,7 @@ public class AvrosTest {
   
   @Test
   public void testIsPrimitive_TruePrimitiveValue(){
-    AvroType truePrimitiveAvroType = new AvroType(int.class, Schema.create(Type.INT));
+    AvroType truePrimitiveAvroType = new AvroType(int.class, Schema.create(Type.INT), new DeepCopier.NoOpDeepCopier());
     assertTrue(Avros.isPrimitive(truePrimitiveAvroType));
   }
 

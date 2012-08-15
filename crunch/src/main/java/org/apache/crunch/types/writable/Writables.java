@@ -17,11 +17,6 @@
  */
 package org.apache.crunch.types.writable;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -35,8 +30,11 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.types.CollectionDeepCopier;
+import org.apache.crunch.types.DeepCopier;
+import org.apache.crunch.types.MapDeepCopier;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.TupleDeepCopier;
 import org.apache.crunch.types.TupleFactory;
 import org.apache.crunch.util.PTypes;
 import org.apache.hadoop.conf.Configuration;
@@ -582,31 +580,7 @@ public class Writables {
     return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());
   }
 
-  /**
-   * Perform a deep copy of a writable value.
-   * 
-   * @param value
-   *          The value to be copied
-   * @param writableClass
-   *          The Writable class of the value to be copied
-   * @return A fully detached deep copy of the input value
-   */
-  public static <T extends Writable> T deepCopy(T value, Class<T> writableClass) {
-    ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
-    DataOutputStream dataOut = new DataOutputStream(byteOutStream);
-    T copiedValue = null;
-    try {
-      value.write(dataOut);
-      dataOut.flush();
-      ByteArrayInputStream byteInStream = new ByteArrayInputStream(byteOutStream.toByteArray());
-      DataInput dataInput = new DataInputStream(byteInStream);
-      copiedValue = writableClass.newInstance();
-      copiedValue.readFields(dataInput);
-    } catch (Exception e) {
-      throw new CrunchRuntimeException("Error while deep copying " + value, e);
-    }
-    return copiedValue;
-  }
+
 
   // Not instantiable
   private Writables() {

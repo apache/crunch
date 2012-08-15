@@ -48,17 +48,30 @@ import org.apache.crunch.types.DeepCopier;
  */
 public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
+  private String jsonSchema;
+  private transient Schema schema;
   private BinaryEncoder binaryEncoder;
   private BinaryDecoder binaryDecoder;
-  protected DatumWriter<T> datumWriter;
-  protected DatumReader<T> datumReader;
 
-  protected AvroDeepCopier(DatumWriter<T> datumWriter, DatumReader<T> datumReader) {
-    this.datumWriter = datumWriter;
-    this.datumReader = datumReader;
+  private transient DatumWriter<T> datumWriter;
+  private transient DatumReader<T> datumReader;
+
+  public AvroDeepCopier(Schema schema) {
+    this.jsonSchema = schema.toString();
+  }
+
+  protected Schema getSchema() {
+    if (schema == null) {
+      schema = new Schema.Parser().parse(jsonSchema);
+    }
+    return schema;
   }
 
   protected abstract T createCopyTarget();
+
+  protected abstract DatumWriter<T> createDatumWriter();
+
+  protected abstract DatumReader<T> createDatumReader();
 
   /**
    * Deep copier for Avro specific data objects.
@@ -68,13 +81,23 @@ public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
     private Class<T> valueClass;
 
     public AvroSpecificDeepCopier(Class<T> valueClass, Schema schema) {
-      super(new SpecificDatumWriter<T>(schema), new SpecificDatumReader<T>(schema));
+      super(schema);
       this.valueClass = valueClass;
     }
 
     @Override
     protected T createCopyTarget() {
       return createNewInstance(valueClass);
+    }
+
+    @Override
+    protected DatumWriter<T> createDatumWriter() {
+      return new SpecificDatumWriter<T>(getSchema());
+    }
+
+    @Override
+    protected DatumReader<T> createDatumReader() {
+      return new SpecificDatumReader<T>(getSchema());
     }
 
   }
@@ -84,16 +107,25 @@ public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
    */
   public static class AvroGenericDeepCopier extends AvroDeepCopier<Record> {
 
-    private Schema schema;
+    private transient Schema schema;
 
     public AvroGenericDeepCopier(Schema schema) {
-      super(new GenericDatumWriter<Record>(schema), new GenericDatumReader<Record>(schema));
-      this.schema = schema;
+      super(schema);
     }
 
     @Override
     protected Record createCopyTarget() {
-      return new GenericData.Record(schema);
+      return new GenericData.Record(getSchema());
+    }
+
+    @Override
+    protected DatumReader<Record> createDatumReader() {
+      return new GenericDatumReader<Record>(getSchema());
+    }
+
+    @Override
+    protected DatumWriter<Record> createDatumWriter() {
+      return new GenericDatumWriter<Record>(getSchema());
     }
   }
 
@@ -101,16 +133,27 @@ public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
    * Deep copier for Avro reflect data objects.
    */
   public static class AvroReflectDeepCopier<T> extends AvroDeepCopier<T> {
+
     private Class<T> valueClass;
 
     public AvroReflectDeepCopier(Class<T> valueClass, Schema schema) {
-      super(new ReflectDatumWriter<T>(schema), new ReflectDatumReader<T>(schema));
+      super(schema);
       this.valueClass = valueClass;
     }
 
     @Override
     protected T createCopyTarget() {
       return createNewInstance(valueClass);
+    }
+
+    @Override
+    protected DatumReader<T> createDatumReader() {
+      return new ReflectDatumReader<T>(getSchema());
+    }
+
+    @Override
+    protected DatumWriter<T> createDatumWriter() {
+      return new ReflectDatumWriter<T>(getSchema());
     }
   }
 
@@ -127,14 +170,19 @@ public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
    */
   @Override
   public T deepCopy(T source) {
+    if (datumReader == null) {
+      datumReader = createDatumReader();
+    }
+    if (datumWriter == null) {
+      datumWriter = createDatumWriter();
+    }
     ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
     binaryEncoder = EncoderFactory.get().binaryEncoder(byteOutStream, binaryEncoder);
     T target = createCopyTarget();
     try {
       datumWriter.write(source, binaryEncoder);
       binaryEncoder.flush();
-      binaryDecoder = DecoderFactory.get()
-          .binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
+      binaryDecoder = DecoderFactory.get().binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
       datumReader.read(target, binaryDecoder);
     } catch (Exception e) {
       throw new CrunchRuntimeException("Error while deep copying avro value " + source, e);

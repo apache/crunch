@@ -25,6 +25,7 @@ import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.TupleDeepCopier;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -121,7 +122,7 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
   public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
     super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(), valueType.getSchema()),
         new IndexedRecordToPair(keyType.getInputMapFn(), valueType.getInputMapFn()), new PairToAvroPair(keyType,
-            valueType), keyType, valueType);
+            valueType), new TupleDeepCopier(Pair.class, keyType, valueType), keyType, valueType);
     this.keyType = keyType;
     this.valueType = valueType;
   }

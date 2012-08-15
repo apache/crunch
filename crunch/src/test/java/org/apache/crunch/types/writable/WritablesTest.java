@@ -253,11 +253,4 @@ public class WritablesTest {
     assertEquals(writable, ptype.getOutputMapFn().map(java));
   }
 
-  @Test
-  public void testDeepCopy() {
-    Text text = new Text("Test");
-    Text copiedText = Writables.deepCopy(text, Text.class);
-    assertEquals(text, copiedText);
-    assertNotSame(text, copiedText);
-  }
 }

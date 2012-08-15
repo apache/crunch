@@ -22,9 +22,9 @@ import java.util.List;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.SourceTarget;
-import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.types.Converter;
+import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.fs.Path;
@@ -39,6 +39,7 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   private final Converter converter;
   private final MapFn<W, T> inputFn;
   private final MapFn<T, W> outputFn;
+  private final DeepCopier<W> deepCopier;
   private final List<PType> subTypes;
 
   WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn, MapFn<T, W> outputDoFn,
@@ -48,6 +49,7 @@ public class WritableType<T, W extends Writable> implements PType<T> {
     this.inputFn = inputDoFn;
     this.outputFn = outputDoFn;
     this.converter = new WritableValueConverter(writableClass);
+    this.deepCopier = new WritableDeepCopier<W>(writableClass);
     this.subTypes = ImmutableList.<PType> builder().add(subTypes).build();
   }
 
@@ -99,17 +101,11 @@ public class WritableType<T, W extends Writable> implements PType<T> {
     return (typeClass.equals(wt.typeClass) && writableClass.equals(wt.writableClass) && subTypes.equals(wt.subTypes));
   }
 
-  // Unchecked warnings are suppressed because we know that W and T are the same
-  // type (due to the IdentityFn being used)
-  @SuppressWarnings("unchecked")
   @Override
   public T getDetachedValue(T value) {
-    if (this.inputFn.getClass().equals(IdentityFn.class)) {
-      W writableValue = (W) value;
-      return (T) Writables.deepCopy(writableValue, this.writableClass);
-    } else {
-      return value;
-    }
+    W writableValue = outputFn.map(value);
+    W deepCopy = this.deepCopier.deepCopy(writableValue);
+    return inputFn.map(deepCopy);
   }
 
   @Override

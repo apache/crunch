@@ -30,6 +30,7 @@ import java.util.Map;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.Pair;
+import org.apache.crunch.TupleN;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.junit.Test;
@@ -228,5 +229,16 @@ public class AvroTypeTest {
     assertEquals(stringPersonMap, detachedMap);
     assertNotSame(value, detachedMap.get(key));
   }
-
+  
+  @Test
+  public void testGetDetachedValue_TupleN(){
+    Person person = createPerson();
+    AvroType<TupleN> ptype = Avros.tuples(Avros.records(Person.class));
+    TupleN tuple = new TupleN(person);
+    TupleN detachedTuple = ptype.getDetachedValue(tuple);
+    
+    assertEquals(tuple, detachedTuple);
+    assertNotSame(person, detachedTuple.get(0));
+  }
+  
 }
