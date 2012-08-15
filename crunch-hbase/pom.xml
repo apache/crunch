@@ -77,13 +77,12 @@ under the License.
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <phase>pre-integration-test</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <excludeArtifactIds>crunch,crunch-test</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>
