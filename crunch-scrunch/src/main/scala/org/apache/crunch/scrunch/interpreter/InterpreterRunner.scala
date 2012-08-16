@@ -33,7 +33,7 @@ import scala.tools.nsc.io.Jar
 import scala.tools.nsc.io.VirtualDirectory
 
 import com.google.common.io.Files
-import org.apache.commons.io.IOUtils
+import com.google.common.io.Closeables
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.crunch.util.DistCache
@@ -153,7 +153,7 @@ object InterpreterRunner extends MainGenericRunner {
       addVirtualDirectoryToJar(virtualDirectory, "", jarStream)
       return tempJar
     } finally {
-      IOUtils.closeQuietly(jarStream)
+      Closeables.closeQuietly(jarStream)
     }
   }
 

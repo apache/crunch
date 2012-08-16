@@ -48,6 +48,12 @@ under the License.
      <artifactId>hadoop-minicluster</artifactId>
     </dependency>
 
+    <!-- Required by LocalJobRunner -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

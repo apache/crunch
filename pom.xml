@@ -57,8 +57,28 @@ under the License.
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.source.version>1.6</java.source.version>
     <java.target.version>1.6</java.target.version>
-    <scala.version>2.9.2</scala.version>
+    <!--
+        NOTE: Please don't change any dependency versions here without
+              checking first that they match those on Hadoop's runtime
+              classpath.
+    -->
+    <guava.version>11.0.2</guava.version>
+    <commons-io.version>2.1</commons-io.version>
+    <commons-lang.version>2.4</commons-lang.version>
+    <commons-codec.version>1.4</commons-codec.version>
+    <commons-httpclient.version>3.0.1</commons-httpclient.version>
+    <commons-logging.version>1.1.1</commons-logging.version>
     <avro.version>1.7.0</avro.version>
+    <jackson.version>1.8.8</jackson.version>
+    <protobuf-java.version>2.3.0</protobuf-java.version>
+    <libthrift.version>0.8.0</libthrift.version>
+    <slf4j.version>1.4.3</slf4j.version>
+    <log4j.version>1.2.15</log4j.version>
+    <junit.version>4.10</junit.version>
+    <hamcrest.version>1.1</hamcrest.version>
+    <mockito.version>1.9.0</mockito.version>
+    <scala.version>2.9.2</scala.version>
+    <scalatest.version>1.7.2</scalatest.version>
   </properties>
 
   <scm>
@@ -119,7 +139,7 @@ under the License.
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>11.0.2</version>
+        <version>${guava.version}</version>
       </dependency>
 
       <dependency>
@@ -137,79 +157,79 @@ under the License.
       <dependency>
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
-        <version>2.2</version>
+        <version>${commons-io.version}</version>
       </dependency>
 
       <dependency>
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
-        <version>1.4</version>
+        <version>${commons-codec.version}</version>
       </dependency>
 
       <dependency>
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
-        <version>2.4</version>
+        <version>${commons-lang.version}</version>
       </dependency>
 
       <dependency>
         <groupId>commons-httpclient</groupId>
         <artifactId>commons-httpclient</artifactId>
-        <version>3.0.1</version>
+        <version>${commons-httpclient.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.jackson</groupId>
         <artifactId>jackson-core-asl</artifactId>
-        <version>1.8.3</version>
+        <version>${jackson.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.jackson</groupId>
         <artifactId>jackson-mapper-asl</artifactId>
-        <version>1.8.3</version>
+        <version>${jackson.version}</version>
       </dependency>
 
       <dependency>
         <groupId>com.google.protobuf</groupId>
         <artifactId>protobuf-java</artifactId>
-        <version>2.4.1</version>
+        <version>${protobuf-java.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.apache.thrift</groupId>
         <artifactId>libthrift</artifactId>
-        <version>0.8.0</version>
+        <version>${libthrift.version}</version>
       </dependency>
 
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.10</version>
+        <version>${junit.version}</version>
       </dependency>
     
       <dependency>
         <groupId>org.mockito</groupId>
         <artifactId>mockito-all</artifactId>
-        <version>1.9.0</version>
+        <version>${mockito.version}</version>
       </dependency>
            
       <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
-        <version>1.1</version>
+        <version>${hamcrest.version}</version>
       </dependency>
 
       <dependency>
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging</artifactId>
-        <version>1.1.1</version>
+        <version>${commons-logging.version}</version>
       </dependency>
    
       <dependency>
         <groupId>log4j</groupId>
         <artifactId>log4j</artifactId>
-        <version>1.2.15</version>
+        <version>${log4j.version}</version>
         <exclusions>
           <exclusion>
             <groupId>javax.mail</groupId>
@@ -233,13 +253,13 @@ under the License.
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.4.3</version>
+        <version>${slf4j.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
-        <version>1.4.3</version>
+        <version>${slf4j.version}</version>
       </dependency>
 
       <dependency>
@@ -263,7 +283,7 @@ under the License.
       <dependency>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest_${scala.version}</artifactId>
-        <version>1.7.2</version>
+        <version>${scalatest.version}</version>
       </dependency>
     </dependencies>
     
@@ -357,6 +377,9 @@ under the License.
              mvn clean install -Dhadoop.profile=2.0
              for this to work. -->
         <hbase.version>0.94.1</hbase.version>
+        <commons-lang.version>2.5</commons-lang.version>
+        <protobuf-java.version>2.4.0a</protobuf-java.version>
+        <slf4j.version>1.6.1</slf4j.version>
       </properties>
       <dependencyManagement>
         <dependencies>

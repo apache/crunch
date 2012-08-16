@@ -24,3 +24,9 @@ local Maven cache:
 
   mvn install
 
+Crunch has experimental support for Hadoop 2 through the "hadoop-2" build
+profile (add -Phadoop-2 to enable it). If you want to use HBase support on
+Hadoop 2, please note that you have to build HBase 0.94.1 from source using
+the following command:
+
+  mvn clean install -Dhadoop.profile=2.0
