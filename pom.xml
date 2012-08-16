@@ -269,16 +269,6 @@ under the License.
     
   </dependencyManagement>
 
-  <!-- TODO: After changing our Hadoop/HBase dependencies to Apache
-             releases we no longer need this section. -->
-  <repositories>
-    <repository>
-      <id>maven-hadoop</id>
-      <name>Hadoop Releases</name>
-      <url>https://repository.cloudera.com/content/repositories/releases/</url>
-    </repository>
-  </repositories>
-
   <profiles>
     <profile>
       <id>hadoop-1</id>
