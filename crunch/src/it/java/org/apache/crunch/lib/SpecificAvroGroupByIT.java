@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
@@ -70,22 +69,7 @@ public class SpecificAvroGroupByIT implements Serializable {
 
   @Test
   public void testGrouByWithSpecificAvroType() throws Exception {
-
     MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class, tmpDir.getDefaultConfiguration());
-
-    testSpecificAvro(pipeline);
-  }
-
-  @Test
-  public void testGrouByOnSpecificAvroButReflectionDatumReader() throws Exception {
-    MRPipeline pipeline = new MRPipeline(SpecificAvroGroupByIT.class, tmpDir.getDefaultConfiguration());
-
-    // https://issues.apache.org/jira/browse/AVRO-1046 resolves
-    // the ClassCastException when reading specific Avro types with
-    // ReflectDatumReader
-
-    pipeline.getConfiguration().setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
-
     testSpecificAvro(pipeline);
   }
 

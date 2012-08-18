@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.io.ResolvingDecoder;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import scala.collection.JavaConversions;
 
@@ -111,7 +112,7 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
           collectionClass.isAssignableFrom(ArrayList.class)) {
         return new ArrayList();
       }
-      return data.newInstance(collectionClass, schema);
+      return ReflectionUtils.newInstance(collectionClass, null);
     }
     Class elementClass = ScalaSafeReflectData.getClassProp(schema,
         ScalaSafeReflectData.ELEMENT_PROP);

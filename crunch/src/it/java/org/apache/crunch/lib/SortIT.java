@@ -150,6 +150,7 @@ public class SortIT implements Serializable {
   @Test
   public void testAvroReflectSortPair() throws IOException {
     Pipeline pipeline = new MRPipeline(SortIT.class, tmpDir.getDefaultConfiguration());
+    pipeline.enableDebug();
     PCollection<Pair<String, StringWrapper>> sorted = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
         .parallelDo(new MapFn<String, Pair<String, StringWrapper>>() {
 

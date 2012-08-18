@@ -628,11 +628,50 @@ public class Avros {
 
     @Override
     public int hashCode() {
-      return ReflectData.get().hashCode(this, getSchema());
+      return reflectAwareHashCode(this, getSchema());
     }
-
   }
 
+  /*
+   * TODO: Remove this once we no longer have to support 1.5.4.
+   */
+  private static int reflectAwareHashCode(Object o, Schema s) {
+    if (o == null) return 0;                      // incomplete datum
+    int hashCode = 1;
+    switch (s.getType()) {
+    case RECORD:
+      for (Schema.Field f : s.getFields()) {
+        if (f.order() == Schema.Field.Order.IGNORE)
+          continue;
+        hashCode = hashCodeAdd(hashCode,
+            ReflectData.get().getField(o, f.name(), f.pos()), f.schema());
+      }
+      return hashCode;
+    case ARRAY:
+      Collection<?> a = (Collection<?>)o;
+      Schema elementType = s.getElementType();
+      for (Object e : a)
+        hashCode = hashCodeAdd(hashCode, e, elementType);
+      return hashCode;
+    case UNION:
+      return reflectAwareHashCode(
+          o, s.getTypes().get(ReflectData.get().resolveUnion(s, o)));
+    case ENUM:
+      return s.getEnumOrdinal(o.toString());
+    case NULL:
+      return 0;
+    case STRING:
+      return (o instanceof Utf8 ? o : new Utf8(o.toString())).hashCode();
+    default:
+      return o.hashCode();
+    }
+  }
+
+  /** Add the hash code for an object into an accumulated hash code. */
+  private static int hashCodeAdd(int hashCode, Object o, Schema s) {
+    return 31*hashCode + reflectAwareHashCode(o, s);
+  }
+  
   private Avros() {
   }
 }
