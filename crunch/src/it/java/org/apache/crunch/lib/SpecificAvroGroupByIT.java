@@ -35,7 +35,6 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.Person;
-import org.apache.crunch.test.Person.Builder;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
@@ -100,7 +99,7 @@ public class SpecificAvroGroupByIT implements Serializable {
 
       @Override
       public Pair<String, Person> map(Person input) {
-        String key = input.getName().toString();
+        String key = input.name.toString();
         return Pair.of(key, input);
 
       }
@@ -117,20 +116,20 @@ public class SpecificAvroGroupByIT implements Serializable {
 
   private void createPersonAvroFile(File avroFile) throws IOException {
 
-    Builder person = Person.newBuilder();
-    person.setAge(40);
-    person.setName("Bob");
+    Person person = new Person();
+    person.age = 40;
+    person.name = "Bob";
     List<CharSequence> siblingNames = Lists.newArrayList();
     siblingNames.add("Bob" + "1");
     siblingNames.add("Bob" + "2");
-    person.setSiblingnames(siblingNames);
+    person.siblingnames = siblingNames;
 
     FileOutputStream outputStream = new FileOutputStream(avroFile);
     SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(Person.class);
 
     DataFileWriter<Person> dataFileWriter = new DataFileWriter<Person>(writer);
     dataFileWriter.create(Person.SCHEMA$, outputStream);
-    dataFileWriter.append(person.build());
+    dataFileWriter.append(person);
     dataFileWriter.close();
     outputStream.close();
   }
