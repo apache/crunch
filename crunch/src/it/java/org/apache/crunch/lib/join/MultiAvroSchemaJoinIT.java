@@ -63,19 +63,19 @@ public class MultiAvroSchemaJoinIT {
     DataFileWriter<Person> pfw = new DataFileWriter<Person>(pdw);
     pfw.create(Person.SCHEMA$, personFile);
     Person p1 = new Person();
-    p1.setName("Josh");
-    p1.setAge(19);
-    p1.setSiblingnames(ImmutableList.<CharSequence> of("Kate", "Mike"));
+    p1.name = "Josh";
+    p1.age = 19;
+    p1.siblingnames = ImmutableList.<CharSequence> of("Kate", "Mike");
     pfw.append(p1);
     Person p2 = new Person();
-    p2.setName("Kate");
-    p2.setAge(17);
-    p2.setSiblingnames(ImmutableList.<CharSequence> of("Josh", "Mike"));
+    p2.name = "Kate";
+    p2.age = 17;;
+    p2.siblingnames = ImmutableList.<CharSequence> of("Josh", "Mike");
     pfw.append(p2);
     Person p3 = new Person();
-    p3.setName("Mike");
-    p3.setAge(12);
-    p3.setSiblingnames(ImmutableList.<CharSequence> of("Josh", "Kate"));
+    p3.name = "Mike";
+    p3.age = 12;
+    p3.siblingnames = ImmutableList.<CharSequence> of("Josh", "Kate");
     pfw.append(p3);
     pfw.close();
 
@@ -83,9 +83,9 @@ public class MultiAvroSchemaJoinIT {
     DataFileWriter<Employee> efw = new DataFileWriter<Employee>(edw);
     efw.create(Employee.SCHEMA$, employeeFile);
     Employee e1 = new Employee();
-    e1.setName("Kate");
-    e1.setSalary(100000);
-    e1.setDepartment("Marketing");
+    e1.name = "Kate";
+    e1.salary = 100000;
+    e1.department = "Marketing";
     efw.append(e1);
     efw.close();
   }
@@ -115,7 +115,7 @@ public class MultiAvroSchemaJoinIT {
         .join(employees.by(new NameFn<Employee>(), strings())).values().materialize();
     List<Pair<Person, Employee>> v = Lists.newArrayList(result);
     assertEquals(1, v.size());
-    assertEquals("Kate", v.get(0).first().getName().toString());
-    assertEquals("Kate", v.get(0).second().getName().toString());
+    assertEquals("Kate", v.get(0).first().name.toString());
+    assertEquals("Kate", v.get(0).second().name.toString());
   }
 }

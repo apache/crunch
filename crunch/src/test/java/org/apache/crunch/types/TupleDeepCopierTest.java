@@ -32,9 +32,9 @@ public class TupleDeepCopierTest {
   @Test
   public void testDeepCopy_Pair() {
     Person person = new Person();
-    person.setName("John Doe");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.name = "John Doe";
+    person.age = 42;
+    person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Pair<Integer, Person> inputPair = Pair.of(1, person);
     DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(

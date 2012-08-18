@@ -96,7 +96,23 @@ public class AvroType<T> implements PType<T> {
    * @return true if the wrapped type is a specific data type
    */
   public boolean isSpecific() {
-    return SpecificRecord.class.isAssignableFrom(typeClass);
+    if (Avros.isPrimitive(this)) {
+      return false;
+    }
+
+    boolean hasSpecific = false;
+    if (!this.subTypes.isEmpty()) {
+      for (PType<?> subType : this.subTypes) {
+        AvroType<?> atype = (AvroType<?>) subType;
+        if (atype.isReflect()) {
+          return false;
+        } else if (atype.isSpecific()) {
+          hasSpecific = true;
+        }
+      }
+    }
+    
+    return hasSpecific || SpecificRecord.class.isAssignableFrom(typeClass);
   }
 
   /**
@@ -119,7 +135,6 @@ public class AvroType<T> implements PType<T> {
     }
 
     if (!this.subTypes.isEmpty()) {
-
       for (PType<?> subType : this.subTypes) {
         if (((AvroType<?>) subType).isReflect()) {
           return true;

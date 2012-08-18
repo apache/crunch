@@ -274,13 +274,13 @@ public class AvrosTest {
     Person personA = new Person();
     Person personB = new Person();
 
-    personA.setAge(1);
-    personA.setName("A");
-    personA.setSiblingnames(Collections.<CharSequence> emptyList());
+    personA.age = 1;
+    personA.name = "A";
+    personA.siblingnames = Collections.<CharSequence> emptyList();
 
-    personB.setAge(2);
-    personB.setName("B");
-    personB.setSiblingnames(Collections.<CharSequence> emptyList());
+    personB.age = 2;
+    personB.name = "B";
+    personB.siblingnames = Collections.<CharSequence> emptyList();
 
     AvroType<Pair<Person, Person>> pairType = Avros.pairs(Avros.records(Person.class), Avros.records(Person.class));
 

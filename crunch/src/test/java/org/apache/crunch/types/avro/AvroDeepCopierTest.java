@@ -20,7 +20,8 @@ package org.apache.crunch.types.avro;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 
-import org.apache.avro.Schema;
+import java.util.List;
+
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.avro.AvroDeepCopier.AvroSpecificDeepCopier;
@@ -33,9 +34,9 @@ public class AvroDeepCopierTest {
   @Test
   public void testDeepCopySpecific() {
     Person person = new Person();
-    person.setName("John Doe");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.name = "John Doe";
+    person.age = 42;
+    person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
         .deepCopy(person);
@@ -58,15 +59,30 @@ public class AvroDeepCopierTest {
     assertNotSame(record, deepCopyRecord);
   }
 
+  static class ReflectedPerson {
+    String name;
+    int age;
+    List<String> siblingnames;
+    
+    @Override
+    public boolean equals(Object other) {
+      if (other == null || !(other instanceof ReflectedPerson)) {
+        return false;
+      }
+      ReflectedPerson that = (ReflectedPerson) other;
+      return name.equals(that.name)&& age == that.age && siblingnames.equals(that.siblingnames); 
+    }
+  }
+  
   @Test
   public void testDeepCopyReflect() {
-    Person person = new Person();
-    person.setName("John Doe");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    ReflectedPerson person = new ReflectedPerson();
+    person.name = "John Doe";
+    person.age = 42;
+    person.siblingnames = Lists.newArrayList();
 
-    Person deepCopyPerson = new AvroDeepCopier.AvroReflectDeepCopier<Person>(Person.class,
-        Person.SCHEMA$).deepCopy(person);
+    ReflectedPerson deepCopyPerson = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
+        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema()).deepCopy(person);
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);

@@ -36,13 +36,13 @@ public class AvroTableTypeTest {
   public void testGetDetachedValue() {
     Integer integerValue = 42;
     Person person = new Person();
-    person.setName("John Doe");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.name = "John Doe";
+    person.age = 42;
+    person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Pair<Integer, Person> pair = Pair.of(integerValue, person);
 
-    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(), Avros.reflects(Person.class));
+    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(), Avros.specifics(Person.class));
 
     Pair<Integer, Person> detachedPair = tableType.getDetachedValue(pair);
 

@@ -72,7 +72,7 @@ public class AvroTypeTest {
 
   @Test
   public void testIsSpecific_SpecificAvroTable() {
-    assertFalse(Avros.tableOf(Avros.strings(), Avros.records(Person.class)).isSpecific());
+    assertTrue(Avros.tableOf(Avros.strings(), Avros.records(Person.class)).isSpecific());
   }
 
   @Test
@@ -162,28 +162,46 @@ public class AvroTypeTest {
   
   private Person createPerson(){
     Person person = new Person();
-    person.setName("name value");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.name = "name value";
+    person.age = 42;
+    person.siblingnames = Lists.<CharSequence> newArrayList();
     return person;
   }
 
   @Test
   public void testGetDetachedValue_SpecificAvroType() {
-    AvroType<Person> specificType = Avros.records(Person.class);
+    AvroType<Person> specificType = Avros.specifics(Person.class);
     Person person = createPerson();
     Person detachedPerson = specificType.getDetachedValue(person);
     assertEquals(person, detachedPerson);
     assertNotSame(person, detachedPerson);
   }
 
+  static class ReflectedPerson {
+    String name;
+    int age;
+    List<String> siblingnames;
+    
+    @Override
+    public boolean equals(Object other) {
+      if (other == null || !(other instanceof ReflectedPerson)) {
+        return false;
+      }
+      ReflectedPerson that = (ReflectedPerson) other;
+      return name.equals(that.name)&& age == that.age && siblingnames.equals(that.siblingnames); 
+    }
+  }
+  
   @Test
   public void testGetDetachedValue_ReflectAvroType() {
-    AvroType<Person> reflectType = Avros.reflects(Person.class);
-    Person person = createPerson();
-    Person detachedPerson = reflectType.getDetachedValue(person);
-    assertEquals(person, detachedPerson);
-    assertNotSame(person, detachedPerson);
+    AvroType<ReflectedPerson> reflectType = Avros.reflects(ReflectedPerson.class);
+    ReflectedPerson rp = new ReflectedPerson();
+    rp.name = "josh";
+    rp.age = 32;
+    rp.siblingnames = Lists.newArrayList();
+    ReflectedPerson detached = reflectType.getDetachedValue(rp);
+    assertEquals(rp, detached);
+    assertNotSame(rp, detached);
   }
 
   @Test

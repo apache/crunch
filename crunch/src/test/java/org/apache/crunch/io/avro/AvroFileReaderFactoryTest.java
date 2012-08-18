@@ -107,12 +107,12 @@ public class AvroFileReaderFactoryTest {
         this.avroFile.getAbsolutePath()));
 
     Person expectedPerson = new Person();
-    expectedPerson.setAge(42);
-    expectedPerson.setName("John Doe");
+    expectedPerson.age = 42;
+    expectedPerson.name = "John Doe";
     List<CharSequence> siblingNames = Lists.newArrayList();
     siblingNames.add("Jimmy");
     siblingNames.add("Jane");
-    expectedPerson.setSiblingnames(siblingNames);
+    expectedPerson.siblingnames = siblingNames;
 
     Person person = recordIterator.next();
 

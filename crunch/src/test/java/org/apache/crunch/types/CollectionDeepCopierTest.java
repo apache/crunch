@@ -32,9 +32,9 @@ public class CollectionDeepCopierTest {
   @Test
   public void testDeepCopy() {
     Person person = new Person();
-    person.setAge(42);
-    person.setName("John Smith");
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.age = 42;
+    person.name = "John Smith";
+    person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Collection<Person> personCollection = Lists.newArrayList(person);
     CollectionDeepCopier<Person> collectionDeepCopier = new CollectionDeepCopier<Person>(Avros.records(Person.class));

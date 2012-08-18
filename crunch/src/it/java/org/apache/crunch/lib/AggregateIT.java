@@ -180,9 +180,9 @@ public class AggregateIT {
     @Override
     public Pair<Integer, Employee> map(String input) {
       Employee emp = new Employee();
-      emp.setName(input);
-      emp.setSalary(0);
-      emp.setDepartment("");
+      emp.name = input;
+      emp.salary = 0;
+      emp.department = "";
       return Pair.of(1, emp);
     }
   }

@@ -96,13 +96,13 @@ public class AvroFileSourceTargetIT implements Serializable {
     List<Person> personList = Lists.newArrayList(genericCollection.materialize());
 
     Person expectedPerson = new Person();
-    expectedPerson.setName("John Doe");
-    expectedPerson.setAge(42);
+    expectedPerson.name = "John Doe";
+    expectedPerson.age = 42;
 
     List<CharSequence> siblingNames = Lists.newArrayList();
     siblingNames.add("Jimmy");
     siblingNames.add("Jane");
-    expectedPerson.setSiblingnames(siblingNames);
+    expectedPerson.siblingnames = siblingNames;
 
     assertEquals(Lists.newArrayList(expectedPerson), Lists.newArrayList(personList));
   }

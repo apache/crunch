@@ -33,6 +33,7 @@ import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -192,9 +193,18 @@ public class Avros {
   }
 
   public static final <T> AvroType<T> containers(Class<T> clazz) {
+    if (SpecificRecord.class.isAssignableFrom(clazz)) {
+      return (AvroType<T>) specifics((Class<SpecificRecord>) clazz);
+    }
     return reflects(clazz);
   }
 
+  public static final <T extends SpecificRecord> AvroType<T> specifics(Class<T> clazz) {
+    T t = ReflectionUtils.newInstance(clazz, null);
+    Schema schema = t.getSchema();
+    return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroSpecificDeepCopier<T>(clazz, schema));
+  }
+  
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
     Schema schema = REFLECT_DATA_FACTORY.getReflectData().getSchema(clazz);
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));

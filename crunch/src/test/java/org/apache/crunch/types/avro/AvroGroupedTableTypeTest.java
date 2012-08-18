@@ -36,14 +36,14 @@ public class AvroGroupedTableTypeTest {
   public void testGetDetachedValue() {
     Integer integerValue = 42;
     Person person = new Person();
-    person.setName("John Doe");
-    person.setAge(42);
-    person.setSiblingnames(Lists.<CharSequence> newArrayList());
+    person.name = "John Doe";
+    person.age = 42;
+    person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Iterable<Person> inputPersonIterable = Lists.newArrayList(person);
     Pair<Integer, Iterable<Person>> pair = Pair.of(integerValue, inputPersonIterable);
 
-    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(), Avros.reflects(Person.class))
+    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(), Avros.specifics(Person.class))
         .getGroupedTableType();
 
     Pair<Integer, Iterable<Person>> detachedPair = groupedTableType.getDetachedValue(pair);

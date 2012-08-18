@@ -83,7 +83,7 @@ public class AvroTypeSortIT implements Serializable {
 
       @Override
       public String map(Person input) {
-        return input.getName().toString();
+        return input.name.toString();
       }
     };
 
@@ -102,7 +102,7 @@ public class AvroTypeSortIT implements Serializable {
 
       @Override
       public Integer map(Person input) {
-        return input.getAge();
+        return input.age;
       }
     };
 
@@ -135,10 +135,10 @@ public class AvroTypeSortIT implements Serializable {
   private Person createPerson(String name, int age) throws IOException {
 
     Person person = new Person();
-    person.setAge(age);
-    person.setName(name);
+    person.age = age;
+    person.name = name;
     List<CharSequence> siblingNames = Lists.newArrayList();
-    person.setSiblingnames(siblingNames);
+    person.siblingnames = siblingNames;
 
     return person;
   }
