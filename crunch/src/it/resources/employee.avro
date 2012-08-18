@@ -1,9 +1,0 @@
-{
-"namespace": "org.apache.crunch.test",
-"name": "Employee",
-"type": "record",
-"fields": [
-  {"name": "name", "type": ["string", "null"] },
-  {"name": "salary", "type": "int"},
-  {"name": "department", "type": ["string", "null"] } ]
-} 
