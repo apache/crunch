@@ -191,13 +191,18 @@ public class CombineFnTest {
     String[] arrayNull = new String[] { null, "" };
     assertEquals(ImmutableList.of("foofoobarbar"), applyAggregator(
         new StringConcatAggregator("", true), ImmutableList.of("foo", "foobar", "bar")));
-
     assertEquals(ImmutableList.of("foo/foobar/bar"), applyAggregator(
         new StringConcatAggregator("/", false), ImmutableList.of("foo", "foobar", "bar")));
     assertEquals(ImmutableList.of("  "), applyAggregator(
         new StringConcatAggregator(" ", true), ImmutableList.of(" ", "")));
     assertEquals(ImmutableList.of(""), applyAggregator(
         new StringConcatAggregator(" ", true), Arrays.asList(arrayNull)));
+    assertEquals(ImmutableList.of("foo bar"), applyAggregator(
+        new StringConcatAggregator(" ", true, 20, 3), ImmutableList.of("foo", "foobar", "bar")));
+    assertEquals(ImmutableList.of("foo foobar"), applyAggregator(
+        new StringConcatAggregator(" ", true, 10, 6), ImmutableList.of("foo", "foobar", "bar")));
+    assertEquals(ImmutableList.of("foo bar"), applyAggregator(
+        new StringConcatAggregator(" ", true, 9, 6), ImmutableList.of("foo", "foobar", "bar")));
   }
 
   @Test(expected = NullPointerException.class)

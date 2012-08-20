@@ -335,9 +335,9 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     return aggregator(new LastNAggregator<V>(n));
   }
 
-
   /**
-   * Used to concatenate strings, with a separator between each strings.
+   * Used to concatenate strings, with a separator between each strings. There
+   * is no limits of length for the concatenated string.
    * 
    * @param separator
    *            the separator which will be appended between each string
@@ -348,7 +348,35 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
    * @return
    */
   public static final <K> CombineFn<K, String> STRING_CONCAT(final String separator, final boolean skipNull) {
-    return aggregator(new StringConcatAggregator(separator, skipNull));
+      return aggregator(new StringConcatAggregator(separator, skipNull));
+  }
+
+  /**
+   * Used to concatenate strings, with a separator between each strings. You
+   * can specify the maximum length of the output string and of the input
+   * strings, if they are > 0. If a value is <= 0, there is no limits.
+   * 
+   * Any too large string (or any string which would made the output too
+   * large) will be silently discarded.
+   * 
+   * @param separator
+   *            the separator which will be appended between each string
+   * @param skipNull
+   *            define if we should skip null values. Throw
+   *            NullPointerException if set to false and there is a null
+   *            value.
+   * @param maxOutputLength
+   *            the maximum length of the output string. If it's set <= 0,
+   *            there is no limits. The number of characters of the output
+   *            string will be < maxOutputLength.
+   * @param maxInputLength
+   *            the maximum length of the input strings. If it's set <= 0,
+   *            there is no limits. The number of characters of the int string
+   *            will be < maxInputLength to be concatenated.
+   * @return
+   */
+  public static final <K> CombineFn<K, String> STRING_CONCAT(final String separator, final boolean skipNull, final long maxOutputLength, final long maxInputLength) {
+      return aggregator(new StringConcatAggregator(separator, skipNull, maxOutputLength, maxInputLength));
   }
 
   public static class SumLongs implements Aggregator<Long> {
@@ -870,6 +898,9 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
   public static class StringConcatAggregator implements Aggregator<String> {
     private final String separator;
     private final boolean skipNulls;
+    private final long maxOutputLength;
+    private final long maxInputLength;
+    private long currentLength;
     private final LinkedList<String> list = new LinkedList<String>();
 
     private transient Joiner joiner;
@@ -877,6 +908,16 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
     public StringConcatAggregator(final String separator, final boolean skipNulls) {
       this.separator = separator;
       this.skipNulls = skipNulls;
+      this.maxInputLength = 0;
+      this.maxOutputLength = 0;
+    }
+
+    public StringConcatAggregator(final String separator, final boolean skipNull, final long maxOutputLength, final long maxInputLength) {
+      this.separator = separator;
+      this.skipNulls = skipNull;
+      this.maxOutputLength = maxOutputLength;
+      this.maxInputLength = maxInputLength;
+      this.currentLength = -separator.length();
     }
 
     @Override
@@ -889,6 +930,13 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
 
     @Override
     public void update(final String next) {
+      long length = (next == null) ? 0 : next.length() + separator.length();
+      if (maxOutputLength > 0 && currentLength + length > maxOutputLength || maxInputLength > 0 && next.length() > maxInputLength) {
+        return;
+      }
+      if (maxOutputLength > 0) {
+        currentLength += length;
+      }
       list.add(next);
     }
 
