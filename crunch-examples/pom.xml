@@ -45,6 +45,11 @@ under the License.
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.crunch</groupId>
+      <artifactId>crunch-hbase</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
