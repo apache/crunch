@@ -35,7 +35,7 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   public AvroFileSource(Path path, AvroType<T> ptype) {
     super(path, ptype, new InputBundle(AvroInputFormat.class)
-        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.isReflect()))
+        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName()));
   }

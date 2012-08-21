@@ -53,17 +53,17 @@ public class AvroTableTypeTest {
 
   @Test
   public void testIsReflect_ContainsReflectKey() {
-    assertTrue(Avros.tableOf(Avros.reflects(StringWrapper.class), Avros.ints()).isReflect());
+    assertTrue(Avros.tableOf(Avros.reflects(StringWrapper.class), Avros.ints()).hasReflect());
   }
 
   @Test
   public void testIsReflect_ContainsReflectValue() {
-    assertTrue(Avros.tableOf(Avros.ints(), Avros.reflects(StringWrapper.class)).isReflect());
+    assertTrue(Avros.tableOf(Avros.ints(), Avros.reflects(StringWrapper.class)).hasReflect());
   }
 
   @Test
   public void testReflect_NoReflectKeyOrValue() {
-    assertFalse(Avros.tableOf(Avros.ints(), Avros.ints()).isReflect());
+    assertFalse(Avros.tableOf(Avros.ints(), Avros.ints()).hasReflect());
   }
 
 }

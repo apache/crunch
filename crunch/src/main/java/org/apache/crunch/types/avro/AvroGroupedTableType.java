@@ -82,8 +82,12 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     String schemaJson = att.getSchema().toString();
     Configuration conf = job.getConfiguration();
 
-    if (att.isReflect()) {
-      conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+    if (att.hasReflect()) {
+      if (att.hasSpecific()) {
+        Avros.checkCombiningSpecificAndReflectionSchemas();
+      } else {
+        conf.setBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, true);
+      }
     }
     conf.set(AvroJob.MAP_OUTPUT_SCHEMA, schemaJson);
     job.setSortComparatorClass(AvroKeyComparator.class);

@@ -71,6 +71,14 @@ import com.google.common.collect.Maps;
 public class Avros {
 
   /**
+   * Older versions of Avro (i.e., before 1.7.0) do not support schemas that are composed of
+   * a mix of specific and reflection-based schemas. This bit controls whether or not we
+   * allow Crunch jobs to be created that involve mixing specific and reflection-based schemas
+   * and can be overridden by the client developer.
+   */
+  public static boolean CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS = false;
+  
+  /**
    * The instance we use for generating reflected schemas. May be modified by
    * clients (e.g., Scrunch.)
    */
@@ -91,6 +99,18 @@ public class Avros {
         conf.getClass(REFLECT_DATA_FACTORY_CLASS, ReflectDataFactory.class), conf);
   }
 
+  public static void checkCombiningSpecificAndReflectionSchemas() {
+    if (!CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS) {
+      throw new IllegalStateException("Crunch does not support running jobs that"
+          + " contain a mixture of reflection-based and avro-generated data types."
+          + " Please consider turning your reflection-based type into an avro-generated"
+          + " type and using that generated type instead."
+          + " If the version of Avro you are using is 1.7.0 or greater, you can enable"
+          + " combined schemas by setting the Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS"
+          + " field to 'true'.");
+    }
+  }
+  
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
     public String map(CharSequence input) {
@@ -477,13 +497,20 @@ public class Avros {
       this.avroTypes = Lists.newArrayList();
       this.jsonSchema = schema.toString();
       boolean reflectFound = false;
+      boolean specificFound = false;
       for (PType ptype : ptypes) {
         AvroType atype = (AvroType) ptype;
         fns.add(atype.getOutputMapFn());
         avroTypes.add(atype);
-        if (atype.isReflect()) {
+        if (atype.hasReflect()) {
           reflectFound = true;
         }
+        if (atype.hasSpecific()) {
+          specificFound = true;
+        }
+      }
+      if (specificFound && reflectFound) {
+        checkCombiningSpecificAndReflectionSchemas();
       }
       this.isReflect = reflectFound;
     }

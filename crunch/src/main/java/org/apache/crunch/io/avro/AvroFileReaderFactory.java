@@ -53,7 +53,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   }
 
   private DatumReader<T> createDatumReader(AvroType<T> avroType) {
-    if (avroType.isSpecific()) {
+    if (avroType.hasSpecific()) {
       return new SpecificDatumReader<T>(avroType.getSchema());
     } else if (avroType.isGeneric()) {
       return new GenericDatumReader<T>(avroType.getSchema());
