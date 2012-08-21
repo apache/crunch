@@ -71,13 +71,18 @@ import com.google.common.collect.Maps;
 public class Avros {
 
   /**
-   * Older versions of Avro (i.e., before 1.7.0) do not support schemas that are composed of
-   * a mix of specific and reflection-based schemas. This bit controls whether or not we
-   * allow Crunch jobs to be created that involve mixing specific and reflection-based schemas
-   * and can be overridden by the client developer.
+   * Older versions of Avro (i.e., before 1.7.0) do not support schemas that are
+   * composed of a mix of specific and reflection-based schemas. This bit
+   * controls whether or not we allow Crunch jobs to be created that involve
+   * mixing specific and reflection-based schemas and can be overridden by the
+   * client developer.
    */
-  public static boolean CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS = false;
-  
+  public static final boolean CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS;
+
+  static {
+    CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS = AvroCapabilities.canDecodeSpecificSchemaWithReflectDatumReader();
+  }
+
   /**
    * The instance we use for generating reflected schemas. May be modified by
    * clients (e.g., Scrunch.)
@@ -106,11 +111,10 @@ public class Avros {
           + " Please consider turning your reflection-based type into an avro-generated"
           + " type and using that generated type instead."
           + " If the version of Avro you are using is 1.7.0 or greater, you can enable"
-          + " combined schemas by setting the Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS"
-          + " field to 'true'.");
+          + " combined schemas by setting the Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS" + " field to 'true'.");
     }
   }
-  
+
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
     public String map(CharSequence input) {
@@ -224,7 +228,7 @@ public class Avros {
     Schema schema = t.getSchema();
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroSpecificDeepCopier<T>(clazz, schema));
   }
-  
+
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
     Schema schema = REFLECT_DATA_FACTORY.getReflectData().getSchema(clazz);
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
@@ -663,26 +667,25 @@ public class Avros {
    * TODO: Remove this once we no longer have to support 1.5.4.
    */
   private static int reflectAwareHashCode(Object o, Schema s) {
-    if (o == null) return 0;                      // incomplete datum
+    if (o == null)
+      return 0; // incomplete datum
     int hashCode = 1;
     switch (s.getType()) {
     case RECORD:
       for (Schema.Field f : s.getFields()) {
         if (f.order() == Schema.Field.Order.IGNORE)
           continue;
-        hashCode = hashCodeAdd(hashCode,
-            ReflectData.get().getField(o, f.name(), f.pos()), f.schema());
+        hashCode = hashCodeAdd(hashCode, ReflectData.get().getField(o, f.name(), f.pos()), f.schema());
       }
       return hashCode;
     case ARRAY:
-      Collection<?> a = (Collection<?>)o;
+      Collection<?> a = (Collection<?>) o;
       Schema elementType = s.getElementType();
       for (Object e : a)
         hashCode = hashCodeAdd(hashCode, e, elementType);
       return hashCode;
     case UNION:
-      return reflectAwareHashCode(
-          o, s.getTypes().get(ReflectData.get().resolveUnion(s, o)));
+      return reflectAwareHashCode(o, s.getTypes().get(ReflectData.get().resolveUnion(s, o)));
     case ENUM:
       return s.getEnumOrdinal(o.toString());
     case NULL:
@@ -696,9 +699,9 @@ public class Avros {
 
   /** Add the hash code for an object into an accumulated hash code. */
   private static int hashCodeAdd(int hashCode, Object o, Schema s) {
-    return 31*hashCode + reflectAwareHashCode(o, s);
+    return 31 * hashCode + reflectAwareHashCode(o, s);
   }
-  
+
   private Avros() {
   }
 }
