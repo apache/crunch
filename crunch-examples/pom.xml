@@ -35,9 +35,15 @@ under the License.
       <artifactId>guava</artifactId>
     </dependency>
 
-   <dependency>
+    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase</artifactId>
       <scope>provided</scope>
     </dependency>
 

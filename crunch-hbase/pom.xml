@@ -43,6 +43,7 @@ under the License.
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -60,6 +61,12 @@ under the License.
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-test</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+     <groupId>org.apache.hadoop</groupId>
+     <artifactId>hadoop-minicluster</artifactId>
+     <scope>test</scope>
     </dependency>
 
     <dependency>

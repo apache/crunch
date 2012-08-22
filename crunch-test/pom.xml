@@ -41,11 +41,13 @@ under the License.
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
      <groupId>org.apache.hadoop</groupId>
      <artifactId>hadoop-minicluster</artifactId>
+     <scope>provided</scope>
     </dependency>
 
     <!-- Required by LocalJobRunner -->
