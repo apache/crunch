@@ -36,8 +36,8 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
-import org.apache.crunch.io.avro.AvroFileReaderFactoryTest.PojoPerson;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
@@ -128,19 +128,19 @@ public class AvroFileSourceTargetIT implements Serializable {
 
   @Test
   public void testReflect() throws IOException {
-    Schema pojoPersonSchema = ReflectData.get().getSchema(PojoPerson.class);
+    Schema pojoPersonSchema = ReflectData.get().getSchema(StringWrapper.class);
     GenericRecord savedRecord = new GenericData.Record(pojoPersonSchema);
-    savedRecord.put("name", "John Doe");
+    savedRecord.put("value", "stringvalue");
     populateGenericFile(Lists.newArrayList(savedRecord), pojoPersonSchema);
 
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
-    PCollection<PojoPerson> personCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
-        Avros.reflects(PojoPerson.class)));
+    PCollection<StringWrapper> stringValueCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
+        Avros.reflects(StringWrapper.class)));
 
-    List<PojoPerson> recordList = Lists.newArrayList(personCollection.materialize());
+    List<StringWrapper> recordList = Lists.newArrayList(stringValueCollection.materialize());
 
     assertEquals(1, recordList.size());
-    PojoPerson person = recordList.get(0);
-    assertEquals("John Doe", person.getName());
+    StringWrapper stringWrapper = recordList.get(0);
+    assertEquals("stringvalue", stringWrapper.getValue());
   }
 }

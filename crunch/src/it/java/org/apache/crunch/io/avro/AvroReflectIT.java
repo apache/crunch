@@ -31,6 +31,7 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
@@ -42,80 +43,29 @@ import com.google.common.collect.Lists;
 
 public class AvroReflectIT implements Serializable {
 
-  static class StringWrapper {
-    private String value;
-
-    public StringWrapper() {
-      this(null);
-    }
-
-    public StringWrapper(String value) {
-      this.value = value;
-    }
-
-    public String getValue() {
-      return value;
-    }
-
-    public void setValue(String value) {
-      this.value = value;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("<StringWrapper(%s)>", value);
-    }
-
-    @Override
-    public int hashCode() {
-      final int prime = 31;
-      int result = 1;
-      result = prime * result + ((value == null) ? 0 : value.hashCode());
-      return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj)
-        return true;
-      if (obj == null)
-        return false;
-      if (getClass() != obj.getClass())
-        return false;
-      StringWrapper other = (StringWrapper) obj;
-      if (value == null) {
-        if (other.value != null)
-          return false;
-      } else if (!value.equals(other.value))
-        return false;
-      return true;
-    }
-
-  }
-
   @Rule
   public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testReflection() throws IOException {
     Pipeline pipeline = new MRPipeline(AvroReflectIT.class, tmpDir.getDefaultConfiguration());
-    PCollection<StringWrapper> stringWrapperCollection = pipeline.readTextFile(
-        tmpDir.copyResourceFileName("set1.txt")).parallelDo(new MapFn<String, StringWrapper>() {
+    PCollection<StringWrapper> stringWrapperCollection = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"))
+        .parallelDo(new MapFn<String, StringWrapper>() {
 
-      @Override
-      public StringWrapper map(String input) {
-        StringWrapper stringWrapper = new StringWrapper();
-        stringWrapper.setValue(input);
-        return stringWrapper;
-      }
-    }, Avros.reflects(StringWrapper.class));
+          @Override
+          public StringWrapper map(String input) {
+            StringWrapper stringWrapper = new StringWrapper();
+            stringWrapper.setValue(input);
+            return stringWrapper;
+          }
+        }, Avros.reflects(StringWrapper.class));
 
     List<StringWrapper> stringWrappers = Lists.newArrayList(stringWrapperCollection.materialize());
 
     pipeline.done();
 
-    assertEquals(Lists.newArrayList(new StringWrapper("b"), new StringWrapper("c"),
-        new StringWrapper("a"), new StringWrapper("e")), stringWrappers);
+    assertEquals(Lists.newArrayList(new StringWrapper("b"), new StringWrapper("c"), new StringWrapper("a"),
+        new StringWrapper("e")), stringWrappers);
 
   }
 
@@ -126,22 +76,20 @@ public class AvroReflectIT implements Serializable {
     Assume.assumeTrue(Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS);
     Pipeline pipeline = new MRPipeline(AvroReflectIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Pair<StringWrapper, Person>> hybridPairCollection = pipeline.readTextFile(
-        tmpDir.copyResourceFileName("set1.txt")).parallelDo(
-        new MapFn<String, Pair<StringWrapper, Person>>() {
+        tmpDir.copyResourceFileName("set1.txt")).parallelDo(new MapFn<String, Pair<StringWrapper, Person>>() {
 
-          @Override
-          public Pair<StringWrapper, Person> map(String input) {
-            Person person = new Person();
-            person.name = input;
-            person.age = 42;
-            person.siblingnames = Lists.<CharSequence> newArrayList(input);
+      @Override
+      public Pair<StringWrapper, Person> map(String input) {
+        Person person = new Person();
+        person.name = input;
+        person.age = 42;
+        person.siblingnames = Lists.<CharSequence> newArrayList(input);
 
-            return Pair.of(new StringWrapper(input), person);
-          }
-        }, Avros.pairs(Avros.reflects(StringWrapper.class), Avros.records(Person.class)));
+        return Pair.of(new StringWrapper(input), person);
+      }
+    }, Avros.pairs(Avros.reflects(StringWrapper.class), Avros.records(Person.class)));
 
-    PCollection<Pair<String, Long>> countCollection = Aggregate.count(hybridPairCollection)
-        .parallelDo(
+    PCollection<Pair<String, Long>> countCollection = Aggregate.count(hybridPairCollection).parallelDo(
         new MapFn<Pair<Pair<StringWrapper, Person>, Long>, Pair<String, Long>>() {
 
           @Override
@@ -150,10 +98,9 @@ public class AvroReflectIT implements Serializable {
           }
         }, Avros.pairs(Avros.strings(), Avros.longs()));
 
-    List<Pair<String, Long>> materialized = Lists
-        .newArrayList(countCollection.materialize());
-    List<Pair<String, Long>> expected = Lists.newArrayList(Pair.of("a", 1L), Pair.of("b", 1L),
-        Pair.of("c", 1L), Pair.of("e", 1L));
+    List<Pair<String, Long>> materialized = Lists.newArrayList(countCollection.materialize());
+    List<Pair<String, Long>> expected = Lists.newArrayList(Pair.of("a", 1L), Pair.of("b", 1L), Pair.of("c", 1L),
+        Pair.of("e", 1L));
     Collections.sort(materialized);
 
     assertEquals(expected, materialized);

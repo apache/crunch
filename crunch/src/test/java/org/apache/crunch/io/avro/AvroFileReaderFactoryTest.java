@@ -29,15 +29,24 @@ import java.util.List;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericData.Record;
+import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
 import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.reflect.ReflectDatumReader;
+import org.apache.avro.specific.SpecificDatumReader;
+import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,8 +58,6 @@ public class AvroFileReaderFactoryTest {
 
   @Before
   public void setUp() throws IOException {
-    // InputSupplier<InputStream> inputStreamSupplier =
-    // newInputStreamSupplier(getResource("person.avro"));
     avroFile = File.createTempFile("test", ".av");
   }
 
@@ -75,6 +82,10 @@ public class AvroFileReaderFactoryTest {
 
   }
 
+  private <T> AvroFileReaderFactory<T> createFileReaderFactory(AvroType<T> avroType) {
+    return new AvroFileReaderFactory<T>(avroType, new Configuration());
+  }
+
   @Test
   public void testRead_GenericReader() throws IOException {
     GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
@@ -83,8 +94,7 @@ public class AvroFileReaderFactoryTest {
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
     populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
-    AvroFileReaderFactory<GenericData.Record> genericReader = new AvroFileReaderFactory<GenericData.Record>(
-        Avros.generics(Person.SCHEMA$), new Configuration());
+    AvroFileReaderFactory<GenericData.Record> genericReader = createFileReaderFactory(Avros.generics(Person.SCHEMA$));
     Iterator<GenericData.Record> recordIterator = genericReader.read(FileSystem.getLocal(new Configuration()),
         new Path(this.avroFile.getAbsolutePath()));
 
@@ -101,8 +111,7 @@ public class AvroFileReaderFactoryTest {
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
     populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
-    AvroFileReaderFactory<Person> genericReader = new AvroFileReaderFactory<Person>(Avros.records(Person.class),
-        new Configuration());
+    AvroFileReaderFactory<Person> genericReader = createFileReaderFactory(Avros.records(Person.class));
     Iterator<Person> recordIterator = genericReader.read(FileSystem.getLocal(new Configuration()), new Path(
         this.avroFile.getAbsolutePath()));
 
@@ -122,31 +131,54 @@ public class AvroFileReaderFactoryTest {
 
   @Test
   public void testRead_ReflectReader() throws IOException {
-    Schema reflectSchema = ReflectData.get().getSchema(PojoPerson.class);
+    Schema reflectSchema = ReflectData.get().getSchema(StringWrapper.class);
     GenericRecord savedRecord = new GenericData.Record(reflectSchema);
-    savedRecord.put("name", "John Doe");
+    savedRecord.put("value", "stringvalue");
     populateGenericFile(Lists.newArrayList(savedRecord), reflectSchema);
 
-    AvroFileReaderFactory<PojoPerson> genericReader = new AvroFileReaderFactory<PojoPerson>(
-        Avros.reflects(PojoPerson.class), new Configuration());
-    Iterator<PojoPerson> recordIterator = genericReader.read(FileSystem.getLocal(new Configuration()), new Path(
+    AvroFileReaderFactory<StringWrapper> genericReader = createFileReaderFactory(Avros.reflects(StringWrapper.class));
+    Iterator<StringWrapper> recordIterator = genericReader.read(FileSystem.getLocal(new Configuration()), new Path(
         this.avroFile.getAbsolutePath()));
 
-    PojoPerson person = recordIterator.next();
+    StringWrapper stringWrapper = recordIterator.next();
 
-    assertEquals("John Doe", person.getName());
+    assertEquals("stringvalue", stringWrapper.getValue());
     assertFalse(recordIterator.hasNext());
   }
 
-  public static class PojoPerson {
-    private String name;
-
-    public String getName() {
-      return name;
-    }
-
-    public void setName(String name) {
-      this.name = name;
-    }
+  @Test
+  public void testCreateDatumReader_Generic() {
+    DatumReader<Record> datumReader = AvroFileReaderFactory.createDatumReader(Avros.generics(Person.SCHEMA$));
+    assertEquals(GenericDatumReader.class, datumReader.getClass());
   }
+
+  @Test
+  public void testCreateDatumReader_Reflect() {
+    DatumReader<StringWrapper> datumReader = AvroFileReaderFactory.createDatumReader(Avros
+        .reflects(StringWrapper.class));
+    assertEquals(ReflectDatumReader.class, datumReader.getClass());
+  }
+
+  @Test
+  public void testCreateDatumReader_Specific() {
+    DatumReader<Person> datumReader = AvroFileReaderFactory.createDatumReader(Avros.records(Person.class));
+    assertEquals(SpecificDatumReader.class, datumReader.getClass());
+  }
+
+  @Test
+  public void testCreateDatumReader_ReflectAndSpecific() {
+    Assume.assumeTrue(Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS);
+
+    DatumReader<Pair<Person, StringWrapper>> datumReader = AvroFileReaderFactory.createDatumReader(Avros.pairs(
+        Avros.records(Person.class), Avros.reflects(StringWrapper.class)));
+    assertEquals(ReflectDatumReader.class, datumReader.getClass());
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void testCreateDatumReader_ReflectAndSpecific_NotSupported() {
+    Assume.assumeTrue(!Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS);
+    AvroFileReaderFactory.createDatumReader(Avros.pairs(Avros.records(Person.class),
+        Avros.reflects(StringWrapper.class)));
+  }
+
 }

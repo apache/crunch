@@ -25,11 +25,15 @@ import java.util.List;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -74,13 +78,15 @@ public class MaterializeIT {
 
   @Test
   public void testMaterializeEmptyIntermediate_Writables() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
+    runMaterializeEmptyIntermediate(
+        new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testMaterializeEmptyIntermediate_Avro() throws IOException {
-    runMaterializeEmptyIntermediate(new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
+    runMaterializeEmptyIntermediate(
+        new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
         AvroTypeFamily.getInstance());
   }
 
@@ -103,11 +109,40 @@ public class MaterializeIT {
     pipeline.done();
   }
 
-  public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily)
+      throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
     PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FalseFilterFn());
 
     assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());
     pipeline.done();
+  }
+
+  static class StringToStringWrapperPersonPairMapFn extends MapFn<String, Pair<StringWrapper, Person>> {
+
+    @Override
+    public Pair<StringWrapper, Person> map(String input) {
+      Person person = new Person();
+      person.name = input;
+      person.age = 42;
+      person.siblingnames = Lists.<CharSequence> newArrayList();
+      return Pair.of(new StringWrapper(input), person);
+    }
+
+  }
+
+  @Test
+  public void testMaterializeAvroPersonAndReflectsPair_GroupedTable() throws IOException {
+    Assume.assumeTrue(Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS);
+    Pipeline pipeline = new MRPipeline(MaterializeIT.class);
+    List<Pair<StringWrapper, Person>> pairList = Lists.newArrayList(pipeline
+        .readTextFile(tmpDir.copyResourceFileName("set1.txt"))
+        .parallelDo(new StringToStringWrapperPersonPairMapFn(),
+            Avros.pairs(Avros.reflects(StringWrapper.class), Avros.records(Person.class)))
+        .materialize());
+    
+    // We just need to make sure this doesn't crash
+    assertEquals(4, pairList.size());
+
   }
 }

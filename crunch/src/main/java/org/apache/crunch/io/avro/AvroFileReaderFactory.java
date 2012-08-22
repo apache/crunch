@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.types.avro.AvroType;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -47,18 +48,21 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   private final Configuration conf;
 
   public AvroFileReaderFactory(AvroType<T> atype, Configuration conf) {
-    this.recordReader = createDatumReader(atype);
+    this.recordReader = AvroFileReaderFactory.createDatumReader(atype);
     this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
     this.conf = conf;
   }
 
-  private DatumReader<T> createDatumReader(AvroType<T> avroType) {
-    if (avroType.hasSpecific()) {
-      return new SpecificDatumReader<T>(avroType.getSchema());
-    } else if (avroType.isGeneric()) {
-      return new GenericDatumReader<T>(avroType.getSchema());
-    } else {
+  static <T> DatumReader<T> createDatumReader(AvroType<T> avroType) {
+    if (avroType.hasReflect()) {
+      if (avroType.hasSpecific()) {
+        Avros.checkCombiningSpecificAndReflectionSchemas();
+      }
       return new ReflectDatumReader<T>(avroType.getSchema());
+    } else if (avroType.hasSpecific()) {
+      return new SpecificDatumReader<T>(avroType.getSchema());
+    } else {
+      return new GenericDatumReader<T>(avroType.getSchema());
     }
   }
 
