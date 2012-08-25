@@ -288,6 +288,9 @@ public class Sort {
         throw new RuntimeException("Unrecognized type family: " + tf);
       }
     }
+    // TODO:CRUNCH-23: Intermediate Fix for release 1. More elaborate fix is
+    // required check JIRA for details.
+    builder.numReducers(1);
     return builder.build();
   }
 
@@ -303,6 +306,9 @@ public class Sort {
     } else {
       throw new RuntimeException("Unrecognized type family: " + tf);
     }
+    // TODO:CRUNCH-23: Intermediate Fix for release 1. More elaborate fix is
+    // required check JIRA for details.
+    builder.numReducers(1);
     return builder.build();
   }
 
