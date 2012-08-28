@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -57,7 +58,7 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
     mapFn.initialize();
     try {
       final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-      return new UnmodifiableIterator<T>() {
+      return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
         boolean nextChecked = false;
         boolean hasNext = false;
 
@@ -84,7 +85,7 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
           nextChecked = false;
           return mapFn.map(value);
         }
-      };
+      });
     } catch (IOException e) {
       LOG.info("Could not read seqfile at path: " + path, e);
       return Iterators.emptyIterator();

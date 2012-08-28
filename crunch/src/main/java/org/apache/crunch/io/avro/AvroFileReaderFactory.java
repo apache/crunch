@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
@@ -73,7 +74,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
     try {
       FsInput fsi = new FsInput(path, fs.getConf());
       final DataFileReader<T> reader = new DataFileReader<T>(fsi, recordReader);
-      return new UnmodifiableIterator<T>() {
+      return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
         @Override
         public boolean hasNext() {
           return reader.hasNext();
@@ -83,7 +84,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
         public T next() {
           return mapFn.map(reader.next());
         }
-      };
+      });
     } catch (IOException e) {
       LOG.info("Could not read avro file at path: " + path, e);
       return Iterators.emptyIterator();

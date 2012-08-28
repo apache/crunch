@@ -28,6 +28,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -65,7 +66,7 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
     mapFn.setConfigurationForTest(conf);
     mapFn.initialize();
 
-    FSDataInputStream is = null;
+    FSDataInputStream is;
     try {
       is = fs.open(path);
     } catch (IOException e) {
@@ -75,7 +76,7 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
     final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
     final MapFn<String, T> iterMapFn = mapFn;
-    return new UnmodifiableIterator<T>() {
+    return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
       private String nextLine;
 
       @Override
@@ -92,6 +93,6 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
       public T next() {
         return iterMapFn.map(nextLine);
       }
-    };
+    });
   }
 }

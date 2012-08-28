@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.io.FileReaderFactory;
+import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -64,7 +65,7 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
     valueMapFn.initialize();
     try {
       final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-      return new UnmodifiableIterator<Pair<K, V>>() {
+      return new AutoClosingIterator<Pair<K, V>>(reader, new UnmodifiableIterator<Pair<K, V>>() {
         boolean nextChecked = false;
         boolean hasNext = false;
 
@@ -91,7 +92,7 @@ public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K
           nextChecked = false;
           return Pair.of(keyMapFn.map(key), valueMapFn.map(value));
         }
-      };
+      });
     } catch (IOException e) {
       LOG.info("Could not read seqfile at path: " + path, e);
       return Iterators.emptyIterator();
