@@ -80,7 +80,6 @@ under the License.
         <executions>
           <execution>
             <id>jar-with-dependencies</id>
-            <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
@@ -92,7 +91,6 @@ under the License.
           </execution>
           <execution>
             <id>make-assembly</id>
-            <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
