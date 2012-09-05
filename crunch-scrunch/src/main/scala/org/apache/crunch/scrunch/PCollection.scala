@@ -20,7 +20,7 @@ package org.apache.crunch.scrunch
 import scala.collection.JavaConversions
 
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, Target}
+import org.apache.crunch.{PCollection => JCollection, Pair => CPair}
 import org.apache.crunch.lib.{Aggregate, Cartesian}
 import org.apache.crunch.scrunch.Conversions._
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner

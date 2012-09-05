@@ -20,6 +20,7 @@ package org.apache.crunch.lib;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -57,6 +58,25 @@ public class Aggregate {
         return Pair.of(input, 1L);
       }
     }, tf.tableOf(collect.getPType(), tf.longs())).groupByKey().combineValues(CombineFn.<S> SUM_LONGS());
+  }
+
+  /**
+   * Returns the number of elements in the provided PCollection.
+   *
+   * @param collect The PCollection whose elements should be counted.
+   * @param <S> The type of the PCollection.
+   * @return A {@code PObject} containing the number of elements in the {@code PCollection}.
+   */
+  public static <S> PObject<Long> length(PCollection<S> collect) {
+    PTypeFamily tf = collect.getTypeFamily();
+    PTable<Integer, Long> countTable = collect.parallelDo("Aggregate.count",
+        new MapFn<S, Pair<Integer, Long>>() {
+          public Pair<Integer, Long> map(S input) {
+            return Pair.of(1, 1L);
+          }
+        }, tf.tableOf(tf.ints(), tf.longs())).groupByKey().combineValues(CombineFn.<Integer> SUM_LONGS());
+    PCollection<Long> count = countTable.values();
+    return new FirstElementPObject<Long>(count);
   }
 
   public static class PairValueComparator<K, V> implements Comparator<Pair<K, V>> {

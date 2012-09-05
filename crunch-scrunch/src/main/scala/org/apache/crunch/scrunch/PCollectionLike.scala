@@ -23,9 +23,9 @@ import org.apache.crunch.types.{PType, PTableType}
 
 trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   val native: NativeType
-  
+
   def wrap(newNative: AnyRef): FullType
-  
+
   def write(target: Target): FullType = wrap(native.write(target))
 
   def parallelDo[T](fn: DoFn[S, T], ptype: PType[T]) = {
@@ -43,6 +43,15 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   def parallelDo[K, V](name: String, fn: DoFn[S, JPair[K, V]], ptype: PTableType[K, V]) = {
     new PTable[K, V](native.parallelDo(name, fn, ptype))
   }
-  
+
+  /**
+   * Gets the number of elements represented by this PCollection.
+   *
+   * @return The number of elements in this PCollection.
+   */
+  def length(): PObject[java.lang.Long] = {
+    PObject(native.length())
+  }
+
   def getTypeFamily() = Avros
 }

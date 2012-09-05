@@ -166,6 +166,11 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
+  public PObject<Long> length() {
+    return Aggregate.length(this);
+  }
+
+  @Override
   public PCollection<S> sample(double acceptanceProbability) {
     return Sample.sample(this, acceptanceProbability);
   }

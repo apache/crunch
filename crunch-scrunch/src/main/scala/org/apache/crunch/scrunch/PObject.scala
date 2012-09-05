@@ -18,7 +18,6 @@
 package org.apache.crunch.scrunch
 
 import org.apache.crunch.{PObject => JPObject}
-import org.apache.crunch.Target
 
 /**
  * Represents a singleton value that results from a distributed computation.
@@ -34,7 +33,9 @@ class PObject[T] private (private val native: JPObject[T]) {
    *
    * @return The value associated with this PObject.
    */
-  def value(): T = native.getValue()
+  def value(): T = {
+    native.getValue()
+  }
 }
 
 /**

@@ -163,6 +163,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
+  public PObject<Long> length() {
+    return Aggregate.length(this);
+  }
+
+  @Override
   public PObject<S> max() {
     return Aggregate.max(this);
   }

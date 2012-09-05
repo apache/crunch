@@ -130,6 +130,13 @@ public interface PCollection<S> {
   long getSize();
 
   /**
+   * Returns the number of elements represented by this {@code PCollection}.
+   *
+   * @return An {@code PObject} containing the number of elements in this {@code PCollection}.
+   */
+  PObject<Long> length();
+
+  /**
    * Returns a shorthand name for this PCollection.
    */
   String getName();
