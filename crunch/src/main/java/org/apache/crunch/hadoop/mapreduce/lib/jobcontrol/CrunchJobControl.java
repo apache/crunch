@@ -41,10 +41,6 @@ import org.apache.hadoop.conf.Configuration;
  * the states of the running jobs, and updates the states of jobs based on the
  * state changes of their depending jobs states. The class provides APIs for
  * suspending/resuming the thread, and for stopping the thread.
- * 
- * TODO This is mostly a copy of the JobControl class in Hadoop MapReduce core. 
- * Once the location and interface of the class are more stable in CDH, this class 
- * should be removed completely and be based on the hadoop-core class.
  */
 public class CrunchJobControl implements Runnable {
 

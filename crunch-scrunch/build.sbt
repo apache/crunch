@@ -17,13 +17,12 @@
  */
 name := "scrunch"
 
-version := "0.2.0"
+version := "0.3.0"
 
 scalaVersion := "2.9.2"
 
 resolvers ++= Seq(
   "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-  "Hadoop Releases" at "https://repository.cloudera.com/content/repositories/releases/"
 )
 
 libraryDependencies ++= Seq(
@@ -32,12 +31,12 @@ libraryDependencies ++= Seq(
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
   ),
-  "org.apache.hadoop" % "hadoop-client" % "0.20.2-cdh3u4" % "provided" excludeAll(
+  "org.apache.hadoop" % "hadoop-client" % "1.0.3" % "provided" excludeAll(
     ExclusionRule(organization = "com.sun.jdmk"),
     ExclusionRule(organization = "com.sun.jmx"),
     ExclusionRule(organization = "javax.jms")
   ),
-  "org.apache.hbase" % "hbase" % "0.90.6-cdh3u4" % "provided" excludeAll(
+  "org.apache.hbase" % "hbase" % "0.90.4" % "provided" excludeAll(
     ExclusionRule(organization = "org.apache.hadoop"),
     ExclusionRule(organization = "commons-logging"),
     ExclusionRule(organization = "com.google.guava"),
