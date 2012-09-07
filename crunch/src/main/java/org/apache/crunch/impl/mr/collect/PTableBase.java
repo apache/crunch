@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Target;
@@ -31,6 +32,7 @@ import org.apache.crunch.lib.Cogroup;
 import org.apache.crunch.lib.Join;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.materialize.MaterializableMap;
+import org.apache.crunch.materialize.pobject.MapPObject;
 import org.apache.crunch.types.PType;
 
 import com.google.common.collect.Lists;
@@ -115,8 +117,14 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> imple
   /**
    * Returns a Map<K, V> made up of the keys and values in this PTable.
    */
+  @Override
   public Map<K, V> materializeToMap() {
     return new MaterializableMap<K, V>(this.materialize());
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public PObject<Map<K, V>> asMap() {
+    return new MapPObject<K, V>(this);
+  }
 }

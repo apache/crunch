@@ -17,6 +17,8 @@
  */
 package org.apache.crunch;
 
+import java.util.Collection;
+
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -24,7 +26,7 @@ import org.apache.crunch.types.PTypeFamily;
 /**
  * A representation of an immutable, distributed collection of elements that is
  * the fundamental target of computations in Crunch.
- * 
+ *
  */
 public interface PCollection<S> {
   /**
@@ -41,7 +43,7 @@ public interface PCollection<S> {
   /**
    * Applies the given doFn to the elements of this {@code PCollection} and
    * returns a new {@code PCollection} that is the output of this processing.
-   * 
+   *
    * @param doFn
    *          The {@code DoFn} to apply
    * @param type
@@ -53,7 +55,7 @@ public interface PCollection<S> {
   /**
    * Applies the given doFn to the elements of this {@code PCollection} and
    * returns a new {@code PCollection} that is the output of this processing.
-   * 
+   *
    * @param name
    *          An identifier for this processing step, useful for debugging
    * @param doFn
@@ -67,7 +69,7 @@ public interface PCollection<S> {
   /**
    * Similar to the other {@code parallelDo} instance, but returns a
    * {@code PTable} instance instead of a {@code PCollection}.
-   * 
+   *
    * @param doFn
    *          The {@code DoFn} to apply
    * @param type
@@ -79,7 +81,7 @@ public interface PCollection<S> {
   /**
    * Similar to the other {@code parallelDo} instance, but returns a
    * {@code PTable} instance instead of a {@code PCollection}.
-   * 
+   *
    * @param name
    *          An identifier for this processing step
    * @param doFn
@@ -93,7 +95,7 @@ public interface PCollection<S> {
   /**
    * Write the contents of this {@code PCollection} to the given {@code Target},
    * using the storage format specified by the target.
-   * 
+   *
    * @param target
    *          The target to write to
    */
@@ -104,6 +106,12 @@ public interface PCollection<S> {
    * may be used by the client to read the data locally.
    */
   Iterable<S> materialize();
+
+  /**
+   * @return A {@code PObject} encapsulating an in-memory {@link Collection} containing the values
+   * of this {@code PCollection}.
+   */
+  PObject<Collection<S>> asCollection();
 
   /**
    * Returns the {@code PType} of this {@code PCollection}.
@@ -135,7 +143,7 @@ public interface PCollection<S> {
   /**
    * Apply the given filter function to this instance and return the resulting
    * {@code PCollection}.
-   * 
+   *
    * @param name
    *          An identifier for this processing step
    * @param filterFn
@@ -152,7 +160,7 @@ public interface PCollection<S> {
   /**
    * Apply the given map function to each element of this instance in order to
    * create a {@code PTable}.
-   * 
+   *
    * @param name
    *          An identifier for this processing step
    * @param extractKeyFn
@@ -173,16 +181,14 @@ public interface PCollection<S> {
   PTable<S, Long> count();
 
   /**
-   * Returns a {@code PCollection} made up of only the maximum element of this
-   * instance.
+   * Returns a {@code PObject} of the maximum element of this instance.
    */
-  PCollection<S> max();
+  PObject<S> max();
 
   /**
-   * Returns a {@code PCollection} made up of only the minimum element of this
-   * instance.
+   * Returns a {@code PObject} of the minimum element of this instance.
    */
-  PCollection<S> min();
+  PObject<S> min();
 
   /**
    * Randomly sample items from this PCollection instance with the given

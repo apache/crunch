@@ -28,9 +28,11 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.fn.MapValuesFn;
+import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -40,7 +42,7 @@ import com.google.common.collect.Lists;
 /**
  * Methods for performing various types of aggregations over {@link PCollection}
  * instances.
- * 
+ *
  */
 public class Aggregate {
 
@@ -146,14 +148,14 @@ public class Aggregate {
   /**
    * Returns the largest numerical element from the input collection.
    */
-  public static <S> PCollection<S> max(PCollection<S> collect) {
+  public static <S> PObject<S> max(PCollection<S> collect) {
     Class<S> clazz = collect.getPType().getTypeClass();
     if (!clazz.isPrimitive() && !Comparable.class.isAssignableFrom(clazz)) {
       throw new IllegalArgumentException("Can only get max for Comparable elements, not for: "
           + collect.getPType().getTypeClass());
     }
     PTypeFamily tf = collect.getTypeFamily();
-    return PTables.values(collect.parallelDo("max", new DoFn<S, Pair<Boolean, S>>() {
+    PCollection<S> maxCollect = PTables.values(collect.parallelDo("max", new DoFn<S, Pair<Boolean, S>>() {
       private transient S max = null;
 
       public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
@@ -178,19 +180,20 @@ public class Aggregate {
         emitter.emit(Pair.of(input.first(), max));
       }
     }));
+    return new FirstElementPObject<S>(maxCollect);
   }
 
   /**
    * Returns the smallest numerical element from the input collection.
    */
-  public static <S> PCollection<S> min(PCollection<S> collect) {
+  public static <S> PObject<S> min(PCollection<S> collect) {
     Class<S> clazz = collect.getPType().getTypeClass();
     if (!clazz.isPrimitive() && !Comparable.class.isAssignableFrom(clazz)) {
       throw new IllegalArgumentException("Can only get min for Comparable elements, not for: "
           + collect.getPType().getTypeClass());
     }
     PTypeFamily tf = collect.getTypeFamily();
-    return PTables.values(collect.parallelDo("min", new DoFn<S, Pair<Boolean, S>>() {
+    PCollection<S> minCollect = PTables.values(collect.parallelDo("min", new DoFn<S, Pair<Boolean, S>>() {
       private transient S min = null;
 
       public void process(S input, Emitter<Pair<Boolean, S>> emitter) {
@@ -215,6 +218,7 @@ public class Aggregate {
         emitter.emit(Pair.of(input.first(), min));
       }
     }));
+    return new FirstElementPObject<S>(minCollect);
   }
 
   public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {

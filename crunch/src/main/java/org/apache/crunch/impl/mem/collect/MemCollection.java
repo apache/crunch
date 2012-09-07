@@ -23,6 +23,7 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
@@ -32,6 +33,7 @@ import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Sample;
 import org.apache.crunch.lib.Sort;
+import org.apache.crunch.materialize.pobject.CollectionPObject;
 import org.apache.crunch.test.InMemoryEmitter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -120,6 +122,12 @@ public class MemCollection<S> implements PCollection<S> {
     return collect;
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public PObject<Collection<S>> asCollection() {
+    return new CollectionPObject<S>(this);
+  }
+
   public Collection<S> getCollection() {
     return collect;
   }
@@ -168,12 +176,12 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
-  public PCollection<S> max() {
+  public PObject<S> max() {
     return Aggregate.max(this);
   }
 
   @Override
-  public PCollection<S> min() {
+  public PObject<S> min() {
     return Aggregate.min(this);
   }
 

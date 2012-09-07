@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.crunch.PObject;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
@@ -71,7 +72,7 @@ public class PageRankIT {
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
-  
+
   @Test
   public void testAvroReflect() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
@@ -155,13 +156,13 @@ public class PageRankIT {
     while (delta > 0.01) {
       scores = pageRank(scores, 0.5f);
       scores.materialize().iterator(); // force the write
-      delta = Iterables.getFirst(Aggregate.max(scores.parallelDo(new MapFn<Pair<String, PageRankData>, Float>() {
+      delta = Aggregate.max(scores.parallelDo(new MapFn<Pair<String, PageRankData>, Float>() {
         @Override
         public Float map(Pair<String, PageRankData> input) {
           PageRankData prd = input.second();
           return Math.abs(prd.score - prd.lastScore);
         }
-      }, ptf.floats())).materialize(), null);
+      }, ptf.floats())).getValue();
     }
     assertEquals(0.0048, delta, 0.001);
   }

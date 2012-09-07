@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,6 +27,7 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
@@ -37,6 +39,7 @@ import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Sample;
 import org.apache.crunch.lib.Sort;
+import org.apache.crunch.materialize.pobject.CollectionPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -112,6 +115,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return getPipeline().materialize(this);
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public PObject<Collection<S>> asCollection() {
+    return new CollectionPObject<S>(this);
+  }
+
   public SourceTarget<S> getMaterializedAt() {
     return materializedAt;
   }
@@ -151,12 +160,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
-  public PCollection<S> max() {
+  public PObject<S> max() {
     return Aggregate.max(this);
   }
 
   @Override
-  public PCollection<S> min() {
+  public PObject<S> min() {
     return Aggregate.min(this);
   }
 

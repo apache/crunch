@@ -26,7 +26,7 @@ import org.apache.crunch.types.PType;
 /**
  * A sub-interface of {@code PCollection} that represents an immutable,
  * distributed multi-map of keys and values.
- * 
+ *
  */
 public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   /**
@@ -37,7 +37,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
 
   /**
    * Performs a grouping operation on the keys of this table.
-   * 
+   *
    * @return a {@code PGroupedTable} instance that represents the grouping
    */
   PGroupedTable<K, V> groupByKey();
@@ -45,7 +45,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   /**
    * Performs a grouping operation on the keys of this table, using the given
    * number of partitions.
-   * 
+   *
    * @param numPartitions
    *          The number of partitions for the data.
    * @return a {@code PGroupedTable} instance that represents this grouping
@@ -55,7 +55,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   /**
    * Performs a grouping operation on the keys of this table, using the
    * additional {@code GroupingOptions} to control how the grouping is executed.
-   * 
+   *
    * @param options
    *          The grouping options to use
    * @return a {@code PGroupedTable} instance that represents the grouping
@@ -91,7 +91,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   /**
    * Returns a PTable made up of the pairs in this PTable with the largest value
    * field.
-   * 
+   *
    * @param count
    *          The number of pairs to return
    */
@@ -100,7 +100,7 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   /**
    * Returns a PTable made up of the pairs in this PTable with the smallest
    * value field.
-   * 
+   *
    * @param count
    *          The number of pairs to return
    */
@@ -135,5 +135,17 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    * values for a single key).
    */
   Map<K, V> materializeToMap();
+
+  /**
+   * Returns a {@link PObject} encapsulating a {@link Map} made up of the keys and values in this
+   * {@code PTable}.
+   * <p><b>Note:</b>The contents of the returned map may not be exactly the same as this PTable,
+   * as a PTable is a multi-map (i.e. can contain multiple values for a single key).
+   * </p>
+   *
+   * @return The {@code PObject} encapsulating a {@code Map} made up of the keys and values in
+   * this {@code PTable}.
+   */
+  PObject<Map<K, V>> asMap();
 
 }

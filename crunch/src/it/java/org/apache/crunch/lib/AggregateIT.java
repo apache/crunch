@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
@@ -91,8 +92,8 @@ public class AggregateIT {
         return -input;
       }
     }, family.ints());
-    Integer maxLengths = Iterables.getFirst(Aggregate.max(lengths).materialize(), null);
-    Integer minLengths = Iterables.getFirst(Aggregate.min(negLengths).materialize(), null);
+    Integer maxLengths = Aggregate.max(lengths).getValue();
+    Integer minLengths = Aggregate.min(negLengths).getValue();
     assertTrue(maxLengths != null);
     assertTrue(minLengths != null);
     assertEquals(maxLengths.intValue(), -minLengths.intValue());

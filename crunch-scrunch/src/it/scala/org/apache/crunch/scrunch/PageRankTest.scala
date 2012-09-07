@@ -86,7 +86,7 @@ class PageRankTest extends CrunchTestSupport with JUnitSuite {
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = update(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.materialize.head
+      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.value()
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done
@@ -97,7 +97,7 @@ class PageRankTest extends CrunchTestSupport with JUnitSuite {
     var delta = 1.0f
     while (delta > 0.01f) {
       prev = fastUpdate(prev, 0.5f)
-      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.materialize.head
+      delta = prev.map((k, v) => math.abs(v._1 - v._2)).max.value()
     }
     assertEquals(0.0048, delta, 0.001)
     pipeline.done
