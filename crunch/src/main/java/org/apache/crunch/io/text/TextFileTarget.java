@@ -19,18 +19,31 @@ package org.apache.crunch.io.text;
 
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.impl.FileTargetImpl;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroTextOutputFormat;
+import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
 public class TextFileTarget extends FileTargetImpl {
-  public TextFileTarget(String path) {
+  private static Class<? extends FileOutputFormat> getOutputFormat(PType<?> ptype) {
+    if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
+      return AvroTextOutputFormat.class;
+    } else {
+      return TextOutputFormat.class;
+    }
+  }
+
+  public <T> TextFileTarget(String path) {
     this(new Path(path));
   }
 
-  public TextFileTarget(Path path) {
-    super(path, TextOutputFormat.class);
+  public <T> TextFileTarget(Path path) {
+    super(path, null);
   }
 
   @Override
@@ -41,6 +54,14 @@ public class TextFileTarget extends FileTargetImpl {
   @Override
   public String toString() {
     return "Text(" + path + ")";
+  }
+
+  @Override
+  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
+    Converter converter = ptype.getConverter();
+    Class keyClass = converter.getKeyClass();
+    Class valueClass = converter.getValueClass();
+    configureForMapReduce(job, keyClass, valueClass, getOutputFormat(ptype), outputPath, name);
   }
 
   @Override

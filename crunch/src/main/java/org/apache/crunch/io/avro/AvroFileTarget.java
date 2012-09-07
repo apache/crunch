@@ -70,7 +70,8 @@ public class AvroFileTarget extends FileTargetImpl {
       throw new IllegalStateException("Avro targets must use the same output schema");
     }
     Avros.configureReflectDataFactory(conf);
-    configureForMapReduce(job, AvroWrapper.class, NullWritable.class, outputPath, name);
+    configureForMapReduce(job, AvroWrapper.class, NullWritable.class, AvroOutputFormat.class,
+        outputPath, name);
   }
 
   @Override

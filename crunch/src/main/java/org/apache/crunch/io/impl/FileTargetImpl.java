@@ -43,10 +43,11 @@ public class FileTargetImpl implements PathTarget {
     Converter converter = ptype.getConverter();
     Class keyClass = converter.getKeyClass();
     Class valueClass = converter.getValueClass();
-    configureForMapReduce(job, keyClass, valueClass, outputPath, name);
+    configureForMapReduce(job, keyClass, valueClass, outputFormatClass, outputPath, name);
   }
 
-  protected void configureForMapReduce(Job job, Class keyClass, Class valueClass, Path outputPath, String name) {
+  protected void configureForMapReduce(Job job, Class keyClass, Class valueClass,
+      Class outputFormatClass, Path outputPath, String name) {
     try {
       FileOutputFormat.setOutputPath(job, outputPath);
     } catch (Exception e) {
