@@ -41,7 +41,6 @@ import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,12 +55,7 @@ public class AvroPipelineIT implements Serializable {
 
   @Before
   public void setUp() throws IOException {
-    avroFile = File.createTempFile("test", ".avro");
-  }
-
-  @After
-  public void tearDown() {
-    avroFile.delete();
+    avroFile = tmpDir.getFile("test.avro");
   }
 
   private void populateGenericFile(List<GenericRecord> genericRecords, Schema schema) throws IOException {
@@ -91,17 +85,17 @@ public class AvroPipelineIT implements Serializable {
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Person> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
         Avros.records(Person.class)));
-    File file = tmpDir.getRootFile();
-    Target textFile = To.textFile(file.getAbsolutePath());
+    File outputFile = tmpDir.getFile("output");
+    Target textFile = To.textFile(outputFile.getAbsolutePath());
     pipeline.write(genericCollection, textFile);
     pipeline.run();
     Person person = genericCollection.materialize().iterator().next();
-    Collection<File> listFiles = FileUtils.listFiles(file, null, false);
-    File outputFile = null;
+    Collection<File> listFiles = FileUtils.listFiles(outputFile, null, false);
+    File partFile = null;
     for (File foundfile : listFiles) {
-      outputFile = foundfile;
+      partFile = foundfile;
     }
-    String outputString = FileUtils.readFileToString(outputFile);
+    String outputString = FileUtils.readFileToString(partFile);
     assertTrue(outputString.contains(person.toString()));
   }
 }

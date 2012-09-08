@@ -57,12 +57,7 @@ public class AvroFileSourceTargetIT implements Serializable {
 
   @Before
   public void setUp() throws IOException {
-    avroFile = File.createTempFile("test", ".avro");
-  }
-
-  @After
-  public void tearDown() {
-    avroFile.delete();
+    avroFile = tmpDir.getFile("test.avro");
   }
 
   private void populateGenericFile(List<GenericRecord> genericRecords, Schema schema) throws IOException {
