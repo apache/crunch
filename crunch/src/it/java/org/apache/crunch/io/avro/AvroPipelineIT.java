@@ -90,12 +90,7 @@ public class AvroPipelineIT implements Serializable {
     pipeline.write(genericCollection, textFile);
     pipeline.run();
     Person person = genericCollection.materialize().iterator().next();
-    Collection<File> listFiles = FileUtils.listFiles(outputFile, null, false);
-    File partFile = null;
-    for (File foundfile : listFiles) {
-      partFile = foundfile;
-    }
-    String outputString = FileUtils.readFileToString(partFile);
+    String outputString = FileUtils.readFileToString(new File(outputFile, "part-m-00000"));
     assertTrue(outputString.contains(person.toString()));
   }
 }
