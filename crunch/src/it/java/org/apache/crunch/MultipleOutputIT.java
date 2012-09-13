@@ -82,7 +82,16 @@ public class MultipleOutputIT {
     run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
 
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
+  @Test
+  public void testParallelDosFused() throws IOException {
+
+    PipelineResult result = run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
+
+    // Ensure our multiple outputs were fused into a single job.
+    assertEquals("parallel Dos not fused into a single job", 1, result.getStageResults().size());
+  }
+
+  public PipelineResult run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     String inputPath = tmpDir.copyResourceFileName("letters.txt");
     String outputPathEven = tmpDir.getFileName("even");
     String outputPathOdd = tmpDir.getFileName("odd");
@@ -94,10 +103,12 @@ public class MultipleOutputIT {
     pipeline.writeTextFile(evenCountWords, outputPathEven);
     pipeline.writeTextFile(oddCountWords, outputPathOdd);
 
-    pipeline.done();
+    PipelineResult result = pipeline.done();
 
     checkFileContents(outputPathEven, Arrays.asList("bb"));
     checkFileContents(outputPathOdd, Arrays.asList("a"));
+
+    return result;
   }
 
   private void checkFileContents(String filePath, List<String> expected) throws IOException {
