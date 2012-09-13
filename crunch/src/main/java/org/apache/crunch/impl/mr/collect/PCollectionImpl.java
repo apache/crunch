@@ -100,9 +100,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return new DoTableImpl<K, V>(name, this, fn, type);
   }
 
-  @Override
   public PCollection<S> write(Target target) {
-    getPipeline().write(this, target);
+    if (materializedAt != null) {
+      getPipeline().write(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()), target);
+    } else {
+      getPipeline().write(this, target);
+    }
     return this;
   }
 
