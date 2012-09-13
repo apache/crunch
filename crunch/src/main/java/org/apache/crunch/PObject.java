@@ -25,25 +25,6 @@ package org.apache.crunch;
  * @param <T> The type of value encapsulated by this {@code PObject}.
  */
 public interface PObject<T> {
-
-  /**
-   * Returns the {@code Pipeline} associated with this {@code PObject}
-   */
-  Pipeline getPipeline();
-
-  /**
-   * Write the contents of this {@code PObject} to the given {@code Target},
-   * using the storage format specified by the target.
-   *
-   * @param target The target to write to
-   */
-  PObject<T> write(Target target);
-
-  /**
-   * Returns a shorthand name for this PObject.
-   */
-  String getName();
-
   /**
    * Gets the value associated with this {@code PObject}.  Calling this method will trigger
    * whatever computation is necessary to obtain the value and block until that computation

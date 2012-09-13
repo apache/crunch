@@ -59,25 +59,6 @@ public abstract class PObjectImpl<S, T> implements PObject<T> {
 
   /** {@inheritDoc} */
   @Override
-  public final Pipeline getPipeline() {
-    return collection.getPipeline();
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public final PObject<T> write(Target target) {
-    collection.write(target);
-    return this;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public final String getName() {
-    return collection.getName();
-  }
-
-  /** {@inheritDoc} */
-  @Override
   public String toString() {
     return collection.toString();
   }

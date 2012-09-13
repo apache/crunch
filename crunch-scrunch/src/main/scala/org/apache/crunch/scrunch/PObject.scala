@@ -28,15 +28,6 @@ import org.apache.crunch.Target
  */
 class PObject[T] private (private val native: JPObject[T]) {
   /**
-   * Writes the contents of this PObject to the specified Target, using the storage format
-   * specified by the target.
-   *
-   * @param target
-   * @return This PObject.
-   */
-  def write(target: Target): PObject[T] = PObject(native.write(target))
-
-  /**
    * Gets the value associated with this PObject.  Calling this method will trigger
    * whatever computation is necessary to obtain the value and block until that computation
    * succeeds.
@@ -44,16 +35,6 @@ class PObject[T] private (private val native: JPObject[T]) {
    * @return The value associated with this PObject.
    */
   def value(): T = native.getValue()
-
-  /**
-   * @return A shorthand name for this PObject.
-   */
-  def name: String = native.getName()
-
-  /**
-   * @return The Pipeline associated with this PObject.
-   */
-  def pipeline: Pipeline = new Pipeline(native.getPipeline())
 }
 
 /**
