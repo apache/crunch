@@ -105,11 +105,9 @@ public class UnionCollectionIT {
   }
 
   private void checkMaterialized(Iterable<String> materialized) {
-
     List<String> materializedValues = Lists.newArrayList(materialized.iterator());
     Collections.sort(materializedValues);
     LOG.info("Materialized union: " + materializedValues);
-
     assertEquals(EXPECTED, materializedValues);
   }
 

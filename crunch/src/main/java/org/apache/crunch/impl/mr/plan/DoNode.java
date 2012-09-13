@@ -104,8 +104,16 @@ public class DoNode {
   }
 
   public DoNode addChild(DoNode node) {
-    if (!children.contains(node)) {
-      this.children.add(node);
+    // TODO: This is sort of terrible, refactor the code to make this make more sense.
+    boolean exists = false;
+    for (DoNode child : children) {
+      if (node == child) {
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      children.add(node);
     }
     return this;
   }

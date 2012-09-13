@@ -44,8 +44,9 @@ class NodePath implements Iterable<PCollectionImpl<?>> {
     this.path.push((PCollectionImpl<?>) stage);
   }
 
-  public void close(PCollectionImpl<?> head) {
+  public NodePath close(PCollectionImpl<?> head) {
     this.path.push(head);
+    return this;
   }
 
   public Iterator<PCollectionImpl<?>> iterator() {
@@ -96,6 +97,23 @@ class NodePath implements Iterable<PCollectionImpl<?>> {
     NodePath top = new NodePath();
     for (int i = 0; i <= splitIndex; i++) {
       top.path.add(path.get(i));
+    }
+    LinkedList<PCollectionImpl<?>> nextPath = Lists.newLinkedList();
+    nextPath.add(newHead);
+    nextPath.addAll(path.subList(splitIndex + 1, path.size()));
+    path = nextPath;
+    return top;
+  }
+  
+  public NodePath splitAt(PCollectionImpl split, PCollectionImpl<?> newHead) {
+    NodePath top = new NodePath();
+    int splitIndex = 0;
+    for (PCollectionImpl p : path) {
+      top.path.add(p);
+      if (p == split) {
+        break;
+      }
+      splitIndex++;
     }
     LinkedList<PCollectionImpl<?>> nextPath = Lists.newLinkedList();
     nextPath.add(newHead);

@@ -73,168 +73,162 @@ public class MSCRPlanner {
   }
 
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
-    // Constructs all of the node paths, which either start w/an input
-    // or a GBK and terminate in an output collection of any type.
-    NodeVisitor visitor = new NodeVisitor();
+    // Walk the current plan tree and build a graph in which the vertices are
+    // sources, targets, and GBK operations.
+    GraphBuilder graphBuilder = new GraphBuilder();
     for (PCollectionImpl<?> output : outputs.keySet()) {
-      visitor.visitOutput(output);
+      graphBuilder.visitOutput(output);
     }
-
-    // Pull out the node paths.
-    Map<PCollectionImpl<?>, Set<NodePath>> nodePaths = visitor.getNodePaths();
-
-    // Keeps track of the dependencies from collections -> jobs and then
-    // between different jobs.
-    Map<PCollectionImpl<?>, JobPrototype> assignments = Maps.newHashMap();
-    Map<PCollectionImpl<?>, Set<JobPrototype>> jobDependencies = new HashMap<PCollectionImpl<?>, Set<JobPrototype>>();
-
-    // Find the set of GBKs that DO NOT depend on any other GBK.
-    Set<PGroupedTableImpl<?, ?>> workingGroupings = null;
-    while (!(workingGroupings = getWorkingGroupings(nodePaths)).isEmpty()) {
-
-      for (PGroupedTableImpl<?, ?> grouping : workingGroupings) {
-        Set<NodePath> mapInputPaths = nodePaths.get(grouping);
-        JobPrototype proto = JobPrototype.createMapReduceJob(grouping, mapInputPaths, pipeline.createTempPath());
-        assignments.put(grouping, proto);
-        if (jobDependencies.containsKey(grouping)) {
-          for (JobPrototype dependency : jobDependencies.get(grouping)) {
-            proto.addDependency(dependency);
-          }
-        }
-      }
-
-      Map<PGroupedTableImpl<?, ?>, Set<NodePath>> dependencyPaths = getDependencyPaths(workingGroupings, nodePaths);
-      for (Map.Entry<PGroupedTableImpl<?, ?>, Set<NodePath>> entry : dependencyPaths.entrySet()) {
-        PGroupedTableImpl<?, ?> grouping = entry.getKey();
-        Set<NodePath> currentNodePaths = entry.getValue();
-
-        JobPrototype proto = assignments.get(grouping);
-        Set<NodePath> gbkPaths = Sets.newHashSet();
-        for (NodePath nodePath : currentNodePaths) {
-          PCollectionImpl<?> tail = nodePath.tail();
-          if (tail instanceof PGroupedTableImpl) {
-            gbkPaths.add(nodePath);
-            if (!jobDependencies.containsKey(tail)) {
-              jobDependencies.put(tail, Sets.<JobPrototype> newHashSet());
-            }
-            jobDependencies.get(tail).add(proto);
-          }
-        }
-
-        if (!gbkPaths.isEmpty()) {
-          handleGroupingDependencies(gbkPaths, currentNodePaths);
-        }
-
-        // At this point, all of the dependencies for the working groups will be
-        // file outputs, and so we can add them all to the JobPrototype-- we now
-        // have
-        // a complete job.
-        HashMultimap<Target, NodePath> reduceOutputs = HashMultimap.create();
-        for (NodePath nodePath : currentNodePaths) {
-          assignments.put(nodePath.tail(), proto);
-          for (Target target : outputs.get(nodePath.tail())) {
-            reduceOutputs.put(target, nodePath);
-          }
-        }
-        proto.addReducePaths(reduceOutputs);
-
-        // We've processed this GBK-- remove it from the set of nodePaths we
-        // need to process in the next step.
-        nodePaths.remove(grouping);
+    Graph baseGraph = graphBuilder.getGraph();
+    
+    // Create a new graph that splits up up dependent GBK nodes.
+    Graph graph = prepareFinalGraph(baseGraph);
+    
+    // Break the graph up into connected components.
+    List<List<Vertex>> components = graph.connectedComponents();
+    
+    // For each component, we will create one or more job prototypes,
+    // depending on its profile.
+    // For dependency handling, we only need to care about which
+    // job prototype a particular GBK is assigned to.
+    Map<Vertex, JobPrototype> assignments = Maps.newHashMap();
+    for (List<Vertex> component : components) {
+      assignments.putAll(constructJobPrototypes(component));
+    }
+    
+    // Add in the job dependency information here.
+    for (Map.Entry<Vertex, JobPrototype> e : assignments.entrySet()) {
+      JobPrototype current = e.getValue();
+      List<Vertex> parents = graph.getParents(e.getKey());
+      for (Vertex parent : parents) {
+        current.addDependency(assignments.get(parent));
       }
     }
-
-    // Process any map-only jobs that are remaining.
-    if (!nodePaths.isEmpty()) {
-      for (Map.Entry<PCollectionImpl<?>, Set<NodePath>> entry : nodePaths.entrySet()) {
-        PCollectionImpl<?> collect = entry.getKey();
-        if (!assignments.containsKey(collect)) {
-          HashMultimap<Target, NodePath> mapOutputs = HashMultimap.create();
-          for (NodePath nodePath : entry.getValue()) {
-            for (Target target : outputs.get(nodePath.tail())) {
-              mapOutputs.put(target, nodePath);
-            }
-          }
-          JobPrototype proto = JobPrototype.createMapOnlyJob(mapOutputs, pipeline.createTempPath());
-
-          if (jobDependencies.containsKey(collect)) {
-            for (JobPrototype dependency : jobDependencies.get(collect)) {
-              proto.addDependency(dependency);
-            }
-          }
-          assignments.put(collect, proto);
-        }
-      }
-    }
-
+    
+    // Finally, construct the jobs from the prototypes and return.
     MRExecutor exec = new MRExecutor(jarClass);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline));
     }
     return exec;
   }
-
-  private Map<PGroupedTableImpl<?, ?>, Set<NodePath>> getDependencyPaths(Set<PGroupedTableImpl<?, ?>> workingGroupings,
-      Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
-    Map<PGroupedTableImpl<?, ?>, Set<NodePath>> dependencyPaths = Maps.newHashMap();
-    for (PGroupedTableImpl<?, ?> grouping : workingGroupings) {
-      dependencyPaths.put(grouping, Sets.<NodePath> newHashSet());
+  
+  private Graph prepareFinalGraph(Graph baseGraph) {
+    Graph graph = new Graph();
+    
+    for (Vertex baseVertex : baseGraph) {
+      // Add all of the vertices in the base graph, but no edges (yet).
+      graph.addVertex(baseVertex.getPCollection());
     }
-
-    // Find the targets that depend on one of the elements of the current
-    // working group.
-    for (PCollectionImpl<?> target : nodePaths.keySet()) {
-      if (!workingGroupings.contains(target)) {
-        for (NodePath nodePath : nodePaths.get(target)) {
-          if (workingGroupings.contains(nodePath.head())) {
-            dependencyPaths.get(nodePath.head()).add(nodePath);
+    
+    for (Edge e : baseGraph.getAllEdges()) {
+      // Add back all of the edges where neither vertex is a GBK.
+      if (!e.getHead().isGBK() && !e.getTail().isGBK()) {
+        Vertex head = graph.getVertexAt(e.getHead().getPCollection());
+        Vertex tail = graph.getVertexAt(e.getTail().getPCollection());
+        graph.getEdge(head, tail).addAllNodePaths(e.getNodePaths());
+      }
+    }
+    
+    for (Vertex baseVertex : baseGraph) {
+      if (baseVertex.isGBK()) {
+        Vertex vertex = graph.getVertexAt(baseVertex.getPCollection());
+        for (Edge e : baseVertex.getIncomingEdges()) {
+          if (!e.getHead().isGBK()) {
+            Vertex newHead = graph.getVertexAt(e.getHead().getPCollection());
+            graph.getEdge(newHead, vertex).addAllNodePaths(e.getNodePaths());
+          }
+        }
+        for (Edge e : baseVertex.getOutgoingEdges()) {
+          if (!e.getTail().isGBK()) {
+            Vertex newTail = graph.getVertexAt(e.getTail().getPCollection());
+            graph.getEdge(vertex, newTail).addAllNodePaths(e.getNodePaths());
+          } else {
+            
+            // Execute an Edge split
+            Vertex newGraphTail = graph.getVertexAt(e.getTail().getPCollection());
+            PCollectionImpl split = e.getSplit();
+            InputCollection<?> inputNode = handleSplitTarget(split);
+            Vertex splitTail = graph.addVertex(split);
+            Vertex splitHead = graph.addVertex(inputNode);
+            
+            // Divide up the node paths in the edge between the two GBK nodes so
+            // that each node is either owned by GBK1 -> newTail or newHead -> GBK2.
+            for (NodePath path : e.getNodePaths()) {
+              NodePath headPath = path.splitAt(split, splitHead.getPCollection());
+              graph.getEdge(vertex, splitTail).addNodePath(headPath);
+              graph.getEdge(splitHead, newGraphTail).addNodePath(path);
+            }
+            
+            // Note the dependency between the vertices in the graph.
+            graph.markDependency(splitHead, splitTail);
           }
         }
       }
     }
-    return dependencyPaths;
+    
+    return graph;
   }
-
-  private int getSplitIndex(Set<NodePath> currentNodePaths) {
-    List<Iterator<PCollectionImpl<?>>> iters = Lists.newArrayList();
-    for (NodePath nodePath : currentNodePaths) {
-      Iterator<PCollectionImpl<?>> iter = nodePath.iterator();
-      iter.next(); // prime this past the initial NGroupedTableImpl
-      iters.add(iter);
-    }
-
-    // Find the lowest point w/the lowest cost to be the split point for
-    // all of the dependent paths.
-    boolean end = false;
-    int splitIndex = -1;
-    while (!end) {
-      splitIndex++;
-      PCollectionImpl<?> current = null;
-      for (Iterator<PCollectionImpl<?>> iter : iters) {
-        if (iter.hasNext()) {
-          PCollectionImpl<?> next = iter.next();
-          if (next instanceof PGroupedTableImpl) {
-            end = true;
-            break;
-          } else if (current == null) {
-            current = next;
-          } else if (current != next) {
-            end = true;
-            break;
-          }
-        } else {
-          end = true;
-          break;
-        }
+  
+  private Map<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component) {
+    Map<Vertex, JobPrototype> assignment = Maps.newHashMap();
+    List<Vertex> gbks = Lists.newArrayList();
+    for (Vertex v : component) {
+      if (v.isGBK()) {
+        gbks.add(v);
       }
     }
-    // TODO: Add costing calcs here.
-    return splitIndex;
-  }
 
-  private void handleGroupingDependencies(Set<NodePath> gbkPaths, Set<NodePath> currentNodePaths) throws IOException {
-    int splitIndex = getSplitIndex(currentNodePaths);
-    PCollectionImpl<?> splitTarget = currentNodePaths.iterator().next().get(splitIndex);
+    if (gbks.isEmpty()) {
+      HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
+      for (Vertex v : component) {
+        if (v.isInput()) {
+          for (Edge e : v.getOutgoingEdges()) {
+            for (NodePath nodePath : e.getNodePaths()) {
+              PCollectionImpl target = nodePath.tail();
+              for (Target t : outputs.get(target)) {
+                outputPaths.put(t, nodePath);
+              }
+            }
+          }
+        }
+      }
+      if (outputPaths.isEmpty()) {
+        throw new IllegalStateException("No outputs?");
+      }
+      JobPrototype prototype = JobPrototype.createMapOnlyJob(
+          outputPaths, pipeline.createTempPath()); 
+      for (Vertex v : component) {
+        assignment.put(v, prototype);
+      }
+    } else {
+      for (Vertex g : gbks) {
+        Set<NodePath> inputs = Sets.newHashSet();
+        for (Edge e : g.getIncomingEdges()) {
+          inputs.addAll(e.getNodePaths());
+        }
+        JobPrototype prototype = JobPrototype.createMapReduceJob(
+            (PGroupedTableImpl) g.getPCollection(), inputs, pipeline.createTempPath());
+        assignment.put(g, prototype);
+        for (Edge e : g.getIncomingEdges()) {
+          assignment.put(e.getHead(), prototype);
+        }
+        HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
+        for (Edge e : g.getOutgoingEdges()) {
+          Vertex output = e.getTail();
+          for (Target t : outputs.get(output.getPCollection())) {
+            outputPaths.putAll(t, e.getNodePaths());
+          }
+          assignment.put(output, prototype);
+        }
+        prototype.addReducePaths(outputPaths);
+      }
+    }
+    
+    return assignment;
+  }
+  
+  private InputCollection<?> handleSplitTarget(PCollectionImpl<?> splitTarget) {
     if (!outputs.containsKey(splitTarget)) {
       outputs.put(splitTarget, Sets.<Target> newHashSet());
     }
@@ -261,108 +255,6 @@ public class MSCRPlanner {
     outputs.get(splitTarget).add(srcTarget);
     splitTarget.materializeAt(srcTarget);
 
-    PCollectionImpl<?> inputNode = (PCollectionImpl<?>) pipeline.read(srcTarget);
-    Set<NodePath> nextNodePaths = Sets.newHashSet();
-    for (NodePath nodePath : currentNodePaths) {
-      if (gbkPaths.contains(nodePath)) {
-        nextNodePaths.add(nodePath.splitAt(splitIndex, inputNode));
-      } else {
-        nextNodePaths.add(nodePath);
-      }
-    }
-    currentNodePaths.clear();
-    currentNodePaths.addAll(nextNodePaths);
-  }
-
-  private Set<PGroupedTableImpl<?, ?>> getWorkingGroupings(Map<PCollectionImpl<?>, Set<NodePath>> nodePaths) {
-    Set<PGroupedTableImpl<?, ?>> gbks = Sets.newHashSet();
-    for (PCollectionImpl<?> target : nodePaths.keySet()) {
-      if (target instanceof PGroupedTableImpl) {
-        boolean hasGBKDependency = false;
-        for (NodePath nodePath : nodePaths.get(target)) {
-          if (nodePath.head() instanceof PGroupedTableImpl) {
-            hasGBKDependency = true;
-            break;
-          }
-        }
-        if (!hasGBKDependency) {
-          gbks.add((PGroupedTableImpl<?, ?>) target);
-        }
-      }
-    }
-    return gbks;
-  }
-
-  private static class NodeVisitor implements PCollectionImpl.Visitor {
-
-    private final Map<PCollectionImpl<?>, Set<NodePath>> nodePaths;
-    private final Map<PCollectionImpl<?>, Source<?>> inputs;
-    private PCollectionImpl<?> workingNode;
-    private NodePath workingPath;
-
-    public NodeVisitor() {
-      this.nodePaths = new HashMap<PCollectionImpl<?>, Set<NodePath>>();
-      this.inputs = new HashMap<PCollectionImpl<?>, Source<?>>();
-    }
-
-    public Map<PCollectionImpl<?>, Set<NodePath>> getNodePaths() {
-      return nodePaths;
-    }
-
-    public void visitOutput(PCollectionImpl<?> output) {
-      nodePaths.put(output, Sets.<NodePath> newHashSet());
-      workingNode = output;
-      workingPath = new NodePath();
-      output.accept(this);
-    }
-
-    @Override
-    public void visitInputCollection(InputCollection<?> collection) {
-      workingPath.close(collection);
-      inputs.put(collection, collection.getSource());
-      nodePaths.get(workingNode).add(workingPath);
-    }
-
-    @Override
-    public void visitUnionCollection(UnionCollection<?> collection) {
-      PCollectionImpl<?> baseNode = workingNode;
-      NodePath basePath = workingPath;
-      for (PCollectionImpl<?> parent : collection.getParents()) {
-        workingPath = new NodePath(basePath);
-        workingNode = baseNode;
-        processParent(parent);
-      }
-    }
-
-    @Override
-    public void visitDoFnCollection(DoCollectionImpl<?> collection) {
-      workingPath.push(collection);
-      processParent(collection.getOnlyParent());
-    }
-
-    @Override
-    public void visitDoTable(DoTableImpl<?, ?> collection) {
-      workingPath.push(collection);
-      processParent(collection.getOnlyParent());
-    }
-
-    @Override
-    public void visitGroupedTable(PGroupedTableImpl<?, ?> collection) {
-      workingPath.close(collection);
-      nodePaths.get(workingNode).add(workingPath);
-      workingNode = collection;
-      nodePaths.put(workingNode, Sets.<NodePath> newHashSet());
-      workingPath = new NodePath(collection);
-      processParent(collection.getOnlyParent());
-    }
-
-    private void processParent(PCollectionImpl<?> parent) {
-      if (!nodePaths.containsKey(parent)) {
-        parent.accept(this);
-      } else {
-        workingPath.close(parent);
-        nodePaths.get(workingNode).add(workingPath);
-      }
-    }
-  }
+    return (InputCollection<?>) pipeline.read(srcTarget);
+  }  
 }
