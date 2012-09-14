@@ -635,9 +635,6 @@ under the License.
           <version>2.12</version>
           <configuration>
             <argLine>-Xmx512m</argLine>
-            <includes>
-              <include>**/*IT.java</include>
-            </includes>
           </configuration>
         </plugin>
         <plugin>
