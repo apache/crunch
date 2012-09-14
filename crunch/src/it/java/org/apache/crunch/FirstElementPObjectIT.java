@@ -46,7 +46,7 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("serial")
 public class FirstElementPObjectIT {
 
-  private static final String FIRST_SHAKESPEAR_LINE =
+  private static final String FIRST_SHAKESPEARE_LINE =
       "***The Project Gutenberg's Etext of Shakespeare's First Folio***";
 
   @Rule
@@ -67,6 +67,6 @@ public class FirstElementPObjectIT {
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     PObject<String> firstLine = new FirstElementPObject<String>(shakespeare);
     String first = firstLine.getValue();
-    assertEquals("First line in Shakespeare is wrong.", FIRST_SHAKESPEAR_LINE, first);
+    assertEquals("First line in Shakespeare is wrong.", FIRST_SHAKESPEARE_LINE, first);
   }
 }

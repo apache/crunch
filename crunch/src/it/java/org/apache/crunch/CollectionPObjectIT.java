@@ -49,10 +49,10 @@ public class CollectionPObjectIT {
 
   private static final int LINES_IN_SHAKES = 3667;
 
-  private static final String FIRST_SHAKESPEAR_LINE =
+  private static final String FIRST_SHAKESPEARE_LINE =
       "***The Project Gutenberg's Etext of Shakespeare's First Folio***";
 
-  private static final String LAST_SHAKESPEAR_LINE =
+  private static final String LAST_SHAKESPEARE_LINE =
       "FINIS. THE TRAGEDIE OF MACBETH.";
 
   @Rule
@@ -86,8 +86,8 @@ public class CollectionPObjectIT {
 
   private void verifyLines(String[] lines) {
     assertEquals("Not enough lines in Shakespeare.", LINES_IN_SHAKES, lines.length);
-    assertEquals("First line in Shakespeare is wrong.", FIRST_SHAKESPEAR_LINE, lines[0]);
-    assertEquals("Last line in Shakespeare is wrong.", LAST_SHAKESPEAR_LINE,
+    assertEquals("First line in Shakespeare is wrong.", FIRST_SHAKESPEARE_LINE, lines[0]);
+    assertEquals("Last line in Shakespeare is wrong.", LAST_SHAKESPEARE_LINE,
         lines[lines.length - 1]);
   }
 

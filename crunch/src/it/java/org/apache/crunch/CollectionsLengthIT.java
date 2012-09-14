@@ -41,7 +41,7 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("serial")
 public class CollectionsLengthIT {
 
-  public static final Long LINES_IN_SHAKESPEAR = 3667L;
+  public static final Long LINES_IN_SHAKESPEARE = 3667L;
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
@@ -71,6 +71,6 @@ public class CollectionsLengthIT {
 
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     Long length = shakespeare.length().getValue();
-    assertEquals("Incorrect length for shakespear PCollection.", LINES_IN_SHAKESPEAR, length);
+    assertEquals("Incorrect length for shakespear PCollection.", LINES_IN_SHAKESPEARE, length);
   }
 }

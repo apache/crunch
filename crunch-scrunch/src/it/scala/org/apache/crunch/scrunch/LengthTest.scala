@@ -29,11 +29,11 @@ import _root_.org.junit.Test
 class LengthTest extends CrunchTestSupport with JUnitSuite {
 
   @Test def testLength {
-    val linesInShakespear: Long = 3667
+    val linesInShakespeare: Long = 3667
     val pipeline = Pipeline.mapReduce[LengthTest](tempDir.getDefaultConfiguration)
     val input = tempDir.copyResourceFileName("shakes.txt")
 
     val len = pipeline.read(from.textFile(input)).length()
-    assert(linesInShakespear == len.value())
+    assert(linesInShakespeare == len.value())
   }
 }
