@@ -42,14 +42,31 @@ public abstract class DoFn<S, T> implements Serializable {
   private transient String internalStatus;
 
   /**
-   * Called during the job planning phase. Subclasses may override this method
-   * in order to modify the configuration of the Job that this DoFn instance
-   * belongs to.
+   * Configure this DoFn. Subclasses may override this method to modify the
+   * configuration of the Job that this DoFn instance belongs to.
+   * 
+   * <p>
+   * Called during the job planning phase by the crunch-client.
+   * </p>
    * 
    * @param conf
    *          The Configuration instance for the Job.
    */
   public void configure(Configuration conf) {
+  }
+
+  /**
+   * Initialize this DoFn. This initialization will happen before the actual
+   * {@link #process(Object, Emitter)} is triggered. Subclasses may override
+   * this method to do appropriate initialization.
+   * 
+   * <p>
+   * Called during the setup of the job instance this {@code DoFn} is
+   * associated with.
+   * </p>
+   * 
+   */
+  public void initialize() {
   }
 
   /**
@@ -71,14 +88,6 @@ public abstract class DoFn<S, T> implements Serializable {
    *          The emitter to send the output to
    */
   public abstract void process(S input, Emitter<T> emitter);
-
-  /**
-   * Called during the setup of the MapReduce job this {@code DoFn} is
-   * associated with. Subclasses may override this method to do appropriate
-   * initialization.
-   */
-  public void initialize() {
-  }
 
   /**
    * Called during the cleanup of the MapReduce job this {@code DoFn} is
