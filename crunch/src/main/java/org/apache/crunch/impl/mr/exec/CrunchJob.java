@@ -18,7 +18,7 @@
 package org.apache.crunch.impl.mr.exec;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,7 +38,7 @@ public class CrunchJob extends CrunchControlledJob {
   private final Log log = LogFactory.getLog(CrunchJob.class);
 
   private final Path workingPath;
-  private final List<Path> multiPaths;
+  private final Map<Integer, Path> multiPaths;
   private final boolean mapOnlyJob;
 
   public CrunchJob(Job job, Path workingPath, MSCROutputHandler handler) throws IOException {
@@ -53,10 +53,12 @@ public class CrunchJob extends CrunchControlledJob {
       // Need to handle moving the data from the output directory of the
       // job to the output locations specified in the paths.
       FileSystem srcFs = workingPath.getFileSystem(job.getConfiguration());
-      for (int i = 0; i < multiPaths.size(); i++) {
+      for (Map.Entry<Integer, Path> entry : multiPaths.entrySet()) {
+        final int i = entry.getKey();
+        final Path dst = entry.getValue();
+
         Path src = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + i + "-*");
         Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(src), src);
-        Path dst = multiPaths.get(i);
         FileSystem dstFs = dst.getFileSystem(job.getConfiguration());
         if (!dstFs.exists(dst)) {
           dstFs.mkdirs(dst);

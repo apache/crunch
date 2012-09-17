@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
-import java.util.List;
+import java.util.Map;
 
 import org.apache.crunch.Target;
 import org.apache.crunch.io.MapReduceTarget;
@@ -27,7 +27,7 @@ import org.apache.crunch.types.PType;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class MSCROutputHandler implements OutputHandler {
 
@@ -36,13 +36,14 @@ public class MSCROutputHandler implements OutputHandler {
   private final boolean mapOnlyJob;
 
   private DoNode workingNode;
-  private List<Path> multiPaths;
+  private Map<Integer, Path> multiPaths;
+  private int jobCount;
 
   public MSCROutputHandler(Job job, Path outputPath, boolean mapOnlyJob) {
     this.job = job;
     this.path = outputPath;
     this.mapOnlyJob = mapOnlyJob;
-    this.multiPaths = Lists.newArrayList();
+    this.multiPaths = Maps.newHashMap();
   }
 
   public void configureNode(DoNode node, Target target) {
@@ -51,17 +52,18 @@ public class MSCROutputHandler implements OutputHandler {
   }
 
   public boolean configure(Target target, PType<?> ptype) {
-    if (target instanceof MapReduceTarget && target instanceof PathTarget) {
-      String name = PlanningParameters.MULTI_OUTPUT_PREFIX + multiPaths.size();
-      multiPaths.add(((PathTarget) target).getPath());
+    if (target instanceof MapReduceTarget) {
+      if (target instanceof PathTarget) {
+        multiPaths.put(jobCount, ((PathTarget) target).getPath());
+      }
+
+      String name = PlanningParameters.MULTI_OUTPUT_PREFIX + jobCount;
+      jobCount++;
       workingNode.setOutputName(name);
       ((MapReduceTarget) target).configureForMapReduce(job, ptype, path, name);
       return true;
     }
-    if (target instanceof MapReduceTarget) {
-      ((MapReduceTarget) target).configureForMapReduce(job, ptype, null, null);
-      return true;
-    }
+
     return false;
   }
 
@@ -69,7 +71,7 @@ public class MSCROutputHandler implements OutputHandler {
     return mapOnlyJob;
   }
 
-  public List<Path> getMultiPaths() {
+  public Map<Integer, Path> getMultiPaths() {
     return multiPaths;
   }
 }
