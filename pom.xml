@@ -496,7 +496,7 @@ under the License.
                   <descriptors>
                     <descriptor>src/main/assembly/crunch-release.xml</descriptor>
                   </descriptors>
-                  <tarLongFileFormat>gnu</tarLongFileFormat>
+                  <tarLongFileMode>gnu</tarLongFileMode>
                 </configuration>
               </execution>
             </executions>
