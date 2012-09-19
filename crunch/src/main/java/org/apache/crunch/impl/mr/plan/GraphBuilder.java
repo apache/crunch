@@ -38,14 +38,14 @@ public class GraphBuilder implements PCollectionImpl.Visitor {
   }
   
   public void visitOutput(PCollectionImpl<?> output) {
-    workingVertex = graph.addVertex(output);
+    workingVertex = graph.addVertex(output, true);
     workingPath = new NodePath();
     output.accept(this);
   }
   
   @Override
   public void visitInputCollection(InputCollection<?> collection) {
-    Vertex v = graph.addVertex(collection);
+    Vertex v = graph.addVertex(collection, false);
     graph.getEdge(v, workingVertex).addNodePath(workingPath.close(collection));
   }
 
@@ -74,7 +74,7 @@ public class GraphBuilder implements PCollectionImpl.Visitor {
 
   @Override
   public void visitGroupedTable(PGroupedTableImpl<?, ?> collection) {
-    Vertex v = graph.addVertex(collection);
+    Vertex v = graph.addVertex(collection, false);
     graph.getEdge(v, workingVertex).addNodePath(workingPath.close(collection));
     workingVertex = v;
     workingPath = new NodePath(collection);

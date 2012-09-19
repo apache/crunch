@@ -42,6 +42,7 @@ import org.apache.hadoop.conf.Configuration;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MSCRPlanner {
@@ -91,17 +92,19 @@ public class MSCRPlanner {
     // depending on its profile.
     // For dependency handling, we only need to care about which
     // job prototype a particular GBK is assigned to.
-    Map<Vertex, JobPrototype> assignments = Maps.newHashMap();
+    Multimap<Vertex, JobPrototype> assignments = HashMultimap.create();
     for (List<Vertex> component : components) {
       assignments.putAll(constructJobPrototypes(component));
     }
     
     // Add in the job dependency information here.
-    for (Map.Entry<Vertex, JobPrototype> e : assignments.entrySet()) {
+    for (Map.Entry<Vertex, JobPrototype> e : assignments.entries()) {
       JobPrototype current = e.getValue();
       List<Vertex> parents = graph.getParents(e.getKey());
       for (Vertex parent : parents) {
-        current.addDependency(assignments.get(parent));
+        for (JobPrototype parentJobProto : assignments.get(parent)) {
+          current.addDependency(parentJobProto);
+        }
       }
     }
     
@@ -118,12 +121,14 @@ public class MSCRPlanner {
     
     for (Vertex baseVertex : baseGraph) {
       // Add all of the vertices in the base graph, but no edges (yet).
-      graph.addVertex(baseVertex.getPCollection());
+      graph.addVertex(baseVertex.getPCollection(), baseVertex.isOutput());
     }
     
     for (Edge e : baseGraph.getAllEdges()) {
-      // Add back all of the edges where neither vertex is a GBK.
-      if (!e.getHead().isGBK() && !e.getTail().isGBK()) {
+      // Add back all of the edges where neither vertex is a GBK and we do not
+      // have an output feeding into a GBK.
+      if (!(e.getHead().isGBK() && e.getTail().isGBK()) &&
+          !(e.getHead().isOutput() && e.getTail().isGBK())) {
         Vertex head = graph.getVertexAt(e.getHead().getPCollection());
         Vertex tail = graph.getVertexAt(e.getTail().getPCollection());
         graph.getEdge(head, tail).addAllNodePaths(e.getNodePaths());
@@ -134,7 +139,24 @@ public class MSCRPlanner {
       if (baseVertex.isGBK()) {
         Vertex vertex = graph.getVertexAt(baseVertex.getPCollection());
         for (Edge e : baseVertex.getIncomingEdges()) {
-          if (!e.getHead().isGBK()) {
+          if (e.getHead().isOutput()) {
+            // Execute an edge split.
+            Vertex splitTail = e.getHead();
+            PCollectionImpl<?> split = splitTail.getPCollection();
+            InputCollection<?> inputNode = handleSplitTarget(split);
+            Vertex splitHead = graph.addVertex(inputNode, false);
+            
+            // Divide up the node paths in the edge between the two GBK nodes so
+            // that each node is either owned by GBK1 -> newTail or newHead -> GBK2.
+            for (NodePath path : e.getNodePaths()) {
+              NodePath headPath = path.splitAt(split, splitHead.getPCollection());
+              graph.getEdge(vertex, splitTail).addNodePath(headPath);
+              graph.getEdge(splitHead, vertex).addNodePath(path);
+            }
+            
+            // Note the dependency between the vertices in the graph.
+            graph.markDependency(splitHead, splitTail);
+          } else if (!e.getHead().isGBK()) {
             Vertex newHead = graph.getVertexAt(e.getHead().getPCollection());
             graph.getEdge(newHead, vertex).addAllNodePaths(e.getNodePaths());
           }
@@ -144,13 +166,12 @@ public class MSCRPlanner {
             Vertex newTail = graph.getVertexAt(e.getTail().getPCollection());
             graph.getEdge(vertex, newTail).addAllNodePaths(e.getNodePaths());
           } else {
-            
             // Execute an Edge split
             Vertex newGraphTail = graph.getVertexAt(e.getTail().getPCollection());
             PCollectionImpl split = e.getSplit();
             InputCollection<?> inputNode = handleSplitTarget(split);
-            Vertex splitTail = graph.addVertex(split);
-            Vertex splitHead = graph.addVertex(inputNode);
+            Vertex splitTail = graph.addVertex(split, true);
+            Vertex splitHead = graph.addVertex(inputNode, false);
             
             // Divide up the node paths in the edge between the two GBK nodes so
             // that each node is either owned by GBK1 -> newTail or newHead -> GBK2.
@@ -170,8 +191,8 @@ public class MSCRPlanner {
     return graph;
   }
   
-  private Map<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component) {
-    Map<Vertex, JobPrototype> assignment = Maps.newHashMap();
+  private Multimap<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component) {
+    Multimap<Vertex, JobPrototype> assignment = HashMultimap.create();
     List<Vertex> gbks = Lists.newArrayList();
     for (Vertex v : component) {
       if (v.isGBK()) {
@@ -222,6 +243,32 @@ public class MSCRPlanner {
           assignment.put(output, prototype);
         }
         prototype.addReducePaths(outputPaths);
+      }
+      
+      // Check for any un-assigned vertices, which should be map-side outputs
+      // that we will need to run in a map-only job.
+      HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
+      Set<Vertex> orphans = Sets.newHashSet();
+      for (Vertex v : component) {
+        if (!assignment.containsKey(v) && v.isOutput()) {
+          orphans.add(v);
+          for (Edge e : v.getIncomingEdges()) {
+            orphans.add(e.getHead());
+            for (NodePath nodePath : e.getNodePaths()) {
+              PCollectionImpl target = nodePath.tail();
+              for (Target t : outputs.get(target)) {
+                outputPaths.put(t, nodePath);
+              }
+            }
+          }
+        }
+      }
+      if (!outputPaths.isEmpty()) {
+        JobPrototype prototype = JobPrototype.createMapOnlyJob(
+            outputPaths, pipeline.createTempPath());
+        for (Vertex orphan : orphans) {
+          assignment.put(orphan, prototype);
+        }
       }
     }
     
