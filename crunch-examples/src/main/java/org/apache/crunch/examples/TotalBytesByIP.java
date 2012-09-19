@@ -28,6 +28,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -46,7 +47,9 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
   static final String logRegex = "^([\\d.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
 
   public int run(String[] args) throws Exception {
-    if (args.length != 2) {
+    String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
+
+    if (remainingArgs.length != 3) {
       System.err.println();
       System.err.println("Two and only two arguments are accepted.");
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
@@ -57,7 +60,7 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(TotalBytesByIP.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(args[0]);
+    PCollection<String> lines = pipeline.readTextFile(remainingArgs[1]);
 
     // Combiner used for summing up response size
     CombineFn<String, Long> longSumCombiner = CombineFn.SUM_LONGS();
@@ -67,10 +70,11 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
         .parallelDo(extractIPResponseSize, Writables.tableOf(Writables.strings(), Writables.longs())).groupByKey()
         .combineValues(longSumCombiner);
 
-    pipeline.writeTextFile(ipAddrResponseSize, args[1]);
+    pipeline.writeTextFile(ipAddrResponseSize, remainingArgs[2]);
     // Execute the pipeline as a MapReduce.
-    pipeline.done();
-    return 0;
+    PipelineResult result = pipeline.done();
+
+    return result.succeeded() ? 0 : 1;
   }
 
   // Function to parse apache log records
@@ -101,6 +105,7 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
   };
 
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new Configuration(), new TotalBytesByIP(), args);
+    int result = ToolRunner.run(new Configuration(), new TotalBytesByIP(), args);
+    System.exit(result);
   }
 }

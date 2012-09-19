@@ -24,6 +24,7 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -34,7 +35,9 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class WordCount extends Configured implements Tool, Serializable {
   public int run(String[] args) throws Exception {
-    if (args.length != 3) {
+    String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
+
+    if (remainingArgs.length != 3) {
       System.err.println();
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
       System.err.println();
@@ -44,7 +47,7 @@ public class WordCount extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(WordCount.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(args[1]);
+    PCollection<String> lines = pipeline.readTextFile(remainingArgs[1]);
 
     // Define a function that splits each line in a PCollection of Strings into
     // a
@@ -64,13 +67,15 @@ public class WordCount extends Configured implements Tool, Serializable {
     PTable<String, Long> counts = words.count();
 
     // Instruct the pipeline to write the resulting counts to a text file.
-    pipeline.writeTextFile(counts, args[2]);
+    pipeline.writeTextFile(counts, remainingArgs[2]);
     // Execute the pipeline as a MapReduce.
-    pipeline.done();
-    return 0;
+    PipelineResult result = pipeline.done();
+
+    return result.succeeded() ? 0 : 1;
   }
 
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new Configuration(), new WordCount(), args);
+    int result = ToolRunner.run(new Configuration(), new WordCount(), args);
+    System.exit(result);
   }
 }
