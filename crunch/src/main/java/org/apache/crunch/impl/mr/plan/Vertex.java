@@ -33,6 +33,8 @@ import com.google.common.collect.Sets;
  */
 public class Vertex {
   private final PCollectionImpl impl;
+  
+  private boolean output;
   private Set<Edge> incoming;
   private Set<Edge> outgoing;
   
@@ -52,6 +54,14 @@ public class Vertex {
   
   public boolean isGBK() {
     return impl instanceof PGroupedTableImpl;
+  }
+  
+  public void setOutput() {
+    this.output = true;
+  }
+  
+  public boolean isOutput() {
+    return output;
   }
   
   public Source getSource() {

@@ -14,9 +14,7 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,13 +45,20 @@ public class Graph implements Iterable<Vertex> {
   public Vertex getVertexAt(PCollectionImpl impl) {
     return vertices.get(impl);
   }
-
-  public Vertex addVertex(PCollectionImpl impl) {
+  
+  public Vertex addVertex(PCollectionImpl impl, boolean output) {
     if (vertices.containsKey(impl)) {
-      return vertices.get(impl);
+      Vertex v = vertices.get(impl);
+      if (output) {
+        v.setOutput();
+      }
+      return v;
     }
     Vertex v = new Vertex(impl);
     vertices.put(impl, v);
+    if (output) {
+      v.setOutput();
+    }
     return v;
   }
   
