@@ -59,6 +59,10 @@ public class PTypes {
     return typeFamily.derived(clazz, new ThriftInputMapFn<T>(clazz), new ThriftOutputMapFn<T>(), typeFamily.bytes());
   }
 
+  public static final <T extends Enum> PType<T> enums(final Class<T> type, PTypeFamily typeFamily) {
+    return typeFamily.derived(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
+  }
+
   public static MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
     public BigInteger map(ByteBuffer input) {
       return input == null ? null : new BigInteger(input.array());
@@ -205,4 +209,25 @@ public class PTypes {
       }
     }
   }
+
+  public static class EnumInputMapper<T extends Enum> extends MapFn<String, T> {
+    private final Class<T> type;
+
+    public EnumInputMapper(Class<T> type) {
+      this.type = type;
+    }
+
+    @Override
+    public T map(String input) {
+      return (T) Enum.valueOf(type, input);
+    }
+  };
+
+  public static class EnumOutputMapper<T extends Enum> extends MapFn<T, String> {
+
+    @Override
+    public String map(T input) {
+      return input.name();
+    }
+  };
 }
