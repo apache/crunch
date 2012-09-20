@@ -41,6 +41,7 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   private final MapFn<T, W> outputFn;
   private final DeepCopier<W> deepCopier;
   private final List<PType> subTypes;
+  private boolean initialized = false;
 
   WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn, MapFn<T, W> outputDoFn,
       PType... subTypes) {
@@ -102,7 +103,20 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   }
 
   @Override
+  public void initialize() {
+    this.inputFn.initialize();
+    this.outputFn.initialize();
+    for (PType subType : subTypes) {
+      subType.initialize();
+    }
+    this.initialized = true;
+  }
+
+  @Override
   public T getDetachedValue(T value) {
+    if (!initialized) {
+      throw new IllegalStateException("Cannot call getDetachedValue on an uninitialized PType");
+    }
     W writableValue = outputFn.map(value);
     W deepCopy = this.deepCopier.deepCopy(writableValue);
     return inputFn.map(deepCopy);

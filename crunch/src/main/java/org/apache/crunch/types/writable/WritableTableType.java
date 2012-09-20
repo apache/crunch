@@ -101,6 +101,12 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   }
 
   @Override
+  public void initialize() {
+    keyType.initialize();
+    valueType.initialize();
+  }
+
+  @Override
   public Pair<K, V> getDetachedValue(Pair<K, V> value) {
     return PTables.getDetachedValue(this, value);
   }

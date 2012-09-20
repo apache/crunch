@@ -34,7 +34,7 @@ public class WritableTableTypeTest {
     Pair<Integer, Text> pair = Pair.of(integerValue, textValue);
 
     WritableTableType<Integer, Text> tableType = Writables.tableOf(Writables.ints(), Writables.writables(Text.class));
-
+    tableType.initialize();
     Pair<Integer, Text> detachedPair = tableType.getDetachedValue(pair);
 
     assertSame(integerValue, detachedPair.first());

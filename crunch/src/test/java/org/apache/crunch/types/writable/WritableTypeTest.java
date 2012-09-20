@@ -19,8 +19,6 @@ package org.apache.crunch.types.writable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 
 import java.util.Collection;
 import java.util.Map;
@@ -35,9 +33,20 @@ import com.google.common.collect.Maps;
 
 public class WritableTypeTest {
 
+  @Test(expected = IllegalStateException.class)
+  public void testGetDetachedValue_NotInitialized() {
+    WritableType<Text, Text> textWritableType = Writables.writables(Text.class);
+    Text value = new Text("test");
+
+    // Calling getDetachedValue without first calling initialize should throw an
+    // exception
+    textWritableType.getDetachedValue(value);
+  }
+
   @Test
   public void testGetDetachedValue_CustomWritable() {
     WritableType<Text, Text> textWritableType = Writables.writables(Text.class);
+    textWritableType.initialize();
     Text value = new Text("test");
 
     Text detachedValue = textWritableType.getDetachedValue(value);
@@ -50,6 +59,7 @@ public class WritableTypeTest {
     Collection<Text> textCollection = Lists.newArrayList(new Text("value"));
     WritableType<Collection<Text>, GenericArrayWritable<Text>> ptype = Writables.collections(Writables
         .writables(Text.class));
+    ptype.initialize();
 
     Collection<Text> detachedCollection = ptype.getDetachedValue(textCollection);
     assertEquals(textCollection, detachedCollection);
@@ -61,8 +71,7 @@ public class WritableTypeTest {
     Pair<Text, Text> textPair = Pair.of(new Text("one"), new Text("two"));
     WritableType<Pair<Text, Text>, TupleWritable> ptype = Writables.pairs(Writables.writables(Text.class),
         Writables.writables(Text.class));
-    ptype.getOutputMapFn().initialize();
-    ptype.getInputMapFn().initialize();
+    ptype.initialize();
 
     Pair<Text, Text> detachedPair = ptype.getDetachedValue(textPair);
     assertEquals(textPair, detachedPair);
@@ -76,6 +85,7 @@ public class WritableTypeTest {
     stringTextMap.put("key", new Text("value"));
 
     WritableType<Map<String, Text>, MapWritable> ptype = Writables.maps(Writables.writables(Text.class));
+    ptype.initialize();
     Map<String, Text> detachedMap = ptype.getDetachedValue(stringTextMap);
 
     assertEquals(stringTextMap, detachedMap);
