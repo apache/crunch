@@ -17,7 +17,7 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,8 +39,7 @@ public class MaterializeToMapIT {
 
   public void assertMatches(Map<Integer, String> m) {
     for (Integer k : m.keySet()) {
-      System.out.println(k + " " + kvPairs.get(k).second() + " " + m.get(k));
-      assertTrue(kvPairs.get(k).second().equals(m.get(k)));
+      assertEquals(kvPairs.get(k).second(), m.get(k));
     }
   }
 

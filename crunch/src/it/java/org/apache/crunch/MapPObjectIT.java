@@ -17,14 +17,11 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 import java.io.IOException;
-import java.lang.Integer;
 import java.util.Map;
 
-import org.apache.crunch.PObject;
-import org.apache.crunch.PTable;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.materialize.pobject.MapPObject;
@@ -43,8 +40,7 @@ public class MapPObjectIT {
 
   public void assertMatches(Map<Integer, String> m) {
     for (Integer k : m.keySet()) {
-      System.out.println(k + " " + kvPairs.get(k).second() + " " + m.get(k));
-      assertTrue(kvPairs.get(k).second().equals(m.get(k)));
+      assertEquals(kvPairs.get(k).second(), m.get(k));
     }
   }
 
