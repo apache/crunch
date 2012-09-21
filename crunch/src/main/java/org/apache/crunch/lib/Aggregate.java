@@ -20,7 +20,6 @@ package org.apache.crunch.lib;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -245,6 +244,12 @@ public class Aggregate {
     PTypeFamily tf = collect.getTypeFamily();
     final PType<V> valueType = collect.getValueType();
     return collect.groupByKey().parallelDo("collect", new MapValuesFn<K, Iterable<V>, Collection<V>>() {
+
+      @Override
+      public void initialize() {
+        valueType.initialize();
+      }
+
       public Collection<V> map(Iterable<V> values) {
         List<V> collected = Lists.newArrayList();
         for (V value : values) {

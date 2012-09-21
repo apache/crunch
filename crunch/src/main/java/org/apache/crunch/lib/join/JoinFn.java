@@ -51,6 +51,12 @@ public abstract class JoinFn<K, U, V> extends DoFn<Pair<Pair<K, Integer>, Iterab
     this.leftValueType = leftValueType;
   }
 
+  @Override
+  public void initialize() {
+    this.keyType.initialize();
+    this.leftValueType.initialize();
+  }
+
   /** @return The name of this join type (e.g. innerJoin, leftOuterJoin). */
   public abstract String getJoinType();
 

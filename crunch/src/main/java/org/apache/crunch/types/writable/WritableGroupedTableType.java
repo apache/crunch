@@ -61,6 +61,11 @@ public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   }
 
   @Override
+  public void initialize() {
+    this.tableType.initialize();
+  }
+
+  @Override
   public Pair<K, Iterable<V>> getDetachedValue(Pair<K, Iterable<V>> value) {
     return PTables.getGroupedDetachedValue(this, value);
   }

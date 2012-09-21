@@ -47,6 +47,7 @@ public class InnerJoinFn<K, U, V> extends JoinFn<K, U, V> {
   /** {@inheritDoc} */
   @Override
   public void initialize() {
+    super.initialize();
     lastKey = null;
     this.leftValues = Lists.newArrayList();
   }

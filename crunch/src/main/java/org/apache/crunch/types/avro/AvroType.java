@@ -163,6 +163,11 @@ public class AvroType<T> implements PType<T> {
     return new AvroFileSourceTarget<T>(path, this);
   }
 
+  @Override
+  public void initialize() {
+    // No initialization needed for Avro PTypes
+  }
+
   public T getDetachedValue(T value) {
     return deepCopier.deepCopy(value);
   }

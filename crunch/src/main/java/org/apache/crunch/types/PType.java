@@ -52,6 +52,14 @@ public interface PType<T> extends Serializable {
   Converter getConverter();
 
   /**
+   * Initialize this PType for use within a DoFn. This generally only needs to
+   * be called when using a PType for {@link #getDetachedValue(Object)}.
+   * 
+   * @see PType#getDetachedValue(Object)
+   */
+  void initialize();
+
+  /**
    * Returns a copy of a value (or the value itself) that can safely be
    * retained.
    * <p>

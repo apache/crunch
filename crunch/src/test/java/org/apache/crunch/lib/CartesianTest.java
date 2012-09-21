@@ -18,48 +18,60 @@
 package org.apache.crunch.lib;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.types.writable.Writables;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 public class CartesianTest {
 
   @Test
-  public void testCartesianCollection() {
-    ImmutableList<ImmutableList<Integer>> testCases = ImmutableList.of(ImmutableList.of(1, 2, 3, 4, 5),
-        ImmutableList.<Integer> of(1, 2, 3), ImmutableList.<Integer> of());
+  public void testCartesianCollection_SingleValues() {
 
-    for (int t1 = 0; t1 < testCases.size(); t1++) {
-      ImmutableList<Integer> testCase1 = testCases.get(t1);
-      for (int t2 = t1; t2 < testCases.size(); t2++) {
-        ImmutableList<Integer> testCase2 = testCases.get(t2);
+    PCollection<String> letters = MemPipeline.typedCollectionOf(Writables.strings(), "a", "b");
+    PCollection<Integer> ints = MemPipeline.typedCollectionOf(Writables.ints(), 1, 2);
 
-        PCollection<Integer> X = MemPipeline.typedCollectionOf(Writables.ints(), testCase1);
-        PCollection<Integer> Y = MemPipeline.typedCollectionOf(Writables.ints(), testCase2);
+    PCollection<Pair<String, Integer>> cartesianProduct = Cartesian.cross(letters, ints);
 
-        PCollection<Pair<Integer, Integer>> cross = Cartesian.cross(X, Y);
-        HashSet<Pair<Integer, Integer>> crossSet = new HashSet<Pair<Integer, Integer>>();
-        for (Iterator<Pair<Integer, Integer>> i = cross.materialize().iterator(); i.hasNext();) {
-          crossSet.add(i.next());
-        }
-        assertEquals(crossSet.size(), testCase1.size() * testCase2.size());
+    @SuppressWarnings("unchecked")
+    List<Pair<String, Integer>> expectedResults = Lists.newArrayList(Pair.of("a", 1), Pair.of("a", 2), Pair.of("b", 1),
+        Pair.of("b", 2));
+    List<Pair<String, Integer>> actualResults = Lists.newArrayList(cartesianProduct.materialize());
+    Collections.sort(actualResults);
 
-        for (int i = 0; i < testCase1.size(); i++) {
-          for (int j = 0; j < testCase2.size(); j++) {
-            assertTrue(crossSet.contains(Pair.of(testCase1.get(i), testCase2.get(j))));
-          }
-        }
-      }
-    }
+    assertEquals(expectedResults, actualResults);
+  }
+
+  @Test
+  public void testCartesianCollection_Tables() {
+
+    PTable<String, Integer> leftTable = MemPipeline.typedTableOf(
+        Writables.tableOf(Writables.strings(), Writables.ints()), "a", 1, "b", 2);
+    PTable<String, Float> rightTable = MemPipeline.typedTableOf(
+        Writables.tableOf(Writables.strings(), Writables.floats()), "A", 1.0f, "B", 2.0f);
+
+    PTable<Pair<String, String>, Pair<Integer, Float>> cartesianProduct = Cartesian.cross(leftTable, rightTable);
+
+    List<Pair<Pair<String, String>, Pair<Integer, Float>>> expectedResults = Lists.newArrayList();
+    expectedResults.add(Pair.of(Pair.of("a", "A"), Pair.of(1, 1.0f)));
+    expectedResults.add(Pair.of(Pair.of("a", "B"), Pair.of(1, 2.0f)));
+    expectedResults.add(Pair.of(Pair.of("b", "A"), Pair.of(2, 1.0f)));
+    expectedResults.add(Pair.of(Pair.of("b", "B"), Pair.of(2, 2.0f)));
+
+    List<Pair<Pair<String, String>, Pair<Integer, Float>>> actualResults = Lists.newArrayList(cartesianProduct
+        .materialize());
+    Collections.sort(actualResults);
+
+    assertEquals(expectedResults, actualResults);
+
   }
 
 }

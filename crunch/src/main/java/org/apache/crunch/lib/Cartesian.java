@@ -17,11 +17,11 @@
  */
 package org.apache.crunch.lib;
 
-import java.util.Collection;
 import java.util.Random;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -132,26 +132,22 @@ public class Cartesian {
     PTable<Pair<Integer, Integer>, Pair<K2, V>> rightCross = right.parallelDo(new GFCross<Pair<K2, V>>(1, parallelism),
         rtf.tableOf(rtf.pairs(rtf.ints(), rtf.ints()), rtf.pairs(right.getKeyType(), right.getValueType())));
 
-    PTable<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> cg = leftCross
-        .cogroup(rightCross);
+    PTable<Pair<Integer, Integer>, Pair<Pair<K1, U>, Pair<K2, V>>> cg = leftCross.join(rightCross);
 
     PTypeFamily ctf = cg.getTypeFamily();
 
-    return cg
-        .parallelDo(
-            new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>>, Pair<Pair<K1, K2>, Pair<U, V>>>() {
-              @Override
-              public void process(
-                  Pair<Pair<Integer, Integer>, Pair<Collection<Pair<K1, U>>, Collection<Pair<K2, V>>>> input,
-                  Emitter<Pair<Pair<K1, K2>, Pair<U, V>>> emitter) {
-                for (Pair<K1, U> l : input.second().first()) {
-                  for (Pair<K2, V> r : input.second().second()) {
-                    emitter.emit(Pair.of(Pair.of(l.first(), r.first()), Pair.of(l.second(), r.second())));
-                  }
-                }
-              }
-            }, ctf.tableOf(ctf.pairs(left.getKeyType(), right.getKeyType()),
-                ctf.pairs(left.getValueType(), right.getValueType())));
+    return cg.parallelDo(
+        new MapFn<Pair<Pair<Integer, Integer>, Pair<Pair<K1, U>, Pair<K2, V>>>, Pair<Pair<K1, K2>, Pair<U, V>>>() {
+
+          @Override
+          public Pair<Pair<K1, K2>, Pair<U, V>> map(Pair<Pair<Integer, Integer>, Pair<Pair<K1, U>, Pair<K2, V>>> input) {
+            Pair<Pair<K1, U>, Pair<K2, V>> valuePair = input.second();
+            return Pair.of(Pair.of(valuePair.first().first(), valuePair.second().first()),
+                Pair.of(valuePair.first().second(), valuePair.second().second()));
+          }
+        },
+        ctf.tableOf(ctf.pairs(left.getKeyType(), right.getKeyType()),
+            ctf.pairs(left.getValueType(), right.getValueType())));
   }
 
   /**
@@ -205,19 +201,14 @@ public class Cartesian {
     PTable<Pair<Integer, Integer>, V> rightCross = right.parallelDo(new GFCross<V>(1, parallelism),
         rtf.tableOf(rtf.pairs(rtf.ints(), rtf.ints()), right.getPType()));
 
-    PTable<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> cg = leftCross.cogroup(rightCross);
+    PTable<Pair<Integer, Integer>, Pair<U, V>> cg = leftCross.join(rightCross);
 
     PTypeFamily ctf = cg.getTypeFamily();
 
-    return cg.parallelDo(new DoFn<Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>>, Pair<U, V>>() {
+    return cg.parallelDo(new MapFn<Pair<Pair<Integer, Integer>, Pair<U, V>>, Pair<U, V>>() {
       @Override
-      public void process(Pair<Pair<Integer, Integer>, Pair<Collection<U>, Collection<V>>> input,
-          Emitter<Pair<U, V>> emitter) {
-        for (U l : input.second().first()) {
-          for (V r : input.second().second()) {
-            emitter.emit(Pair.of(l, r));
-          }
-        }
+      public Pair<U, V> map(Pair<Pair<Integer, Integer>, Pair<U, V>> input) {
+        return input.second();
       }
     }, ctf.pairs(left.getPType(), right.getPType()));
   }

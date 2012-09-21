@@ -48,6 +48,7 @@ public class FullOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   /** {@inheritDoc} */
   @Override
   public void initialize() {
+    super.initialize();
     lastId = 1;
     lastKey = null;
     this.leftValues = Lists.newArrayList();

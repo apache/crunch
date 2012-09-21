@@ -41,6 +41,7 @@ public class WritableGroupedTableTypeTest {
 
     PGroupedTableType<Integer, Text> groupedTableType = Writables.tableOf(Writables.ints(),
         Writables.writables(Text.class)).getGroupedTableType();
+    groupedTableType.initialize();
 
     Pair<Integer, Iterable<Text>> detachedPair = groupedTableType.getDetachedValue(pair);
 
