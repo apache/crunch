@@ -25,6 +25,8 @@ object WordCount extends PipelineApp {
       .count
   }
 
-  val counts = join(countWords(args(0)), countWords(args(1)))
-  write(counts, to.textFile(args(2)))
+  override def run(args: Array[String]) {
+    val counts = join(countWords(args(0)), countWords(args(1)))
+    write(counts, to.textFile(args(2)))
+  }
 }

@@ -45,17 +45,19 @@ object PageRank extends PipelineApp {
     })
   }
 
-  var index = 0
-  var delta = 10.0f
-  fs.mkdirs("prank/")
-  var curr = initialize(args(0))
-  while (delta > 1.0f) {
-    index = index + 1
-    curr = update(curr, 0.5f)
-    write(curr, to.avroFile("prank/" + index))
-    delta = curr.values.map(v => math.abs(v._1 - v._2)).max.materialize.head
-    println("Current delta = " + delta)
+  override def run(args: Array[String]) {
+    var index = 0
+    var delta = 10.0f
+    fs.mkdirs("prank/")
+    var curr = initialize(args(0))
+    while (delta > 1.0f) {
+      index = index + 1
+      curr = update(curr, 0.5f)
+      write(curr, to.avroFile("prank/" + index))
+      delta = curr.values.map(v => math.abs(v._1 - v._2)).max.value()
+      println("Current delta = " + delta)
+    }
+    fs.rename("prank/" + index, args(1))
+    fs.delete("prank/", true)
   }
-  fs.rename("prank/" + index, args(1))
-  fs.delete("prank/", true)
 }

@@ -27,7 +27,7 @@ import org.apache.hadoop.util.GenericOptionsParser
 
 import org.apache.crunch.{Source, TableSource, Target}
 
-trait PipelineApp extends MREmbeddedPipeline with PipelineHelper with DelayedInit {
+trait PipelineApp extends MREmbeddedPipeline with PipelineHelper {
   implicit def _string2path(str: String) = new Path(str)
 
   /** Contains factory methods used to create `Source`s. */
@@ -39,26 +39,22 @@ trait PipelineApp extends MREmbeddedPipeline with PipelineHelper with DelayedIni
   /** Contains factory methods used to create `SourceTarget`s. */
   val at = At
 
-  private val initCode = new ListBuffer[() => Unit]
-
-  private var _args: Array[String] = _
-
-  /** Command-line arguments passed to this application. */
-  protected def args: Array[String] = _args
-
   def configuration: Configuration = pipeline.getConfiguration
 
   /** Gets the distributed filesystem associated with this application's configuration. */
   def fs: FileSystem = FileSystem.get(configuration)
 
-  override def delayedInit(body: => Unit) {
-    initCode += (() => body)
-  }
+  /**
+   * The entry-point for pipeline applications.  Clients should override this method to implement
+   * the logic of their pipeline application.
+   *
+   * @param args The command-line arguments passed to the pipeline application.
+   */
+  def run(args: Array[String]): Unit
 
-  def main(args: Array[String]) = {
+  final def main(args: Array[String]) = {
     val parser = new GenericOptionsParser(configuration, args)
-    _args = parser.getRemainingArgs()
-    for (proc <- initCode) proc()
+    run(parser.getRemainingArgs())
     done
   }
 }

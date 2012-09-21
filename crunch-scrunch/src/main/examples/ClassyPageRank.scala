@@ -22,9 +22,9 @@ case class UrlData(pageRank: Float, oldPageRank: Float, links: List[String]) {
   def this() = this(1.0f, 0.0f, Nil)
 
   def this(links: String*) = this(1.0f, 0.0f, List(links:_*))
- 
+
   def this(links: Iterable[String]) = this(1.0f, 0.0f, links.toList)
-  
+
   def delta = math.abs(pageRank - oldPageRank)
 
   def next(newPageRank: Float) = new UrlData(newPageRank, pageRank, links)
@@ -55,17 +55,19 @@ object ClassyPageRank extends PipelineApp {
     })
   }
 
-  var index = 0
-  var delta = 10.0f
-  fs.mkdirs("prank/")
-  var curr = initialize(args(0))
-  while (delta > 1.0f) {
-    index = index + 1
-    curr = update(curr, 0.5f)
-    write(curr, to.avroFile("prank/" + index))
-    delta = curr.values.map(_.delta).max.materialize.head
-    println("Current delta = " + delta)
+  override def run(args: Array[String]) {
+    var index = 0
+    var delta = 10.0f
+    fs.mkdirs("prank/")
+    var curr = initialize(args(0))
+    while (delta > 1.0f) {
+      index = index + 1
+      curr = update(curr, 0.5f)
+      write(curr, to.avroFile("prank/" + index))
+      delta = curr.values.map(_.delta).max.value()
+      println("Current delta = " + delta)
+    }
+    fs.rename("prank/" + index, args(1))
+    fs.delete("prank/", true)
   }
-  fs.rename("prank/" + index, args(1))
-  fs.delete("prank/", true)
 }

@@ -32,9 +32,11 @@ object WordCount extends PipelineApp {
     words.count
   }
 
-  val w1 = countWords(args(0))
-  val w2 = countWords(args(1))
-  cogroup(w1, w2).write(to.textFile(args(2)))
+  override def run(args: Array[String]) {
+    val w1 = countWords(args(0))
+    val w2 = countWords(args(1))
+    cogroup(w1, w2).write(to.textFile(args(2)))
+  }
 }
 
 class PipelineAppTest extends CrunchTestSupport with JUnitSuite {
