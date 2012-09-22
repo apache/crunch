@@ -35,9 +35,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 public class WordCount extends Configured implements Tool, Serializable {
   public int run(String[] args) throws Exception {
-    String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
-
-    if (remainingArgs.length != 3) {
+    if (args.length != 2) {
       System.err.println();
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
       System.err.println();
@@ -47,7 +45,7 @@ public class WordCount extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(WordCount.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(remainingArgs[1]);
+    PCollection<String> lines = pipeline.readTextFile(args[0]);
 
     // Define a function that splits each line in a PCollection of Strings into
     // a
@@ -67,7 +65,7 @@ public class WordCount extends Configured implements Tool, Serializable {
     PTable<String, Long> counts = words.count();
 
     // Instruct the pipeline to write the resulting counts to a text file.
-    pipeline.writeTextFile(counts, remainingArgs[2]);
+    pipeline.writeTextFile(counts, args[1]);
     // Execute the pipeline as a MapReduce.
     PipelineResult result = pipeline.done();
 

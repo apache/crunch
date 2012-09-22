@@ -47,9 +47,7 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
   static final String logRegex = "^([\\d.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
 
   public int run(String[] args) throws Exception {
-    String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
-
-    if (remainingArgs.length != 3) {
+    if (args.length != 2) {
       System.err.println();
       System.err.println("Two and only two arguments are accepted.");
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
@@ -60,7 +58,7 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(TotalBytesByIP.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(remainingArgs[1]);
+    PCollection<String> lines = pipeline.readTextFile(args[0]);
 
     // Combiner used for summing up response size
     CombineFn<String, Long> longSumCombiner = CombineFn.SUM_LONGS();
@@ -70,7 +68,7 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
         .parallelDo(extractIPResponseSize, Writables.tableOf(Writables.strings(), Writables.longs())).groupByKey()
         .combineValues(longSumCombiner);
 
-    pipeline.writeTextFile(ipAddrResponseSize, remainingArgs[2]);
+    pipeline.writeTextFile(ipAddrResponseSize, args[1]);
     // Execute the pipeline as a MapReduce.
     PipelineResult result = pipeline.done();
 

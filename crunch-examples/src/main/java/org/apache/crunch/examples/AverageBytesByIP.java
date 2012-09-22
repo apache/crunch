@@ -48,9 +48,7 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
   static final String logRegex = "^([\\d.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
 
   public int run(String[] args) throws Exception {
-    String[] remainingArgs = new GenericOptionsParser(getConf(), args).getRemainingArgs();
-
-    if (remainingArgs.length != 3) {
+    if (args.length != 2) {
       System.err.println();
       System.err.println("Two and only two arguments are accepted.");
       System.err.println("Usage: " + this.getClass().getName() + " [generic options] input output");
@@ -61,7 +59,7 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
     // Create an object to coordinate pipeline creation and execution.
     Pipeline pipeline = new MRPipeline(AverageBytesByIP.class, getConf());
     // Reference a given text file as a collection of Strings.
-    PCollection<String> lines = pipeline.readTextFile(remainingArgs[1]);
+    PCollection<String> lines = pipeline.readTextFile(args[0]);
 
     // Combiner used for summing up response size and count
     CombineFn<String, Pair<Long, Long>> stringPairOfLongsSumCombiner = CombineFn.pairAggregator(CombineFn.SUM_LONGS,
@@ -78,7 +76,7 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
         Writables.tableOf(Writables.strings(), Writables.doubles()));
 
     // write the result to a text file
-    pipeline.writeTextFile(avgs, remainingArgs[2]);
+    pipeline.writeTextFile(avgs, args[1]);
     // Execute the pipeline as a MapReduce.
     PipelineResult result = pipeline.done();
 

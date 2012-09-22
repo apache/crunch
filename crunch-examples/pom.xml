@@ -66,11 +66,6 @@ under the License.
           <descriptors>
             <descriptor>src/main/assembly/hadoop-job.xml</descriptor>
           </descriptors>
-          <archive>
-            <manifest>
-              <mainClass>org.apache.crunch.examples.WordCount</mainClass>
-            </manifest>
-          </archive>
         </configuration>
         <executions>
           <execution>
