@@ -49,8 +49,12 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
    *
    * @return The number of elements in this PCollection.
    */
-  def length(): PObject[java.lang.Long] = {
+  def length(): PObject[Long] = {
     PObject(native.length())
+  }
+
+  def asSeq(): PObject[Seq[S]] = {
+    PObject(native.asCollection())
   }
 
   def getTypeFamily() = Avros

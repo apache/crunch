@@ -72,9 +72,9 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     count.mapValues(_.longValue())
   }
 
-  def max() = PObject(Aggregate.max(native))
+  def max()(implicit converter: Converter[S, S]) = PObject(Aggregate.max(native))(converter)
 
-  def min() = PObject(Aggregate.min(native))
+  def min()(implicit converter: Converter[S, S]) = PObject(Aggregate.min(native))(converter)
 
   def pType = native.getPType()
 }

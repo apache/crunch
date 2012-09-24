@@ -25,6 +25,7 @@ import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
 import org.apache.crunch.lib.{Join, Cartesian, Aggregate, Cogroup, PTables}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
+import java.util
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
   import PTable._
@@ -137,6 +138,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def materializeToMap(): Map[K, V] = {
     InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
     native.materializeToMap().view.toMap
+  }
+
+  def asMap(): PObject[Map[K, V]] = {
+    PObject(native.asMap())
   }
 
   def keyType() = native.getPTableType().getKeyType()

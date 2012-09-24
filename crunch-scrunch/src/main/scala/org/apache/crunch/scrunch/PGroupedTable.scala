@@ -47,7 +47,7 @@ class PGroupedTable[K, V](val native: JGroupedTable[K, V])
   def combineValues(fn: CombineFn[K, V]) = new PTable[K, V](native.combineValues(fn))
 
   def ungroup() = new PTable[K, V](native.ungroup())
-  
+
   def wrap(newNative: AnyRef): PGroupedTable[K, V] = {
     new PGroupedTable[K, V](newNative.asInstanceOf[JGroupedTable[K, V]])
   }
