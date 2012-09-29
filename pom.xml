@@ -492,6 +492,7 @@ under the License.
                   <goal>single</goal>
                 </goals>
                 <configuration combine.self="override">
+                  <finalName>apache-crunch-${project.version}</finalName>
                   <runOnlyAtExecutionRoot>true</runOnlyAtExecutionRoot>
                   <descriptors>
                     <descriptor>src/main/assembly/crunch-release.xml</descriptor>
@@ -507,7 +508,6 @@ under the License.
   </profiles>
 
   <build>
-    <finalName>apache-crunch-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.rat</groupId>

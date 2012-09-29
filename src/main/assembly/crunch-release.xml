@@ -19,7 +19,6 @@
 -->
 <assembly>
   <id>src</id>
-  <baseDirectory>${project.build.finalName}-src</baseDirectory>
   <formats>
     <format>zip</format>
     <format>tar.gz</format>
