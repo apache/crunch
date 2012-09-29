@@ -38,7 +38,7 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("serial")
 public class CollectionsIT {
 
-  public static class AggregateStringListFn implements CombineFn.Aggregator<Collection<String>> {
+  public static class AggregateStringListFn extends CombineFn.SimpleAggregator<Collection<String>> {
     private final Collection<String> rtn = Lists.newArrayList();
 
     @Override
