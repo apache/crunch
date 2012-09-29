@@ -50,6 +50,22 @@ under the License.
       <artifactId>avro-mapred</artifactId>
     </dependency>
 
+    <!-- Override the slf4j dependency from Avro, which is incompatible with
+         Hadoop's. We don't use the "provided" scope so that clients get the
+	 correct version, too. -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <!-- LocalJobRunner needs commons-io, but hadoop-core doesn't reference
+         it. We add it here so that clients can run Crunch-based applications
+	 from the IDE. Note that this wouldn't work with "provided" scope! -->
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>

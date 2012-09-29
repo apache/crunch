@@ -48,6 +48,7 @@ under the License.
     <module>crunch-hbase</module>
     <module>crunch-test</module>
     <module>crunch-examples</module>
+    <module>crunch-archetype</module>
     <module>crunch-scrunch</module>
   </modules>
 
@@ -591,6 +592,7 @@ under the License.
             <exclude>.gitignore</exclude>
             <exclude>.repository/</exclude>
             <exclude>**/resources/*.txt</exclude>
+            <exclude>**/goal.txt</exclude>
             <exclude>**/target/generated-test-sources/**</exclude>
             <exclude>**/scripts/scrunch</exclude>
             </excludes>
@@ -650,6 +652,12 @@ under the License.
               </goals>
             </execution>
           </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-archetype-plugin</artifactId>
+          <version>2.2</version>
+          <extensions>true</extensions>
         </plugin>
         <!-- The m2eclipse plugin doesn't support all maven plugins we use, so
              we tell it to ignore them to avoid errors in Eclipse. -->
