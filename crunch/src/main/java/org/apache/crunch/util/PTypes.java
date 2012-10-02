@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.util;
 
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
@@ -129,7 +130,7 @@ public class PTypes {
 
     @Override
     public void initialize() {
-      this.instance = ReflectionUtils.newInstance(clazz, getConfiguration());
+      this.instance = Protos.getDefaultInstance(clazz);
     }
 
     @Override
