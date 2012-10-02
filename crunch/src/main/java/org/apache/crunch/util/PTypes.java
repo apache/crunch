@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.util;
 
-import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
