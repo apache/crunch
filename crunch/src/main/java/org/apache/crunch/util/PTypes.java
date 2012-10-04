@@ -129,7 +129,7 @@ public class PTypes {
 
     @Override
     public void initialize() {
-      this.instance = ReflectionUtils.newInstance(clazz, getConfiguration());
+      this.instance = Protos.getDefaultInstance(clazz);
     }
 
     @Override

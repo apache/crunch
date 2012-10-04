@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.base.Splitter;
@@ -35,6 +36,27 @@ import com.google.protobuf.Message.Builder;
  */
 public class Protos {
 
+  /**
+   * Utility function for creating a default PB Messgae from a Class object that
+   * works with both protoc 2.3.0 and 2.4.x.
+   * @param clazz The class of the protocol buffer to create
+   * @return An instance of a protocol buffer
+   */
+  public static <M extends Message> M getDefaultInstance(Class<M> clazz) {
+    if (clazz.getConstructors().length > 0) {
+      // Protobuf 2.3.0
+      return ReflectionUtils.newInstance(clazz, null);
+    } else {
+      // Protobuf 2.4.x
+      try {
+        Message.Builder mb = (Message.Builder) clazz.getDeclaredMethod("newBuilder").invoke(null);
+        return (M) mb.getDefaultInstanceForType();
+      } catch (Exception e) {
+        throw new CrunchRuntimeException(e);
+      }  
+    }
+  }
+  
   public static <M extends Message, K> MapFn<M, K> extractKey(String fieldName) {
     return new ExtractKeyFn<M, K>(fieldName);
   }
@@ -89,7 +111,7 @@ public class Protos {
 
     @Override
     public void initialize() {
-      this.msgInstance = ReflectionUtils.newInstance(msgClass, getConfiguration());
+      this.msgInstance = getDefaultInstance(msgClass);
       this.fields = msgInstance.getDescriptorForType().getFields();
       this.splitter = Splitter.on(sep);
     }
