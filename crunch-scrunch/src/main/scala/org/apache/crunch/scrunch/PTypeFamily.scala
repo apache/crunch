@@ -78,7 +78,8 @@ trait PTypeFamily {
   }
 
   def maps[T](ptype: PType[T]) = {
-    derived(classOf[scala.collection.Map[String, T]], mapAsScalaMap[String, T], mapAsJavaMap[String, T], ptf.maps(ptype))
+    derived(classOf[Map[String, T]], {x: java.util.Map[String, T] => mapAsScalaMap(x).toMap}, 
+        mapAsJavaMap[String, T], ptf.maps(ptype))
   }
 
   def lists[T](ptype: PType[T]) = {

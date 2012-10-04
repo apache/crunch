@@ -97,6 +97,14 @@ object PTypeH {
     }
   }
 
+  implicit def maps[T: PTypeH] = {
+    new PTypeH[Map[String, T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.maps(implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+  }
+
   implicit def pairs[A: PTypeH, B: PTypeH] = {
     new PTypeH[(A, B)] {
       def get(ptf: PTypeFamily) = {
