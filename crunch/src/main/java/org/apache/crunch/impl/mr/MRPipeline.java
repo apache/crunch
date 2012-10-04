@@ -74,7 +74,7 @@ public class MRPipeline implements Pipeline {
 
   private Configuration conf;
 
-  public MRPipeline(Class<?> jarClass) throws IOException {
+  public MRPipeline(Class<?> jarClass) {
     this(jarClass, new Configuration());
   }
 

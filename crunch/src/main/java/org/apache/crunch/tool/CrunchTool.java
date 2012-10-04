@@ -52,7 +52,7 @@ public abstract class CrunchTool extends Configured implements Tool {
     this(false);
   }
 
-  public CrunchTool(boolean inMemory) throws IOException {
+  public CrunchTool(boolean inMemory) {
     this.pipeline = inMemory ? MemPipeline.getInstance() : new MRPipeline(getClass());
   }
 
