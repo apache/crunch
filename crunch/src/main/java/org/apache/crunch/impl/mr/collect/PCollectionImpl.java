@@ -86,7 +86,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type) {
-    return new DoCollectionImpl<T>(name, this, fn, type);
+    return new DoCollectionImpl<T>(name, getChainingCollection(), fn, type);
   }
 
   @Override
@@ -97,7 +97,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
-    return new DoTableImpl<K, V>(name, this, fn, type);
+    return new DoTableImpl<K, V>(name, getChainingCollection(), fn, type);
   }
 
   public PCollection<S> write(Target target) {
@@ -254,4 +254,13 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   protected abstract long getSizeInternal();
+  
+  /**
+   * Retrieve the PCollectionImpl to be used for chaining within PCollectionImpls further down the pipeline.
+   * @return The PCollectionImpl instance to be chained
+   */
+  protected PCollectionImpl<S> getChainingCollection(){
+    return this;
+  }
+  
 }

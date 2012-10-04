@@ -42,7 +42,7 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   private final PTableBase<K, V> parent;
   private final GroupingOptions groupingOptions;
   private final PGroupedTableType<K, V> ptype;
-
+  
   PGroupedTableImpl(PTableBase<K, V> parent) {
     this(parent, null);
   }
@@ -79,7 +79,7 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   }
 
   public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
-    return new DoTableImpl<K, V>("combine", this, combineFn, parent.getPTableType());
+    return new DoTableImpl<K, V>("combine", getChainingCollection(), combineFn, parent.getPTableType());
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
@@ -112,5 +112,12 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
 
   public DoNode getGroupingNode() {
     return DoNode.createGroupingNode("", ptype);
+  }
+  
+  @Override
+  protected PCollectionImpl<Pair<K, Iterable<V>>> getChainingCollection() {
+    // Use a copy for chaining to allow sending the output of a single grouped table to multiple outputs
+    // TODO This should be implemented in a cleaner way in the planner
+    return new PGroupedTableImpl<K, V>(parent, groupingOptions);
   }
 }
