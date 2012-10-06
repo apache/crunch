@@ -28,6 +28,7 @@ import org.apache.crunch.impl.mr.emit.IntermediateEmitter;
 import org.apache.crunch.impl.mr.emit.MultipleOutputEmitter;
 import org.apache.crunch.impl.mr.emit.OutputEmitter;
 import org.apache.crunch.types.Converter;
+import org.apache.crunch.types.PType;
 
 public class RTNode implements Serializable {
 
@@ -35,6 +36,7 @@ public class RTNode implements Serializable {
 
   private final String nodeName;
   private DoFn<Object, Object> fn;
+  private PType<Object> outputPType;
   private final List<RTNode> children;
   private final Converter inputConverter;
   private final Converter outputConverter;
@@ -42,9 +44,11 @@ public class RTNode implements Serializable {
 
   private transient Emitter<Object> emitter;
 
-  public RTNode(DoFn<Object, Object> fn, String name, List<RTNode> children, Converter inputConverter,
+  public RTNode(DoFn<Object, Object> fn, PType<Object> outputPType, String name, List<RTNode> children,
+      Converter inputConverter,
       Converter outputConverter, String outputName) {
     this.fn = fn;
+    this.outputPType = outputPType;
     this.nodeName = name;
     this.children = children;
     this.inputConverter = inputConverter;
@@ -70,7 +74,7 @@ public class RTNode implements Serializable {
         this.emitter = new OutputEmitter(outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
-      this.emitter = new IntermediateEmitter(children);
+      this.emitter = new IntermediateEmitter(outputPType, children);
     } else {
       throw new CrunchRuntimeException("Invalid RTNode config: no emitter for: " + nodeName);
     }

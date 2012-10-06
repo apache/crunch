@@ -27,14 +27,18 @@ import java.util.List;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.crunch.types.writable.Writables;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class MultipleOutputIT {
@@ -85,7 +89,8 @@ public class MultipleOutputIT {
   @Test
   public void testParallelDosFused() throws IOException {
 
-    PipelineResult result = run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
+    PipelineResult result = run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()),
+        WritableTypeFamily.getInstance());
 
     // Ensure our multiple outputs were fused into a single job.
     assertEquals("parallel Dos not fused into a single job", 1, result.getStageResults().size());
@@ -109,6 +114,57 @@ public class MultipleOutputIT {
     checkFileContents(outputPathOdd, Arrays.asList("a"));
 
     return result;
+  }
+
+  /**
+   * Mutates the state of an input and then emits the mutated object.
+   */
+  static class AppendFn extends DoFn<StringWrapper, StringWrapper> {
+
+    private String value;
+
+    public AppendFn(String value) {
+      this.value = value;
+    }
+
+    @Override
+    public void process(StringWrapper input, Emitter<StringWrapper> emitter) {
+      input.setValue(input.getValue() + value);
+      emitter.emit(input);
+    }
+
+  }
+
+  /**
+   * Fusing multiple pipelines has a risk of running into object reuse bugs.
+   * This test verifies that mutating the state of an object that is passed
+   * through multiple streams of a pipeline doesn't allow one stream to affect
+   * another.
+   */
+  @Test
+  public void testFusedMappersObjectReuseBug() throws IOException {
+    Pipeline pipeline = new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<StringWrapper> stringWrappers = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
+        .parallelDo(new StringWrapper.StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class));
+
+    PCollection<String> stringsA = stringWrappers.parallelDo(new AppendFn("A"), stringWrappers.getPType())
+        .parallelDo(new StringWrapper.StringWrapperToStringMapFn(), Writables.strings());
+    PCollection<String> stringsB = stringWrappers.parallelDo(new AppendFn("B"), stringWrappers.getPType())
+        .parallelDo(new StringWrapper.StringWrapperToStringMapFn(), Writables.strings());
+
+    String outputA = tmpDir.getFileName("stringsA");
+    String outputB = tmpDir.getFileName("stringsB");
+
+    pipeline.writeTextFile(stringsA, outputA);
+    pipeline.writeTextFile(stringsB, outputB);
+    PipelineResult pipelineResult = pipeline.done();
+
+    // Make sure fusing did actually occur
+    assertEquals(1, pipelineResult.getStageResults().size());
+
+    checkFileContents(outputA, Lists.newArrayList("cA", "dA", "aA"));
+    checkFileContents(outputB, Lists.newArrayList("cB", "dB", "aB"));
+
   }
 
   private void checkFileContents(String filePath, List<String> expected) throws IOException {

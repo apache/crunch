@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.run.RTNode;
+import org.apache.crunch.types.PType;
 
 import com.google.common.collect.ImmutableList;
 
@@ -33,14 +34,24 @@ import com.google.common.collect.ImmutableList;
 public class IntermediateEmitter implements Emitter<Object> {
 
   private final List<RTNode> children;
+  private final PType<Object> outputPType;
+  private final boolean needDetachedValues;
 
-  public IntermediateEmitter(List<RTNode> children) {
+  public IntermediateEmitter(PType<Object> outputPType, List<RTNode> children) {
+    this.outputPType = outputPType;
     this.children = ImmutableList.copyOf(children);
+
+    outputPType.initialize();
+    needDetachedValues = this.children.size() > 1;
   }
 
   public void emit(Object emitted) {
     for (RTNode child : children) {
-      child.process(emitted);
+      Object value = emitted;
+      if (needDetachedValues) {
+        value = this.outputPType.getDetachedValue(emitted);
+      }
+      child.process(value);
     }
   }
 

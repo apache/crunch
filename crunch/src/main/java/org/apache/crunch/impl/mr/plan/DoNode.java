@@ -140,7 +140,7 @@ public class DoNode {
         inputConverter = ((PGroupedTableType<?, ?>) ptype).getGroupingConverter();
       }
     }
-    return new RTNode(fn, name, childRTNodes, inputConverter, outputConverter, outputName);
+    return new RTNode(fn, (PType<Object>) getPType(), name, childRTNodes, inputConverter, outputConverter, outputName);
   }
 
   @Override
