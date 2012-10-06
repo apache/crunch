@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -50,8 +52,7 @@ import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  * You need to have a HBase instance running. Required dependencies : hbase /!\
@@ -61,7 +62,7 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("serial")
 public class WordAggregationHBase extends Configured implements Tool, Serializable {
-  private final static Logger LOGGER = LoggerFactory.getLogger(WordAggregationHBase.class);
+  private final static Log LOG = LogFactory.getLog(WordAggregationHBase.class);
 
   // Configuration parameters. Here configured for a hbase instance running
   // locally
@@ -187,7 +188,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
   private List<Put> createPuts(final List<String> character, final List<String> play, final List<String> quote) throws IllegalArgumentException {
     List<Put> list = new ArrayList<Put>();
     if (character.size() != play.size() || quote.size() != play.size()) {
-      LOGGER.error("Every list should have the same number of elements");
+      LOG.error("Every list should have the same number of elements");
       throw new IllegalArgumentException("Every list should have the same number of elements");
     }
     for (int i = 0; i < character.size(); i++) {

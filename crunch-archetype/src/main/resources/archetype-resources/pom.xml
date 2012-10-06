@@ -45,13 +45,32 @@
       <artifactId>crunch</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- We use hadoop-core instead of hadoop-client because it contains
-         dependencies that are necessary for running LocalJobRunner from
-         an IDE. -->
     <dependency>
       <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-core</artifactId>
+      <artifactId>hadoop-client</artifactId>
       <version>${hadoop.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- The following libraries come with Hadoop but are missing from
+         the client POM. You need them if you want to use LocalJobRunner
+         from the IDE. If you don't you can safely delete them. -->
+    <dependency>
+      <groupId>commons-cli</groupId>
+      <artifactId>commons-cli</artifactId>
+      <version>${commons-cli.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>${commons-httpclient.version}</version>
       <scope>provided</scope>
     </dependency>
 
