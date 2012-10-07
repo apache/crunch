@@ -36,7 +36,7 @@ public class MSCROutputHandler implements OutputHandler {
   private final boolean mapOnlyJob;
 
   private DoNode workingNode;
-  private Map<Integer, Path> multiPaths;
+  private Map<Integer, PathTarget> multiPaths;
   private int jobCount;
 
   public MSCROutputHandler(Job job, Path outputPath, boolean mapOnlyJob) {
@@ -54,7 +54,7 @@ public class MSCROutputHandler implements OutputHandler {
   public boolean configure(Target target, PType<?> ptype) {
     if (target instanceof MapReduceTarget) {
       if (target instanceof PathTarget) {
-        multiPaths.put(jobCount, ((PathTarget) target).getPath());
+        multiPaths.put(jobCount, (PathTarget) target);
       }
 
       String name = PlanningParameters.MULTI_OUTPUT_PREFIX + jobCount;
@@ -71,7 +71,7 @@ public class MSCROutputHandler implements OutputHandler {
     return mapOnlyJob;
   }
 
-  public Map<Integer, Path> getMultiPaths() {
+  public Map<Integer, PathTarget> getMultiPaths() {
     return multiPaths;
   }
 }

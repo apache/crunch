@@ -20,6 +20,7 @@ package org.apache.crunch.io.impl;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.Converter;
@@ -32,10 +33,13 @@ public class FileTargetImpl implements PathTarget {
 
   protected final Path path;
   private final Class<? extends FileOutputFormat> outputFormatClass;
+  private final FileNamingScheme fileNamingScheme;
 
-  public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass) {
+  public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass,
+      FileNamingScheme fileNamingScheme) {
     this.path = path;
     this.outputFormatClass = outputFormatClass;
+    this.fileNamingScheme = fileNamingScheme;
   }
 
   @Override
@@ -71,6 +75,11 @@ public class FileTargetImpl implements PathTarget {
   @Override
   public Path getPath() {
     return path;
+  }
+
+  @Override
+  public FileNamingScheme getFileNamingScheme() {
+    return fileNamingScheme;
   }
 
   @Override

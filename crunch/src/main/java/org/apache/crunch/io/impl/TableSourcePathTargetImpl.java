@@ -19,13 +19,19 @@ package org.apache.crunch.io.impl;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.TableSource;
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.types.PTableType;
 
 public class TableSourcePathTargetImpl<K, V> extends SourcePathTargetImpl<Pair<K, V>> implements TableSource<K, V> {
 
   public TableSourcePathTargetImpl(TableSource<K, V> source, PathTarget target) {
-    super(source, target);
+    this(source, target, new SequentialFileNamingScheme());
+  }
+
+  public TableSourcePathTargetImpl(TableSource<K, V> source, PathTarget target, FileNamingScheme fileNamingScheme) {
+    super(source, target, fileNamingScheme);
   }
 
   @Override

@@ -19,6 +19,8 @@ package org.apache.crunch.io.seq;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.TableSource;
+import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.fs.Path;
@@ -32,7 +34,11 @@ public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl
   }
 
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
-    super(new SeqFileTableSource<K, V>(path, tableType), new SeqFileTarget(path));
+    this(path, tableType, new SequentialFileNamingScheme());
+  }
+
+  public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType, FileNamingScheme fileNamingScheme) {
+    super(new SeqFileTableSource<K, V>(path, tableType), new SeqFileTarget(path), fileNamingScheme);
     this.tableType = tableType;
   }
 

@@ -19,6 +19,18 @@ package org.apache.crunch.io;
 
 import org.apache.hadoop.fs.Path;
 
+/**
+ * A target whose output goes to a given path on a file system.
+ */
 public interface PathTarget extends MapReduceTarget {
+
   Path getPath();
+
+  /**
+   * Get the naming scheme to be used for outputs being written to an output
+   * path.
+   * 
+   * @return the naming scheme to be used
+   */
+  FileNamingScheme getFileNamingScheme();
 }

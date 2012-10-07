@@ -15,30 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.io.text;
+package org.apache.crunch.impl.mr.exec;
 
-import org.apache.crunch.io.FileNamingScheme;
-import org.apache.crunch.io.SequentialFileNamingScheme;
-import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
-import org.apache.crunch.types.PType;
-import org.apache.hadoop.fs.Path;
+import static org.junit.Assert.assertEquals;
 
-public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
+import org.junit.Test;
 
-  public TextFileSourceTarget(String path, PType<T> ptype) {
-    this(new Path(path), ptype);
+public class CrunchJobTest {
+
+  @Test
+  public void testExtractPartitionNumber() {
+    assertEquals(0, CrunchJob.extractPartitionNumber("out1-r-00000"));
+    assertEquals(10, CrunchJob.extractPartitionNumber("out2-r-00010"));
+    assertEquals(99999, CrunchJob.extractPartitionNumber("out3-r-99999"));
   }
 
-  public TextFileSourceTarget(Path path, PType<T> ptype) {
-    this(path, ptype, new SequentialFileNamingScheme());
+  @Test
+  public void testExtractPartitionNumber_WithSuffix() {
+    assertEquals(10, CrunchJob.extractPartitionNumber("out2-r-00010.avro"));
   }
 
-  public TextFileSourceTarget(Path path, PType<T> ptype, FileNamingScheme fileNamingScheme) {
-    super(new TextFileSource<T>(path, ptype), new TextFileTarget(path), fileNamingScheme);
-  }
-
-  @Override
-  public String toString() {
-    return target.toString();
+  @Test(expected = IllegalArgumentException.class)
+  public void testExtractPartitionNumber_MapOutputFile() {
+    CrunchJob.extractPartitionNumber("out1-m-00000");
   }
 }

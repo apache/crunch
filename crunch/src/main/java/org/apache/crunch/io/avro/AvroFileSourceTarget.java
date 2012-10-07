@@ -17,13 +17,19 @@
  */
 package org.apache.crunch.io.avro;
 
+import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.fs.Path;
 
 public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public AvroFileSourceTarget(Path path, AvroType<T> atype) {
-    super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path));
+    this(path, atype, new SequentialFileNamingScheme());
+  }
+
+  public AvroFileSourceTarget(Path path, AvroType<T> atype, FileNamingScheme fileNamingScheme) {
+    super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path), fileNamingScheme);
   }
 
   @Override

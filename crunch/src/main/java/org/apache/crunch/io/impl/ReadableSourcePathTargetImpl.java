@@ -19,6 +19,7 @@ package org.apache.crunch.io.impl;
 
 import java.io.IOException;
 
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
@@ -26,8 +27,8 @@ import org.apache.hadoop.conf.Configuration;
 
 public class ReadableSourcePathTargetImpl<T> extends SourcePathTargetImpl<T> implements ReadableSourceTarget<T> {
 
-  public ReadableSourcePathTargetImpl(ReadableSource<T> source, PathTarget target) {
-    super(source, target);
+  public ReadableSourcePathTargetImpl(ReadableSource<T> source, PathTarget target, FileNamingScheme fileNamingScheme) {
+    super(source, target, fileNamingScheme);
   }
 
   @Override

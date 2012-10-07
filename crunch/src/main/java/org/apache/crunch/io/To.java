@@ -36,7 +36,7 @@ public class To {
   }
 
   public static Target formattedFile(Path path, Class<? extends FileOutputFormat> formatClass) {
-    return new FileTargetImpl(path, formatClass);
+    return new FileTargetImpl(path, formatClass, new SequentialFileNamingScheme());
   }
 
   public static Target avroFile(String pathName) {

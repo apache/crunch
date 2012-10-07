@@ -18,6 +18,8 @@
 package org.apache.crunch.io.text;
 
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
@@ -43,7 +45,11 @@ public class TextFileTarget extends FileTargetImpl {
   }
 
   public <T> TextFileTarget(Path path) {
-    super(path, null);
+    this(path, new SequentialFileNamingScheme());
+  }
+
+  public <T> TextFileTarget(Path path, FileNamingScheme fileNamingScheme) {
+    super(path, null, fileNamingScheme);
   }
 
   @Override

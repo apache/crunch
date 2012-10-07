@@ -24,6 +24,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
 import org.apache.hadoop.conf.Configuration;
 
@@ -56,6 +58,8 @@ public class CrunchJobControl implements Runnable {
   private Map<String, CrunchControlledJob> runningJobs;
   private Map<String, CrunchControlledJob> successfulJobs;
   private Map<String, CrunchControlledJob> failedJobs;
+
+  private Log log = LogFactory.getLog(CrunchJobControl.class);
 
   private long nextJobID;
   private String groupName;
@@ -274,6 +278,7 @@ public class CrunchJobControl implements Runnable {
         checkWaitingJobs();
         startReadyJobs();
       } catch (Exception e) {
+        log.error("Error in run loop", e);
         this.runnerState = ThreadState.STOPPED;
       }
       if (this.runnerState != ThreadState.RUNNING

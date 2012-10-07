@@ -18,6 +18,7 @@
 package org.apache.crunch.io.impl;
 
 import org.apache.crunch.Source;
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.fs.Path;
@@ -25,8 +26,11 @@ import org.apache.hadoop.mapreduce.Job;
 
 public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements PathTarget {
 
-  public SourcePathTargetImpl(Source<T> source, PathTarget target) {
+  private final FileNamingScheme fileNamingScheme;
+
+  public SourcePathTargetImpl(Source<T> source, PathTarget target, FileNamingScheme fileNamingScheme) {
     super(source, target);
+    this.fileNamingScheme = fileNamingScheme;
   }
 
   @Override
@@ -37,5 +41,10 @@ public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements Path
   @Override
   public Path getPath() {
     return ((PathTarget) target).getPath();
+  }
+
+  @Override
+  public FileNamingScheme getFileNamingScheme() {
+    return fileNamingScheme;
   }
 }

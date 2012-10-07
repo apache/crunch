@@ -18,6 +18,8 @@
 package org.apache.crunch.io.seq;
 
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -30,7 +32,11 @@ public class SeqFileTarget extends FileTargetImpl {
   }
 
   public SeqFileTarget(Path path) {
-    super(path, SequenceFileOutputFormat.class);
+    this(path, new SequentialFileNamingScheme());
+  }
+
+  public SeqFileTarget(Path path, FileNamingScheme fileNamingScheme) {
+    super(path, SequenceFileOutputFormat.class, fileNamingScheme);
   }
 
   @Override

@@ -19,7 +19,9 @@ package org.apache.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.OutputHandler;
+import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroOutputFormat;
@@ -31,12 +33,17 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 
 public class AvroFileTarget extends FileTargetImpl {
+
   public AvroFileTarget(String path) {
     this(new Path(path));
   }
 
   public AvroFileTarget(Path path) {
-    super(path, AvroOutputFormat.class);
+    this(path, new SequentialFileNamingScheme());
+  }
+
+  public AvroFileTarget(Path path, FileNamingScheme fileNamingScheme) {
+    super(path, AvroOutputFormat.class, fileNamingScheme);
   }
 
   @Override
