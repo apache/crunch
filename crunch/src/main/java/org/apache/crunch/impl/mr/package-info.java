@@ -16,11 +16,7 @@
  * limitations under the License.
  */
 
-/** 
- * Support for creating Bloom Filters.
- *
- * Bloom Filters are space and time efficient data structures supported by
- * Hadoop. This package provides support for creating them in Crunch.
+/**
+ * A Pipeline implementation that runs on Hadoop MapReduce.
  */
-package org.apache.crunch.contrib.bloomfilter;
-
+package org.apache.crunch.impl.mr;

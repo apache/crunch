@@ -17,6 +17,6 @@
  */
 
 /**
- * Provides a collection of test utilities.
+ * Utilities for testing Crunch-based applications.
  */
 package org.apache.crunch.test;

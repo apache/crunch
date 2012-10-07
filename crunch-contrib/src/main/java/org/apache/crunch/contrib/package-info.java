@@ -17,9 +17,11 @@
  */
 
 /**
- *  The package contains some interesting contributions from the users of
- *  crunch.These interesting things did not have a place in the core library of crunch 
- *  but they are quite useful for the users of crunch. 
+ * User contributions that may be interesting for special applications.
+ *
+ * Things included in this package or its subpackages are maintained
+ * by the Crunch team, but are too specialized to include them in the
+ * core library.
  */
 package org.apache.crunch.contrib;
 

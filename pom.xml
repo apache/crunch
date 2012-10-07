@@ -82,6 +82,7 @@ under the License.
     <mockito.version>1.9.0</mockito.version>
     <scala.version>2.9.2</scala.version>
     <scalatest.version>1.7.2</scalatest.version>
+    <pkg>org.apache.crunch</pkg>
   </properties>
 
   <scm>
@@ -552,6 +553,25 @@ under the License.
         <configuration>
           <show>public</show>
           <nohelp>true</nohelp>
+          <excludePackageNames>${pkg}.hadoop.*:${pkg}.impl.mr.*:${pkg}.impl.mem.*:${pkg}.io.*:${pkg}.materialize:${pkg}.scrunch</excludePackageNames>
+          <groups>
+            <group>
+              <title>Core</title>
+              <packages>${pkg}:${pkg}.fn:${pkg}.impl.*:${pkg}.io:${pkg}.types.*:${pkg}.test</packages>
+            </group>
+            <group>
+              <title>Extension Library</title>
+              <packages>${pkg}.lib:${pkg}.lib.*</packages>
+            </group>
+            <group>
+              <title>User-contributed Functionality</title>
+              <packages>${pkg}.contrib:${pkg}.contrib.*</packages>
+            </group>
+            <group>
+              <title>Examples</title>
+              <packages>${pkg}.examples</packages>
+            </group>
+          </groups>
         </configuration>
         <executions>
           <execution>
@@ -752,6 +772,8 @@ under the License.
                 <configuration>
                   <show>public</show> 
                   <nohelp>true</nohelp>
+                  <subpackages>org.apache.crunch;org.apache.crunch.fn</subpackages>
+                  <excludePackageNames>org.apache.crunch.impl.*</excludePackageNames>
                 </configuration>         
                 <reportSets>
                   <reportSet>
