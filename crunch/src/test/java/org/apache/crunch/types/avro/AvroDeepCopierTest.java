@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.avro.AvroDeepCopier.AvroSpecificDeepCopier;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -63,17 +64,17 @@ public class AvroDeepCopierTest {
     String name;
     int age;
     List<String> siblingnames;
-    
+
     @Override
     public boolean equals(Object other) {
       if (other == null || !(other instanceof ReflectedPerson)) {
         return false;
       }
       ReflectedPerson that = (ReflectedPerson) other;
-      return name.equals(that.name)&& age == that.age && siblingnames.equals(that.siblingnames); 
+      return name.equals(that.name) && age == that.age && siblingnames.equals(that.siblingnames);
     }
   }
-  
+
   @Test
   public void testDeepCopyReflect() {
     ReflectedPerson person = new ReflectedPerson();
@@ -81,8 +82,11 @@ public class AvroDeepCopierTest {
     person.age = 42;
     person.siblingnames = Lists.newArrayList();
 
-    ReflectedPerson deepCopyPerson = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
-        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema()).deepCopy(person);
+    AvroDeepCopier<ReflectedPerson> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
+        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema());
+    avroDeepCopier.initialize(new Configuration());
+
+    ReflectedPerson deepCopyPerson = avroDeepCopier.deepCopy(person);
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);

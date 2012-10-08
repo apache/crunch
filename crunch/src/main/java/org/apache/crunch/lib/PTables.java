@@ -58,31 +58,27 @@ public class PTables {
   /**
    * Create a detached value for a table {@link Pair}.
    * 
-   * @param tableType
-   *          The table type
-   * @param value
-   *          The value from which a detached value is to be created
+   * @param tableType The table type
+   * @param value The value from which a detached value is to be created
    * @return The detached value
    * @see PType#getDetachedValue(Object)
    */
   public static <K, V> Pair<K, V> getDetachedValue(PTableType<K, V> tableType, Pair<K, V> value) {
-    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()),
-        tableType.getValueType().getDetachedValue(value.second()));
+    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()), tableType.getValueType()
+        .getDetachedValue(value.second()));
   }
 
   /**
    * Created a detached value for a {@link PGroupedTable} value.
    * 
    * 
-   * @param groupedTableType
-   *          The grouped table type
-   * @param value
-   *          The value from which a detached value is to be created
+   * @param groupedTableType The grouped table type
+   * @param value The value from which a detached value is to be created
    * @return The detached value
    * @see PType#getDetachedValue(Object)
    */
-  public static <K, V> Pair<K, Iterable<V>> getGroupedDetachedValue(PGroupedTableType<K, V> groupedTableType,
-      Pair<K, Iterable<V>> value) {
+  public static <K, V> Pair<K, Iterable<V>> getGroupedDetachedValue(
+      PGroupedTableType<K, V> groupedTableType, Pair<K, Iterable<V>> value) {
 
     PTableType<K, V> tableType = groupedTableType.getTableType();
     List<V> detachedIterable = Lists.newArrayList();
@@ -90,6 +86,7 @@ public class PTables {
     for (V v : value.second()) {
       detachedIterable.add(valueType.getDetachedValue(v));
     }
-    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()), (Iterable<V>) detachedIterable);
+    return Pair.of(tableType.getKeyType().getDetachedValue(value.first()),
+        (Iterable<V>) detachedIterable);
   }
 }

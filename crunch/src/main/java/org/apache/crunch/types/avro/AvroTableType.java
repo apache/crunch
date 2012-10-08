@@ -66,8 +66,8 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
     public void initialize() {
       keyMapFn.setContext(getContext());
       valueMapFn.setContext(getContext());
-      pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(new Schema.Parser().parse(firstJson),
-          new Schema.Parser().parse(secondJson)).toString();
+      pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
+          new Schema.Parser().parse(firstJson), new Schema.Parser().parse(secondJson)).toString();
     }
 
     @Override
@@ -120,9 +120,10 @@ public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableT
   private final AvroType<V> valueType;
 
   public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
-    super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(), valueType.getSchema()),
-        new IndexedRecordToPair(keyType.getInputMapFn(), valueType.getInputMapFn()), new PairToAvroPair(keyType,
-            valueType), new TupleDeepCopier(Pair.class, keyType, valueType), keyType, valueType);
+    super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(),
+        valueType.getSchema()), new IndexedRecordToPair(keyType.getInputMapFn(),
+        valueType.getInputMapFn()), new PairToAvroPair(keyType, valueType), new TupleDeepCopier(
+        Pair.class, keyType, valueType), keyType, valueType);
     this.keyType = keyType;
     this.valueType = valueType;
   }

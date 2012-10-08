@@ -35,7 +35,7 @@ public class ReflectDataFactory {
     return new ReflectDatumReader<T>(schema);
   }
 
-  public <T> ReflectDatumWriter<T> getWriter() {
-    return new ReflectDatumWriter<T>();
+  public <T> ReflectDatumWriter<T> getWriter(Schema schema) {
+    return new ReflectDatumWriter<T>(schema);
   }
 }

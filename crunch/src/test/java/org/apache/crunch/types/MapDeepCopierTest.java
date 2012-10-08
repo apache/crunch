@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Maps;
@@ -37,7 +38,9 @@ public class MapDeepCopierTest {
     Map<String, StringWrapper> map = Maps.newHashMap();
     map.put(key, stringWrapper);
 
-    MapDeepCopier<StringWrapper> deepCopier = new MapDeepCopier<StringWrapper>(Avros.reflects(StringWrapper.class));
+    MapDeepCopier<StringWrapper> deepCopier = new MapDeepCopier<StringWrapper>(
+        Avros.reflects(StringWrapper.class));
+    deepCopier.initialize(new Configuration());
     Map<String, StringWrapper> deepCopy = deepCopier.deepCopy(map);
 
     assertEquals(map, deepCopy);

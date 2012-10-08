@@ -20,24 +20,30 @@ package org.apache.crunch.types;
 import java.util.List;
 
 import org.apache.crunch.Tuple;
+import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Lists;
 
 /**
- * Performs deep copies (based on underlying PType deep copying) of Tuple-based
- * objects.
+ * Performs deep copies (based on underlying PType deep copying) of Tuple-based objects.
  * 
- * @param <T>
- *          The type of Tuple implementation being copied
+ * @param <T> The type of Tuple implementation being copied
  */
 public class TupleDeepCopier<T extends Tuple> implements DeepCopier<T> {
 
   private final TupleFactory<T> tupleFactory;
   private final List<PType> elementTypes;
 
-  public TupleDeepCopier(Class<T> tupleClass, PType...elementTypes) {
+  public TupleDeepCopier(Class<T> tupleClass, PType... elementTypes) {
     tupleFactory = TupleFactory.getTupleFactory(tupleClass);
     this.elementTypes = Lists.newArrayList(elementTypes);
+  }
+
+  @Override
+  public void initialize(Configuration conf) {
+    for (PType elementType : elementTypes) {
+      elementType.initialize(conf);
+    }
   }
 
   @Override

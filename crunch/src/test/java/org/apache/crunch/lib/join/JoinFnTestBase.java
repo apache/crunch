@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.StringWrapper;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,6 +41,7 @@ public abstract class JoinFnTestBase {
   @Before
   public void setUp() {
     joinFn = getJoinFn();
+    joinFn.setConfigurationForTest(new Configuration());
     joinFn.initialize();
     emitter = mock(Emitter.class);
   }

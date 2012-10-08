@@ -28,12 +28,9 @@ import com.google.common.collect.Lists;
 /**
  * Used to perform the last step of an left outer join.
  * 
- * @param <K>
- *          Type of the keys.
- * @param <U>
- *          Type of the first {@link org.apache.crunch.PTable}'s values
- * @param <V>
- *          Type of the second {@link org.apache.crunch.PTable}'s values
+ * @param <K> Type of the keys.
+ * @param <U> Type of the first {@link org.apache.crunch.PTable}'s values
+ * @param <V> Type of the second {@link org.apache.crunch.PTable}'s values
  */
 public class LeftOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
 

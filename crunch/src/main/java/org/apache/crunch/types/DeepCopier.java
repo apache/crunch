@@ -19,30 +19,42 @@ package org.apache.crunch.types;
 
 import java.io.Serializable;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Performs deep copies of values.
  * 
- * @param <T>
- *          The type of value that will be copied
+ * @param <T> The type of value that will be copied
  */
 public interface DeepCopier<T> extends Serializable {
 
   /**
+   * Initialize the deep copier with a job-specific configuration
+   * 
+   * @param conf Job-specific configuration
+   */
+  void initialize(Configuration conf);
+
+  /**
    * Create a deep copy of a value.
    * 
-   * @param source
-   *          The value to be copied
+   * @param source The value to be copied
    * @return The deep copy of the value
    */
   T deepCopy(T source);
-  
+
   static class NoOpDeepCopier<V> implements DeepCopier<V> {
 
     @Override
     public V deepCopy(V source) {
       return source;
     }
-    
+
+    @Override
+    public void initialize(Configuration conf) {
+      // No initialization needed
+    }
+
   }
-  
+
 }

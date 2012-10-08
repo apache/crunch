@@ -72,8 +72,8 @@ public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   }
 
   @Override
-  public void initialize() {
-    // No initialization needed for Avro PTypes
+  public void initialize(Configuration conf) {
+    getTableType().initialize(conf);
   }
 
   @Override

@@ -23,25 +23,28 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.impl.mr.run.RTNode;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.ImmutableList;
 
 /**
- * An {@link Emitter} implementation that links the output of one {@link DoFn}
- * to the input of another {@code DoFn}.
+ * An {@link Emitter} implementation that links the output of one {@link DoFn} to the input of
+ * another {@code DoFn}.
  * 
  */
 public class IntermediateEmitter implements Emitter<Object> {
 
   private final List<RTNode> children;
+  private final Configuration conf;
   private final PType<Object> outputPType;
   private final boolean needDetachedValues;
 
-  public IntermediateEmitter(PType<Object> outputPType, List<RTNode> children) {
+  public IntermediateEmitter(PType<Object> outputPType, List<RTNode> children, Configuration conf) {
     this.outputPType = outputPType;
     this.children = ImmutableList.copyOf(children);
+    this.conf = conf;
 
-    outputPType.initialize();
+    outputPType.initialize(conf);
     needDetachedValues = this.children.size() > 1;
   }
 

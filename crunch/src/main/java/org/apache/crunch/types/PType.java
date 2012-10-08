@@ -24,14 +24,14 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
- * A {@code PType} defines a mapping between a data type that is used in a
- * Crunch pipeline and a serialization and storage format that is used to
- * read/write data from/to HDFS. Every {@link PCollection} has an associated
- * {@code PType} that tells Crunch how to read/write data from that
- * {@code PCollection}.
+ * A {@code PType} defines a mapping between a data type that is used in a Crunch pipeline and a
+ * serialization and storage format that is used to read/write data from/to HDFS. Every
+ * {@link PCollection} has an associated {@code PType} that tells Crunch how to read/write data from
+ * that {@code PCollection}.
  * 
  */
 public interface PType<T> extends Serializable {
@@ -52,38 +52,35 @@ public interface PType<T> extends Serializable {
   Converter getConverter();
 
   /**
-   * Initialize this PType for use within a DoFn. This generally only needs to
-   * be called when using a PType for {@link #getDetachedValue(Object)}.
+   * Initialize this PType for use within a DoFn. This generally only needs to be called when using
+   * a PType for {@link #getDetachedValue(Object)}.
    * 
+   * @param conf Configuration object
    * @see PType#getDetachedValue(Object)
    */
-  void initialize();
+  void initialize(Configuration conf);
 
   /**
-   * Returns a copy of a value (or the value itself) that can safely be
-   * retained.
+   * Returns a copy of a value (or the value itself) that can safely be retained.
    * <p>
-   * This is useful when iterable values being processed in a DoFn (via a
-   * reducer) need to be held on to for more than the scope of a single
-   * iteration, as a reducer (and therefore also a DoFn that has an Iterable as
-   * input) re-use deserialized values. More information on object reuse is
+   * This is useful when iterable values being processed in a DoFn (via a reducer) need to be held
+   * on to for more than the scope of a single iteration, as a reducer (and therefore also a DoFn
+   * that has an Iterable as input) re-use deserialized values. More information on object reuse is
    * available in the {@link DoFn} class documentation.
    * 
-   * @param value
-   *          The value to be deep-copied
+   * @param value The value to be deep-copied
    * @return A deep copy of the input value
    */
   T getDetachedValue(T value);
 
   /**
-   * Returns a {@code SourceTarget} that is able to read/write data using the
-   * serialization format specified by this {@code PType}.
+   * Returns a {@code SourceTarget} that is able to read/write data using the serialization format
+   * specified by this {@code PType}.
    */
   SourceTarget<T> getDefaultFileSource(Path path);
 
   /**
-   * Returns the sub-types that make up this PType if it is a composite
-   * instance, such as a tuple.
+   * Returns the sub-types that make up this PType if it is a composite instance, such as a tuple.
    */
   List<PType> getSubTypes();
 }

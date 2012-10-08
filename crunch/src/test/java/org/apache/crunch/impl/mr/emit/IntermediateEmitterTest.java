@@ -28,6 +28,7 @@ import org.apache.crunch.impl.mr.run.RTNode;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,7 +49,8 @@ public class IntermediateEmitterTest {
   @Test
   public void testEmit_SingleChild() {
     RTNode singleChild = mock(RTNode.class);
-    IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(singleChild));
+    IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(singleChild),
+        new Configuration());
     emitter.emit(stringWrapper);
 
     ArgumentCaptor<StringWrapper> argumentCaptor = ArgumentCaptor.forClass(StringWrapper.class);
@@ -60,7 +62,8 @@ public class IntermediateEmitterTest {
   public void testEmit_MultipleChildren() {
     RTNode childA = mock(RTNode.class);
     RTNode childB = mock(RTNode.class);
-    IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(childA, childB));
+    IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(childA, childB),
+        new Configuration());
     emitter.emit(stringWrapper);
 
     ArgumentCaptor<StringWrapper> argumentCaptorA = ArgumentCaptor.forClass(StringWrapper.class);

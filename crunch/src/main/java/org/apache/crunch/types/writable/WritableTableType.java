@@ -31,6 +31,7 @@ import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
@@ -49,7 +50,8 @@ class WritableTableType<K, V> implements PTableType<K, V> {
     this.valueType = valueType;
     this.inputFn = new PairMapFn(keyType.getInputMapFn(), valueType.getInputMapFn());
     this.outputFn = new PairMapFn(keyType.getOutputMapFn(), valueType.getOutputMapFn());
-    this.converter = new WritablePairConverter(keyType.getSerializationClass(), valueType.getSerializationClass());
+    this.converter = new WritablePairConverter(keyType.getSerializationClass(),
+        valueType.getSerializationClass());
   }
 
   @Override
@@ -101,9 +103,9 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   }
 
   @Override
-  public void initialize() {
-    keyType.initialize();
-    valueType.initialize();
+  public void initialize(Configuration conf) {
+    keyType.initialize(conf);
+    valueType.initialize(conf);
   }
 
   @Override

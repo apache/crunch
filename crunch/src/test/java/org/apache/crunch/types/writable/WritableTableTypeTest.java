@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 import org.apache.crunch.Pair;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -33,8 +34,9 @@ public class WritableTableTypeTest {
     Text textValue = new Text("forty-two");
     Pair<Integer, Text> pair = Pair.of(integerValue, textValue);
 
-    WritableTableType<Integer, Text> tableType = Writables.tableOf(Writables.ints(), Writables.writables(Text.class));
-    tableType.initialize();
+    WritableTableType<Integer, Text> tableType = Writables.tableOf(Writables.ints(),
+        Writables.writables(Text.class));
+    tableType.initialize(new Configuration());
     Pair<Integer, Text> detachedPair = tableType.getDetachedValue(pair);
 
     assertSame(integerValue, detachedPair.first());

@@ -111,8 +111,7 @@ public class SafeAvroSerialization<T> extends Configured implements Serializatio
         .getKeySchema(AvroJob.getMapOutputSchema(conf)) : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
 
     ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
-    ReflectDatumWriter<T> writer = factory.getWriter();
-    writer.setSchema(schema);
+    ReflectDatumWriter<T> writer = factory.getWriter(schema);
     return new AvroWrapperSerializer(writer);
   }
 

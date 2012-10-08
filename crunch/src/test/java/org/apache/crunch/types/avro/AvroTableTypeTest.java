@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -42,7 +43,9 @@ public class AvroTableTypeTest {
 
     Pair<Integer, Person> pair = Pair.of(integerValue, person);
 
-    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(), Avros.specifics(Person.class));
+    AvroTableType<Integer, Person> tableType = Avros.tableOf(Avros.ints(),
+        Avros.specifics(Person.class));
+    tableType.initialize(new Configuration());
 
     Pair<Integer, Person> detachedPair = tableType.getDetachedValue(pair);
 

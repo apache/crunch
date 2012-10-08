@@ -31,6 +31,7 @@ import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.base.Preconditions;
@@ -52,13 +53,14 @@ public class AvroType<T> implements PType<T> {
   private final MapFn baseOutputMapFn;
   private final List<PType> subTypes;
   private DeepCopier<T> deepCopier;
+  private boolean initialized = false;
 
   public AvroType(Class<T> typeClass, Schema schema, DeepCopier<T> deepCopier, PType... ptypes) {
     this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), deepCopier, ptypes);
   }
 
-  public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn, DeepCopier<T> deepCopier,
-      PType... ptypes) {
+  public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn,
+      DeepCopier<T> deepCopier, PType... ptypes) {
     this.typeClass = typeClass;
     this.schema = Preconditions.checkNotNull(schema);
     this.schemaString = schema.toString();
@@ -99,7 +101,7 @@ public class AvroType<T> implements PType<T> {
     if (Avros.isPrimitive(this)) {
       return false;
     }
-    
+
     if (!this.subTypes.isEmpty()) {
       for (PType<?> subType : this.subTypes) {
         AvroType<?> atype = (AvroType<?>) subType;
@@ -109,7 +111,7 @@ public class AvroType<T> implements PType<T> {
       }
       return false;
     }
-    
+
     return SpecificRecord.class.isAssignableFrom(typeClass);
   }
 
@@ -164,11 +166,16 @@ public class AvroType<T> implements PType<T> {
   }
 
   @Override
-  public void initialize() {
-    // No initialization needed for Avro PTypes
+  public void initialize(Configuration conf) {
+    deepCopier.initialize(conf);
+    initialized = true;
   }
 
+  @Override
   public T getDetachedValue(T value) {
+    if (!initialized) {
+      throw new IllegalStateException("Cannot call getDetachedValue on an uninitialized PType");
+    }
     return deepCopier.deepCopy(value);
   }
 

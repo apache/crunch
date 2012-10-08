@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -41,7 +42,7 @@ public class WritableGroupedTableTypeTest {
 
     PGroupedTableType<Integer, Text> groupedTableType = Writables.tableOf(Writables.ints(),
         Writables.writables(Text.class)).getGroupedTableType();
-    groupedTableType.initialize();
+    groupedTableType.initialize(new Configuration());
 
     Pair<Integer, Iterable<Text>> detachedPair = groupedTableType.getDetachedValue(pair);
 

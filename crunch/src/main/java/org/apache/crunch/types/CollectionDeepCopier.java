@@ -20,13 +20,14 @@ package org.apache.crunch.types;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.google.common.collect.Lists;
 
 /**
  * Performs deep copies (based on underlying PType deep copying) of Collections.
  * 
- * @param <T>
- *          The type of Tuple implementation being copied
+ * @param <T> The type of Tuple implementation being copied
  */
 public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>> {
 
@@ -34,6 +35,11 @@ public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>> {
 
   public CollectionDeepCopier(PType<T> elementType) {
     this.elementType = elementType;
+  }
+
+  @Override
+  public void initialize(Configuration conf) {
+    this.elementType.initialize(conf);
   }
 
   @Override

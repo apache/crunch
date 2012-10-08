@@ -25,19 +25,24 @@ import java.io.DataOutputStream;
 
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.types.DeepCopier;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
-
 
 /**
  * Performs deep copies of Writable values.
+ * 
  * @param <T> The type of Writable that can be copied
  */
-public class WritableDeepCopier<T extends Writable> implements DeepCopier<T>{
-  
+public class WritableDeepCopier<T extends Writable> implements DeepCopier<T> {
+
   private Class<T> writableClass;
 
-  public WritableDeepCopier(Class<T> writableClass){
+  public WritableDeepCopier(Class<T> writableClass) {
     this.writableClass = writableClass;
+  }
+
+  @Override
+  public void initialize(Configuration conf) {
   }
 
   @Override

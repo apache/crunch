@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotSame;
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -37,9 +38,10 @@ public class TupleDeepCopierTest {
     person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Pair<Integer, Person> inputPair = Pair.of(1, person);
-    DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(
-        Pair.class, Avros.ints(), Avros.records(Person.class));
+    DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(Pair.class, Avros.ints(),
+        Avros.records(Person.class));
 
+    deepCopier.initialize(new Configuration());
     Pair<Integer, Person> deepCopyPair = deepCopier.deepCopy(inputPair);
 
     assertEquals(inputPair, deepCopyPair);

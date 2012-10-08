@@ -27,6 +27,7 @@ import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
@@ -43,8 +44,8 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   private final List<PType> subTypes;
   private boolean initialized = false;
 
-  WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn, MapFn<T, W> outputDoFn,
-      PType... subTypes) {
+  WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn,
+      MapFn<T, W> outputDoFn, PType... subTypes) {
     this.typeClass = typeClass;
     this.writableClass = writableClass;
     this.inputFn = inputDoFn;
@@ -99,15 +100,16 @@ public class WritableType<T, W extends Writable> implements PType<T> {
       return false;
     }
     WritableType wt = (WritableType) obj;
-    return (typeClass.equals(wt.typeClass) && writableClass.equals(wt.writableClass) && subTypes.equals(wt.subTypes));
+    return (typeClass.equals(wt.typeClass) && writableClass.equals(wt.writableClass) && subTypes
+        .equals(wt.subTypes));
   }
 
   @Override
-  public void initialize() {
+  public void initialize(Configuration conf) {
     this.inputFn.initialize();
     this.outputFn.initialize();
     for (PType subType : subTypes) {
-      subType.initialize();
+      subType.initialize(conf);
     }
     this.initialized = true;
   }

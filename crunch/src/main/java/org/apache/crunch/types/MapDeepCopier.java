@@ -20,25 +20,31 @@ package org.apache.crunch.types;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.google.common.collect.Maps;
 
-
-public class MapDeepCopier<T> implements DeepCopier<Map<String,T>> {
+public class MapDeepCopier<T> implements DeepCopier<Map<String, T>> {
 
   private final PType<T> ptype;
-  
-  public MapDeepCopier(PType<T> ptype){
+
+  public MapDeepCopier(PType<T> ptype) {
     this.ptype = ptype;
   }
-  
+
+  @Override
+  public void initialize(Configuration conf) {
+    this.ptype.initialize(conf);
+  }
+
   @Override
   public Map<String, T> deepCopy(Map<String, T> source) {
-    Map<String,T> deepCopyMap = Maps.newHashMap();
-    for (Entry<String, T> entry : source.entrySet()){
+    Map<String, T> deepCopyMap = Maps.newHashMap();
+    for (Entry<String, T> entry : source.entrySet()) {
       deepCopyMap.put(entry.getKey(), ptype.getDetachedValue(entry.getValue()));
     }
     return deepCopyMap;
-    
+
   }
 
 }

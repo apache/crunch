@@ -74,7 +74,7 @@ public class RTNode implements Serializable {
         this.emitter = new OutputEmitter(outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
-      this.emitter = new IntermediateEmitter(outputPType, children);
+      this.emitter = new IntermediateEmitter(outputPType, children, ctxt.getContext().getConfiguration());
     } else {
       throw new CrunchRuntimeException("Invalid RTNode config: no emitter for: " + nodeName);
     }

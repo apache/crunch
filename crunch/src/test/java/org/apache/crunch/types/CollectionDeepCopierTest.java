@@ -17,12 +17,14 @@
  */
 package org.apache.crunch.types;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 import java.util.Collection;
 
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -37,7 +39,9 @@ public class CollectionDeepCopierTest {
     person.siblingnames = Lists.<CharSequence> newArrayList();
 
     Collection<Person> personCollection = Lists.newArrayList(person);
-    CollectionDeepCopier<Person> collectionDeepCopier = new CollectionDeepCopier<Person>(Avros.records(Person.class));
+    CollectionDeepCopier<Person> collectionDeepCopier = new CollectionDeepCopier<Person>(
+        Avros.records(Person.class));
+    collectionDeepCopier.initialize(new Configuration());
 
     Collection<Person> deepCopyCollection = collectionDeepCopier.deepCopy(personCollection);
 

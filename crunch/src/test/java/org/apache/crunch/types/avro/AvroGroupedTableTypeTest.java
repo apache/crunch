@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -43,8 +44,9 @@ public class AvroGroupedTableTypeTest {
     Iterable<Person> inputPersonIterable = Lists.newArrayList(person);
     Pair<Integer, Iterable<Person>> pair = Pair.of(integerValue, inputPersonIterable);
 
-    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(), Avros.specifics(Person.class))
-        .getGroupedTableType();
+    PGroupedTableType<Integer, Person> groupedTableType = Avros.tableOf(Avros.ints(),
+        Avros.specifics(Person.class)).getGroupedTableType();
+    groupedTableType.initialize(new Configuration());
 
     Pair<Integer, Iterable<Person>> detachedPair = groupedTableType.getDetachedValue(pair);
 

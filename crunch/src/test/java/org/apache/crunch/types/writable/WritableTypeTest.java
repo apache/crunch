@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.apache.crunch.Pair;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class WritableTypeTest {
   @Test
   public void testGetDetachedValue_CustomWritable() {
     WritableType<Text, Text> textWritableType = Writables.writables(Text.class);
-    textWritableType.initialize();
+    textWritableType.initialize(new Configuration());
     Text value = new Text("test");
 
     Text detachedValue = textWritableType.getDetachedValue(value);
@@ -57,9 +58,9 @@ public class WritableTypeTest {
   @Test
   public void testGetDetachedValue_Collection() {
     Collection<Text> textCollection = Lists.newArrayList(new Text("value"));
-    WritableType<Collection<Text>, GenericArrayWritable<Text>> ptype = Writables.collections(Writables
-        .writables(Text.class));
-    ptype.initialize();
+    WritableType<Collection<Text>, GenericArrayWritable<Text>> ptype = Writables
+        .collections(Writables.writables(Text.class));
+    ptype.initialize(new Configuration());
 
     Collection<Text> detachedCollection = ptype.getDetachedValue(textCollection);
     assertEquals(textCollection, detachedCollection);
@@ -69,9 +70,9 @@ public class WritableTypeTest {
   @Test
   public void testGetDetachedValue_Tuple() {
     Pair<Text, Text> textPair = Pair.of(new Text("one"), new Text("two"));
-    WritableType<Pair<Text, Text>, TupleWritable> ptype = Writables.pairs(Writables.writables(Text.class),
-        Writables.writables(Text.class));
-    ptype.initialize();
+    WritableType<Pair<Text, Text>, TupleWritable> ptype = Writables.pairs(
+        Writables.writables(Text.class), Writables.writables(Text.class));
+    ptype.initialize(new Configuration());
 
     Pair<Text, Text> detachedPair = ptype.getDetachedValue(textPair);
     assertEquals(textPair, detachedPair);
@@ -84,8 +85,9 @@ public class WritableTypeTest {
     Map<String, Text> stringTextMap = Maps.newHashMap();
     stringTextMap.put("key", new Text("value"));
 
-    WritableType<Map<String, Text>, MapWritable> ptype = Writables.maps(Writables.writables(Text.class));
-    ptype.initialize();
+    WritableType<Map<String, Text>, MapWritable> ptype = Writables.maps(Writables
+        .writables(Text.class));
+    ptype.initialize(new Configuration());
     Map<String, Text> detachedMap = ptype.getDetachedValue(stringTextMap);
 
     assertEquals(stringTextMap, detachedMap);

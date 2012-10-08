@@ -23,6 +23,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
 public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
@@ -37,7 +38,8 @@ public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     WritableType valueType = (WritableType) tableType.getValueType();
     this.inputFn = new PairIterableMapFn(keyType.getInputMapFn(), valueType.getInputMapFn());
     this.outputFn = tableType.getOutputMapFn();
-    this.converter = new WritablePairConverter(keyType.getSerializationClass(), valueType.getSerializationClass());
+    this.converter = new WritablePairConverter(keyType.getSerializationClass(),
+        valueType.getSerializationClass());
   }
 
   @Override
@@ -61,8 +63,8 @@ public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   }
 
   @Override
-  public void initialize() {
-    this.tableType.initialize();
+  public void initialize(Configuration conf) {
+    this.tableType.initialize(conf);
   }
 
   @Override
