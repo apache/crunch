@@ -57,6 +57,10 @@ under the License.
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-scrunch</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.crunch</groupId>
+      <artifactId>crunch-contrib</artifactId>
+    </dependency>
   </dependencies>
 
   <profiles>

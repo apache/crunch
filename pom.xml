@@ -47,6 +47,7 @@ under the License.
     <module>crunch</module>
     <module>crunch-hbase</module>
     <module>crunch-test</module>
+    <module>crunch-contrib</module>
     <module>crunch-examples</module>
     <module>crunch-archetype</module>
     <module>crunch-scrunch</module>
@@ -154,6 +155,12 @@ under the License.
       <dependency>
         <groupId>org.apache.crunch</groupId>
         <artifactId>crunch-scrunch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      
+      <dependency>
+        <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch-contrib</artifactId>
         <version>${project.version}</version>
       </dependency>
 
