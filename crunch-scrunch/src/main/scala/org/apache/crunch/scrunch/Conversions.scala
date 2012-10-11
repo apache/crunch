@@ -57,9 +57,9 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
       }
     }
   }
-} 
+}
 
-trait PTypeH[T] {
+trait PTypeH[T] extends Serializable {
   def get(ptf: PTypeFamily): PType[T]
 }
 
@@ -140,11 +140,11 @@ object Conversions {
   implicit def jtable2ptable[K, V](jtable: JTable[K, V]) = {
     new PTable[K, V](jtable)
   }
-  
+
   implicit def jcollect2pcollect[S](jcollect: JCollection[S]) = {
     new PCollection[S](jcollect)
   }
-  
+
   implicit def jgrouped2pgrouped[K, V](jgrouped: JGroupedTable[K, V]) = {
     new PGroupedTable[K, V](jgrouped)
   }
