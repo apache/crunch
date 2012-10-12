@@ -75,6 +75,13 @@ under the License.
       <artifactId>jackson-mapper-asl</artifactId>
       <scope>provided</scope>
     </dependency>
+    
+    <dependency>
+      <groupId>javassist</groupId>
+      <artifactId>javassist</artifactId>
+      <version>3.12.1.GA</version>
+    </dependency>
+            
 
     <!-- Both Protobufs and Thrift are supported as
          derived serialization types, and you can use

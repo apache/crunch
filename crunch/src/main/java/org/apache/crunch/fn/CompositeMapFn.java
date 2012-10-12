@@ -61,10 +61,4 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
     first.configure(conf);
     second.configure(conf);
   }
-
-  @Override
-  public void setConfigurationForTest(Configuration conf) {
-    first.setConfigurationForTest(conf);
-    second.setConfigurationForTest(conf);
-  }
 }

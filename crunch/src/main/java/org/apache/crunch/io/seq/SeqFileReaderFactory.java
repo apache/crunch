@@ -54,7 +54,6 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
   @Override
   public Iterator<T> read(FileSystem fs, final Path path) {
-    mapFn.setConfigurationForTest(conf);
     mapFn.initialize();
     try {
       final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);

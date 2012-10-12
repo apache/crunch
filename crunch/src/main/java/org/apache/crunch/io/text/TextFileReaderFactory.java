@@ -63,7 +63,6 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
         mapFn = ((CompositeMapFn) input).getSecond();
       }
     }
-    mapFn.setConfigurationForTest(conf);
     mapFn.initialize();
 
     FSDataInputStream is;

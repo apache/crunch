@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
-import org.junit.After;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 /**
@@ -35,12 +35,11 @@ public class CountersTest {
     THREE
   };
 
-  @After
-  public void after() {
-    TestCounters.clearCounters();
-  }
-
   public static class CTFn extends DoFn<String, String> {
+    CTFn() {
+      setContext(CrunchTestSupport.getTestContext(new Configuration()));
+    }
+
     @Override
     public void process(String input, Emitter<String> emitter) {
       getCounter(CT.ONE).increment(1);

@@ -17,7 +17,12 @@
  */
 package org.apache.crunch.impl.mem.collect;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
+
+import javassist.util.proxy.MethodFilter;
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.ProxyFactory;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
@@ -30,14 +35,20 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.impl.mem.MemPipeline;
+import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Sample;
 import org.apache.crunch.lib.Sort;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
-import org.apache.crunch.test.InMemoryEmitter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.OutputCommitter;
+import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.mapreduce.StatusReporter;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -103,6 +114,7 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type) {
     InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
+    doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
     doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
@@ -213,5 +225,50 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <K> PTable<K, S> by(String name, MapFn<S, K> mapFn, PType<K> keyType) {
     return parallelDo(name, new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
+  }
+
+  /**
+   * The method creates a {@link TaskInputOutputContext} that will just provide
+   * {@linkplain Configuration}. The method has been implemented with javaassist
+   * as there are API changes in versions of Hadoop. In hadoop 1.0.3 the
+   * {@linkplain TaskInputOutputContext} is abstract class while in version 2
+   * the same is an interface.
+   * <p>
+   * Note: The intention of this is to provide the bare essentials that are
+   * required to make the {@linkplain MemPipeline} work. It lacks even the basic
+   * things that can proved some support for unit testing pipeline.
+   */
+  private static TaskInputOutputContext<?, ?, ?, ?> getInMemoryContext(final Configuration conf) {
+    ProxyFactory factory = new ProxyFactory();
+    Class<TaskInputOutputContext> superType = TaskInputOutputContext.class;
+    Class[] types = new Class[0];
+    Object[] args = new Object[0];
+    if (superType.isInterface()) {
+      factory.setInterfaces(new Class[] { superType });
+    } else {
+      types = new Class[] { Configuration.class, TaskAttemptID.class, RecordWriter.class, OutputCommitter.class,
+          StatusReporter.class };
+      args = new Object[] { conf, new TaskAttemptID(), null, null, null };
+      factory.setSuperclass(superType);
+    }
+    factory.setFilter(new MethodFilter() {
+      @Override
+      public boolean isHandled(Method m) {
+        return m.getName().equals("getConfiguration");
+      }
+    });
+    MethodHandler handler = new MethodHandler() {
+      @Override
+      public Object invoke(Object arg0, Method arg1, Method arg2, Object[] arg3) throws Throwable {
+        return conf;
+      }
+    };
+    try {
+      Object newInstance = factory.create(types, args, handler);
+      return (TaskInputOutputContext<?, ?, ?, ?>) newInstance;
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException(e);
+    }
   }
 }

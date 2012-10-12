@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
+import org.apache.crunch.test.CrunchTestSupport;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Before;
@@ -41,7 +42,7 @@ public abstract class JoinFnTestBase {
   @Before
   public void setUp() {
     joinFn = getJoinFn();
-    joinFn.setConfigurationForTest(new Configuration());
+    joinFn.setContext(CrunchTestSupport.getTestContext(new Configuration()));
     joinFn.initialize();
     emitter = mock(Emitter.class);
   }
@@ -67,13 +68,11 @@ public abstract class JoinFnTestBase {
 
   }
 
-  protected abstract void checkOutput(
-      Emitter<Pair<StringWrapper, Pair<StringWrapper, String>>> emitter);
+  protected abstract void checkOutput(Emitter<Pair<StringWrapper, Pair<StringWrapper, String>>> emitter);
 
   protected abstract JoinFn<StringWrapper, StringWrapper, String> getJoinFn();
 
-  protected List<Pair<StringWrapper, String>> createValuePairList(StringWrapper leftValue,
-      String rightValue) {
+  protected List<Pair<StringWrapper, String>> createValuePairList(StringWrapper leftValue, String rightValue) {
     Pair<StringWrapper, String> valuePair = Pair.of(leftValue, rightValue);
     List<Pair<StringWrapper, String>> valuePairList = Lists.newArrayList();
     valuePairList.add(valuePair);

@@ -19,7 +19,6 @@ package org.apache.crunch;
 
 import java.io.Serializable;
 
-import org.apache.crunch.test.TestCounters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
@@ -38,8 +37,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
  */
 public abstract class DoFn<S, T> implements Serializable {
   private transient TaskInputOutputContext<?, ?, ?, ?> context;
-  private transient Configuration testConf;
-  private transient String internalStatus;
 
   /**
    * Configure this DoFn. Subclasses may override this method to modify the
@@ -61,8 +58,8 @@ public abstract class DoFn<S, T> implements Serializable {
    * this method to do appropriate initialization.
    * 
    * <p>
-   * Called during the setup of the job instance this {@code DoFn} is
-   * associated with.
+   * Called during the setup of the job instance this {@code DoFn} is associated
+   * with.
    * </p>
    * 
    */
@@ -110,16 +107,6 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   /**
-   * Sets a {@code Configuration} instance to be used during unit tests.
-   * 
-   * @param conf
-   *          The Configuration instance.
-   */
-  public void setConfigurationForTest(Configuration conf) {
-    this.testConf = conf;
-  }
-
-  /**
    * Returns an estimate of how applying this function to a {@link PCollection}
    * will cause it to change in side. The optimizer uses these estimates to
    * decide where to break up dependent MR jobs into separate Map and Reduce
@@ -138,25 +125,14 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected Configuration getConfiguration() {
-    if (context != null) {
-      return context.getConfiguration();
-    } else if (testConf != null) {
-      return testConf;
-    }
-    return null;
+    return context.getConfiguration();
   }
 
   protected Counter getCounter(Enum<?> counterName) {
-    if (context == null) {
-      return TestCounters.getCounter(counterName);
-    }
     return context.getCounter(counterName);
   }
 
   protected Counter getCounter(String groupName, String counterName) {
-    if (context == null) {
-      return TestCounters.getCounter(groupName, counterName);
-    }
     return context.getCounter(groupName, counterName);
   }
 
@@ -169,31 +145,19 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected void progress() {
-    if (context != null) {
-      context.progress();
-    }
+    context.progress();
   }
 
   protected TaskAttemptID getTaskAttemptID() {
-    if (context != null) {
-      return context.getTaskAttemptID();
-    } else {
-      return new TaskAttemptID();
-    }
+    return context.getTaskAttemptID();
   }
 
   protected void setStatus(String status) {
-    if (context != null) {
-      context.setStatus(status);
-    }
-    this.internalStatus = status;
+    context.setStatus(status);
   }
 
   protected String getStatus() {
-    if (context != null) {
-      return context.getStatus();
-    }
-    return internalStatus;
+    return context.getStatus();
   }
 
 }
