@@ -21,15 +21,12 @@ import java.io.Serializable;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
-import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
-import org.apache.crunch.lib.join.JoinUtils;
-import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -85,10 +82,10 @@ public class SecondarySort extends Configured implements Tool, Serializable {
     // a pair of pairs, the first of which will be grouped by (first member) and
     // the sorted by (second memeber). The second pair is payload which can be
     // passed in an Iterable object.
-    PTable<Pair<String, Long>, Pair<Long, String>> pairs = lines.parallelDo("extract_records",
-        new DoFn<String, Pair<Pair<String, Long>, Pair<Long, String>>>() {
+    PTable<String, Pair<Long, String>> pairs = lines.parallelDo("extract_records",
+        new DoFn<String, Pair<String, Pair<Long, String>>>() {
           @Override
-          public void process(String line, Emitter<Pair<Pair<String, Long>, Pair<Long, String>>> emitter) {
+          public void process(String line, Emitter<Pair<String, Pair<Long, String>>> emitter) {
             int i = 0;
             String key = "";
             long timestamp = 0;
@@ -116,21 +113,11 @@ public class SecondarySort extends Configured implements Tool, Serializable {
             }
             if (i == 3) {
               Long sortby = new Long(timestamp);
-              emitter.emit(new Pair<Pair<String, Long>, Pair<Long, String>>(new Pair<String, Long>(key, sortby),
-                  new Pair<Long, String>(sortby, value)));
+              emitter.emit(Pair.of(key, Pair.of(sortby, value)));
             } else {
               this.getCounter(COUNTERS.CORRUPT_LINE).increment(1);
             }
-          }}, Avros.tableOf(Avros.pairs(Avros.strings(), Avros.longs()), Avros.pairs(Avros.longs(), Avros.strings())));
-
-    // Define partitioning and grouping properties
-    GroupingOptions groupingOptions = GroupingOptions.builder()
-        .numReducers(this.getConf().getInt("mapred.reduce.tasks", 1))
-        .partitionerClass(JoinUtils.getPartitionerClass(AvroTypeFamily.getInstance()))
-        .groupingComparatorClass(JoinUtils.getGroupingComparator(AvroTypeFamily.getInstance())).build();
-
-    // Do the rest of the processing extracting a list of things according to
-    // groups defined in the groupingOptions
+          }}, Avros.tableOf(Avros.strings(), Avros.pairs(Avros.longs(), Avros.strings())));
 
     // The output of the above input will be (with one reducer):
 
@@ -138,14 +125,13 @@ public class SecondarySort extends Configured implements Tool, Serializable {
     // three : [[0,-1]]
     // two : [[1,7,9],[2,6],[4,5]]
 
-    pairs.groupByKey(groupingOptions)
-        .parallelDo("group_records",
-        new DoFn<Pair<Pair<String, Long>, Iterable<Pair<Long, String>>>, String>() {
+    org.apache.crunch.lib.SecondarySort.sortAndApply(pairs,
+        new DoFn<Pair<String, Iterable<Pair<Long, String>>>, String>() {
           final StringBuilder sb = new StringBuilder();
           @Override
-          public void process(Pair<Pair<String, Long>, Iterable<Pair<Long, String>>> input, Emitter<String> emitter) {
+          public void process(Pair<String, Iterable<Pair<Long, String>>> input, Emitter<String> emitter) {
             sb.setLength(0);
-            sb.append(input.first().get(0));
+            sb.append(input.first());
             sb.append(" : [");
             boolean first = true;
             for(Pair<Long, String> pair : input.second()) {
