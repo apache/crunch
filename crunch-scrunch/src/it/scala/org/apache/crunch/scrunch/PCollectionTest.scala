@@ -69,4 +69,32 @@ class PCollectionTest extends CrunchTestSupport with JUnitSuite {
     assertEquals("Wrong last line in Shakespeare.", lastLineInShakespeare,
         lines(linesInShakespeare - 1))
   }
+
+  /**
+   * Tests sampling elements from a PCollection using some acceptance probability.
+   */
+  @Test def testSampling {
+    // Get the collection and sample ten percent.
+    val shakespeare = shakespeareCollection
+    val sampledCollection = shakespeare.sample(0.10)
+    val length = sampledCollection.length().value()
+    // The number of lines in the sampled collection should be about ten percent of the lines in
+    // the original collection. We use a tolerance of +- 50.
+    val lower = linesInShakespeare * 0.10 - 50
+    val upper = linesInShakespeare * 0.10 + 50
+    assertTrue("Sampled collection contains too few elements.", lower <= length)
+    assertTrue("Sampled collection contains too many elements.", length <= upper)
+  }
+
+  /**
+   * Tests sampling elements from a PCollection using some acceptance probability and a seed.
+   */
+  @Test def testSamplingWithSeed {
+    // Get the collection and sample ten percent.
+    val shakespeare = shakespeareCollection
+    // With a seed of 1L, 380 elements should be sampled.
+    val sampledCollection = shakespeare.sample(0.10, 1L)
+    val length = sampledCollection.length().value()
+    assertEquals("Incorrect number of elements sampled with seed 1L.", 380L, length)
+  }
 }

@@ -76,6 +76,14 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
 
   def min()(implicit converter: Converter[S, S]) = PObject(Aggregate.min(native))(converter)
 
+  def sample(acceptanceProbability: Double) = {
+    wrap(native.sample(acceptanceProbability))
+  }
+
+  def sample(acceptanceProbability: Double, seed: Long) = {
+    wrap(native.sample(acceptanceProbability, seed))
+  }
+
   def pType = native.getPType()
 }
 
