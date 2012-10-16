@@ -72,6 +72,7 @@ under the License.
     <commons-logging.version>1.1.1</commons-logging.version>
     <commons-cli.version>1.2</commons-cli.version>
     <avro.version>1.7.0</avro.version>
+    <javassist.version>3.12.1.GA</javassist.version>
     <jackson.version>1.8.8</jackson.version>
     <protobuf-java.version>2.3.0</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
@@ -212,6 +213,12 @@ under the License.
             <artifactId>avro-ipc</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>javassist</groupId>
+        <artifactId>javassist</artifactId>
+        <version>${javassist.version}</version>
       </dependency>
 
       <dependency>

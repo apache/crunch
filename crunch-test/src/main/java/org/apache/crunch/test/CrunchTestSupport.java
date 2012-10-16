@@ -36,8 +36,8 @@ public class CrunchTestSupport {
 
   /**
    * The method creates a {@linkplain TaskInputOutputContext} which can be used
-   * in unit tests. The context servers very limited purpose. You can only
-   * operate with counters, taskAttempId ,status and configuration while using
+   * in unit tests. The context serves very limited purpose. You can only
+   * operate with counters, taskAttempId, status and configuration while using
    * this context.
    */
   public static <KI, VI, KO, VO> TaskInputOutputContext<KI, VI, KO, VO> getTestContext(final Configuration config) {

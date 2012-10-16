@@ -45,6 +45,11 @@ under the License.
     </dependency>
 
     <dependency>
+      <groupId>javassist</groupId>
+      <artifactId>javassist</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
       <scope>provided</scope>
@@ -76,13 +81,6 @@ under the License.
       <scope>provided</scope>
     </dependency>
     
-    <dependency>
-      <groupId>javassist</groupId>
-      <artifactId>javassist</artifactId>
-      <version>3.12.1.GA</version>
-    </dependency>
-            
-
     <!-- Both Protobufs and Thrift are supported as
          derived serialization types, and you can use
          (almost) any version of them you like, Crunch
