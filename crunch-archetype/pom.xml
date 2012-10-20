@@ -33,6 +33,10 @@ under the License.
     Create a basic, self-contained job for Apache Crunch.
   </description>
 
+  <properties>
+    <test.goals>clean test</test.goals>
+  </properties>
+
   <build>
     <plugins>
       <plugin>
@@ -66,6 +70,33 @@ under the License.
         </excludes>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>**/goal.txt</include>
+        </includes>
+      </testResource>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>**/goal.txt</exclude>
+        </excludes>
+      </testResource>
+    </testResources>
   </build>
+
+  <profiles>
+    <profile>
+      <id>apache-release</id>
+      <properties>
+        <!-- Don't run the archetype's integration test during release
+             because it doesn't work with Maven's release plugin. -->
+        <test.goals />
+      </properties>
+    </profile>
+  </profiles>
 
 </project>
