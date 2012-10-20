@@ -35,6 +35,11 @@ import org.apache.hadoop.conf.Configuration;
 
 /**
  * Utilities for performing a secondary sort on a {@code PTable<K, Pair<V1, V2>>} collection.
+ * <p>
+ * Secondary sorts are usually performed during sessionization: given a collection
+ * of events, we want to group them by a key (such as a user ID), then sort the grouped
+ * records by an auxillary key (such as a timestamp), and then perform some additional
+ * processing on the sorted records.
  */
 public class SecondarySort {
   
@@ -92,11 +97,6 @@ public class SecondarySort {
     @Override
     public void configure(Configuration conf) {
       intern.configure(conf);
-    }
-
-    @Override
-    public void setConfigurationForTest(Configuration conf) {
-      intern.setConfigurationForTest(conf);
     }
 
     @Override

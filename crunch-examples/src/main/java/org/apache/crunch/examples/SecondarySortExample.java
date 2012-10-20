@@ -26,6 +26,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.lib.SecondarySort;
 import org.apache.crunch.io.To;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
@@ -38,7 +39,7 @@ import org.apache.hadoop.util.ToolRunner;
 import com.google.common.base.Splitter;
 
 @SuppressWarnings("serial")
-public class SecondarySort extends Configured implements Tool, Serializable {
+public class SecondarySortExample extends Configured implements Tool, Serializable {
 
   static enum COUNTERS {
     CORRUPT_TIMESTAMP,
@@ -74,7 +75,7 @@ public class SecondarySort extends Configured implements Tool, Serializable {
       return 1;
     }
     // Create an object to coordinate pipeline creation and execution.
-    Pipeline pipeline = new MRPipeline(SecondarySort.class, getConf());
+    Pipeline pipeline = new MRPipeline(SecondarySortExample.class, getConf());
     // Reference a given text file as a collection of Strings.
     PCollection<String> lines = pipeline.readTextFile(args[0]);
 
@@ -125,7 +126,7 @@ public class SecondarySort extends Configured implements Tool, Serializable {
     // three : [[0,-1]]
     // two : [[1,7,9],[2,6],[4,5]]
 
-    org.apache.crunch.lib.SecondarySort.sortAndApply(pairs,
+    SecondarySort.sortAndApply(pairs,
         new DoFn<Pair<String, Iterable<Pair<Long, String>>>, String>() {
           final StringBuilder sb = new StringBuilder();
           @Override
@@ -154,7 +155,7 @@ public class SecondarySort extends Configured implements Tool, Serializable {
   public static void main(String[] args) throws Exception {
     int exitCode = -1;
     try {
-      exitCode = ToolRunner.run(new Configuration(), new SecondarySort(), args);
+      exitCode = ToolRunner.run(new Configuration(), new SecondarySortExample(), args);
     } catch (Throwable e) {
       e.printStackTrace();
     }
