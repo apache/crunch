@@ -234,7 +234,7 @@ public class Avros {
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
   }
 
-  private static class BytesToWritableMapFn<T extends Writable> extends MapFn<ByteBuffer, T> {
+  private static class BytesToWritableMapFn<T extends Writable> extends MapFn<Object, T> {
     private static final Log LOG = LogFactory.getLog(BytesToWritableMapFn.class);
 
     private final Class<T> writableClazz;
@@ -244,11 +244,12 @@ public class Avros {
     }
 
     @Override
-    public T map(ByteBuffer input) {
-      T instance = ReflectionUtils.newInstance(writableClazz, getConfiguration());
+    public T map(Object input) {
+      ByteBuffer byteBuffer = BYTES_IN.map(input);
+      T instance = ReflectionUtils.newInstance(writableClazz, null);
       try {
-        instance.readFields(new DataInputStream(new ByteArrayInputStream(input.array(), input.arrayOffset(), input
-            .limit())));
+        instance.readFields(new DataInputStream(new ByteArrayInputStream(byteBuffer.array(),
+            byteBuffer.arrayOffset(), byteBuffer.limit())));
       } catch (IOException e) {
         LOG.error("Exception thrown reading instance of: " + writableClazz, e);
       }

@@ -25,6 +25,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -74,9 +75,15 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
     }
 
     @Override
+    public void configure(Configuration conf) {
+      keys.configure(conf);
+      values.configure(conf);
+    }
+    
+    @Override
     public void initialize() {
-      keys.initialize();
-      values.initialize();
+      keys.setContext(getContext());
+      values.setContext(getContext());
     }
 
     @Override
