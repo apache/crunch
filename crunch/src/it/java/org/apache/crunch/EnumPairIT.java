@@ -25,8 +25,8 @@ import java.io.Serializable;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.writable.Writables;
-import org.apache.crunch.util.PTypes;
 import org.junit.Rule;
 import org.junit.Test;
 

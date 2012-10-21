@@ -15,35 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.util;
-
-import java.util.Collection;
-import java.util.Iterator;
-
-import com.google.common.collect.Lists;
 
 /**
- * Utility functions for returning Collection objects backed by different types
- * of implementations.
+ * An assorted set of utilities.
  */
-public class Collects {
-
-  public static <T> Collection<T> newArrayList() {
-    return Lists.newArrayList();
-  }
-
-  public static <T> Collection<T> newArrayList(T... elements) {
-    return Lists.newArrayList(elements);
-  }
-
-  public static <T> Collection<T> newArrayList(Iterable<? extends T> elements) {
-    return Lists.newArrayList(elements);
-  }
-
-  public static <T> Collection<T> newArrayList(Iterator<? extends T> elements) {
-    return Lists.newArrayList(elements);
-  }
-
-  private Collects() {
-  }
-}
+package org.apache.crunch.util;

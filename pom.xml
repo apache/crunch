@@ -564,7 +564,7 @@ under the License.
           <groups>
             <group>
               <title>Core</title>
-              <packages>${pkg}:${pkg}.fn:${pkg}.impl.*:${pkg}.io:${pkg}.types.*:${pkg}.test</packages>
+              <packages>${pkg}:${pkg}.fn:${pkg}.impl.*:${pkg}.io:${pkg}.types:${pkg}.types.*:${pkg}.test:${pkg}.util</packages>
             </group>
             <group>
               <title>Extension Library</title>

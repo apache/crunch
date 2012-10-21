@@ -15,15 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.util;
+package org.apache.crunch.types;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
-import org.apache.crunch.types.PType;
-import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
