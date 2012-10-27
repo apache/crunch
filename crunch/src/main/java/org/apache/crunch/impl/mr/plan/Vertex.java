@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.plan;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.collect.InputCollection;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
@@ -114,5 +115,10 @@ public class Vertex {
   @Override
   public int hashCode() {
     return 17 + 37 * impl.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toStringExclude(this, Lists.newArrayList("outgoing", "incoming"));
   }
 }
