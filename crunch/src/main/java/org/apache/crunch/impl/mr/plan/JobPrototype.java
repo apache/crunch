@@ -82,6 +82,22 @@ public class JobPrototype {
     this.targetsToNodePaths = outputPaths;
   }
 
+  public boolean isMapOnly() {
+    return this.group == null;
+  }
+
+  Set<NodePath> getMapNodePaths() {
+    return mapNodePaths;
+  }
+
+  PGroupedTableImpl<?, ?> getGroupingTable() {
+    return group;
+  }
+
+  HashMultimap<Target, NodePath> getTargetsToNodePaths() {
+    return targetsToNodePaths;
+  }
+
   public void addReducePaths(HashMultimap<Target, NodePath> outputPaths) {
     if (group == null) {
       throw new IllegalStateException("Cannot add a reduce phase to a map-only job");

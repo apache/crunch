@@ -40,7 +40,9 @@ import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.collect.UnionCollection;
 import org.apache.crunch.impl.mr.collect.UnionTable;
+import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.impl.mr.plan.MSCRPlanner;
+import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.ReadableSourceTarget;
@@ -136,13 +138,21 @@ public class MRPipeline implements Pipeline {
     this.tempDirectory = createTempDirectory(conf);
   }
 
+  public MRExecutor plan() {
+    MSCRPlanner planner = new MSCRPlanner(this, outputTargets);
+    try {
+      return planner.plan(jarClass, conf);
+    } catch (IOException e) {
+      throw new CrunchRuntimeException(e);
+    }
+  }
+
   @Override
   public PipelineResult run() {
-    MSCRPlanner planner = new MSCRPlanner(this, outputTargets);
     PipelineResult res = null;
     try {
-      res = planner.plan(jarClass, conf).execute();
-    } catch (IOException e) {
+      res = plan().execute();
+    } catch (CrunchRuntimeException e) {
       LOG.error(e);
       return PipelineResult.EMPTY;
     }

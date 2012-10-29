@@ -55,7 +55,7 @@ public class MSCRPlanner {
       }
       return cmp;
     }
-  };
+  };  
 
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
@@ -91,6 +91,7 @@ public class MSCRPlanner {
       assignments.putAll(constructJobPrototypes(component));
     }
     
+
     // Add in the job dependency information here.
     for (Map.Entry<Vertex, JobPrototype> e : assignments.entries()) {
       JobPrototype current = e.getValue();
@@ -103,10 +104,15 @@ public class MSCRPlanner {
     }
     
     // Finally, construct the jobs from the prototypes and return.
+    DotfileWriter dotfileWriter = new DotfileWriter();
     MRExecutor exec = new MRExecutor(jarClass);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
+      dotfileWriter.addJobPrototype(proto);
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline));
     }
+
+    conf.set(PlanningParameters.PIPELINE_PLAN_DOTFILE, dotfileWriter.buildDotfile());
+
     return exec;
   }
   

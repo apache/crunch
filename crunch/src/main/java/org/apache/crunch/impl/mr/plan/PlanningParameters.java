@@ -17,11 +17,21 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
+/**
+ * Collection of Configuration keys and various constants used when planning MapReduce jobs for a
+ * pipeline.
+ */
 public class PlanningParameters {
 
   public static final String MULTI_OUTPUT_PREFIX = "out";
 
   public static final String CRUNCH_WORKING_DIRECTORY = "crunch.work.dir";
+
+  /**
+   * Configuration key under which a <a href="http://www.graphviz.org">DOT</a> file containing the
+   * pipeline job graph is stored by the planner.
+   */
+  public static final String PIPELINE_PLAN_DOTFILE = "crunch.planner.dotfile";
 
   private PlanningParameters() {
   }
