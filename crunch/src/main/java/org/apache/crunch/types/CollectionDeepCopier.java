@@ -44,6 +44,9 @@ public class CollectionDeepCopier<T> implements DeepCopier<Collection<T>> {
 
   @Override
   public Collection<T> deepCopy(Collection<T> source) {
+    if (source == null) {
+      return null;
+    }
     List<T> copiedCollection = Lists.newArrayListWithCapacity(source.size());
     for (T value : source) {
       copiedCollection.add(elementType.getDetachedValue(value));

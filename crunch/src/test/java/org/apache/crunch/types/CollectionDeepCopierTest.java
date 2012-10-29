@@ -19,6 +19,7 @@ package org.apache.crunch.types;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 import java.util.Collection;
 
@@ -49,4 +50,12 @@ public class CollectionDeepCopierTest {
     assertNotSame(personCollection.iterator().next(), deepCopyCollection.iterator().next());
   }
 
+  @Test
+  public void testNullDeepCopy() {
+    CollectionDeepCopier<Person> collectionDeepCopier = new CollectionDeepCopier<Person>(
+        Avros.records(Person.class));
+    collectionDeepCopier.initialize(new Configuration());
+    Collection<Person> nullCollection = null;
+    assertNull(collectionDeepCopier.deepCopy(nullCollection));
+  }
 }
