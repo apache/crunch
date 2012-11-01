@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -28,6 +29,7 @@ import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PType;
@@ -78,8 +80,14 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
     return ptype;
   }
 
+  @Override
   public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
     return new DoTableImpl<K, V>("combine", getChainingCollection(), combineFn, parent.getPTableType());
+  }
+
+  @Override
+  public PTable<K, V> combineValues(Aggregator<V> agg) {
+    return combineValues(Aggregators.<K, V>toCombineFn(agg));
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {

@@ -20,8 +20,7 @@ package org.apache.crunch.contrib.bloomfilter;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.crunch.CombineFn.Aggregator;
-import org.apache.crunch.CombineFn.AggregatorCombineFn;
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
@@ -75,7 +74,7 @@ public class BloomFilterFactory {
     PTypeFamily tf = collection.getTypeFamily();
     PTable<String, BloomFilter> table = collection.parallelDo(filterFn,
         tf.tableOf(tf.strings(), Writables.writables(BloomFilter.class)));
-    return table.groupByKey(1).combineValues(new AggregatorCombineFn<String, BloomFilter>(new BloomFilterAggregator()));
+    return table.groupByKey(1).combineValues(new BloomFilterAggregator());
   }
 
 }

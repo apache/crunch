@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
@@ -143,7 +144,7 @@ public class WordCountIT {
 
     if (runSecond) {
       String substrPath = tmpDir.getFileName("substr");
-      PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(CombineFn.<String> SUM_LONGS());
+      PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(Aggregators.SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
     PipelineResult res = pipeline.done();

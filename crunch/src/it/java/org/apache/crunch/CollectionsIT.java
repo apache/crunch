@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.crunch.fn.Aggregators.SimpleAggregator;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
@@ -38,7 +39,7 @@ import com.google.common.collect.Lists;
 @SuppressWarnings("serial")
 public class CollectionsIT {
 
-  public static class AggregateStringListFn extends CombineFn.SimpleAggregator<Collection<String>> {
+  private static class AggregateStringListFn extends SimpleAggregator<Collection<String>> {
     private final Collection<String> rtn = Lists.newArrayList();
 
     @Override
@@ -57,7 +58,7 @@ public class CollectionsIT {
     }
   }
 
-  public static PTable<String, Collection<String>> listOfCharcters(PCollection<String> lines, PTypeFamily typeFamily) {
+  private static PTable<String, Collection<String>> listOfCharcters(PCollection<String> lines, PTypeFamily typeFamily) {
 
     return lines.parallelDo(new DoFn<String, Pair<String, Collection<String>>>() {
       @Override
@@ -70,8 +71,8 @@ public class CollectionsIT {
           emitter.emit(Pair.of(word, characters));
         }
       }
-    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings()))).groupByKey()
-        .combineValues(CombineFn.<String, Collection<String>> aggregator(new AggregateStringListFn()));
+    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.collections(typeFamily.strings())))
+        .groupByKey().combineValues(new AggregateStringListFn());
   }
 
   @Rule

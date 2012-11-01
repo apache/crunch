@@ -31,6 +31,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
@@ -56,7 +57,7 @@ public class Aggregate {
         return Pair.of(input, 1L);
       }
     }, tf.tableOf(collect.getPType(), tf.longs())).groupByKey()
-        .combineValues(CombineFn.<S> SUM_LONGS());
+        .combineValues(Aggregators.SUM_LONGS());
   }
 
   /**
@@ -74,7 +75,7 @@ public class Aggregate {
             return Pair.of(1, 1L);
           }
         }, tf.tableOf(tf.ints(), tf.longs())).groupByKey()
-        .combineValues(CombineFn.<Integer> SUM_LONGS());
+        .combineValues(Aggregators.SUM_LONGS());
     PCollection<Long> count = countTable.values();
     return new FirstElementPObject<Long>(count);
   }

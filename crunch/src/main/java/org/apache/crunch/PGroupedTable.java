@@ -17,11 +17,14 @@
  */
 package org.apache.crunch;
 
+import org.apache.crunch.Aggregator;
+
 /**
  * The Crunch representation of a grouped {@link PTable}.
  * 
  */
 public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
+
   /**
    * Combines the values of this grouping using the given {@code CombineFn}.
    * 
@@ -30,6 +33,16 @@ public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
    * @return A {@code PTable} where each key has a single value
    */
   PTable<K, V> combineValues(CombineFn<K, V> combineFn);
+
+  /**
+   * Combine the values in each group using the given {@link Aggregator}.
+   *
+   * @param aggregator The function to use
+   * @return A {@link PTable} where each group key maps to an aggregated
+   *         value. Group keys may be repeated if an aggregator returns
+   *         more than one value.
+   */
+  PTable<K, V> combineValues(Aggregator<V> aggregator);
 
   /**
    * Convert this grouping back into a multimap.

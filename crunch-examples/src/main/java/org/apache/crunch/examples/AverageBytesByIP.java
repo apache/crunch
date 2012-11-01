@@ -17,11 +17,14 @@
  */
 package org.apache.crunch.examples;
 
+import static org.apache.crunch.fn.Aggregators.SUM_LONGS;
+import static org.apache.crunch.fn.Aggregators.pairAggregator;
+
 import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.crunch.CombineFn;
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
@@ -61,15 +64,14 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
     // Reference a given text file as a collection of Strings.
     PCollection<String> lines = pipeline.readTextFile(args[0]);
 
-    // Combiner used for summing up response size and count
-    CombineFn<String, Pair<Long, Long>> stringPairOfLongsSumCombiner = CombineFn.pairAggregator(CombineFn.SUM_LONGS,
-        CombineFn.SUM_LONGS);
+    // Aggregator used for summing up response size and count
+    Aggregator<Pair<Long, Long>> agg = pairAggregator(SUM_LONGS(), SUM_LONGS());
 
     // Table of (ip, sum(response size), count)
     PTable<String, Pair<Long, Long>> remoteAddrResponseSize = lines
         .parallelDo(extractResponseSize,
             Writables.tableOf(Writables.strings(), Writables.pairs(Writables.longs(), Writables.longs()))).groupByKey()
-        .combineValues(stringPairOfLongsSumCombiner);
+        .combineValues(agg);
 
     // Calculate average response size by ip address
     PTable<String, Double> avgs = remoteAddrResponseSize.parallelDo(calulateAverage,

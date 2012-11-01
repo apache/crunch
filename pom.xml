@@ -614,6 +614,7 @@ under the License.
             <exclude>.gitignore</exclude>
             <exclude>.repository/</exclude>
             <exclude>**/resources/*.txt</exclude>
+            <exclude>**/resources/**/*.txt</exclude>
             <exclude>**/goal.txt</exclude>
             <exclude>**/target/generated-test-sources/**</exclude>
             <exclude>**/scripts/scrunch</exclude>

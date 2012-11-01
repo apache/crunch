@@ -25,13 +25,13 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.hbase.HBaseTarget;
@@ -125,8 +125,8 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
     // We process the data from the source HTable then concatenate all data
     // with the same rowkey
     PTable<String, String> textExtracted = extractText(rawText);
-    CombineFn<String, String> stringConcatCombine = CombineFn.STRING_CONCAT(" ", true);
-    PTable<String, String> result = textExtracted.groupByKey().combineValues(stringConcatCombine);
+    PTable<String, String> result = textExtracted.groupByKey()
+        .combineValues(Aggregators.STRING_CONCAT(" ",  true));
 
     // We create the collection of puts from the concatenated datas
     PCollection<Put> resultPut = createPut(result);

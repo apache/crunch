@@ -21,7 +21,7 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.crunch.CombineFn;
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
@@ -29,6 +29,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -60,13 +61,13 @@ public class TotalBytesByIP extends Configured implements Tool, Serializable {
     // Reference a given text file as a collection of Strings.
     PCollection<String> lines = pipeline.readTextFile(args[0]);
 
-    // Combiner used for summing up response size
-    CombineFn<String, Long> longSumCombiner = CombineFn.SUM_LONGS();
+    // Aggregator used for summing up response size
+    Aggregator<Long> agg = Aggregators.SUM_LONGS();
 
     // Table of (ip, sum(response size))
     PTable<String, Long> ipAddrResponseSize = lines
         .parallelDo(extractIPResponseSize, Writables.tableOf(Writables.strings(), Writables.longs())).groupByKey()
-        .combineValues(longSumCombiner);
+        .combineValues(agg);
 
     pipeline.writeTextFile(ipAddrResponseSize, args[1]);
     // Execute the pipeline as a MapReduce.

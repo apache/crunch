@@ -32,6 +32,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.fn.MapKeysFn;
 import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.impl.mr.MRPipeline;
@@ -89,7 +90,7 @@ public class CogroupIT {
           return "";
         }
       }
-    }, ntt).groupByKey().combineValues(CombineFn.<String> SUM_LONGS());
+    }, ntt).groupByKey().combineValues(Aggregators.SUM_LONGS());
   }
 
   @Test
