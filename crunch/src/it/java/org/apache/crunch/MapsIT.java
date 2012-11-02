@@ -17,6 +17,9 @@
  */
 package org.apache.crunch;
 
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.util.Map;
 
 import org.apache.crunch.impl.mr.MRPipeline;
@@ -83,13 +86,16 @@ public class MapsIT {
             emitter.emit(Pair.of(input.first(), agg));
           }
         }).materialize();
+
     boolean passed = false;
     for (Pair<String, Map<String, Long>> v : output) {
-      if (v.first() == "k" && v.second().get("n") == 8L) {
+      if (v.first().equals("k") && v.second().get("n") == 8L) {
         passed = true;
         break;
       }
     }
     pipeline.done();
+
+    assertThat(passed, is(true));
   }
 }
