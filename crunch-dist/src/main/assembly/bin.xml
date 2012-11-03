@@ -46,6 +46,18 @@
         </dependencySets>
       </binaries>
     </moduleSet>
+    <moduleSet>
+      <useAllReactorProjects>true</useAllReactorProjects>
+      <includes>
+        <include>org.apache.crunch:crunch-examples</include>
+      </includes>
+      <binaries>
+        <unpack>false</unpack>
+        <fileMode>0644</fileMode>
+        <attachmentClassifier>job</attachmentClassifier>
+        <includeDependencies>false</includeDependencies>
+      </binaries>
+    </moduleSet>
   </moduleSets>
   <fileSets>
     <fileSet>
