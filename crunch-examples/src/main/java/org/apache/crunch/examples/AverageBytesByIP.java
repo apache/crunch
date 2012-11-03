@@ -45,7 +45,7 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
     CORRUPT_SIZE
   }
 
-  static final String logRegex = "^([\\d.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
+  static final String logRegex = "^([\\w.]+) (\\S+) (\\S+) \\[([\\w:/]+\\s[+\\-]\\d{4})\\] \"(.+?)\" (\\d{3}) (\\d+) \"([^\"]+)\" \"([^\"]+)\"";
 
   public int run(String[] args) throws Exception {
     if (args.length != 2) {
