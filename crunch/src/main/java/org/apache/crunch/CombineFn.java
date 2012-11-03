@@ -954,6 +954,7 @@ public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S,
       if (joiner == null) {
         joiner = skipNulls ? Joiner.on(separator).skipNulls() : Joiner.on(separator);
       }
+      currentLength = -separator.length();
       list.clear();
     }
 

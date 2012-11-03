@@ -205,6 +205,14 @@ public class CombineFnTest {
         new StringConcatAggregator(" ", true, 9, 6), ImmutableList.of("foo", "foobar", "bar")));
   }
 
+  @Test
+  public void testConcatenationReset() {
+    StringConcatAggregator a = new StringConcatAggregator(" ", true, 10, 6);
+
+    assertEquals(ImmutableList.of("foo foobar"), applyAggregator(a, ImmutableList.of("foo", "foobar", "bar")));
+    assertEquals(ImmutableList.of("foo foobar"), applyAggregator(a, ImmutableList.of("foo", "foobar", "bar")));
+  }
+
   @Test(expected = NullPointerException.class)
   public void testConcatenationNullException() {
     String[] arrayNull = new String[] { null, "" };
