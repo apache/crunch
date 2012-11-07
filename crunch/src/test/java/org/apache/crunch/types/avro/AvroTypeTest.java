@@ -144,7 +144,9 @@ public class AvroTypeTest {
   @Test
   public void testGetDetachedValue_AlreadyMappedAvroType() {
     Integer value = 42;
-    Integer detachedValue = Avros.ints().getDetachedValue(value);
+    AvroType<Integer> intType = Avros.ints();
+    intType.initialize(new Configuration());
+    Integer detachedValue = intType.getDetachedValue(value);
     assertSame(value, detachedValue);
   }
 
