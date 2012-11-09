@@ -22,7 +22,7 @@ under the License.
   <parent>
     <groupId>org.apache.crunch</groupId>
     <artifactId>crunch-parent</artifactId>
-    <version>0.4.0-incubating-SNAPSHOT</version>
+    <version>0.5.0-incubating-SNAPSHOT</version>
   </parent>
 
   <artifactId>crunch-archetype</artifactId>
