@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
@@ -42,12 +43,7 @@ public class MRPipelineIT implements Serializable {
     Pipeline pipeline = new MRPipeline(MRPipelineIT.class, tmpDir.getDefaultConfiguration());
     PCollection<String> genericCollection = pipeline.readTextFile(textFile.getAbsolutePath());
     pipeline.run();
-    PCollection<String> filter = genericCollection.filter("Filtering data", new FilterFn<String>() {
-      @Override
-      public boolean accept(String input) {
-        return true;
-      }
-    });
+    PCollection<String> filter = genericCollection.filter("Filtering data", FilterFns.<String>ACCEPT_ALL());
     filter.materialize();
     pipeline.run();
     File file = tmpDir.getFile("output.txt");

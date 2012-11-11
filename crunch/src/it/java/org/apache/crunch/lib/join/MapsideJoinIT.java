@@ -24,11 +24,11 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
@@ -73,14 +73,6 @@ public class MapsideJoinIT {
 
   }
 
-  private static class NegativeFilter extends FilterFn<Pair<Integer, String>> {
-
-    @Override
-    public boolean accept(Pair<Integer, String> input) {
-      return false;
-    }
-
-  }
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
 
@@ -96,7 +88,7 @@ public class MapsideJoinIT {
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
 
     PTable<Integer, String> filteredOrderTable = orderTable
-        .parallelDo(new NegativeFilter(), orderTable.getPTableType());
+        .parallelDo(FilterFns.<Pair<Integer, String>>REJECT_ALL(), orderTable.getPTableType());
 
     PTable<Integer, Pair<String, String>> joined = MapsideJoin.join(customerTable, filteredOrderTable);
 

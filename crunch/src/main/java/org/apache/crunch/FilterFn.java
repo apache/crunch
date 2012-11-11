@@ -19,12 +19,13 @@ package org.apache.crunch;
 
 import java.util.List;
 
+import org.apache.crunch.fn.FilterFns;
+
 import com.google.common.collect.ImmutableList;
 
 /**
  * A {@link DoFn} for the common case of filtering the members of a
  * {@link PCollection} based on a boolean condition.
- * 
  */
 public abstract class FilterFn<T> extends DoFn<T, T> {
 
@@ -45,10 +46,16 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     return 0.5f;
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#and(FilterFn...)}
+   */
   public static <S> FilterFn<S> and(FilterFn<S>... fns) {
     return new AndFn<S>(fns);
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#and(FilterFn...)}
+   */
   public static class AndFn<S> extends FilterFn<S> {
 
     private final List<FilterFn<S>> fns;
@@ -77,10 +84,16 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     }
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#or(FilterFn...)}
+   */
   public static <S> FilterFn<S> or(FilterFn<S>... fns) {
     return new OrFn<S>(fns);
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#or(FilterFn...)}
+   */
   public static class OrFn<S> extends FilterFn<S> {
 
     private final List<FilterFn<S>> fns;
@@ -109,10 +122,16 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     }
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#not(FilterFn)}
+   */
   public static <S> FilterFn<S> not(FilterFn<S> fn) {
     return new NotFn<S>(fn);
   }
 
+  /**
+   * @deprecated Use {@link FilterFns#not(FilterFn)}
+   */
   public static class NotFn<S> extends FilterFn<S> {
 
     private final FilterFn<S> base;

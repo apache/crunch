@@ -23,6 +23,7 @@ import static junit.framework.Assert.assertTrue;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.Person;
@@ -40,16 +41,6 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 public class MaterializeIT {
-
-  /** Filter that rejects everything. */
-  @SuppressWarnings("serial")
-  private static class FalseFilterFn extends FilterFn<String> {
-
-    @Override
-    public boolean accept(final String input) {
-      return false;
-    }
-  }
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
@@ -112,7 +103,7 @@ public class MaterializeIT {
   public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily)
       throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
-    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FalseFilterFn());
+    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(FilterFns.<String>REJECT_ALL());
 
     assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());
     pipeline.done();

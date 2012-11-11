@@ -26,6 +26,7 @@ import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
@@ -42,16 +43,6 @@ public class PCollectionGetSizeIT {
   private String emptyInputPath;
   private String nonEmptyInputPath;
   private String outputPath;
-
-  /** Filter that rejects everything. */
-  @SuppressWarnings("serial")
-  private static class FalseFilterFn extends FilterFn<String> {
-
-    @Override
-    public boolean accept(final String input) {
-      return false;
-    }
-  }
 
   @Before
   public void setUp() throws IOException {
@@ -105,7 +96,7 @@ public class PCollectionGetSizeIT {
     PCollection<String> data = new MRPipeline(this.getClass(), tmpDir.getDefaultConfiguration())
       .readTextFile(nonEmptyInputPath);
 
-    PCollection<String> emptyPCollection = data.filter(new FalseFilterFn());
+    PCollection<String> emptyPCollection = data.filter(FilterFns.<String>REJECT_ALL());
 
     assertThat(emptyPCollection.getSize(), is(0L));
   }
@@ -139,7 +130,7 @@ public class PCollectionGetSizeIT {
 
     PCollection<String> data = pipeline.readTextFile(nonEmptyInputPath);
 
-    PCollection<String> emptyPCollection = data.filter(new FalseFilterFn());
+    PCollection<String> emptyPCollection = data.filter(FilterFns.<String>REJECT_ALL());
 
     emptyPCollection.write(sequenceFile(outputPath, strings()));
 
