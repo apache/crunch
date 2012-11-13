@@ -52,10 +52,6 @@ import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -344,17 +340,6 @@ public class MRPipeline implements Pipeline {
   public void enableDebug() {
     // Turn on Crunch runtime error catching.
     getConfiguration().setBoolean(RuntimeParameters.DEBUG, true);
-
-    // Write Hadoop's WARN logs to the console.
-    Logger crunchInfoLogger = LogManager.getLogger("org.apache.crunch");
-    Appender console = crunchInfoLogger.getAppender("A");
-    if (console != null) {
-      Logger hadoopLogger = LogManager.getLogger("org.apache.hadoop");
-      hadoopLogger.setLevel(Level.WARN);
-      hadoopLogger.addAppender(console);
-    } else {
-      LOG.warn("Could not find console appender named 'A' for writing Hadoop warning logs");
-    }
   }
 
   @Override

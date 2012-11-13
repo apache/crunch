@@ -49,6 +49,12 @@ under the License.
      <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Required by LocalJobRunner -->
     <dependency>
       <groupId>commons-io</groupId>
