@@ -48,9 +48,9 @@ public class TupleFactoryTest {
     assertEquals(TupleFactory.TUPLEN, TupleFactory.getTupleFactory(TupleN.class));
   }
 
-  @Test(expected = IllegalArgumentException.class)
   public void testGetTupleFactory_CustomTupleClass() {
-    TupleFactory.getTupleFactory(CustomTupleImplementation.class);
+	TupleFactory<CustomTupleImplementation> customTupleFactory = TupleFactory.create(CustomTupleImplementation.class);
+    assertEquals(customTupleFactory, TupleFactory.getTupleFactory(CustomTupleImplementation.class));
   }
 
   private static class CustomTupleImplementation implements Tuple {

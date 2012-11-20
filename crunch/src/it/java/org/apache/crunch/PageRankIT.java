@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.crunch.PObject;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;

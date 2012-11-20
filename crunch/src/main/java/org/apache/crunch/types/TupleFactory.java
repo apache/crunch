@@ -19,6 +19,7 @@ package org.apache.crunch.types;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.util.Map;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -27,6 +28,8 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 
+import com.google.common.collect.Maps;
+
 public abstract class TupleFactory<T extends Tuple> implements Serializable {
 
   public void initialize() {
@@ -34,9 +37,11 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
 
   public abstract T makeTuple(Object... values);
 
+  
+  private static final Map<Class, TupleFactory> customTupleFactories = Maps.newHashMap();
+  
   /**
-   * Get the {@link TupleFactory} for a given Tuple implementation. Only
-   * standard Tuple implementations are supported.
+   * Get the {@link TupleFactory} for a given Tuple implementation.
    * 
    * @param tupleClass
    *          The class for which the factory is to be retrieved
@@ -51,6 +56,8 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
       return (TupleFactory<T>) TUPLE4;
     } else if (tupleClass == TupleN.class) {
       return (TupleFactory<T>) TUPLEN;
+    } else if (customTupleFactories.containsKey(tupleClass)) {
+      return (TupleFactory<T>) customTupleFactories.get(tupleClass);
     } else {
       throw new IllegalArgumentException("Can't create TupleFactory for " + tupleClass);
     }
@@ -85,7 +92,12 @@ public abstract class TupleFactory<T extends Tuple> implements Serializable {
   };
 
   public static <T extends Tuple> TupleFactory<T> create(Class<T> clazz, Class... typeArgs) {
-    return new CustomTupleFactory<T>(clazz, typeArgs);
+    if (customTupleFactories.containsKey(clazz)) {
+      return (TupleFactory<T>) customTupleFactories.get(clazz);
+    }
+    TupleFactory<T> custom = new CustomTupleFactory<T>(clazz, typeArgs);
+    customTupleFactories.put(clazz, custom);
+    return custom;
   }
 
   private static class CustomTupleFactory<T extends Tuple> extends TupleFactory<T> {

@@ -28,7 +28,6 @@ import java.util.Map;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
-import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
@@ -48,7 +47,6 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 public class AggregateIT {
