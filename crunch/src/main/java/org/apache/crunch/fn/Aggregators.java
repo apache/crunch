@@ -20,6 +20,7 @@ package org.apache.crunch.fn;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 
 import org.apache.crunch.Aggregator;
@@ -326,7 +327,7 @@ public final class Aggregators {
   public static <V> Aggregator<V> LAST_N(int n) {
     return new LastNAggregator<V>(n);
   }
-
+  
   /**
    * Concatenate strings, with a separator between strings. There
    * is no limits of length for the concatenated string.
@@ -340,7 +341,7 @@ public final class Aggregators {
    *            define if we should skip null values. Throw
    *            NullPointerException if set to false and there is a null
    *            value.
-   * @return The newly constructed instance instance
+   * @return The newly constructed instance
    */
   public static Aggregator<String> STRING_CONCAT(String separator, boolean skipNull) {
     return new StringConcatAggregator(separator, skipNull);
@@ -371,13 +372,24 @@ public final class Aggregators {
    *            the maximum length of the input strings. If it's set <= 0,
    *            there is no limit. The number of characters of the input string
    *            will be &lt; maxInputLength to be concatenated.
-   * @return The newly constructed instance instance
+   * @return The newly constructed instance
    */
   public static Aggregator<String> STRING_CONCAT(String separator, boolean skipNull,
       long maxOutputLength, long maxInputLength) {
     return new StringConcatAggregator(separator, skipNull, maxOutputLength, maxInputLength);
   }
 
+  /**
+   * Collect the unique elements of the input, as defined by the {@code equals} method for
+   * the input objects. No guarantees are made about the order in which the final elements
+   * will be returned.
+   * 
+   * @return The newly constructed instance
+   */
+  public static <V> Aggregator<V> UNIQUE_ELEMENTS() {
+    return new SetAggregator<V>();
+  }
+  
   /**
    * Apply separate aggregators to each component of a {@link Pair}.
    */
@@ -1052,4 +1064,36 @@ public final class Aggregators {
     }
   }
 
+  private static class SetAggregator<V> extends SimpleAggregator<V> {
+    private final Set<V> elements;
+    private final int sizeLimit;
+    
+    public SetAggregator() {
+      this(-1);
+    }
+    
+    public SetAggregator(int sizeLimit) {
+      this.elements = Sets.newHashSet();
+      this.sizeLimit = sizeLimit;
+    }
+    
+    @Override
+    public void reset() {
+      elements.clear();
+    }
+
+    @Override
+    public void update(V value) {
+      elements.add(value);
+      if (sizeLimit > 0 && elements.size() > sizeLimit) {
+        elements.iterator().remove();
+      }
+    }
+
+    @Override
+    public Iterable<V> results() {
+      return ImmutableList.copyOf(elements);
+    }
+  }
+  
 }

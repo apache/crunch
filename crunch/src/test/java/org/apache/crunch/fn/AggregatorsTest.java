@@ -55,6 +55,7 @@ import org.junit.Test;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 
@@ -122,7 +123,13 @@ public class AggregatorsTest {
   public void testLastN() {
     assertThat(apply(Aggregators.<Integer>LAST_N(2), 17, 34, 98, 29, 1009), is(ImmutableList.of(29, 1009)));
   }
-
+  
+  @Test
+  public void testUniqueElements() {
+    assertThat(ImmutableSet.copyOf(apply(Aggregators.<Integer>UNIQUE_ELEMENTS(), 17, 29, 29, 16, 17)),
+        is(ImmutableSet.of(17, 29, 16)));
+  }
+  
   @Test
   public void testPairs() {
     List<Pair<Long, Double>> input = ImmutableList.of(Pair.of(1720L, 17.29), Pair.of(9L, -3.14));
