@@ -38,6 +38,7 @@ import static org.apache.crunch.fn.Aggregators.SUM_LONGS;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 import java.math.BigInteger;
@@ -128,6 +129,11 @@ public class AggregatorsTest {
   public void testUniqueElements() {
     assertThat(ImmutableSet.copyOf(apply(Aggregators.<Integer>UNIQUE_ELEMENTS(), 17, 29, 29, 16, 17)),
         is(ImmutableSet.of(17, 29, 16)));
+    
+    Iterable<Integer> samp = apply(Aggregators.<Integer>SAMPLE_UNIQUE_ELEMENTS(2), 17, 29, 16, 17, 29, 16);
+    List<Integer> elements = ImmutableList.copyOf(samp);
+    assertEquals(2, elements.size());
+    assertFalse(elements.get(0).equals(elements.get(1)));
   }
   
   @Test

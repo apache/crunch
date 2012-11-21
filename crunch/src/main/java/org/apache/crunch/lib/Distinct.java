@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 /**
  * Functions for computing the distinct elements of a {@code PCollection}.
  */
-public class Distinct {
+public final class Distinct {
 
   private static final int DEFAULT_FLUSH_EVERY = 50000;
   
@@ -97,4 +97,7 @@ public class Distinct {
       emitter.emit(input.first());
     }
   }
+  
+  // No instantiation
+  private Distinct() {}
 }

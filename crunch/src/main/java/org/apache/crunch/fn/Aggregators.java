@@ -391,6 +391,19 @@ public final class Aggregators {
   }
   
   /**
+   * Collect a random sample of unique elements from the input, where 'unique' is defined by
+   * the {@code equals} method for the input objects. No guarantees are made about which
+   * elements will be returned, simply that there will not be any more than the given sample
+   * size for any key.
+   * 
+   * @param maximumSampleSize The maximum number of unique elements to return per key
+   * @return The newly constructed instance
+   */
+  public static <V> Aggregator<V> SAMPLE_UNIQUE_ELEMENTS(int maximumSampleSize) {
+    return new SetAggregator<V>(maximumSampleSize);
+  }
+  
+  /**
    * Apply separate aggregators to each component of a {@link Pair}.
    */
   public static <V1, V2> Aggregator<Pair<V1, V2>> pairAggregator(
@@ -1084,9 +1097,8 @@ public final class Aggregators {
 
     @Override
     public void update(V value) {
-      elements.add(value);
-      if (sizeLimit > 0 && elements.size() > sizeLimit) {
-        elements.iterator().remove();
+      if (sizeLimit == -1 || elements.size() < sizeLimit) {
+        elements.add(value);
       }
     }
 
