@@ -29,6 +29,10 @@ public class FileTableSourceImpl<K, V> extends FileSourceImpl<Pair<K, V>> implem
     super(path, tableType, formatClass);
   }
 
+  public FileTableSourceImpl(Path path, PTableType<K, V> tableType, InputBundle bundle) {
+    super(path, tableType, bundle);
+  }
+  
   @Override
   public PTableType<K, V> getTableType() {
     return (PTableType<K, V>) getType();

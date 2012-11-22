@@ -22,6 +22,20 @@ import java.io.IOException;
 import org.apache.crunch.Source;
 import org.apache.hadoop.conf.Configuration;
 
+/**
+ * An extension of the {@code Source} interface that indicates that a
+ * {@code Source} instance may be read as a series of records by the client
+ * code. This is used to determine whether a {@code PCollection} instance can be
+ * materialized.
+ */
 public interface ReadableSource<T> extends Source<T> {
+
+  /**
+   * Returns an {@code Iterable} that contains the contents of this source.
+   * 
+   * @param conf The current {@code Configuration} instance
+   * @return the contents of this {@code Source} as an {@code Iterable} instance
+   * @throws IOException
+   */
   Iterable<T> read(Configuration conf) throws IOException;
 }

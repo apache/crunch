@@ -24,13 +24,9 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.MapFn;
-import org.apache.crunch.fn.CompositeMapFn;
-import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.PType;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -42,28 +38,19 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(TextFileReaderFactory.class);
 
-  private final PType<T> ptype;
-  private final Configuration conf;
+  private final LineParser<T> parser;
 
-  public TextFileReaderFactory(PType<T> ptype, Configuration conf) {
-    this.ptype = ptype;
-    this.conf = conf;
+  public TextFileReaderFactory(PType<T> ptype) {
+    this(LineParser.forType(ptype));
+  }
+  
+  public TextFileReaderFactory(LineParser<T> parser) {
+    this.parser = parser;
   }
 
   @Override
   public Iterator<T> read(FileSystem fs, Path path) {
-    MapFn mapFn = null;
-    if (String.class.equals(ptype.getTypeClass())) {
-      mapFn = IdentityFn.getInstance();
-    } else {
-      // Check for a composite MapFn for the PType.
-      // Note that this won't work for Avro-- need to solve that.
-      MapFn input = ptype.getInputMapFn();
-      if (input instanceof CompositeMapFn) {
-        mapFn = ((CompositeMapFn) input).getSecond();
-      }
-    }
-    mapFn.initialize();
+    parser.initialize();
 
     FSDataInputStream is;
     try {
@@ -74,7 +61,6 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
     }
 
     final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-    final MapFn<String, T> iterMapFn = mapFn;
     return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
       private String nextLine;
 
@@ -90,7 +76,7 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
       @Override
       public T next() {
-        return iterMapFn.map(nextLine);
+        return parser.parse(nextLine);
       }
     });
   }

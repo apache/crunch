@@ -25,8 +25,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
+import org.apache.crunch.types.Converter;
+import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -40,23 +41,29 @@ class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileReaderFactory.class);
 
+  private final Converter converter;
   private final MapFn<Object, T> mapFn;
   private final Writable key;
   private final Writable value;
-  private final Configuration conf;
 
-  public SeqFileReaderFactory(PType<T> ptype, Configuration conf) {
-    this.mapFn = SeqFileHelper.getInputMapFn(ptype);
-    this.key = NullWritable.get();
-    this.value = SeqFileHelper.newInstance(ptype, conf);
-    this.conf = conf;
+  public SeqFileReaderFactory(PType<T> ptype) {
+    this.converter = ptype.getConverter();
+    this.mapFn = ptype.getInputMapFn();
+    if (ptype instanceof PTableType) {
+      PTableType ptt = (PTableType) ptype;
+      this.key = SeqFileHelper.newInstance(ptt.getKeyType(), null);
+      this.value = SeqFileHelper.newInstance(ptt.getValueType(), null);
+    } else {
+      this.key = NullWritable.get();
+      this.value = SeqFileHelper.newInstance(ptype, null);
+    }
   }
 
   @Override
   public Iterator<T> read(FileSystem fs, final Path path) {
     mapFn.initialize();
     try {
-      final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
+      final SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, fs.getConf());
       return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
         boolean nextChecked = false;
         boolean hasNext = false;
@@ -82,7 +89,7 @@ class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
             return null;
           }
           nextChecked = false;
-          return mapFn.map(value);
+          return mapFn.map(converter.convertInput(key, value));
         }
       });
     } catch (IOException e) {

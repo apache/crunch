@@ -48,7 +48,7 @@ public class CompositePathIterableIT {
     LocalFileSystem local = FileSystem.getLocal(conf);
 
     Iterable<String> iterable = CompositePathIterable.create(local, new Path(inputFilePath),
-        new TextFileReaderFactory<String>(Writables.strings(), conf));
+        new TextFileReaderFactory<String>(Writables.strings()));
 
     assertEquals(Lists.newArrayList("b", "c", "a", "e"), Lists.newArrayList(iterable));
 
@@ -62,7 +62,7 @@ public class CompositePathIterableIT {
     LocalFileSystem local = FileSystem.getLocal(conf);
 
     Iterable<String> iterable = CompositePathIterable.create(local, emptyInputDir,
-        new TextFileReaderFactory<String>(Writables.strings(), conf));
+        new TextFileReaderFactory<String>(Writables.strings()));
 
     assertTrue(Lists.newArrayList(iterable).isEmpty());
   }
@@ -78,7 +78,7 @@ public class CompositePathIterableIT {
     LocalFileSystem local = FileSystem.getLocal(conf);
 
     CompositePathIterable.create(local, new Path(nonExistentDir.getAbsolutePath()), new TextFileReaderFactory<String>(
-        Writables.strings(), conf));
+        Writables.strings()));
   }
 
 }

@@ -73,7 +73,7 @@ public class TextFileTarget extends FileTargetImpl {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof PTableType) {
-      return null;
+      return new TextFileTableSourceTarget(path, (PTableType) ptype);
     }
     return new TextFileSourceTarget<T>(path, ptype);
   }

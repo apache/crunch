@@ -30,7 +30,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
 /**
- *
+ * A {@code TableSource} that uses {@code SequenceFileInputFormat} to read the input
+ * file.
  */
 public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implements ReadableSource<Pair<K, V>> {
 
@@ -45,7 +46,8 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
   @Override
   public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
     FileSystem fs = path.getFileSystem(conf);
-    return CompositePathIterable.create(fs, path, new SeqFileTableReaderFactory<K, V>((PTableType<K, V>) ptype, conf));
+    return CompositePathIterable.create(fs, path,
+        new SeqFileReaderFactory<Pair<K, V>>(getTableType()));
   }
 
   @Override

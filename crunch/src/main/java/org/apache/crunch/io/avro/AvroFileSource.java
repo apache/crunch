@@ -33,11 +33,16 @@ import org.apache.hadoop.fs.Path;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  public AvroFileSource(Path path, AvroType<T> ptype) {
-    super(path, ptype, new InputBundle(AvroInputFormat.class)
+  private static <S> InputBundle getBundle(AvroType<S> ptype) {
+    InputBundle bundle = new InputBundle(AvroInputFormat.class)
         .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
-        .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName()));
+        .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName());
+    return bundle;
+  }
+  
+  public AvroFileSource(Path path, AvroType<T> ptype) {
+    super(path, ptype, getBundle(ptype));
   }
 
   @Override
@@ -48,6 +53,6 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     FileSystem fs = path.getFileSystem(conf);
-    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>((AvroType<T>) ptype, conf));
+    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>((AvroType<T>) ptype));
   }
 }

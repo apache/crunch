@@ -83,7 +83,7 @@ public class AvroFileReaderFactoryTest {
   }
 
   private <T> AvroFileReaderFactory<T> createFileReaderFactory(AvroType<T> avroType) {
-    return new AvroFileReaderFactory<T>(avroType, new Configuration());
+    return new AvroFileReaderFactory<T>(avroType);
   }
 
   @Test

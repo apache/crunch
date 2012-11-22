@@ -33,7 +33,6 @@ import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -46,12 +45,10 @@ class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private final DatumReader<T> recordReader;
   private final MapFn<T, T> mapFn;
-  private final Configuration conf;
 
-  public AvroFileReaderFactory(AvroType<T> atype, Configuration conf) {
+  public AvroFileReaderFactory(AvroType<T> atype) {
     this.recordReader = AvroFileReaderFactory.createDatumReader(atype);
     this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
-    this.conf = conf;
   }
 
   static <T> DatumReader<T> createDatumReader(AvroType<T> avroType) {

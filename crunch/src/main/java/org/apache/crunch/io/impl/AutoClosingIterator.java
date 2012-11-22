@@ -28,7 +28,7 @@ import com.google.common.io.Closeables;
  * Closes the wrapped {@code Closeable} when {@link #hasNext()} returns false.  As long a client loops through to
  * completion (doesn't abort early due to an exception, short circuit, etc.) resources will be closed automatically.
  */
-public class AutoClosingIterator<T> extends UnmodifiableIterator<T> implements Iterator<T>, Closeable {
+public class AutoClosingIterator<T> extends UnmodifiableIterator<T> implements Closeable {
   private final Iterator<T> iter;
   private Closeable closeable;
 

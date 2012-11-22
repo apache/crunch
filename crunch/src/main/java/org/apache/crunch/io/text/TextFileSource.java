@@ -67,7 +67,7 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(path.getFileSystem(conf), path, new TextFileReaderFactory<T>(ptype,
-        conf));
+    return CompositePathIterable.create(path.getFileSystem(conf), path,
+        new TextFileReaderFactory<T>(LineParser.forType(ptype)));
   }
 }
