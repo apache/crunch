@@ -91,7 +91,7 @@ public final class Distinct {
     }
   }
   
-  private static class PostDistinctFn<S> extends DoFn<Pair<S, java.lang.Iterable<java.lang.Void>>, S> {
+  private static class PostDistinctFn<S> extends DoFn<Pair<S, Iterable<Void>>, S> {
     @Override
     public void process(Pair<S, Iterable<Void>> input, Emitter<S> emitter) {
       emitter.emit(input.first());

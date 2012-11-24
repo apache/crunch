@@ -391,7 +391,7 @@ public final class Aggregators {
   }
   
   /**
-   * Collect a random sample of unique elements from the input, where 'unique' is defined by
+   * Collect a sample of unique elements from the input, where 'unique' is defined by
    * the {@code equals} method for the input objects. No guarantees are made about which
    * elements will be returned, simply that there will not be any more than the given sample
    * size for any key.

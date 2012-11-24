@@ -19,6 +19,9 @@ package org.apache.crunch.lib;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.types.avro.Avros;
@@ -27,11 +30,23 @@ import org.junit.Test;
 import com.google.common.collect.ImmutableSet;
 
 public class DistinctTest {
+  private static final List<Integer> DATA = Arrays.asList(
+      17, 29, 17, 29, 17, 29, 36, 45, 17, 45, 36, 29
+  );
+
   @Test
   public void testDistinct() {
-    PCollection<Integer> input = MemPipeline.typedCollectionOf(Avros.ints(),
-        17, 29, 17, 29, 17, 29, 36, 45, 17, 45, 36, 29);
+    PCollection<Integer> input = MemPipeline.typedCollectionOf(Avros.ints(), DATA);
     Iterable<Integer> unique = Distinct.distinct(input).materialize();
-    assertEquals(ImmutableSet.of(17, 29, 36, 45), ImmutableSet.copyOf(unique));
+
+    assertEquals(ImmutableSet.copyOf(DATA), ImmutableSet.copyOf(unique));
+  }
+
+  @Test
+  public void testDistinctFlush() {
+    PCollection<Integer> input = MemPipeline.typedCollectionOf(Avros.ints(), DATA);
+    Iterable<Integer> unique = Distinct.distinct(input, 2).materialize();
+
+    assertEquals(ImmutableSet.copyOf(DATA), ImmutableSet.copyOf(unique));
   }
 }
