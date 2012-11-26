@@ -45,33 +45,15 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
 
   private final MemTable<K, V> parent;
 
-  private static <S, T> Map<S, Collection<T>> createMapFor(PType<S> keyType, GroupingOptions options, Pipeline pipeline) {
-    if (options != null && options.getSortComparatorClass() != null) {
-      RawComparator<S> rc = ReflectionUtils.newInstance(options.getSortComparatorClass(), pipeline.getConfiguration());
-      return new TreeMap<S, Collection<T>>(rc);
-    } else if (keyType != null && Comparable.class.isAssignableFrom(keyType.getTypeClass())) {
-      return new TreeMap<S, Collection<T>>();
-    }
-    return Maps.newHashMap();
-  }
-
   private static <S, T> Iterable<Pair<S, Iterable<T>>> buildMap(MemTable<S, T> parent, GroupingOptions options) {
     PType<S> keyType = parent.getKeyType();
-    Map<S, Collection<T>> map = createMapFor(keyType, options, parent.getPipeline());
+    Shuffler<S, T> shuffler = Shuffler.create(keyType, options, parent.getPipeline());
 
     for (Pair<S, T> pair : parent.materialize()) {
-      S key = pair.first();
-      if (!map.containsKey(key)) {
-        map.put(key, Lists.<T> newArrayList());
-      }
-      map.get(key).add(pair.second());
+      shuffler.add(pair);
     }
 
-    List<Pair<S, Iterable<T>>> values = Lists.newArrayList();
-    for (Map.Entry<S, Collection<T>> e : map.entrySet()) {
-      values.add(Pair.of(e.getKey(), (Iterable<T>) e.getValue()));
-    }
-    return values;
+    return shuffler;
   }
 
   public MemGroupedTable(MemTable<K, V> parent, GroupingOptions options) {

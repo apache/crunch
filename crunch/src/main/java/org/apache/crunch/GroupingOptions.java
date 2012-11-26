@@ -51,6 +51,14 @@ public class GroupingOptions {
     return sortComparatorClass;
   }
 
+  public Class<? extends RawComparator> getGroupingComparatorClass() {
+    return groupingComparatorClass;
+  }
+  
+  public Class<? extends Partitioner> getPartitionerClass() {
+    return partitionerClass;
+  }
+  
   public void configure(Job job) {
     if (partitionerClass != null) {
       job.setPartitionerClass(partitionerClass);
