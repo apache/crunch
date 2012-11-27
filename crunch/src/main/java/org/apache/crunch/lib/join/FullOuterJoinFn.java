@@ -56,7 +56,7 @@ public class FullOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   public void join(K key, int id, Iterable<Pair<U, V>> pairs, Emitter<Pair<K, Pair<U, V>>> emitter) {
     if (!key.equals(lastKey)) {
       // Make sure that left side gets emitted.
-      if (0 == lastId && 0 == id) {
+      if (0 == lastId) {
         for (U u : leftValues) {
           emitter.emit(Pair.of(lastKey, Pair.of(u, (V) null)));
         }
