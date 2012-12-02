@@ -37,7 +37,7 @@ import org.apache.hadoop.io.Writable;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K, V>> {
+class SeqFileTableReaderFactory<K, V> implements FileReaderFactory<Pair<K, V>> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileTableReaderFactory.class);
 

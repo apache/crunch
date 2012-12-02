@@ -37,7 +37,6 @@ import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
-import org.apache.crunch.types.avro.SafeAvroSerialization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -46,7 +45,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 /**
- * Test {@link SafeAvroSerialization} with Specific Avro types
+ * Test {@link org.apache.crunch.types.avro.SafeAvroSerialization} with Specific Avro types
  */
 public class SpecificAvroGroupByIT implements Serializable {
 

@@ -36,7 +36,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /** An {@link RecordReader} for Avro data files. */
-public class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritable> {
+class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritable> {
 
   private FileReader<T> reader;
   private long start;

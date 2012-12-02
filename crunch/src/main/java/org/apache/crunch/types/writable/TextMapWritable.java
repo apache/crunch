@@ -29,7 +29,7 @@ import org.apache.hadoop.io.WritableUtils;
 
 import com.google.common.collect.Maps;
 
-public class TextMapWritable<T extends Writable> implements Writable {
+class TextMapWritable<T extends Writable> implements Writable {
 
   private Class<T> valueClazz;
   private final Map<Text, T> instance;

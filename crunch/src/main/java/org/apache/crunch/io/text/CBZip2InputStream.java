@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
  * 
  * @author <a href="mailto:keiron@aftexsw.com">Keiron Liddle</a>
  */
-public class CBZip2InputStream extends InputStream implements BZip2Constants {
+class CBZip2InputStream extends InputStream implements BZip2Constants {
   private static void cadvise(String reason) throws IOException {
     throw new IOException(reason);
   }

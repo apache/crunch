@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
  * Visitor that traverses the {@code DoNode} instances in a job and builds a
  * String that identifies the stages of the pipeline that belong to this job.
  */
-public class JobNameBuilder {
+class JobNameBuilder {
 
   private static final Joiner JOINER = Joiner.on("+");
   private static final Joiner CHILD_JOINER = Joiner.on("/");

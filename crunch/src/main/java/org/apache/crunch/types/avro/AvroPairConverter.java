@@ -24,7 +24,7 @@ import org.apache.avro.mapred.AvroValue;
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.Converter;
 
-public class AvroPairConverter<K, V> implements Converter<AvroKey<K>, AvroValue<V>, Pair<K, V>, Pair<K, Iterable<V>>> {
+class AvroPairConverter<K, V> implements Converter<AvroKey<K>, AvroValue<V>, Pair<K, V>, Pair<K, Iterable<V>>> {
 
   private transient AvroKey<K> keyWrapper = null;
   private transient AvroValue<V> valueWrapper = null;

@@ -40,7 +40,7 @@ import org.apache.hadoop.fs.Path;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
+class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
 

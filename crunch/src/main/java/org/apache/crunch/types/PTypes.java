@@ -73,7 +73,7 @@ public class PTypes {
     }
   };
 
-  public static class JacksonInputMapFn<T> extends MapFn<String, T> {
+  private static class JacksonInputMapFn<T> extends MapFn<String, T> {
 
     private final Class<T> clazz;
     private transient ObjectMapper mapper;
@@ -97,7 +97,7 @@ public class PTypes {
     }
   }
 
-  public static class JacksonOutputMapFn<T> extends MapFn<T, String> {
+  private static class JacksonOutputMapFn<T> extends MapFn<T, String> {
 
     private transient ObjectMapper mapper;
 
@@ -116,7 +116,7 @@ public class PTypes {
     }
   }
 
-  public static class ProtoInputMapFn<T extends Message> extends MapFn<ByteBuffer, T> {
+  private static class ProtoInputMapFn<T extends Message> extends MapFn<ByteBuffer, T> {
 
     private final Class<T> clazz;
     private transient T instance;
@@ -140,7 +140,7 @@ public class PTypes {
     }
   }
 
-  public static class ProtoOutputMapFn<T extends Message> extends MapFn<T, ByteBuffer> {
+  private static class ProtoOutputMapFn<T extends Message> extends MapFn<T, ByteBuffer> {
 
     public ProtoOutputMapFn() {
     }
@@ -151,7 +151,7 @@ public class PTypes {
     }
   }
 
-  public static class ThriftInputMapFn<T extends TBase> extends MapFn<ByteBuffer, T> {
+  private static class ThriftInputMapFn<T extends TBase> extends MapFn<ByteBuffer, T> {
 
     private final Class<T> clazz;
     private transient T instance;
@@ -186,7 +186,7 @@ public class PTypes {
     }
   }
 
-  public static class ThriftOutputMapFn<T extends TBase> extends MapFn<T, ByteBuffer> {
+  private static class ThriftOutputMapFn<T extends TBase> extends MapFn<T, ByteBuffer> {
 
     private transient TSerializer serializer;
 
@@ -208,7 +208,7 @@ public class PTypes {
     }
   }
 
-  public static class EnumInputMapper<T extends Enum> extends MapFn<String, T> {
+  private static class EnumInputMapper<T extends Enum> extends MapFn<String, T> {
     private final Class<T> type;
 
     public EnumInputMapper(Class<T> type) {
@@ -221,7 +221,7 @@ public class PTypes {
     }
   };
 
-  public static class EnumOutputMapper<T extends Enum> extends MapFn<T, String> {
+  private static class EnumOutputMapper<T extends Enum> extends MapFn<T, String> {
 
     @Override
     public String map(T input) {

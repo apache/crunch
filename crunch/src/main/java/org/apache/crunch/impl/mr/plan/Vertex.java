@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 /**
  *
  */
-public class Vertex {
+class Vertex {
   private final PCollectionImpl impl;
   
   private boolean output;

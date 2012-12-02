@@ -21,7 +21,7 @@ import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.types.Converter;
 import org.apache.hadoop.io.NullWritable;
 
-public class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
+class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
 
   private transient AvroWrapper<K> wrapper = null;
 

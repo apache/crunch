@@ -29,7 +29,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableUtils;
 
-public class GenericArrayWritable<T> implements Writable {
+class GenericArrayWritable<T> implements Writable {
   private Writable[] values;
   private Class<? extends Writable> valueClass;
 

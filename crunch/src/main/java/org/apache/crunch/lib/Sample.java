@@ -27,7 +27,7 @@ import com.google.common.base.Preconditions;
 
 public class Sample {
 
-  public static class SamplerFn<S> extends DoFn<S, S> {
+  private static class SamplerFn<S> extends DoFn<S, S> {
 
     private final long seed;
     private final double acceptanceProbability;

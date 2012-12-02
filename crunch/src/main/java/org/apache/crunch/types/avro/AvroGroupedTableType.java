@@ -37,7 +37,7 @@ import org.apache.hadoop.mapreduce.Job;
  *
  *
  */
-public class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
+class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
   private static final AvroPairConverter CONVERTER = new AvroPairConverter();
   private final MapFn inputFn;

@@ -27,7 +27,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
-public class CrunchTaskContext {
+class CrunchTaskContext {
 
   private final TaskInputOutputContext<Object, Object, Object, Object> taskContext;
   private final NodeContext nodeContext;

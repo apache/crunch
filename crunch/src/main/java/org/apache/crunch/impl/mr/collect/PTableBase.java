@@ -37,7 +37,7 @@ import org.apache.crunch.types.PType;
 
 import com.google.common.collect.Lists;
 
-public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements PTable<K, V> {
+abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements PTable<K, V> {
 
   public PTableBase(String name) {
     super(name);

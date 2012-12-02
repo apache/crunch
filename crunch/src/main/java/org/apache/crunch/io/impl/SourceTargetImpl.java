@@ -28,7 +28,7 @@ import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
-public class SourceTargetImpl<T> implements SourceTarget<T> {
+class SourceTargetImpl<T> implements SourceTarget<T> {
 
   protected final Source<T> source;
   protected final Target target;

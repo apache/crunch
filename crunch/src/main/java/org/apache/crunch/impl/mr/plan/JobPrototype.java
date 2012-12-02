@@ -47,7 +47,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-public class JobPrototype {
+class JobPrototype {
 
   public static JobPrototype createMapReduceJob(PGroupedTableImpl<?, ?> group, Set<NodePath> inputs, Path workingPath) {
     return new JobPrototype(inputs, group, workingPath);

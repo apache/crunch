@@ -33,7 +33,7 @@ import com.google.common.collect.Sets;
 /**
  *
  */
-public class Graph implements Iterable<Vertex> {
+class Graph implements Iterable<Vertex> {
 
   private final Map<PCollectionImpl, Vertex> vertices;
   private final Map<Pair<Vertex, Vertex>, Edge> edges;  

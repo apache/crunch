@@ -44,7 +44,7 @@ import org.apache.hadoop.conf.Configuration;
  * running in a map-reduce context where each mapper/reducer is running in its own JVM, but it may
  * well be a problem in any other kind of multi-threaded context.
  */
-public abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
+abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
   private String jsonSchema;
   private transient Configuration conf;

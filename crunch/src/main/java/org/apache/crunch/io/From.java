@@ -22,7 +22,7 @@ import org.apache.crunch.TableSource;
 import org.apache.crunch.io.avro.AvroFileSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.io.seq.SeqFileSource;
-import org.apache.crunch.io.seq.SeqFileTableSourceTarget;
+import org.apache.crunch.io.seq.SeqFileTableSource;
 import org.apache.crunch.io.text.TextFileSource;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -71,7 +71,7 @@ public class From {
 
   public static <K, V> TableSource<K, V> sequenceFile(Path path, PType<K> keyType, PType<V> valueType) {
     PTypeFamily ptf = keyType.getFamily();
-    return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
+    return new SeqFileTableSource<K, V>(path, ptf.tableOf(keyType, valueType));
   }
 
   public static Source<String> textFile(String pathName) {

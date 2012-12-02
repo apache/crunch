@@ -32,7 +32,7 @@ import org.apache.hadoop.conf.Configuration;
  * The implementation of the PTableType interface for Avro-based serialization.
  * 
  */
-public class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, V> {
+class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, V> {
 
   private static class PairToAvroPair extends MapFn<Pair, org.apache.avro.mapred.Pair> {
     private final MapFn keyMapFn;

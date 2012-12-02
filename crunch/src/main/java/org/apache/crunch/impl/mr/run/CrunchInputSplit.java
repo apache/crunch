@@ -35,7 +35,7 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class CrunchInputSplit extends InputSplit implements Configurable, Writable {
+class CrunchInputSplit extends InputSplit implements Configurable, Writable {
 
   private InputSplit inputSplit;
   private Class<? extends InputFormat> inputFormatClass;

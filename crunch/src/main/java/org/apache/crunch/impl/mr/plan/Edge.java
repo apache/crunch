@@ -33,7 +33,7 @@ import com.google.common.collect.Sets;
 /**
  *
  */
-public class Edge {
+class Edge {
   private final Vertex head;
   private final Vertex tail;
   private final Set<NodePath> paths;

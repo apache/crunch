@@ -27,7 +27,7 @@ import org.apache.crunch.impl.mr.collect.UnionCollection;
 /**
  *
  */
-public class GraphBuilder implements PCollectionImpl.Visitor {
+class GraphBuilder implements PCollectionImpl.Visitor {
 
   private Graph graph = new Graph();
   private Vertex workingVertex;

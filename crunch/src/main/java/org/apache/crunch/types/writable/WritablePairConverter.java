@@ -20,7 +20,7 @@ package org.apache.crunch.types.writable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.Converter;
 
-public class WritablePairConverter<K, V> implements Converter<K, V, Pair<K, V>, Pair<K, Iterable<V>>> {
+class WritablePairConverter<K, V> implements Converter<K, V, Pair<K, V>, Pair<K, Iterable<V>>> {
 
   private final Class<K> keyClass;
   private final Class<V> valueClass;

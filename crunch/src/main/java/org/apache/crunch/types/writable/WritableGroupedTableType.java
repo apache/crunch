@@ -26,7 +26,7 @@ import org.apache.crunch.types.PGroupedTableType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
-public class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
+class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
   private final MapFn inputFn;
   private final MapFn outputFn;

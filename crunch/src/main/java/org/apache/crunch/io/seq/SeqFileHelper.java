@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class SeqFileHelper {
+class SeqFileHelper {
   static <T> Writable newInstance(PType<T> ptype, Configuration conf) {
     return (Writable) ReflectionUtils.newInstance(((WritableType) ptype).getSerializationClass(), conf);
   }

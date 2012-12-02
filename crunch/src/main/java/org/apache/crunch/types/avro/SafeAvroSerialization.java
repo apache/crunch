@@ -43,7 +43,7 @@ import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.hadoop.util.ReflectionUtils;
 
 /** The {@link Serialization} used by jobs configured with {@link AvroJob}. */
-public class SafeAvroSerialization<T> extends Configured implements Serialization<AvroWrapper<T>> {
+class SafeAvroSerialization<T> extends Configured implements Serialization<AvroWrapper<T>> {
 
   public boolean accept(Class<?> c) {
     return AvroWrapper.class.isAssignableFrom(c);

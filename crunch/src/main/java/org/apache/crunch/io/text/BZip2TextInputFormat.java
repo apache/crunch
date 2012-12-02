@@ -35,7 +35,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
-public class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
+class BZip2TextInputFormat extends FileInputFormat<LongWritable, Text> {
   /**
    * Treats keys as offset in file and value as line. Since the input file is
    * compressed, the offset for a particular line is not well-defined. This
