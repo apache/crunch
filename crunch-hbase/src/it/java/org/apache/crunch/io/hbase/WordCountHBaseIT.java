@@ -50,6 +50,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -96,6 +97,18 @@ public class WordCountHBaseIT {
       }
 
     }, Writables.writables(Put.class));
+  }
+  
+  @SuppressWarnings("serial")
+  public static PCollection<Delete> clearCounts(PTable<ImmutableBytesWritable, Result> counts) {
+    return counts.parallelDo("convert to delete", new DoFn<Pair<ImmutableBytesWritable, Result>, Delete>() {
+      @Override
+      public void process(Pair<ImmutableBytesWritable, Result> input, Emitter<Delete> emitter) {
+        Delete delete = new Delete(input.first().get());
+        emitter.emit(delete);
+      }
+
+    }, Writables.writables(Delete.class));
   }
 
   @Before
@@ -151,6 +164,7 @@ public class WordCountHBaseIT {
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$1.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$2.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$3.class");
       jos.close();
 
       Path target = new Path(tmpPath, "WordCountHBaseIT.jar");
@@ -205,6 +219,20 @@ public class WordCountHBaseIT {
 
       assertIsLong(outputTable, "cat", 2);
       assertIsLong(outputTable, "dog", 1);
+      
+      //verify HBaseTarget supports deletes.
+      Scan clearScan = new Scan();
+      clearScan.addColumn(COUNTS_COLFAM, null);
+      pipeline = new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration());
+      HBaseSourceTarget clearSource = new HBaseSourceTarget(outputTableName, clearScan);
+      PTable<ImmutableBytesWritable, Result> counts = pipeline.read(clearSource);
+      pipeline.write(clearCounts(counts), new HBaseTarget(outputTableName));
+      pipeline.done();
+      
+      assertDeleted(outputTable, "cat");
+      assertDeleted(outputTable, "dog");
+      
+      
     } finally {
       // not quite sure...
     }
@@ -226,4 +254,11 @@ public class WordCountHBaseIT {
     assertTrue(rawCount != null);
     assertEquals(new Long(i), new Long(Bytes.toLong(rawCount)));
   }
+  
+  protected void assertDeleted(HTable table, String key) throws IOException {
+      Get get = new Get(Bytes.toBytes(key));
+      get.addColumn(COUNTS_COLFAM, null);
+      Result result = table.get(get);
+      assertTrue(result.isEmpty());
+    }
 }

@@ -29,6 +29,7 @@ import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
@@ -69,7 +70,7 @@ public class HBaseTarget implements MapReduceTarget {
 
   @Override
   public boolean accept(OutputHandler handler, PType<?> ptype) {
-    if (Put.class.equals(ptype.getTypeClass())) {
+    if (Put.class.equals(ptype.getTypeClass()) || Delete.class.equals(ptype.getTypeClass())) {
       handler.configure(this, ptype);
       return true;
     }
