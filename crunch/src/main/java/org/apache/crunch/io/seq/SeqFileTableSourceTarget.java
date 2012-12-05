@@ -18,7 +18,7 @@
 package org.apache.crunch.io.seq;
 
 import org.apache.crunch.Pair;
-import org.apache.crunch.TableSource;
+import org.apache.crunch.TableSourceTarget;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
@@ -26,7 +26,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.fs.Path;
 
 public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl<Pair<K, V>> implements
-    TableSource<K, V> {
+    TableSourceTarget<K, V> {
   private final PTableType<K, V> tableType;
 
   public SeqFileTableSourceTarget(String path, PTableType<K, V> tableType) {

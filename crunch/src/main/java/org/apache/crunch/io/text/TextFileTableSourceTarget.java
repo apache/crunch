@@ -18,7 +18,7 @@
 package org.apache.crunch.io.text;
 
 import org.apache.crunch.Pair;
-import org.apache.crunch.TableSource;
+import org.apache.crunch.TableSourceTarget;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.Path;
  * the keys and the values.
  */
 public class TextFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl<Pair<K, V>> implements
-    TableSource<K, V> {
+    TableSourceTarget<K, V> {
 
   private final PTableType<K, V> tableType;
   

@@ -18,9 +18,8 @@
 package org.apache.crunch;
 
 /**
- * An interface for classes that implement both the {@code Source} and the
+ * An interface for classes that implement both the {@code TableSource} and the
  * {@code Target} interfaces.
- *
  */
-public interface SourceTarget<T> extends Source<T>, Target {
+public interface TableSourceTarget<K, V> extends TableSource<K, V>, SourceTarget<Pair<K, V>> {
 }
