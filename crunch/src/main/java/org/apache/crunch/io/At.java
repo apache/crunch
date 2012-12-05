@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io;
 
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
@@ -25,51 +26,204 @@ import org.apache.crunch.io.text.TextFileSourceTarget;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 
 /**
- * Static factory methods for creating various {@link SourceTarget} types.
- * 
+ * Static factory methods for creating common {@link SourceTarget} types, which may be treated as both a {@code Source}
+ * and a {@code Target}.
  */
 public class At {
+
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given path name.
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param avroClass The subclass of {@code SpecificRecord} to use for the Avro file
+   * @return A new {@code AvroFileSourceTarget<T>} instance
+   */
+  public static <T extends SpecificRecord> AvroFileSourceTarget<T> avroFile(String pathName, Class<T> avroClass) {
+    return avroFile(new Path(pathName), avroClass);  
+  }
+
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given {@code Path}.
+   * 
+   * @param path The {@code Path} to the data
+   * @param avroClass The subclass of {@code SpecificRecord} to use for the Avro file
+   * @return A new {@code AvroFileSourceTarget<T>} instance
+   */
+  public static <T extends SpecificRecord> AvroFileSourceTarget<T> avroFile(Path path, Class<T> avroClass) {
+    return avroFile(path, Avros.specifics(avroClass));  
+  }
+  
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given path name.
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param avroType The {@code AvroType} for the Avro records
+   * @return A new {@code AvroFileSourceTarget<T>} instance
+   */
   public static <T> AvroFileSourceTarget<T> avroFile(String pathName, AvroType<T> avroType) {
     return avroFile(new Path(pathName), avroType);
   }
 
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given {@code Path}.
+   * 
+   * @param path The {@code Path} to the data
+   * @param avroType The {@code AvroType} for the Avro records
+   * @return A new {@code AvroFileSourceTarget<T>} instance
+   */
   public static <T> AvroFileSourceTarget<T> avroFile(Path path, AvroType<T> avroType) {
     return new AvroFileSourceTarget<T>(path, avroType);
   }
 
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the SequenceFile(s) at the given path name
+   * from the value field of each key-value pair in the SequenceFile(s).
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param valueClass The {@code Writable} type for the value of the SequenceFile entry
+   * @return A new {@code SeqFileSourceTarget<T>} instance
+   */
+  public static <T extends Writable> SeqFileSourceTarget<T> sequenceFile(String pathName, Class<T> valueClass) {
+    return sequenceFile(new Path(pathName), valueClass);
+  }
+
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the SequenceFile(s) at the given {@code Path}
+   * from the value field of each key-value pair in the SequenceFile(s).
+   * 
+   * @param path The {@code Path} to the data
+   * @param valueClass The {@code Writable} type for the value of the SequenceFile entry
+   * @return A new {@code SeqFileSourceTarget<T>} instance
+   */
+  public static <T extends Writable> SeqFileSourceTarget<T> sequenceFile(Path path, Class<T> valueClass) {
+    return sequenceFile(path, Writables.writables(valueClass));
+  }
+  
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the SequenceFile(s) at the given path name
+   * from the value field of each key-value pair in the SequenceFile(s).
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param ptype The {@code PType} for the value of the SequenceFile entry
+   * @return A new {@code SeqFileSourceTarget<T>} instance
+   */
   public static <T> SeqFileSourceTarget<T> sequenceFile(String pathName, PType<T> ptype) {
     return sequenceFile(new Path(pathName), ptype);
   }
 
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the SequenceFile(s) at the given {@code Path}
+   * from the value field of each key-value pair in the SequenceFile(s).
+   * 
+   * @param path The {@code Path} to the data
+   * @param ptype The {@code PType} for the value of the SequenceFile entry
+   * @return A new {@code SeqFileSourceTarget<T>} instance
+   */
   public static <T> SeqFileSourceTarget<T> sequenceFile(Path path, PType<T> ptype) {
     return new SeqFileSourceTarget<T>(path, ptype);
   }
 
+  /**
+   * Creates a {@code TableSourceTarget<K, V>} instance from the SequenceFile(s) at the given path name
+   * from the key-value pairs in the SequenceFile(s).
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param keyClass The {@code Writable} type for the key of the SequenceFile entry
+   * @param valueClass The {@code Writable} type for the value of the SequenceFile entry
+   * @return A new {@code SeqFileTableSourceTarget<K, V>} instance
+   */
+  public static <K extends Writable, V extends Writable> SeqFileTableSourceTarget<K, V> sequenceFile(
+      String pathName, Class<K> keyClass, Class<V> valueClass) {
+    return sequenceFile(new Path(pathName), keyClass, valueClass);
+  }
+
+  /**
+   * Creates a {@code TableSourceTarget<K, V>} instance from the SequenceFile(s) at the given {@code Path}
+   * from the key-value pairs in the SequenceFile(s).
+   * 
+   * @param path The {@code Path} to the data
+   * @param keyClass The {@code Writable} type for the key of the SequenceFile entry
+   * @param valueClass The {@code Writable} type for the value of the SequenceFile entry
+   * @return A new {@code SeqFileTableSourceTarget<K, V>} instance
+   */
+  public static <K extends Writable, V extends Writable> SeqFileTableSourceTarget<K, V> sequenceFile(
+      Path path, Class<K> keyClass, Class<V> valueClass) {
+    return sequenceFile(path, Writables.writables(keyClass), Writables.writables(valueClass));
+  }
+  
+  /**
+   * Creates a {@code TableSourceTarget<K, V>} instance from the SequenceFile(s) at the given path name
+   * from the key-value pairs in the SequenceFile(s).
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param keyType The {@code PType} for the key of the SequenceFile entry
+   * @param valueType The {@code PType} for the value of the SequenceFile entry
+   * @return A new {@code SeqFileTableSourceTarget<K, V>} instance
+   */
   public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(String pathName, PType<K> keyType, PType<V> valueType) {
     return sequenceFile(new Path(pathName), keyType, valueType);
   }
 
+  /**
+   * Creates a {@code TableSourceTarget<K, V>} instance from the SequenceFile(s) at the given {@code Path}
+   * from the key-value pairs in the SequenceFile(s).
+   * 
+   * @param path The {@code Path} to the data
+   * @param keyType The {@code PType} for the key of the SequenceFile entry
+   * @param valueType The {@code PType} for the value of the SequenceFile entry
+   * @return A new {@code SeqFileTableSourceTarget<K, V>} instance
+   */
   public static <K, V> SeqFileTableSourceTarget<K, V> sequenceFile(Path path, PType<K> keyType, PType<V> valueType) {
     PTypeFamily ptf = keyType.getFamily();
     return new SeqFileTableSourceTarget<K, V>(path, ptf.tableOf(keyType, valueType));
   }
 
+  /**
+   * Creates a {@code SourceTarget<String>} instance for the text file(s) at the given path name.
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @return A new {@code TextFileSourceTarget<String>} instance
+   */
   public static TextFileSourceTarget<String> textFile(String pathName) {
     return textFile(new Path(pathName));
   }
 
+  /**
+   * Creates a {@code SourceTarget<String>} instance for the text file(s) at the given {@code Path}.
+   * 
+   * @param path The {@code Path} to the data
+   * @return A new {@code TextFileSourceTarget<String>} instance
+   */
   public static TextFileSourceTarget<String> textFile(Path path) {
     return textFile(path, Writables.strings());
   }
 
+  /**
+   * Creates a {@code SourceTarget<T>} instance for the text file(s) at the given path name using
+   * the provided {@code PType<T>} to convert the input text.
+   * 
+   * @param pathName The name of the path to the data on the filesystem
+   * @param ptype The {@code PType<T>} to use to process the input text
+   * @return A new {@code TextFileSourceTarget<T>} instance
+   */
   public static <T> TextFileSourceTarget<T> textFile(String pathName, PType<T> ptype) {
     return textFile(new Path(pathName), ptype);
   }
 
+  /**
+   * Creates a {@code SourceTarget<T>} instance for the text file(s) at the given {@code Path} using
+   * the provided {@code PType<T>} to convert the input text.
+   * 
+   * @param path The {@code Path} to the data
+   * @param ptype The {@code PType<T>} to use to process the input text
+   * @return A new {@code TextFileSourceTarget<T>} instance
+   */
   public static <T> TextFileSourceTarget<T> textFile(Path path, PType<T> ptype) {
     return new TextFileSourceTarget<T>(path, ptype);
   }
