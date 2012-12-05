@@ -27,7 +27,6 @@ import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueLineRecordReader;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 
 /** 
@@ -38,9 +37,15 @@ import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 public class TextFileTableSource<K, V> extends FileTableSourceImpl<K, V>
     implements ReadableSource<Pair<K, V>> {
 
+  // CRUNCH-125: Maintain compatibility with both versions of the KeyValueTextInputFormat's
+  // configuration field for specifying the separator character.
+  private static final String OLD_KV_SEP = "key.value.separator.in.input.line";
+  private static final String NEW_KV_SEP = "mapreduce.input.keyvaluelinerecordreader.key.value.separator";
+  
   private static InputBundle getBundle(String sep) {
     InputBundle bundle = new InputBundle(KeyValueTextInputFormat.class);
-    bundle.set(KeyValueLineRecordReader.KEY_VALUE_SEPERATOR, sep);
+    bundle.set(OLD_KV_SEP, sep);
+    bundle.set(NEW_KV_SEP, sep);
     return bundle;
   }
   
