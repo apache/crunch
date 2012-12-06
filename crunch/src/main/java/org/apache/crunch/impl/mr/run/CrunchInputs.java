@@ -20,7 +20,7 @@ package org.apache.crunch.impl.mr.run;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.crunch.io.impl.InputBundle;
+import org.apache.crunch.io.InputBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;

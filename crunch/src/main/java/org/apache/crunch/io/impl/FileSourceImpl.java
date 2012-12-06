@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.run.CrunchInputs;
+import org.apache.crunch.io.InputBundle;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -38,15 +39,15 @@ public abstract class FileSourceImpl<T> implements Source<T> {
 
   protected final Path path;
   protected final PType<T> ptype;
-  protected final InputBundle inputBundle;
+  protected final InputBundle<?> inputBundle;
 
   public FileSourceImpl(Path path, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
     this.path = path;
     this.ptype = ptype;
-    this.inputBundle = new InputBundle(inputFormatClass);
+    this.inputBundle = InputBundle.of(inputFormatClass);
   }
 
-  public FileSourceImpl(Path path, PType<T> ptype, InputBundle inputBundle) {
+  public FileSourceImpl(Path path, PType<T> ptype, InputBundle<?> inputBundle) {
     this.path = path;
     this.ptype = ptype;
     this.inputBundle = inputBundle;

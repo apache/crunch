@@ -21,9 +21,9 @@ import java.io.IOException;
 
 import org.apache.avro.mapred.AvroJob;
 import org.apache.crunch.io.CompositePathIterable;
+import org.apache.crunch.io.InputBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
-import org.apache.crunch.io.impl.InputBundle;
 import org.apache.crunch.types.avro.AvroInputFormat;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;

@@ -21,9 +21,9 @@ import java.io.IOException;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.io.CompositePathIterable;
+import org.apache.crunch.io.InputBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
-import org.apache.crunch.io.impl.InputBundle;
 import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

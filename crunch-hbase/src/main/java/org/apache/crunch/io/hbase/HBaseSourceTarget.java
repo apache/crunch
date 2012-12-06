@@ -25,11 +25,14 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
+import org.apache.crunch.impl.mr.run.CrunchInputs;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
+import org.apache.crunch.io.InputBundle;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
@@ -46,10 +49,18 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
       Writables.writables(ImmutableBytesWritable.class), Writables.writables(Result.class));
 
   protected Scan scan;
-
+  private InputBundle<TableInputFormat> inputBundle;
+  
   public HBaseSourceTarget(String table, Scan scan) {
     super(table);
     this.scan = scan;
+    try {
+      this.inputBundle = new InputBundle<TableInputFormat>(TableInputFormat.class)
+          .set(TableInputFormat.INPUT_TABLE, table)
+          .set(TableInputFormat.SCAN, convertScanToString(scan));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -69,7 +80,7 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
     }
     HBaseSourceTarget o = (HBaseSourceTarget) other;
     // XXX scan does not have equals method
-    return table.equals(o.table) && scan.equals(o.scan);
+    return inputBundle.equals(o.inputBundle);
   }
 
   @Override
@@ -85,12 +96,16 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     Configuration conf = job.getConfiguration();
-    job.setInputFormatClass(TableInputFormat.class);
-    job.setMapperClass(CrunchMapper.class);
     HBaseConfiguration.addHbaseResources(conf);
-    conf.set(TableInputFormat.INPUT_TABLE, table);
-    conf.set(TableInputFormat.SCAN, convertScanToString(scan));
     TableMapReduceUtil.addDependencyJars(job);
+    if (inputId == -1) {
+      job.setMapperClass(CrunchMapper.class);
+      job.setInputFormatClass(inputBundle.getInputFormatClass());
+      inputBundle.configure(job.getConfiguration());
+    } else {
+      Path dummy = new Path("/hbase/" + table);
+      CrunchInputs.addInputPath(job, dummy, inputBundle, inputId);
+    }
   }
 
   static String convertScanToString(Scan scan) throws IOException {

@@ -82,7 +82,8 @@ public class HBaseTarget implements MapReduceTarget {
     final Configuration conf = job.getConfiguration();
     HBaseConfiguration.addHbaseResources(conf);
     conf.set(TableOutputFormat.OUTPUT_TABLE, table);
-
+    Class<?> typeClass = ptype.getTypeClass(); // Either Put or Delete
+    
     try {
       TableMapReduceUtil.addDependencyJars(job);
       FileOutputFormat.setOutputPath(job, outputPath);
@@ -93,12 +94,12 @@ public class HBaseTarget implements MapReduceTarget {
     if (null == name) {
       job.setOutputFormatClass(TableOutputFormat.class);
       job.setOutputKeyClass(ImmutableBytesWritable.class);
-      job.setOutputValueClass(Put.class);
+      job.setOutputValueClass(typeClass);
     } else {
       CrunchMultipleOutputs.addNamedOutput(job, name,
           TableOutputFormat.class,
           ImmutableBytesWritable.class,
-          Put.class);
+          typeClass);
     }
   }
 

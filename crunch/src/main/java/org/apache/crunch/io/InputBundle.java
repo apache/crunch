@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.io.impl;
+package org.apache.crunch.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,19 +35,19 @@ import com.google.common.collect.Maps;
 /**
  * A combination of an InputFormat and any configuration information that
  * InputFormat needs to run properly. InputBundles allow us to let different
- * InputFormats pretend as if they are the only InputFormat that exists in a
+ * InputFormats act as if they are the only InputFormat that exists in a
  * particular MapReduce job.
  */
-public class InputBundle implements Serializable {
+public class InputBundle<K extends InputFormat> implements Serializable {
 
-  private Class<? extends InputFormat> inputFormatClass;
+  private Class<K> inputFormatClass;
   private Map<String, String> extraConf;
 
-  public static InputBundle fromSerialized(String serialized) {
+  public static <T extends InputFormat> InputBundle<T> fromSerialized(String serialized) {
     ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(serialized));
     try {
       ObjectInputStream ois = new ObjectInputStream(bais);
-      InputBundle bundle = (InputBundle) ois.readObject();
+      InputBundle<T> bundle = (InputBundle<T>) ois.readObject();
       ois.close();
       return bundle;
     } catch (IOException e) {
@@ -57,17 +57,21 @@ public class InputBundle implements Serializable {
     }
   }
 
-  public InputBundle(Class<? extends InputFormat> inputFormatClass) {
+  public static <T extends InputFormat> InputBundle<T> of(Class<T> inputFormatClass) {
+    return new InputBundle<T>(inputFormatClass);
+  }
+  
+  public InputBundle(Class<K> inputFormatClass) {
     this.inputFormatClass = inputFormatClass;
     this.extraConf = Maps.newHashMap();
   }
 
-  public InputBundle set(String key, String value) {
+  public InputBundle<K> set(String key, String value) {
     this.extraConf.put(key, value);
     return this;
   }
 
-  public Class<? extends InputFormat> getInputFormatClass() {
+  public Class<K> getInputFormatClass() {
     return inputFormatClass;
   }
 
@@ -108,7 +112,7 @@ public class InputBundle implements Serializable {
     if (other == null || !(other instanceof InputBundle)) {
       return false;
     }
-    InputBundle oib = (InputBundle) other;
+    InputBundle<K> oib = (InputBundle<K>) other;
     return inputFormatClass.equals(oib.inputFormatClass) && extraConf.equals(oib.extraConf);
   }
 }

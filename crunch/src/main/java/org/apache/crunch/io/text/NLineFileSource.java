@@ -20,9 +20,9 @@ package org.apache.crunch.io.text;
 import java.io.IOException;
 
 import org.apache.crunch.io.CompositePathIterable;
+import org.apache.crunch.io.InputBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
-import org.apache.crunch.io.impl.InputBundle;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

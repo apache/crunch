@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.crunch.io.impl.InputBundle;
+import org.apache.crunch.io.InputBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -47,6 +47,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
     for (Map.Entry<InputBundle, Map<Integer, List<Path>>> entry : formatNodeMap.entrySet()) {
       InputBundle inputBundle = entry.getKey();
       Job jobCopy = new Job(conf);
+      inputBundle.configure(jobCopy.getConfiguration());
       InputFormat<?, ?> format = (InputFormat<?, ?>) ReflectionUtils.newInstance(inputBundle.getInputFormatClass(),
           jobCopy.getConfiguration());
       for (Map.Entry<Integer, List<Path>> nodeEntry : entry.getValue().entrySet()) {
