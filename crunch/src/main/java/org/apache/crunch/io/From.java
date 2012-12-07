@@ -36,13 +36,38 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
- * Static factory methods for creating common {@link Source} types.
+ * <p>Static factory methods for creating common {@link Source} types.</p>
+ * 
+ * <p>The {@code From} class is intended to provide a literate API for creating
+ * Crunch pipelines from common input file types.
+ * 
+ * <code>
+ *   Pipeline pipeline = new MRPipeline(this.getClass());
+ *   
+ *   // Reference the lines of a text file by wrapping the TextInputFormat class.
+ *   PCollection<String> lines = pipeline.read(From.textFile("/path/to/myfiles"));
+ *   
+ *   // Reference entries from a sequence file where the key is a LongWritable and the
+ *   // value is a custom Writable class.
+ *   PTable<LongWritable, MyWritable> table = pipeline.read(From.sequenceFile(
+ *       "/path/to/seqfiles", LongWritable.class, MyWritable.class));
+ *   
+ *   // Reference the records from an Avro file, where MyAvroObject implements Avro's
+ *   // SpecificRecord interface.
+ *   PCollection<MyAvroObject> myObjects = pipeline.read(From.avroFile("/path/to/avrofiles",
+ *       MyAvroObject.class));
+ *       
+ *   // References the key-value pairs from a custom extension of FileInputFormat:
+ *   PTable<KeyWritable, ValueWritable> custom = pipeline.read(From.formattedFile(
+ *       "/custom", MyFileInputFormat.class, KeyWritable.class, ValueWritable.class));
+ * </code>
+ * </p>
  */
 public class From {
 
   /**
    * Creates a {@code TableSource<K, V>} for reading data from files that have custom
-   * {@code FileInputFormat} implementations not covered by the provided {@code TableSource}
+   * {@code FileInputFormat<K, V>} implementations not covered by the provided {@code TableSource}
    * and {@code Source} factory methods.
    * 
    * @param pathName The name of the path to the data on the filesystem
@@ -52,14 +77,14 @@ public class From {
    * @return A new {@code TableSource<K, V>} instance
    */
   public static <K extends Writable, V extends Writable> TableSource<K, V> formattedFile(
-      String pathName, Class<? extends FileInputFormat> formatClass,
+      String pathName, Class<? extends FileInputFormat<K, V>> formatClass,
       Class<K> keyClass, Class<V> valueClass) {
     return formattedFile(new Path(pathName), formatClass, keyClass, valueClass);
   }
 
   /**
    * Creates a {@code TableSource<K, V>} for reading data from files that have custom
-   * {@code FileInputFormat} implementations not covered by the provided {@code TableSource}
+   * {@code FileInputFormat<K, V>} implementations not covered by the provided {@code TableSource}
    * and {@code Source} factory methods.
    * 
    * @param  The {@code Path} to the data
@@ -69,7 +94,7 @@ public class From {
    * @return A new {@code TableSource<K, V>} instance
    */
   public static <K extends Writable, V extends Writable> TableSource<K, V> formattedFile(
-      Path path, Class<? extends FileInputFormat> formatClass,
+      Path path, Class<? extends FileInputFormat<K, V>> formatClass,
       Class<K> keyClass, Class<V> valueClass) {
     return formattedFile(path, formatClass, Writables.writables(keyClass),
         Writables.writables(valueClass));
@@ -86,7 +111,8 @@ public class From {
    * @param valueType The {@code PType} to use for the value
    * @return A new {@code TableSource<K, V>} instance
    */
-  public static <K, V> TableSource<K, V> formattedFile(String pathName, Class<? extends FileInputFormat> formatClass,
+  public static <K, V> TableSource<K, V> formattedFile(String pathName,
+      Class<? extends FileInputFormat<?, ?>> formatClass,
       PType<K> keyType, PType<V> valueType) {
     return formattedFile(new Path(pathName), formatClass, keyType, valueType);
   }
@@ -102,7 +128,8 @@ public class From {
    * @param valueType The {@code PType} to use for the value
    * @return A new {@code TableSource<K, V>} instance
    */
-  public static <K, V> TableSource<K, V> formattedFile(Path path, Class<? extends FileInputFormat> formatClass,
+  public static <K, V> TableSource<K, V> formattedFile(Path path,
+      Class<? extends FileInputFormat<?, ?>> formatClass,
       PType<K> keyType, PType<V> valueType) {
     PTableType<K, V> tableType = keyType.getFamily().tableOf(keyType, valueType);
     return new FileTableSourceImpl<K, V>(path, tableType, formatClass);

@@ -23,10 +23,39 @@ import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.io.seq.SeqFileTarget;
 import org.apache.crunch.io.text.TextFileTarget;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 /**
- * Static factory methods for creating common {@link Target} types.
+ * <p>Static factory methods for creating common {@link Target} types.</p>
+ * 
+ * <p>The {@code To} class is intended to be used as part of a literate API
+ * for writing the output of Crunch pipelines to common file types. We can use
+ * the {@code Target} objects created by the factory methods in the {@code To}
+ * class with either the {@code write} method on the {@code Pipeline} class or
+ * the convenience {@code write} method on {@code PCollection} and {@code PTable}
+ * instances.
+ * 
+ * <code>
+ *   Pipeline pipeline = new MRPipeline(this.getClass());
+ *   ...
+ *   // Write a PCollection<String> to a text file:
+ *   PCollection<String> words = ...;
+ *   pipeline.write(words, To.textFile("/put/my/words/here"));
+ *   
+ *   // Write a PTable<Text, Text> to a sequence file:
+ *   PTable<Text, Text> textToText = ...;
+ *   textToText.write(To.sequenceFile("/words/to/words"));
+ *   
+ *   // Write a PCollection<MyAvroObject> to an Avro data file:
+ *   PCollection<MyAvroObject> objects = ...;
+ *   objects.write(To.avroFile("/my/avro/files"));
+ *   
+ *   // Write a PTable to a custom FileOutputFormat:
+ *   PTable<KeyWritable, ValueWritable> custom = ...;
+ *   pipeline.write(custom, To.formattedFile("/custom", MyFileFormat.class));
+ * </code>
+ * </p>
  */
 public class To {
 
@@ -35,10 +64,11 @@ public class To {
    * a custom {@code FileOutputFormat}.
    * 
    * @param pathName The name of the path to write the data to on the filesystem
-   * @param formatClass The {@code FileOutputFormat} to write the data to
+   * @param formatClass The {@code FileOutputFormat<K, V>} to write the data to
    * @return A new {@code Target} instance
    */
-  public static Target formattedFile(String pathName, Class<? extends FileOutputFormat> formatClass) {
+  public static <K extends Writable, V extends Writable> Target formattedFile(
+      String pathName, Class<? extends FileOutputFormat<K, V>> formatClass) {
     return formattedFile(new Path(pathName), formatClass);
   }
 
@@ -50,7 +80,8 @@ public class To {
    * @param formatClass The {@code FileOutputFormat} to write the data to
    * @return A new {@code Target} instance
    */
-  public static Target formattedFile(Path path, Class<? extends FileOutputFormat> formatClass) {
+  public static <K extends Writable, V extends Writable> Target formattedFile(
+      Path path, Class<? extends FileOutputFormat<K, V>> formatClass) {
     return new FileTargetImpl(path, formatClass, new SequentialFileNamingScheme());
   }
 
@@ -119,5 +150,4 @@ public class To {
   public static Target textFile(Path path) {
     return new TextFileTarget(path);
   }
-
 }

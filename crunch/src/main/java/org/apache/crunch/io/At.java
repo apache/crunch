@@ -33,8 +33,34 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
 /**
- * Static factory methods for creating common {@link SourceTarget} types, which may be treated as both a {@code Source}
- * and a {@code Target}.
+ * <p>Static factory methods for creating common {@link SourceTarget} types, which may be treated as both a {@code Source}
+ * and a {@code Target}.</p>
+ * 
+ * <p>The {@code At} methods is analogous to the {@link From} and {@link To} factory methods, but is used for
+ * storing intermediate outputs that need to be passed from one run of a MapReduce pipeline to another run. The
+ * {@code SourceTarget} object acts as both a {@code Source} and a {@Target}, which enables it to provide this
+ * functionality.
+ * 
+ * <code>
+ *   Pipeline pipeline = new MRPipeline(this.getClass());
+ *   // Create our intermediate storage location
+ *   SourceTarget<String> intermediate = At.textFile("/temptext");
+ *   ...
+ *   // Write out the output of the first phase of a pipeline.
+ *   pipeline.write(phase1, intermediate);
+ *   
+ *   // Explicitly call run to kick off the pipeline.
+ *   pipeline.run();
+ *   
+ *   // And then kick off a second phase by consuming the output
+ *   // from the first phase.
+ *   PCollection<String> phase2Input = pipeline.read(intermediate);
+ *   ...
+ * </code>
+ * </p>
+ * 
+ * <p>The {@code SourceTarget} abstraction is useful when we care about reading the intermediate
+ * outputs of a pipeline as well as the final results.</p>
  */
 public class At {
 
