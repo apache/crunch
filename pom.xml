@@ -839,7 +839,7 @@ under the License.
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.12</version>
         <configuration>
-          <argLine>-Xmx512m</argLine>
+          <argLine>-Xmx768m</argLine>
           <testSourceDirectory>${basedir}/src/it/java</testSourceDirectory>
         </configuration>
         <executions>
