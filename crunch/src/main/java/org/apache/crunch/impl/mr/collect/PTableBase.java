@@ -27,6 +27,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Target;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Cogroup;
@@ -44,6 +45,10 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
     super(name);
   }
 
+  public PTableBase(String name, ParallelDoOptions options) {
+    super(name, options);
+  }
+  
   public PType<K> getKeyType() {
     return getPTableType().getKeyType();
   }

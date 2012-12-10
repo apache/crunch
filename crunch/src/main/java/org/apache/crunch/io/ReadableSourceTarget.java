@@ -18,6 +18,7 @@
 package org.apache.crunch.io;
 
 import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.fs.Path;
 
 /**
  * An interface that indicates that a {@code SourceTarget} instance can be read

@@ -24,7 +24,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.hadoop.fs.Path;
 
 public class MaterializableIterable<E> implements Iterable<E> {
 
@@ -44,6 +46,13 @@ public class MaterializableIterable<E> implements Iterable<E> {
     return sourceTarget;
   }
 
+  public Path getPath() {
+    if (sourceTarget instanceof PathTarget) {
+      return ((PathTarget) sourceTarget).getPath();
+    }
+    return null;
+  }
+  
   @Override
   public Iterator<E> iterator() {
     if (materialized == null) {

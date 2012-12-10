@@ -28,6 +28,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mem.collect.MemCollection;

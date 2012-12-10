@@ -31,6 +31,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
@@ -95,6 +96,12 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type) {
+    return parallelDo(name, doFn, type, ParallelDoOptions.builder().build());
+  }
+  
+  @Override
+  public <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type,
+      ParallelDoOptions options) {
     InMemoryEmitter<T> emitter = new InMemoryEmitter<T>();
     doFn.initialize();
     for (S s : collect) {
@@ -111,6 +118,12 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type) {
+    return parallelDo(name, doFn, type, ParallelDoOptions.builder().build());
+  }
+  
+  @Override
+  public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type,
+      ParallelDoOptions options) {
     InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
     doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
     doFn.initialize();

@@ -23,6 +23,7 @@ import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -36,7 +37,12 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
   private final PTableType<K, V> type;
 
   <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype) {
-    super(name);
+    this(name, parent, fn, ntype, ParallelDoOptions.builder().build());
+  }
+  
+  <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype,
+      ParallelDoOptions options) {
+    super(name, options);
     this.parent = parent;
     this.fn = fn;
     this.type = ntype;

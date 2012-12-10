@@ -18,12 +18,16 @@
 package org.apache.crunch.impl.mr.collect;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.crunch.DoFn;
+import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 
@@ -32,7 +36,12 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   private final PType<S> ntype;
 
   <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn, PType<S> ntype) {
-    super(name);
+    this(name, parent, fn, ntype, ParallelDoOptions.builder().build());
+  }
+  
+  <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn, PType<S> ntype,
+      ParallelDoOptions options) {
+    super(name, options);
     this.parent = (PCollectionImpl<Object>) parent;
     this.fn = (DoFn<Object, S>) fn;
     this.ntype = ntype;

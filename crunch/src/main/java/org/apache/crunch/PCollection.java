@@ -65,6 +65,23 @@ public interface PCollection<S> {
    * @return a new {@code PCollection}
    */
   <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type);
+  
+  /**
+   * Applies the given doFn to the elements of this {@code PCollection} and
+   * returns a new {@code PCollection} that is the output of this processing.
+   *
+   * @param name
+   *          An identifier for this processing step, useful for debugging
+   * @param doFn
+   *          The {@code DoFn} to apply
+   * @param type
+   *          The {@link PType} of the resulting {@code PCollection}
+   * @param options
+   *          Optional information that is needed for certain pipeline operations
+   * @return a new {@code PCollection}
+   */
+  <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type,
+      ParallelDoOptions options);
 
   /**
    * Similar to the other {@code parallelDo} instance, but returns a
@@ -91,6 +108,23 @@ public interface PCollection<S> {
    * @return a new {@code PTable}
    */
   <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type);
+  
+  /**
+   * Similar to the other {@code parallelDo} instance, but returns a
+   * {@code PTable} instance instead of a {@code PCollection}.
+   *
+   * @param name
+   *          An identifier for this processing step
+   * @param doFn
+   *          The {@code DoFn} to apply
+   * @param type
+   *          The {@link PTableType} of the resulting {@code PTable}
+   * @param options
+   *          Optional information that is needed for certain pipeline operations
+   * @return a new {@code PTable}
+   */
+  <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type,
+      ParallelDoOptions options);
 
   /**
    * Write the contents of this {@code PCollection} to the given {@code Target},

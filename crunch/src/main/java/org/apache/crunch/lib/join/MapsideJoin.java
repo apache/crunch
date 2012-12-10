@@ -24,16 +24,18 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
-import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.io.ReadableSourceTarget;
-import org.apache.crunch.io.impl.SourcePathTargetImpl;
+import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 /**
@@ -64,37 +66,46 @@ public class MapsideJoin {
    * @return A table keyed on the join key, containing pairs of joined values
    */
   public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
+    PTypeFamily tf = left.getTypeFamily();
+    Iterable<Pair<K, V>> iterable = right.materialize();
 
-    if (!(right.getPipeline() instanceof MRPipeline)) {
-      throw new CrunchRuntimeException("Map-side join is only supported within a MapReduce context");
+    if (iterable instanceof MaterializableIterable) {
+      MaterializableIterable<Pair<K, V>> mi = (MaterializableIterable<Pair<K, V>>) iterable;
+      MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(), right.getPType());
+      ParallelDoOptions options = ParallelDoOptions.builder()
+          .sourceTargets(mi.getSourceTarget())
+          .build();
+      return left.parallelDo("mapjoin", mapJoinDoFn,
+          tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())),
+          options);
+    } else { // in-memory pipeline
+      return left.parallelDo(new InMemoryJoinFn<K, U, V>(iterable),
+          tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())));
     }
-
-    MRPipeline pipeline = (MRPipeline) right.getPipeline();
-    pipeline.materialize(right);
-
-    // TODO Move necessary logic to MRPipeline so that we can theoretically
-    // optimize his by running the setup of multiple map-side joins concurrently
-    pipeline.run();
-
-    ReadableSourceTarget<Pair<K, V>> readableSourceTarget = pipeline.getMaterializeSourceTarget(right);
-    if (!(readableSourceTarget instanceof SourcePathTargetImpl)) {
-      throw new CrunchRuntimeException("Right-side contents can't be read from a path");
-    }
-
-    // Suppress warnings because we've just checked this cast via instanceof
-    @SuppressWarnings("unchecked")
-    SourcePathTargetImpl<Pair<K, V>> sourcePathTarget = (SourcePathTargetImpl<Pair<K, V>>) readableSourceTarget;
-
-    Path path = sourcePathTarget.getPath();
-    DistributedCache.addCacheFile(path.toUri(), pipeline.getConfiguration());
-
-    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(path.getName(), right.getPType());
-    PTypeFamily typeFamily = left.getTypeFamily();
-    return left.parallelDo("mapjoin", mapJoinDoFn,
-        typeFamily.tableOf(left.getKeyType(), typeFamily.pairs(left.getValueType(), right.getValueType())));
-
   }
 
+  static class InMemoryJoinFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
+
+    private Multimap<K, V> joinMap;
+    
+    public InMemoryJoinFn(Iterable<Pair<K, V>> iterable) {
+      joinMap = HashMultimap.create();
+      for (Pair<K, V> joinPair : iterable) {
+        joinMap.put(joinPair.first(), joinPair.second());
+      }
+    }
+    
+    @Override
+    public void process(Pair<K, U> input, Emitter<Pair<K, Pair<U, V>>> emitter) {
+      K key = input.first();
+      U value = input.second();
+      for (V joinValue : joinMap.get(key)) {
+        Pair<U, V> valuePair = Pair.of(value, joinValue);
+        emitter.emit(Pair.of(key, valuePair));
+      }
+    }
+  }
+  
   static class MapsideJoinDoFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
     private String inputPath;
@@ -121,6 +132,11 @@ public class MapsideJoin {
       throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
     }
 
+    @Override
+    public void configure(Configuration conf) {
+      DistributedCache.addCacheFile(new Path(inputPath).toUri(), conf);
+    }
+    
     @Override
     public void initialize() {
       super.initialize();

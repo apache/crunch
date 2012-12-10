@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -43,6 +45,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public abstract class PCollectionImpl<S> implements PCollection<S> {
 
@@ -51,9 +54,15 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   private final String name;
   protected MRPipeline pipeline;
   private SourceTarget<S> materializedAt;
-
+  private final ParallelDoOptions options;
+  
   public PCollectionImpl(String name) {
+    this(name, ParallelDoOptions.builder().build());
+  }
+  
+  public PCollectionImpl(String name, ParallelDoOptions options) {
     this.name = name;
+    this.options = options;
   }
 
   @Override
@@ -86,7 +95,13 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type) {
     return new DoCollectionImpl<T>(name, getChainingCollection(), fn, type);
   }
-
+  
+  @Override
+  public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type,
+      ParallelDoOptions options) {
+    return new DoCollectionImpl<T>(name, getChainingCollection(), fn, type, options);
+  }
+  
   @Override
   public <K, V> PTable<K, V> parallelDo(DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
     MRPipeline pipeline = (MRPipeline) getPipeline();
@@ -96,6 +111,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
     return new DoTableImpl<K, V>(name, getChainingCollection(), fn, type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type,
+      ParallelDoOptions options) {
+    return new DoTableImpl<K, V>(name, getChainingCollection(), fn, type, options);
   }
 
   public PCollection<S> write(Target target) {
@@ -194,7 +215,15 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     }
     return pipeline;
   }
-
+  
+  public Set<SourceTarget<?>> getTargetDependencies() {
+    Set<SourceTarget<?>> targetDeps = options.getSourceTargets();
+    for (PCollectionImpl<?> parent : getParents()) {
+      targetDeps = Sets.union(targetDeps, parent.getTargetDependencies());
+    }
+    return targetDeps;
+  }
+  
   public int getDepth() {
     int parentMax = 0;
     for (PCollectionImpl parent : getParents()) {

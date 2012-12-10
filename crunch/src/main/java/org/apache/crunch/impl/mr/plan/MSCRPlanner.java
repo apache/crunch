@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -35,27 +36,11 @@ import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MSCRPlanner {
-
-  // Used to ensure that we always build pipelines starting from the deepest
-  // outputs, which
-  // helps ensure that we handle intermediate outputs correctly.
-  private static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
-    @Override
-    public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
-      int cmp = right.getDepth() - left.getDepth();
-      if (cmp == 0) {
-        // Ensure we don't throw away two output collections at the same depth.
-        // Using the collection name would be nicer here, but names aren't
-        // necessarily unique
-        cmp = new Integer(right.hashCode()).compareTo(left.hashCode());
-      }
-      return cmp;
-    }
-  };  
 
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
@@ -66,39 +51,97 @@ public class MSCRPlanner {
     this.outputs.putAll(outputs);
   }
 
+  // Used to ensure that we always build pipelines starting from the deepest
+  // outputs, which helps ensure that we handle intermediate outputs correctly.
+  private static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
+    @Override
+    public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
+      int cmp = right.getDepth() - left.getDepth();
+      if (cmp == 0) {
+        // Ensure we don't throw away two output collections at the same depth.
+        // Using the collection name would be nicer here, but names aren't
+        // necessarily unique.
+        cmp = new Integer(right.hashCode()).compareTo(left.hashCode());
+      }
+      return cmp;
+    }
+  };  
+
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
-    // Walk the current plan tree and build a graph in which the vertices are
-    // sources, targets, and GBK operations.
-    GraphBuilder graphBuilder = new GraphBuilder();
-    for (PCollectionImpl<?> output : outputs.keySet()) {
-      graphBuilder.visitOutput(output);
+    Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
+    for (PCollectionImpl<?> pcollect : outputs.keySet()) {
+      targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
-    Graph baseGraph = graphBuilder.getGraph();
     
-    // Create a new graph that splits up up dependent GBK nodes.
-    Graph graph = prepareFinalGraph(baseGraph);
-    
-    // Break the graph up into connected components.
-    List<List<Vertex>> components = graph.connectedComponents();
-    
-
-    // For each component, we will create one or more job prototypes,
-    // depending on its profile.
-    // For dependency handling, we only need to care about which
-    // job prototype a particular GBK is assigned to.
     Multimap<Vertex, JobPrototype> assignments = HashMultimap.create();
-    for (List<Vertex> component : components) {
-      assignments.putAll(constructJobPrototypes(component));
+    Multimap<PCollectionImpl<?>, Vertex> protoDependency = HashMultimap.create();
+    while (!targetDeps.isEmpty()) {
+      Set<Target> allTargets = Sets.newHashSet();
+      for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
+        allTargets.addAll(outputs.get(pcollect));
+      }
+      GraphBuilder graphBuilder = new GraphBuilder();
+      
+      // Walk the current plan tree and build a graph in which the vertices are
+      // sources, targets, and GBK operations.
+      Set<PCollectionImpl<?>> currentStage = Sets.newHashSet();
+      Set<PCollectionImpl<?>> laterStage = Sets.newHashSet();
+      for (PCollectionImpl<?> output : targetDeps.keySet()) {
+        if (Sets.intersection(allTargets, targetDeps.get(output)).isEmpty()) {
+          graphBuilder.visitOutput(output);
+          currentStage.add(output);
+        } else {
+          laterStage.add(output);
+        }
+      }
+      
+      Graph baseGraph = graphBuilder.getGraph();
+      
+      // Create a new graph that splits up up dependent GBK nodes.
+      Graph graph = prepareFinalGraph(baseGraph);
+      
+      // Break the graph up into connected components.
+      List<List<Vertex>> components = graph.connectedComponents();
+      
+      // For each component, we will create one or more job prototypes,
+      // depending on its profile.
+      // For dependency handling, we only need to care about which
+      // job prototype a particular GBK is assigned to.
+      for (List<Vertex> component : components) {
+        assignments.putAll(constructJobPrototypes(component));
+      }
+
+      // Add in the job dependency information here.
+      for (Map.Entry<Vertex, JobPrototype> e : assignments.entries()) {
+        JobPrototype current = e.getValue();
+        List<Vertex> parents = graph.getParents(e.getKey());
+        for (Vertex parent : parents) {
+          for (JobPrototype parentJobProto : assignments.get(parent)) {
+            current.addDependency(parentJobProto);
+          }
+        }
+      }
+      
+      // Add cross-stage dependencies.
+      for (PCollectionImpl<?> output : currentStage) {
+        Set<Target> targets = outputs.get(output);
+        Vertex vertex = graph.getVertexAt(output);
+        for (PCollectionImpl<?> later : laterStage) {
+          if (!Sets.intersection(targets, targetDeps.get(later)).isEmpty()) {
+            protoDependency.put(later, vertex);
+          }
+        }
+        targetDeps.remove(output);
+      }
     }
     
-
-    // Add in the job dependency information here.
-    for (Map.Entry<Vertex, JobPrototype> e : assignments.entries()) {
-      JobPrototype current = e.getValue();
-      List<Vertex> parents = graph.getParents(e.getKey());
-      for (Vertex parent : parents) {
-        for (JobPrototype parentJobProto : assignments.get(parent)) {
-          current.addDependency(parentJobProto);
+    // Cross-job dependencies.
+    for (Entry<PCollectionImpl<?>, Vertex> pd : protoDependency.entries()) {
+      Vertex d = new Vertex(pd.getKey());
+      Vertex dj = pd.getValue();
+      for (JobPrototype parent : assignments.get(dj)) {
+        for (JobPrototype child : assignments.get(d)) {
+          child.addDependency(parent);
         }
       }
     }
