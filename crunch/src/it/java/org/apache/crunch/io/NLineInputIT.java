@@ -39,12 +39,12 @@ public class NLineInputIT {
   
   @Test
   public void testNLine() throws Exception {
-    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
+    String urlsInputPath = tmpDir.copyResourceFileName("urls.txt");
     Pipeline pipeline = new MRPipeline(NLineInputIT.class, tmpDir.getDefaultConfiguration());
-    PCollection<String> shakespeare = pipeline.read(new NLineFileSource<String>(shakesInputPath,
-        Writables.strings(), 100));
-    assertEquals(new Integer(100),
-        shakespeare.parallelDo(new LineCountFn(), Avros.ints()).max().getValue());
+    PCollection<String> urls = pipeline.read(new NLineFileSource<String>(urlsInputPath,
+        Writables.strings(), 2));
+    assertEquals(new Integer(2),
+        urls.parallelDo(new LineCountFn(), Avros.ints()).max().getValue());
   }
   
   private static class LineCountFn extends DoFn<String, Integer> {
