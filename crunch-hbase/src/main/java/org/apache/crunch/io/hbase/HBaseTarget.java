@@ -22,7 +22,8 @@ import java.io.IOException;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
-import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+import org.apache.crunch.io.CrunchOutputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.types.PType;
@@ -33,7 +34,6 @@ import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
@@ -81,7 +81,6 @@ public class HBaseTarget implements MapReduceTarget {
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     final Configuration conf = job.getConfiguration();
     HBaseConfiguration.addHbaseResources(conf);
-    conf.set(TableOutputFormat.OUTPUT_TABLE, table);
     Class<?> typeClass = ptype.getTypeClass(); // Either Put or Delete
     
     try {
@@ -95,9 +94,13 @@ public class HBaseTarget implements MapReduceTarget {
       job.setOutputFormatClass(TableOutputFormat.class);
       job.setOutputKeyClass(ImmutableBytesWritable.class);
       job.setOutputValueClass(typeClass);
+      conf.set(TableOutputFormat.OUTPUT_TABLE, table);
     } else {
-      CrunchMultipleOutputs.addNamedOutput(job, name,
-          TableOutputFormat.class,
+      FormatBundle<TableOutputFormat> bundle = FormatBundle.forOutput(
+          TableOutputFormat.class);
+      bundle.set(TableOutputFormat.OUTPUT_TABLE, table);
+      CrunchOutputs.addNamedOutput(job, name,
+          bundle,
           ImmutableBytesWritable.class,
           typeClass);
     }

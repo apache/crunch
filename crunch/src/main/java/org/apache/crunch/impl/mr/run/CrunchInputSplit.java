@@ -22,9 +22,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Map;
 
-import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -35,11 +33,10 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-class CrunchInputSplit extends InputSplit implements Configurable, Writable {
+class CrunchInputSplit extends InputSplit implements Writable {
 
   private InputSplit inputSplit;
-  private Class<? extends InputFormat> inputFormatClass;
-  private Map<String, String> extraConf;
+  private Class<? extends InputFormat<?, ?>> inputFormatClass;
   private int nodeIndex;
   private Configuration conf;
 
@@ -47,15 +44,21 @@ class CrunchInputSplit extends InputSplit implements Configurable, Writable {
     // default constructor
   }
 
-  public CrunchInputSplit(InputSplit inputSplit, Class<? extends InputFormat> inputFormatClass,
-      Map<String, String> extraConf, int nodeIndex, Configuration conf) {
+  public CrunchInputSplit(
+      InputSplit inputSplit,
+      Class<? extends InputFormat<?, ?>> inputFormatClass,
+      int nodeIndex,
+      Configuration conf) {
     this.inputSplit = inputSplit;
     this.inputFormatClass = inputFormatClass;
-    this.extraConf = extraConf;
     this.nodeIndex = nodeIndex;
     this.conf = conf;
   }
 
+  public Configuration getConf() {
+    return conf;
+  }
+  
   public int getNodeIndex() {
     return nodeIndex;
   }
@@ -64,7 +67,7 @@ class CrunchInputSplit extends InputSplit implements Configurable, Writable {
     return inputSplit;
   }
 
-  public Class<? extends InputFormat> getInputFormatClass() {
+  public Class<? extends InputFormat<?, ?>> getInputFormatClass() {
     return inputFormatClass;
   }
 
@@ -80,12 +83,8 @@ class CrunchInputSplit extends InputSplit implements Configurable, Writable {
 
   public void readFields(DataInput in) throws IOException {
     nodeIndex = in.readInt();
-    int extraConfSize = in.readInt();
-    if (extraConfSize > 0) {
-      for (int i = 0; i < extraConfSize; i++) {
-        conf.set(in.readUTF(), in.readUTF());
-      }
-    }
+    conf = new Configuration();
+    conf.readFields(in);
     inputFormatClass = (Class<? extends InputFormat<?, ?>>) readClass(in);
     Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
     inputSplit = (InputSplit) ReflectionUtils.newInstance(inputSplitClass, conf);
@@ -106,24 +105,12 @@ class CrunchInputSplit extends InputSplit implements Configurable, Writable {
 
   public void write(DataOutput out) throws IOException {
     out.writeInt(nodeIndex);
-    out.writeInt(extraConf.size());
-    for (Map.Entry<String, String> e : extraConf.entrySet()) {
-      out.writeUTF(e.getKey());
-      out.writeUTF(e.getValue());
-    }
+    conf.write(out);
     Text.writeString(out, inputFormatClass.getName());
     Text.writeString(out, inputSplit.getClass().getName());
     SerializationFactory factory = new SerializationFactory(conf);
     Serializer serializer = factory.getSerializer(inputSplit.getClass());
     serializer.open((DataOutputStream) out);
     serializer.serialize(inputSplit);
-  }
-
-  public Configuration getConf() {
-    return conf;
-  }
-
-  public void setConf(Configuration conf) {
-    this.conf = conf;
   }
 }

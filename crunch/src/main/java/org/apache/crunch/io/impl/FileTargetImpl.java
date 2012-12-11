@@ -19,7 +19,7 @@ package org.apache.crunch.io.impl;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.SourceTarget;
-import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
+import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
@@ -62,7 +62,7 @@ public class FileTargetImpl implements PathTarget {
       job.setOutputKeyClass(keyClass);
       job.setOutputValueClass(valueClass);
     } else {
-      CrunchMultipleOutputs.addNamedOutput(job, name, outputFormatClass, keyClass, valueClass);
+      CrunchOutputs.addNamedOutput(job, name, outputFormatClass, keyClass, valueClass);
     }
   }
 

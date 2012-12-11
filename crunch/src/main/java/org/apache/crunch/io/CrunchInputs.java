@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.run;
+package org.apache.crunch.io;
 
 import java.util.List;
 import java.util.Map;
 
-import org.apache.crunch.io.InputBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 
@@ -31,26 +31,31 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+/**
+ * Helper functions for configuring multiple {@code InputFormat} instances within a single
+ * Crunch MapReduce job.
+ */
 public class CrunchInputs {
+  public static final String CRUNCH_INPUTS = "crunch.inputs.dir";
 
   private static final char RECORD_SEP = ',';
   private static final char FIELD_SEP = ';';
   private static final Joiner JOINER = Joiner.on(FIELD_SEP);
   private static final Splitter SPLITTER = Splitter.on(FIELD_SEP);
 
-  public static void addInputPath(Job job, Path path, InputBundle inputBundle, int nodeIndex) {
+  public static void addInputPath(Job job, Path path, FormatBundle inputBundle, int nodeIndex) {
     Configuration conf = job.getConfiguration();
     String inputs = JOINER.join(inputBundle.serialize(), String.valueOf(nodeIndex), path.toString());
-    String existing = conf.get(RuntimeParameters.MULTI_INPUTS);
-    conf.set(RuntimeParameters.MULTI_INPUTS, existing == null ? inputs : existing + RECORD_SEP + inputs);
+    String existing = conf.get(CRUNCH_INPUTS);
+    conf.set(CRUNCH_INPUTS, existing == null ? inputs : existing + RECORD_SEP + inputs);
   }
 
-  public static Map<InputBundle, Map<Integer, List<Path>>> getFormatNodeMap(JobContext job) {
-    Map<InputBundle, Map<Integer, List<Path>>> formatNodeMap = Maps.newHashMap();
+  public static Map<FormatBundle, Map<Integer, List<Path>>> getFormatNodeMap(JobContext job) {
+    Map<FormatBundle, Map<Integer, List<Path>>> formatNodeMap = Maps.newHashMap();
     Configuration conf = job.getConfiguration();
-    for (String input : Splitter.on(RECORD_SEP).split(conf.get(RuntimeParameters.MULTI_INPUTS))) {
+    for (String input : Splitter.on(RECORD_SEP).split(conf.get(CRUNCH_INPUTS))) {
       List<String> fields = Lists.newArrayList(SPLITTER.split(input));
-      InputBundle inputBundle = InputBundle.fromSerialized(fields.get(0));
+      FormatBundle<InputFormat> inputBundle = FormatBundle.fromSerialized(fields.get(0), InputFormat.class);
       if (!formatNodeMap.containsKey(inputBundle)) {
         formatNodeMap.put(inputBundle, Maps.<Integer, List<Path>> newHashMap());
       }

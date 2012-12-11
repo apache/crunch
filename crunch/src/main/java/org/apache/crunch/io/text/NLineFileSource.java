@@ -20,7 +20,7 @@ package org.apache.crunch.io.text;
 import java.io.IOException;
 
 import org.apache.crunch.io.CompositePathIterable;
-import org.apache.crunch.io.InputBundle;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
@@ -36,8 +36,8 @@ import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
  */
 public class NLineFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  private static InputBundle getBundle(int linesPerTask) {
-    InputBundle bundle = new InputBundle(NLineInputFormat.class);
+  private static FormatBundle getBundle(int linesPerTask) {
+    FormatBundle bundle = FormatBundle.forInput(NLineInputFormat.class);
     bundle.set(NLineInputFormat.LINES_PER_MAP, String.valueOf(linesPerTask));
     return bundle;
   }

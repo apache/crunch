@@ -21,16 +21,17 @@ import java.io.IOException;
 
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.types.Converter;
-import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
 public class MultipleOutputEmitter<T, K, V> implements Emitter<T> {
 
   private final Converter converter;
-  private final CrunchMultipleOutputs<K, V> outputs;
+  private final CrunchOutputs<K, V> outputs;
   private final String outputName;
 
-  public MultipleOutputEmitter(Converter converter, CrunchMultipleOutputs<K, V> outputs, String outputName) {
+  public MultipleOutputEmitter(Converter converter, CrunchOutputs<K, V> outputs,
+      String outputName) {
     this.converter = converter;
     this.outputs = outputs;
     this.outputName = outputName;
@@ -39,10 +40,10 @@ public class MultipleOutputEmitter<T, K, V> implements Emitter<T> {
   @Override
   public void emit(T emitted) {
     try {
-      this.outputs.write(outputName, converter.outputKey(emitted), converter.outputValue(emitted));
-    } catch (IOException e) {
-      throw new CrunchRuntimeException(e);
-    } catch (InterruptedException e) {
+      this.outputs.write(outputName,
+          (K) converter.outputKey(emitted),
+          (V) converter.outputValue(emitted));
+    } catch (Exception e) {
       throw new CrunchRuntimeException(e);
     }
   }

@@ -25,9 +25,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
-import org.apache.crunch.impl.mr.run.CrunchInputs;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
-import org.apache.crunch.io.InputBundle;
+import org.apache.crunch.io.CrunchInputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
@@ -49,13 +49,13 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
       Writables.writables(ImmutableBytesWritable.class), Writables.writables(Result.class));
 
   protected Scan scan;
-  private InputBundle<TableInputFormat> inputBundle;
+  private FormatBundle<TableInputFormat> inputBundle;
   
   public HBaseSourceTarget(String table, Scan scan) {
     super(table);
     this.scan = scan;
     try {
-      this.inputBundle = new InputBundle<TableInputFormat>(TableInputFormat.class)
+      this.inputBundle = FormatBundle.forInput(TableInputFormat.class)
           .set(TableInputFormat.INPUT_TABLE, table)
           .set(TableInputFormat.SCAN, convertScanToString(scan));
     } catch (IOException e) {
@@ -100,7 +100,7 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
     TableMapReduceUtil.addDependencyJars(job);
     if (inputId == -1) {
       job.setMapperClass(CrunchMapper.class);
-      job.setInputFormatClass(inputBundle.getInputFormatClass());
+      job.setInputFormatClass(inputBundle.getFormatClass());
       inputBundle.configure(job.getConfiguration());
     } else {
       Path dummy = new Path("/hbase/" + table);

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.run;
+package org.apache.crunch.hadoop.mapreduce;
 
 import java.lang.reflect.Constructor;
 
@@ -26,7 +26,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 
 /**
- *
+ * A factory class that allows us to hide the fact that {@code TaskAttemptContext} is a class in
+ * Hadoop 1.x.x and an interface in Hadoop 2.x.x.
  */
 @SuppressWarnings("unchecked")
 public class TaskAttemptContextFactory {
@@ -39,13 +40,14 @@ public class TaskAttemptContextFactory {
     return INSTANCE.createInternal(conf, taskAttemptId);
   }
 
-  private Constructor taskAttemptConstructor;
+  private Constructor<TaskAttemptContext> taskAttemptConstructor;
 
   private TaskAttemptContextFactory() {
-    Class implClass = TaskAttemptContext.class;
+    Class<TaskAttemptContext> implClass = TaskAttemptContext.class;
     if (implClass.isInterface()) {
       try {
-        implClass = Class.forName("org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl");
+        implClass = (Class<TaskAttemptContext>) Class.forName(
+            "org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl");
       } catch (ClassNotFoundException e) {
         LOG.fatal("Could not find TaskAttemptContextImpl class, exiting", e);
       }

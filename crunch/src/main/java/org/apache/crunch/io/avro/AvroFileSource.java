@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import org.apache.avro.mapred.AvroJob;
 import org.apache.crunch.io.CompositePathIterable;
-import org.apache.crunch.io.InputBundle;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.avro.AvroInputFormat;
@@ -33,8 +33,8 @@ import org.apache.hadoop.fs.Path;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  private static <S> InputBundle getBundle(AvroType<S> ptype) {
-    InputBundle bundle = new InputBundle(AvroInputFormat.class)
+  private static <S> FormatBundle getBundle(AvroType<S> ptype) {
+    FormatBundle bundle = FormatBundle.forInput(AvroInputFormat.class)
         .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName());

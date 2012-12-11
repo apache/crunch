@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.io.CompositePathIterable;
-import org.apache.crunch.io.InputBundle;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.types.PTableType;
@@ -42,8 +42,8 @@ public class TextFileTableSource<K, V> extends FileTableSourceImpl<K, V>
   private static final String OLD_KV_SEP = "key.value.separator.in.input.line";
   private static final String NEW_KV_SEP = "mapreduce.input.keyvaluelinerecordreader.key.value.separator";
   
-  private static InputBundle getBundle(String sep) {
-    InputBundle bundle = new InputBundle(KeyValueTextInputFormat.class);
+  private static FormatBundle getBundle(String sep) {
+    FormatBundle bundle = FormatBundle.forInput(KeyValueTextInputFormat.class);
     bundle.set(OLD_KV_SEP, sep);
     bundle.set(NEW_KV_SEP, sep);
     return bundle;

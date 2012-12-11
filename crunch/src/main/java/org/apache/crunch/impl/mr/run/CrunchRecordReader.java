@@ -19,6 +19,7 @@ package org.apache.crunch.impl.mr.run;
 
 import java.io.IOException;
 
+import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;

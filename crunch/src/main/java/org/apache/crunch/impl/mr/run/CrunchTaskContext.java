@@ -22,17 +22,17 @@ import java.util.List;
 
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
+import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
 
 class CrunchTaskContext {
 
   private final TaskInputOutputContext<Object, Object, Object, Object> taskContext;
   private final NodeContext nodeContext;
-  private CrunchMultipleOutputs<Object, Object> multipleOutputs;
+  private CrunchOutputs<Object, Object> multipleOutputs;
 
   public CrunchTaskContext(TaskInputOutputContext<Object, Object, Object, Object> taskContext, NodeContext nodeContext) {
     this.taskContext = taskContext;
@@ -77,9 +77,9 @@ class CrunchTaskContext {
     }
   }
 
-  public CrunchMultipleOutputs<Object, Object> getMultipleOutputs() {
+  public CrunchOutputs<Object, Object> getMultipleOutputs() {
     if (multipleOutputs == null) {
-      multipleOutputs = new CrunchMultipleOutputs<Object, Object>(taskContext);
+      multipleOutputs = new CrunchOutputs<Object, Object>(taskContext);
     }
     return multipleOutputs;
   }

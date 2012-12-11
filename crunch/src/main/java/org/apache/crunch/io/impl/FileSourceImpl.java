@@ -23,8 +23,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Source;
-import org.apache.crunch.impl.mr.run.CrunchInputs;
-import org.apache.crunch.io.InputBundle;
+import org.apache.crunch.io.CrunchInputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -39,15 +39,15 @@ public class FileSourceImpl<T> implements Source<T> {
 
   protected final Path path;
   protected final PType<T> ptype;
-  protected final InputBundle<?> inputBundle;
+  protected final FormatBundle<? extends InputFormat> inputBundle;
 
   public FileSourceImpl(Path path, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
     this.path = path;
     this.ptype = ptype;
-    this.inputBundle = InputBundle.of(inputFormatClass);
+    this.inputBundle = FormatBundle.forInput(inputFormatClass);
   }
 
-  public FileSourceImpl(Path path, PType<T> ptype, InputBundle<?> inputBundle) {
+  public FileSourceImpl(Path path, PType<T> ptype, FormatBundle<? extends InputFormat> inputBundle) {
     this.path = path;
     this.ptype = ptype;
     this.inputBundle = inputBundle;
@@ -57,7 +57,7 @@ public class FileSourceImpl<T> implements Source<T> {
   public void configureSource(Job job, int inputId) throws IOException {
     if (inputId == -1) {
       FileInputFormat.addInputPath(job, path);
-      job.setInputFormatClass(inputBundle.getInputFormatClass());
+      job.setInputFormatClass(inputBundle.getFormatClass());
       inputBundle.configure(job.getConfiguration());
     } else {
       CrunchInputs.addInputPath(job, path, inputBundle, inputId);

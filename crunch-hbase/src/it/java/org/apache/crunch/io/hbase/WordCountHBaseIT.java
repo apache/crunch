@@ -26,7 +26,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -216,13 +215,15 @@ public class WordCountHBaseIT {
     int postFix = Math.abs(rand.nextInt());
     String inputTableName = "crunch_words_" + postFix;
     String outputTableName = "crunch_counts_" + postFix;
+    String otherTableName = "crunch_other_" + postFix;
     String joinTableName = "crunch_join_words_" + postFix;
     
     try {
 
       HTable inputTable = hbaseTestUtil.createTable(Bytes.toBytes(inputTableName), WORD_COLFAM);
       HTable outputTable = hbaseTestUtil.createTable(Bytes.toBytes(outputTableName), COUNTS_COLFAM);
-
+      HTable otherTable = hbaseTestUtil.createTable(Bytes.toBytes(otherTableName), COUNTS_COLFAM);
+      
       int key = 0;
       key = put(inputTable, key, "cat");
       key = put(inputTable, key, "cat");
@@ -231,11 +232,15 @@ public class WordCountHBaseIT {
       scan.addColumn(WORD_COLFAM, null);
       HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
       PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
-      pipeline.write(wordCount(words), new HBaseTarget(outputTableName));
+      PCollection<Put> puts = wordCount(words);
+      pipeline.write(puts, new HBaseTarget(outputTableName));
+      pipeline.write(puts, new HBaseTarget(otherTableName));
       pipeline.done();
 
       assertIsLong(outputTable, "cat", 2);
       assertIsLong(outputTable, "dog", 1);
+      assertIsLong(otherTable, "cat", 2);
+      assertIsLong(otherTable, "dog", 1);
       
       // verify we can do joins.
       HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);

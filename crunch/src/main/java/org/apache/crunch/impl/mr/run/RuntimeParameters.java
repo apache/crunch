@@ -19,13 +19,10 @@ package org.apache.crunch.impl.mr.run;
 
 /**
  * Parameters used during the runtime execution.
- * 
  */
 public class RuntimeParameters {
 
   public static final String AGGREGATOR_BUCKETS = "crunch.aggregator.buckets";
-
-  public static final String MULTI_INPUTS = "crunch.inputs.dir";
 
   public static final String DEBUG = "crunch.debug";
 
