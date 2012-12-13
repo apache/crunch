@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.io;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
@@ -40,28 +39,13 @@ public class SourceTargetHelper {
   }
 
   public static long getPathSize(FileSystem fs, Path path) throws IOException {
-
-    if (!fs.exists(path)) {
+    FileStatus[] stati = fs.globStatus(path);
+    if (stati == null || stati.length == 0) {
       return -1L;
-    }
-
-    FileStatus[] stati = null;
-    try {
-      stati = fs.listStatus(path);
-      if (stati == null) {
-        throw new FileNotFoundException(path + " doesn't exist");
-      }
-    } catch (FileNotFoundException e) {
-      LOG.warn("Returning 0 for getPathSize on non-existant path '" + path + "'");
-      return 0L;
-    }
-
-    if (stati.length == 0) {
-      return 0L;
     }
     long size = 0;
     for (FileStatus status : stati) {
-      size += status.getLen();
+      size += fs.getContentSummary(status.getPath()).getLength();
     }
     return size;
   }
