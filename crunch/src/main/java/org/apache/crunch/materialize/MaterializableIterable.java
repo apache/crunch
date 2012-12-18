@@ -22,8 +22,8 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Pipeline;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.io.ReadableSourceTarget;
 
 public class MaterializableIterable<E> implements Iterable<E> {

@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.run;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;

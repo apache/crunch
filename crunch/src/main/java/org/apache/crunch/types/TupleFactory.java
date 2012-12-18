@@ -21,12 +21,12 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 
 import com.google.common.collect.Maps;
 

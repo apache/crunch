@@ -20,8 +20,8 @@ package org.apache.crunch.types;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;

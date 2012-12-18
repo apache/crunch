@@ -23,7 +23,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;

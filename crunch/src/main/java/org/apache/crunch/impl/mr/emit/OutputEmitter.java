@@ -19,8 +19,8 @@ package org.apache.crunch.impl.mr.emit;
 
 import java.io.IOException;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Emitter;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.types.Converter;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 

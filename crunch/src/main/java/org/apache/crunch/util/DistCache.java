@@ -26,7 +26,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
 
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;

@@ -20,9 +20,9 @@ package org.apache.crunch.io.hbase;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.hadoop.mapreduce.lib.output.CrunchMultipleOutputs;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.types.PType;

@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -42,7 +43,6 @@ import org.apache.crunch.impl.mr.collect.UnionCollection;
 import org.apache.crunch.impl.mr.collect.UnionTable;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.impl.mr.plan.MSCRPlanner;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.ReadableSourceTarget;

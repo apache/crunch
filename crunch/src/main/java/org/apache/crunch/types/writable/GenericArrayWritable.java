@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;

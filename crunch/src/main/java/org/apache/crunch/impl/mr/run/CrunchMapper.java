@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class CrunchMapper extends Mapper<Object, Object, Object, Object> {

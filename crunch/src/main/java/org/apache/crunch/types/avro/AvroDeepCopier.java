@@ -33,7 +33,7 @@ import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.hadoop.conf.Configuration;
 

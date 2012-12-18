@@ -15,8 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.run;
+package org.apache.crunch;
 
+/**
+ * A {@code RuntimeException} implementation that includes some additional options
+ * for the Crunch execution engine to track reporting status. Clients may
+ * use instances of this class in their own {@code DoFn} implementations.
+ */
 public class CrunchRuntimeException extends RuntimeException {
 
   private boolean logged = false;
@@ -33,10 +38,16 @@ public class CrunchRuntimeException extends RuntimeException {
     super(msg, e);
   }
 
+  /**
+   * Returns true if this exception was written to the debug logs.
+   */
   public boolean wasLogged() {
     return logged;
   }
 
+  /**
+   * Indicate that this exception has been written to the debug logs.
+   */
   public void markLogged() {
     this.logged = true;
   }

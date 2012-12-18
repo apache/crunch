@@ -19,12 +19,12 @@ package org.apache.crunch.lib.join;
 
 import java.io.IOException;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.impl.mr.run.CrunchRuntimeException;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.impl.SourcePathTargetImpl;
 import org.apache.crunch.types.PType;
