@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PGroupedTable;
@@ -104,6 +105,16 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
       return ptype.getValueType();
     }
     return null;
+  }
+
+  @Override
+  public PTable<K, V> filter(FilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(filterFn, getPTableType());
+  }
+  
+  @Override
+  public PTable<K, V> filter(String name, FilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(name, filterFn, getPTableType());
   }
 
   @Override

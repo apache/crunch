@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
+import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.junit.Test;
 
@@ -29,8 +30,8 @@ import com.google.common.collect.ImmutableList;
 public class SampleTest {
   @Test
   public void testSampler() {
-    Iterable<Integer> sample = MemPipeline.collectionOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).sample(0.2, 123998)
-        .materialize();
+    PCollection<Integer> pcollect = MemPipeline.collectionOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    Iterable<Integer> sample = Sample.sample(pcollect, 123998, 0.2).materialize();
     List<Integer> sampleValues = ImmutableList.copyOf(sample);
     assertEquals(ImmutableList.of(6, 7), sampleValues);
   }

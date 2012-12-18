@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
@@ -79,6 +80,16 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
     return this;
   }
 
+  @Override
+  public PTable<K, V> filter(FilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(filterFn, getPTableType());
+  }
+  
+  @Override
+  public PTable<K, V> filter(String name, FilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(name, filterFn, getPTableType());
+  }
+  
   @Override
   public PTable<K, V> top(int count) {
     return Aggregate.top(this, count, true);

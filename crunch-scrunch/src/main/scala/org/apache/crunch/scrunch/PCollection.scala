@@ -21,7 +21,7 @@ import scala.collection.JavaConversions
 
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{PCollection => JCollection, Pair => CPair}
-import org.apache.crunch.lib.{Aggregate, Cartesian}
+import org.apache.crunch.lib.{Aggregate, Cartesian, Sample}
 import org.apache.crunch.scrunch.Conversions._
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 
@@ -77,11 +77,11 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   def min()(implicit converter: Converter[S, S]) = PObject(Aggregate.min(native))(converter)
 
   def sample(acceptanceProbability: Double) = {
-    wrap(native.sample(acceptanceProbability))
+    wrap(Sample.sample(native, acceptanceProbability))
   }
 
   def sample(acceptanceProbability: Double, seed: Long) = {
-    wrap(native.sample(acceptanceProbability, seed))
+    wrap(Sample.sample(native, seed, acceptanceProbability))
   }
 
   def pType = native.getPType()

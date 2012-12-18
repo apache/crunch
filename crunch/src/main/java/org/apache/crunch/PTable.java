@@ -89,6 +89,23 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   PTable<K, Collection<V>> collectValues();
 
   /**
+   * Apply the given filter function to this instance and return the resulting
+   * {@code PTable}.
+   */
+  PTable<K, V> filter(FilterFn<Pair<K, V>> filterFn);
+  
+  /**
+   * Apply the given filter function to this instance and return the resulting
+   * {@code PTable}.
+   *
+   * @param name
+   *          An identifier for this processing step
+   * @param filterFn
+   *          The {@code FilterFn} to apply
+   */
+  PTable<K, V> filter(String name, FilterFn<Pair<K, V>> filterFn);
+  
+  /**
    * Returns a PTable made up of the pairs in this PTable with the largest value
    * field.
    *

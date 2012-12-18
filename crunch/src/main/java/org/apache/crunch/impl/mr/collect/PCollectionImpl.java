@@ -37,8 +37,6 @@ import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.lib.Aggregate;
-import org.apache.crunch.lib.Sample;
-import org.apache.crunch.lib.Sort;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -153,11 +151,6 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
-  public PCollection<S> sort(boolean ascending) {
-    return Sort.sort(this, ascending ? Sort.Order.ASCENDING : Sort.Order.DESCENDING);
-  }
-
-  @Override
   public PTable<S, Long> count() {
     return Aggregate.count(this);
   }
@@ -175,16 +168,6 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public PObject<S> min() {
     return Aggregate.min(this);
-  }
-
-  @Override
-  public PCollection<S> sample(double acceptanceProbability) {
-    return Sample.sample(this, acceptanceProbability);
-  }
-
-  @Override
-  public PCollection<S> sample(double acceptanceProbability, long seed) {
-    return Sample.sample(this, seed, acceptanceProbability);
   }
 
   @Override

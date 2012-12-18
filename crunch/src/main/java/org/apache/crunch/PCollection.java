@@ -176,12 +176,6 @@ public interface PCollection<S> {
   <K> PTable<K, S> by(String name, MapFn<S, K> extractKeyFn, PType<K> keyType);
 
   /**
-   * Returns a {@code PCollection} instance that contains all of the elements of
-   * this instance in sorted order.
-   */
-  PCollection<S> sort(boolean ascending);
-
-  /**
    * Returns a {@code PTable} instance that contains the counts of each unique
    * element of this PCollection.
    */
@@ -196,16 +190,4 @@ public interface PCollection<S> {
    * Returns a {@code PObject} of the minimum element of this instance.
    */
   PObject<S> min();
-
-  /**
-   * Randomly sample items from this PCollection instance with the given
-   * probability of an item being accepted.
-   */
-  PCollection<S> sample(double acceptanceProbability);
-
-  /**
-   * Randomly sample items from this PCollection instance with the given
-   * probability of an item being accepted and using the given seed.
-   */
-  PCollection<S> sample(double acceptanceProbability, long seed);
 }

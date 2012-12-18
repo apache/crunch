@@ -151,15 +151,17 @@ public class SortIT implements Serializable {
   public void testAvroReflectSortPair() throws IOException {
     Pipeline pipeline = new MRPipeline(SortIT.class, tmpDir.getDefaultConfiguration());
     pipeline.enableDebug();
-    PCollection<Pair<String, StringWrapper>> sorted = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
+    String rsrc = tmpDir.copyResourceFileName("set2.txt");
+    PCollection<Pair<String, StringWrapper>> in = pipeline.readTextFile(rsrc)
         .parallelDo(new MapFn<String, Pair<String, StringWrapper>>() {
 
           @Override
           public Pair<String, StringWrapper> map(String input) {
             return Pair.of(input, wrap(input));
           }
-        }, Avros.pairs(Avros.strings(), Avros.reflects(StringWrapper.class))).sort(true);
-
+        }, Avros.pairs(Avros.strings(), Avros.reflects(StringWrapper.class)));
+    PCollection<Pair<String, StringWrapper>> sorted = Sort.sort(in, Order.ASCENDING);
+    
     List<Pair<String, StringWrapper>> expected = Lists.newArrayList();
     expected.add(Pair.of("a", wrap("a")));
     expected.add(Pair.of("c", wrap("c")));
