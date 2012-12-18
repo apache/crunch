@@ -33,7 +33,7 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-public abstract class FileSourceImpl<T> implements Source<T> {
+public class FileSourceImpl<T> implements Source<T> {
 
   private static final Log LOG = LogFactory.getLog(FileSourceImpl.class);
 

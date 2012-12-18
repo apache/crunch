@@ -44,7 +44,7 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   private final List<PType> subTypes;
   private boolean initialized = false;
 
-  WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn,
+  public WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn,
       MapFn<T, W> outputDoFn, PType... subTypes) {
     this.typeClass = typeClass;
     this.writableClass = writableClass;
