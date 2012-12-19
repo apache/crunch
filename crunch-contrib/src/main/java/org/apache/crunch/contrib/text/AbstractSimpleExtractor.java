@@ -62,7 +62,7 @@ public abstract class AbstractSimpleExtractor<T> implements Extractor<T> {
       if (errors < LOG_ERROR_LIMIT) {
         String msg = String.format("Error occurred parsing input '%s' using extractor %s",
             input, this); 
-        LOG.error(msg, e);
+        LOG.error(msg);
       }
     }
     return res;
