@@ -164,7 +164,7 @@ public class PTypes {
 
     @Override
     public void initialize() {
-      this.instance = ReflectionUtils.newInstance(clazz, getConfiguration());
+      this.instance = ReflectionUtils.newInstance(clazz, null);
       this.deserializer = new TDeserializer(new TBinaryProtocol.Factory());
       this.bytes = new byte[0];
     }
