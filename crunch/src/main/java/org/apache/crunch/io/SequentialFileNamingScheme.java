@@ -42,7 +42,7 @@ public class SequentialFileNamingScheme implements FileNamingScheme {
 
   private String getSequentialFileName(Configuration configuration, Path outputDirectory, String jobTypeName)
       throws IOException {
-    FileSystem fileSystem = FileSystem.get(configuration);
+    FileSystem fileSystem = outputDirectory.getFileSystem(configuration);
     int fileSequenceNumber = fileSystem.listStatus(outputDirectory).length;
 
     return String.format("part-%s-%05d", jobTypeName, fileSequenceNumber);
