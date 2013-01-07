@@ -26,6 +26,7 @@ import java.util.PriorityQueue;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
@@ -74,7 +75,8 @@ public class Aggregate {
           public Pair<Integer, Long> map(S input) {
             return Pair.of(1, 1L);
           }
-        }, tf.tableOf(tf.ints(), tf.longs())).groupByKey()
+        }, tf.tableOf(tf.ints(), tf.longs()))
+        .groupByKey(GroupingOptions.builder().numReducers(1).build())
         .combineValues(Aggregators.SUM_LONGS());
     PCollection<Long> count = countTable.values();
     return new FirstElementPObject<Long>(count);
