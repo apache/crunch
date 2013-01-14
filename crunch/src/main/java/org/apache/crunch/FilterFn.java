@@ -42,7 +42,20 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       emitter.emit(input);
     }
   }
-
+  
+  @Override
+  public final void cleanup(Emitter<T> emitter) {
+    cleanup();
+  }
+  
+  /**
+   * Called during the cleanup of the MapReduce job this {@code FilterFn} is
+   * associated with. Subclasses may override this method to do appropriate
+   * cleanup.
+   */
+  public void cleanup() {
+  }
+  
   @Override
   public float scaleFactor() {
     return 0.5f;
@@ -80,6 +93,13 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       initialize();
     }
+    
+    @Override
+    public void cleanup() {
+      for (FilterFn<S> fn : fns) {
+        fn.cleanup();
+      }
+    }
 
     @Override
     public boolean accept(S input) {
@@ -90,7 +110,7 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       return true;
     }
-
+    
     @Override
     public float scaleFactor() {
       float scaleFactor = 1.0f;
@@ -133,6 +153,13 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       initialize();
     }
+    
+    @Override
+    public void cleanup() {
+      for (FilterFn<S> fn : fns) {
+        fn.cleanup();
+      }
+    }
 
     @Override
     public boolean accept(S input) {
@@ -143,7 +170,7 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       }
       return false;
     }
-
+    
     @Override
     public float scaleFactor() {
       float scaleFactor = 0.0f;
@@ -181,6 +208,11 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
       base.setContext(context);
       initialize();
+    }
+    
+    @Override
+    public void cleanup() {
+      base.cleanup();
     }
     
     @Override
