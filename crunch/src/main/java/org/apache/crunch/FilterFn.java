@@ -20,6 +20,8 @@ package org.apache.crunch;
 import java.util.List;
 
 import org.apache.crunch.fn.FilterFns;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.ImmutableList;
 
@@ -63,6 +65,21 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     public AndFn(FilterFn<S>... fns) {
       this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
     }
+    
+    @Override
+    public void configure(Configuration conf) {
+      for (FilterFn<S> fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (FilterFn<S> fn : fns) {
+        fn.setContext(context);
+      }
+      initialize();
+    }
 
     @Override
     public boolean accept(S input) {
@@ -100,6 +117,21 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
 
     public OrFn(FilterFn<S>... fns) {
       this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
+    }
+    
+    @Override
+    public void configure(Configuration conf) {
+      for (FilterFn<S> fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (FilterFn<S> fn : fns) {
+        fn.setContext(context);
+      }
+      initialize();
     }
 
     @Override
@@ -139,7 +171,18 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     public NotFn(FilterFn<S> base) {
       this.base = base;
     }
+    
+    @Override
+    public void configure(Configuration conf) {
+        base.configure(conf);
+    }
 
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      base.setContext(context);
+      initialize();
+    }
+    
     @Override
     public boolean accept(S input) {
       return !base.accept(input);
