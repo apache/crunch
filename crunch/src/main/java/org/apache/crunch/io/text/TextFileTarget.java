@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.text;
 
+import org.apache.avro.Schema;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.SequentialFileNamingScheme;
@@ -25,8 +26,12 @@ import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroTextOutputFormat;
+import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.writable.WritableType;
+import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -72,9 +77,33 @@ public class TextFileTarget extends FileTargetImpl {
 
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
+    if (!isTextCompatible(ptype)) {
+      return null;
+    }
     if (ptype instanceof PTableType) {
       return new TextFileTableSourceTarget(path, (PTableType) ptype);
     }
     return new TextFileSourceTarget<T>(path, ptype);
+  }
+  
+  private <T> boolean isTextCompatible(PType<T> ptype) {
+    if (AvroTypeFamily.getInstance().equals(ptype.getFamily())) {
+      AvroType<T> at = (AvroType<T>) ptype;
+      if (at.getSchema().equals(Schema.create(Schema.Type.STRING))) {
+        return true;
+      }
+    } else if (WritableTypeFamily.getInstance().equals(ptype.getFamily())) {
+      if (ptype instanceof PTableType) {
+        PTableType ptt = (PTableType) ptype;
+        return isText(ptt.getKeyType()) && isText(ptt.getValueType());
+      } else {
+        return isText(ptype);
+      }
+    }
+    return false;
+  }
+  
+  private <T> boolean isText(PType<T> wtype) {
+    return Text.class.equals(((WritableType) wtype).getSerializationClass());
   }
 }

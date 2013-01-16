@@ -162,9 +162,17 @@ public class MRPipeline implements Pipeline {
       } else {
         boolean materialized = false;
         for (Target t : outputTargets.get(c)) {
-          if (!materialized && t instanceof Source) {
-            c.materializeAt((SourceTarget) t);
-            materialized = true;
+          if (!materialized) {
+            if (t instanceof SourceTarget) {
+              c.materializeAt((SourceTarget) t);
+              materialized = true;
+            } else {
+              SourceTarget st = t.asSourceTarget(c.getPType());
+              if (st != null) {
+                c.materializeAt(st);
+                materialized = true;
+              }
+            }
           }
         }
       }
