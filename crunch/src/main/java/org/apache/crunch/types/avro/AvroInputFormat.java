@@ -18,34 +18,18 @@
 package org.apache.crunch.types.avro;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /** An {@link org.apache.hadoop.mapreduce.InputFormat} for Avro data files. */
 public class AvroInputFormat<T> extends FileInputFormat<AvroWrapper<T>, NullWritable> {
-
-  @Override
-  protected List<FileStatus> listStatus(JobContext job) throws IOException {
-    List<FileStatus> result = new ArrayList<FileStatus>();
-    for (FileStatus file : super.listStatus(job)) {
-      if (file.getPath().getName().endsWith(org.apache.avro.mapred.AvroOutputFormat.EXT)) {
-        result.add(file);
-      }
-    }
-    return result;
-  }
-
   @Override
   public RecordReader<AvroWrapper<T>, NullWritable> createRecordReader(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
@@ -54,5 +38,4 @@ public class AvroInputFormat<T> extends FileInputFormat<AvroWrapper<T>, NullWrit
     Schema schema = new Schema.Parser().parse(jsonSchema);
     return new AvroRecordReader<T>(schema);
   }
-
 }
