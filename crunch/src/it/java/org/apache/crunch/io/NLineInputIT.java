@@ -29,6 +29,7 @@ import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -40,7 +41,9 @@ public class NLineInputIT {
   @Test
   public void testNLine() throws Exception {
     String urlsInputPath = tmpDir.copyResourceFileName("urls.txt");
-    Pipeline pipeline = new MRPipeline(NLineInputIT.class, tmpDir.getDefaultConfiguration());
+    Configuration conf = new Configuration(tmpDir.getDefaultConfiguration());
+    conf.setInt("io.sort.mb", 10);
+    Pipeline pipeline = new MRPipeline(NLineInputIT.class, conf);
     PCollection<String> urls = pipeline.read(new NLineFileSource<String>(urlsInputPath,
         Writables.strings(), 2));
     assertEquals(new Integer(2),
