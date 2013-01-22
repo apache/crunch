@@ -118,9 +118,10 @@ public class MapsideJoin {
     }
 
     private Path getCacheFilePath() {
+      Path input = new Path(inputPath);
       try {
         for (Path localPath : DistributedCache.getLocalCacheFiles(getConfiguration())) {
-          if (localPath.toString().endsWith(inputPath)) {
+          if (localPath.toString().endsWith(input.getName())) {
             return localPath.makeQualified(FileSystem.getLocal(getConfiguration()));
 
           }
