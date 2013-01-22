@@ -202,7 +202,7 @@ public class TfIdfIT implements Serializable {
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
-      if (line.startsWith("the") && line.contains("B,0.6931471805599453")) {
+      if (line.startsWith("[the") && line.contains("B,0.6931471805599453")) {
         passed = true;
         break;
       }
@@ -214,7 +214,7 @@ public class TfIdfIT implements Serializable {
     lines = Files.readLines(outputFile, Charset.defaultCharset());
     passed = false;
     for (String line : lines) {
-      if (line.startsWith("THE") && line.contains("B,0.6931471805599453")) {
+      if (line.startsWith("[THE") && line.contains("B,0.6931471805599453")) {
         passed = true;
         break;
       }

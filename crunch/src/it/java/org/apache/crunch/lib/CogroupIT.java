@@ -25,7 +25,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
@@ -117,7 +116,7 @@ public class CogroupIT {
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
-      if (line.equals("j\t705")) {
+      if (line.equals("[j,705]")) {
         passed = true;
         break;
       }

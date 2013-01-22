@@ -161,7 +161,7 @@ public class WordCountIT {
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
     boolean passed = false;
     for (String line : lines) {
-      if (line.startsWith("Macbeth\t28")) {
+      if (line.startsWith("Macbeth\t28") || line.startsWith("[Macbeth,28]")) {
         passed = true;
         break;
       }

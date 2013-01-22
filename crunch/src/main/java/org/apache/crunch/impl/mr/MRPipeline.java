@@ -44,11 +44,12 @@ import org.apache.crunch.impl.mr.collect.UnionTable;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.impl.mr.plan.MSCRPlanner;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
-import org.apache.crunch.io.At;
+import org.apache.crunch.io.From;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.To;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
-import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -191,7 +192,7 @@ public class MRPipeline implements Pipeline {
   }
 
   public PCollection<String> readTextFile(String pathName) {
-    return read(At.textFile(pathName));
+    return read(From.textFile(pathName));
   }
 
   @SuppressWarnings("unchecked")
@@ -311,12 +312,17 @@ public class MRPipeline implements Pipeline {
 
   @Override
   public <T> void writeTextFile(PCollection<T> pcollection, String pathName) {
-    // Ensure that this is a writable pcollection instance.
-    pcollection = pcollection.parallelDo("asText", IdentityFn.<T> getInstance(), WritableTypeFamily
-        .getInstance().as(pcollection.getPType()));
-    write(pcollection, At.textFile(pathName));
+    pcollection.parallelDo("asText", new StringifyFn<T>(), Writables.strings())
+        .write(To.textFile(pathName));
   }
 
+  private static class StringifyFn<T> extends MapFn<T, String> {
+    @Override
+    public String map(T input) {
+      return input.toString();
+    }
+  }
+  
   private void cleanup() {
     if (!outputTargets.isEmpty()) {
       LOG.warn("Not running cleanup while output targets remain");
