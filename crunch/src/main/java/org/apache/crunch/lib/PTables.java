@@ -25,9 +25,11 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.PTypeFamily;
 
 import com.google.common.collect.Lists;
 
@@ -37,6 +39,24 @@ import com.google.common.collect.Lists;
  */
 public class PTables {
 
+  /**
+   * Convert the given {@code PCollection<Pair<K, V>>} to a {@code PTable<K, V>}.
+   * @param pcollect The {@code PCollection} to convert
+   * @return A {@code PTable} that contains the same data as the input {@code PCollection}
+   */
+  public static <K, V> PTable<K, V> asPTable(PCollection<Pair<K, V>> pcollect) {
+    PType<Pair<K, V>> pt = pcollect.getPType();
+    PTypeFamily ptf = pt.getFamily();
+    PTableType<K, V> ptt = ptf.tableOf(pt.getSubTypes().get(0), pt.getSubTypes().get(1));
+    DoFn<Pair<K, V>, Pair<K, V>> id = IdentityFn.getInstance();
+    return pcollect.parallelDo("asPTable", id, ptt);
+  }
+  
+  /**
+   * Extract the keys from the given {@code PTable<K, V>} as a {@code PCollection<K>}.
+   * @param ptable The {@code PTable}
+   * @return A {@code PCollection<K>}
+   */
   public static <K, V> PCollection<K> keys(PTable<K, V> ptable) {
     return ptable.parallelDo("PTables.keys", new DoFn<Pair<K, V>, K>() {
       @Override
@@ -46,6 +66,11 @@ public class PTables {
     }, ptable.getKeyType());
   }
 
+  /**
+   * Extract the values from the given {@code PTable<K, V>} as a {@code PCollection<V>}.
+   * @param ptable The {@code PTable}
+   * @return A {@code PCollection<V>}
+   */
   public static <K, V> PCollection<V> values(PTable<K, V> ptable) {
     return ptable.parallelDo("PTables.values", new DoFn<Pair<K, V>, V>() {
       @Override

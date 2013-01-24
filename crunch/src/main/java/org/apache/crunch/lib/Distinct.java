@@ -22,6 +22,7 @@ import java.util.Set;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -48,6 +49,13 @@ public final class Distinct {
   }
   
   /**
+   * A {@code PTable<K, V>} analogue of the {@code distinct} function.
+   */
+  public static <K, V> PTable<K, V> distinct(PTable<K, V> input) {
+    return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input));
+  }
+  
+  /**
    * A {@code distinct} operation that gives the client more control over how frequently
    * elements are flushed to disk in order to allow control over performance or
    * memory consumption.
@@ -64,6 +72,13 @@ public final class Distinct {
         .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery), ptf.tableOf(pt, ptf.nulls()))
         .groupByKey()
         .parallelDo("post-distinct", new PostDistinctFn<S>(), pt);
+  }
+  
+  /**
+   * A {@code PTable<K, V>} analogue of the {@code distinct} function.
+   */
+  public static <K, V> PTable<K, V> distinct(PTable<K, V> input, int flushEvery) {
+    return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input, flushEvery));
   }
   
   private static class PreDistinctFn<S> extends DoFn<S, Pair<S, Void>> {
