@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.util;
 
-import java.io.IOException;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
@@ -48,7 +46,7 @@ public abstract class CrunchTool extends Configured implements Tool {
 
   private Pipeline pipeline;
 
-  public CrunchTool() throws IOException {
+  public CrunchTool() {
     this(false);
   }
 
