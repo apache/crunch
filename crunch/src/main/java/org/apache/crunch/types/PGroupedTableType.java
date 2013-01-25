@@ -29,6 +29,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
+import com.google.common.collect.Iterables;
+
 /**
  * The {@code PType} instance for {@link PGroupedTable} instances. Its settings
  * are derived from the {@code PTableType} that was grouped to create the
@@ -62,6 +64,11 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
           iter.remove();
         }
       };
+    }
+    
+    @Override
+    public String toString() {
+      return Iterables.toString(this);
     }
   }
 
