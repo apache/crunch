@@ -285,7 +285,7 @@ public class MRPipeline implements Pipeline {
    */
   private <T> PCollectionImpl<T> toPcollectionImpl(PCollection<T> pcollection) {
     PCollectionImpl<T> pcollectionImpl = null;
-    if (pcollection instanceof UnionCollection) {
+    if (pcollection instanceof UnionCollection || pcollection instanceof UnionTable) {
       pcollectionImpl = (PCollectionImpl<T>) pcollection.parallelDo("UnionCollectionWrapper",
           (MapFn) IdentityFn.<Object> getInstance(), pcollection.getPType());
     } else {
