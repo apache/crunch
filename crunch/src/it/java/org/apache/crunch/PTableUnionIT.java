@@ -19,8 +19,6 @@ package org.apache.crunch;
 
 import static org.junit.Assert.assertNotNull;
 
-import java.io.IOException;
-
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.fn.IdentityFn;
@@ -35,7 +33,7 @@ import org.junit.Test;
 
 
 
-public class PTableUnionTest {
+public class PTableUnionIT {
 
   public static class FirstLetterKeyFn extends DoFn<String, Pair<String, String>> {
 
