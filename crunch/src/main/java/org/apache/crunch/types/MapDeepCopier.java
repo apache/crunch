@@ -39,6 +39,10 @@ public class MapDeepCopier<T> implements DeepCopier<Map<String, T>> {
 
   @Override
   public Map<String, T> deepCopy(Map<String, T> source) {
+    if (source == null) {
+      return null;
+    }
+    
     Map<String, T> deepCopyMap = Maps.newHashMap();
     for (Entry<String, T> entry : source.entrySet()) {
       deepCopyMap.put(entry.getKey(), ptype.getDetachedValue(entry.getValue()));

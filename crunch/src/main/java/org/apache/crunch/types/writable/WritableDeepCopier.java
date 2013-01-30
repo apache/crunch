@@ -47,6 +47,11 @@ public class WritableDeepCopier<T extends Writable> implements DeepCopier<T> {
 
   @Override
   public T deepCopy(T source) {
+    
+    if (source == null) {
+      return null;
+    }
+    
     ByteArrayOutputStream byteOutStream = new ByteArrayOutputStream();
     DataOutputStream dataOut = new DataOutputStream(byteOutStream);
     T copiedValue = null;

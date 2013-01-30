@@ -19,6 +19,7 @@ package org.apache.crunch.types.avro;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 
@@ -31,7 +32,7 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 
 public class AvroDeepCopierTest {
-
+  
   @Test
   public void testDeepCopySpecific() {
     Person person = new Person();
@@ -91,6 +92,16 @@ public class AvroDeepCopierTest {
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);
 
+  }
+  
+  @Test
+  public void testDeepCopy_Null() {
+    Person person = null;
+
+    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
+        .deepCopy(person);
+
+    assertNull(deepCopyPerson);
   }
 
 }

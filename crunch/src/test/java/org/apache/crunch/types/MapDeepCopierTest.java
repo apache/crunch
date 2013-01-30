@@ -19,6 +19,7 @@ package org.apache.crunch.types;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 import java.util.Map;
 
@@ -45,6 +46,18 @@ public class MapDeepCopierTest {
 
     assertEquals(map, deepCopy);
     assertNotSame(map.get(key), deepCopy.get(key));
+  }
+  
+  @Test
+  public void testDeepCopy_Null() {
+    Map<String, StringWrapper> map = null;
+
+    MapDeepCopier<StringWrapper> deepCopier = new MapDeepCopier<StringWrapper>(
+        Avros.reflects(StringWrapper.class));
+    deepCopier.initialize(new Configuration());
+    Map<String, StringWrapper> deepCopy = deepCopier.deepCopy(map);
+
+    assertNull(deepCopy);
   }
 
 }

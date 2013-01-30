@@ -19,6 +19,7 @@ package org.apache.crunch.types.writable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 import org.apache.hadoop.io.Text;
 import org.junit.Before;
@@ -40,6 +41,14 @@ public class WritableDeepCopierTest {
 
     assertEquals(text, deepCopy);
     assertNotSame(text, deepCopy);
+  }
+  
+  @Test
+  public void testDeepCopy_Null() {
+    Text text = null;
+    Text deepCopy = deepCopier.deepCopy(text);
+    
+    assertNull(deepCopy);
   }
 
 }

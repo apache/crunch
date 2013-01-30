@@ -169,6 +169,11 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
    */
   @Override
   public T deepCopy(T source) {
+    
+    if (source == null) {
+      return null;
+    }
+    
     if (datumReader == null) {
       datumReader = createDatumReader(conf);
     }

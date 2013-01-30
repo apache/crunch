@@ -48,6 +48,11 @@ public class TupleDeepCopier<T extends Tuple> implements DeepCopier<T> {
 
   @Override
   public T deepCopy(T source) {
+    
+    if (source == null) {
+      return null;
+    }
+    
     Object[] deepCopyValues = new Object[source.size()];
 
     for (int valueIndex = 0; valueIndex < elementTypes.size(); valueIndex++) {

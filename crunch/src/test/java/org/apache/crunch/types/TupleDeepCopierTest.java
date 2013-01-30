@@ -19,6 +19,7 @@ package org.apache.crunch.types;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
@@ -46,6 +47,31 @@ public class TupleDeepCopierTest {
 
     assertEquals(inputPair, deepCopyPair);
     assertNotSame(inputPair.second(), deepCopyPair.second());
+  }
+  
+  @Test
+  public void testDeepCopy_PairContainingNull() {
+
+    Pair<Integer, Person> inputPair = Pair.of(1, null);
+    DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(Pair.class, Avros.ints(),
+        Avros.records(Person.class));
+
+    deepCopier.initialize(new Configuration());
+    Pair<Integer, Person> deepCopyPair = deepCopier.deepCopy(inputPair);
+
+    assertEquals(inputPair, deepCopyPair);
+  }
+  
+  @Test
+  public void testDeepCopy_NullPair() {
+    Pair<Integer, Person> inputPair = null;
+    DeepCopier<Pair> deepCopier = new TupleDeepCopier<Pair>(Pair.class, Avros.ints(),
+        Avros.records(Person.class));
+
+    deepCopier.initialize(new Configuration());
+    Pair<Integer, Person> deepCopyPair = deepCopier.deepCopy(inputPair);
+
+    assertNull(deepCopyPair);
   }
 
 }
