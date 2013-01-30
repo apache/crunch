@@ -103,7 +103,7 @@ public class MemCollection<S> implements PCollection<S> {
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type,
       ParallelDoOptions options) {
     InMemoryEmitter<T> emitter = new InMemoryEmitter<T>();
-    doFn.initialize();
+    doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
     for (S s : collect) {
       doFn.process(s, emitter);
     }
@@ -126,7 +126,6 @@ public class MemCollection<S> implements PCollection<S> {
       ParallelDoOptions options) {
     InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
     doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
-    doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
     }
@@ -250,13 +249,26 @@ public class MemCollection<S> implements PCollection<S> {
     factory.setFilter(new MethodFilter() {
       @Override
       public boolean isHandled(Method m) {
-        return m.getName().equals("getConfiguration");
+        String name = m.getName();
+        return "getConfiguration".equals(name) || "getCounter".equals(name) || "progress".equals(name);
       }
     });
     MethodHandler handler = new MethodHandler() {
       @Override
-      public Object invoke(Object arg0, Method arg1, Method arg2, Object[] arg3) throws Throwable {
-        return conf;
+      public Object invoke(Object arg0, Method m, Method arg2, Object[] args) throws Throwable {
+        String name = m.getName();
+        if ("getConfiguration".equals(name)) {
+          return conf;
+        } else if ("progress".equals(name)) {
+          // no-op
+          return null;
+        } else { // getCounter
+          if (args.length == 1) {
+            return MemPipeline.getCounters().findCounter((Enum<?>) args[0]);
+          } else {
+            return MemPipeline.getCounters().findCounter((String) args[0], (String) args[1]);
+          }
+        }
       }
     };
     try {
