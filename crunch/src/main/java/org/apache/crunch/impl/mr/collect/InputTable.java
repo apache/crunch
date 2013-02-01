@@ -40,6 +40,10 @@ public class InputTable<K, V> extends PTableBase<K, V> {
     this.asCollection = new InputCollection<Pair<K, V>>(source, pipeline);
   }
 
+  public TableSource<K, V> getSource() {
+    return source;
+  }
+  
   @Override
   protected long getSizeInternal() {
     return asCollection.getSizeInternal();

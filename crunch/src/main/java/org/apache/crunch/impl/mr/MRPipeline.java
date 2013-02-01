@@ -45,6 +45,7 @@ import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.impl.mr.plan.MSCRPlanner;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.From;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.To;
 import org.apache.crunch.materialize.MaterializableIterable;
@@ -156,8 +157,10 @@ public class MRPipeline implements Pipeline {
     for (PCollectionImpl<?> c : outputTargets.keySet()) {
       if (outputTargetsToMaterialize.containsKey(c)) {
         MaterializableIterable iter = outputTargetsToMaterialize.get(c);
-        iter.materialize();
-        c.materializeAt(iter.getSourceTarget());
+        if (iter.isSourceTarget()) {
+          iter.materialize();
+          c.materializeAt((SourceTarget) iter.getSource());
+        }
         outputTargetsToMaterialize.remove(c);
       } else {
         boolean materialized = false;
@@ -225,9 +228,9 @@ public class MRPipeline implements Pipeline {
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
 
     PCollectionImpl<T> pcollectionImpl = toPcollectionImpl(pcollection);
-    ReadableSourceTarget<T> srcTarget = getMaterializeSourceTarget(pcollectionImpl);
+    ReadableSource<T> readableSrc = getMaterializeSourceTarget(pcollectionImpl);
 
-    MaterializableIterable<T> c = new MaterializableIterable<T>(this, srcTarget);
+    MaterializableIterable<T> c = new MaterializableIterable<T>(this, readableSrc);
     if (!outputTargetsToMaterialize.containsKey(pcollectionImpl)) {
       outputTargetsToMaterialize.put(pcollectionImpl, c);
     }
@@ -245,35 +248,56 @@ public class MRPipeline implements Pipeline {
    * @throws IllegalArgumentException If no ReadableSourceTarget can be retrieved for the given
    *           PCollection
    */
-  public <T> ReadableSourceTarget<T> getMaterializeSourceTarget(PCollection<T> pcollection) {
+  public <T> ReadableSource<T> getMaterializeSourceTarget(PCollection<T> pcollection) {
     PCollectionImpl<T> impl = toPcollectionImpl(pcollection);
+
+    // First, check to see if this is a readable input collection.
+    if (impl instanceof InputCollection) {
+      InputCollection<T> ic = (InputCollection<T>) impl;
+      if (ic.getSource() instanceof ReadableSource) {
+        return (ReadableSource) ic.getSource();
+      } else {
+        throw new IllegalArgumentException(
+            "Cannot materialize non-readable input collection: " + ic);
+      }
+    } else if (impl instanceof InputTable) {
+      InputTable it = (InputTable) impl;
+      if (it.getSource() instanceof ReadableSource) {
+        return (ReadableSource) it.getSource();
+      } else {
+        throw new IllegalArgumentException(
+            "Cannot materialize non-readable input table: " + it);
+      }
+    }
+
+    // Next, check to see if this pcollection has already been materialized.
     SourceTarget<T> matTarget = impl.getMaterializedAt();
     if (matTarget != null && matTarget instanceof ReadableSourceTarget) {
       return (ReadableSourceTarget<T>) matTarget;
     }
-
+    
+    // Check to see if we plan on materializing this collection on the
+    // next run.
     ReadableSourceTarget<T> srcTarget = null;
     if (outputTargets.containsKey(pcollection)) {
       for (Target target : outputTargets.get(impl)) {
         if (target instanceof ReadableSourceTarget) {
-          srcTarget = (ReadableSourceTarget<T>) target;
-          break;
+          return (ReadableSourceTarget<T>) target;
         }
       }
     }
 
-    if (srcTarget == null) {
-      SourceTarget<T> st = createIntermediateOutput(pcollection.getPType());
-      if (!(st instanceof ReadableSourceTarget)) {
-        throw new IllegalArgumentException("The PType for the given PCollection is not readable"
-            + " and cannot be materialized");
-      } else {
-        srcTarget = (ReadableSourceTarget<T>) st;
-        addOutput(impl, srcTarget);
-      }
+    // If we're not planning on materializing it already, create a temporary
+    // output to hold the materialized records and return that.
+    SourceTarget<T> st = createIntermediateOutput(pcollection.getPType());
+    if (!(st instanceof ReadableSourceTarget)) {
+      throw new IllegalArgumentException("The PType for the given PCollection is not readable"
+          + " and cannot be materialized");
+    } else {
+      srcTarget = (ReadableSourceTarget<T>) st;
+      addOutput(impl, srcTarget);
+      return srcTarget;
     }
-
-    return srcTarget;
   }
 
   /**

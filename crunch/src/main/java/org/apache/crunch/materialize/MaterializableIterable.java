@@ -24,8 +24,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.PathTarget;
-import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.hadoop.fs.Path;
 
 public class MaterializableIterable<E> implements Iterable<E> {
@@ -33,22 +35,28 @@ public class MaterializableIterable<E> implements Iterable<E> {
   private static final Log LOG = LogFactory.getLog(MaterializableIterable.class);
 
   private final Pipeline pipeline;
-  private final ReadableSourceTarget<E> sourceTarget;
+  private final ReadableSource<E> source;
   private Iterable<E> materialized;
 
-  public MaterializableIterable(Pipeline pipeline, ReadableSourceTarget<E> source) {
+  public MaterializableIterable(Pipeline pipeline, ReadableSource<E> source) {
     this.pipeline = pipeline;
-    this.sourceTarget = source;
+    this.source = source;
     this.materialized = null;
   }
 
-  public ReadableSourceTarget<E> getSourceTarget() {
-    return sourceTarget;
+  public ReadableSource<E> getSource() {
+    return source;
   }
 
+  public boolean isSourceTarget() {
+    return (source instanceof SourceTarget);
+  }
+  
   public Path getPath() {
-    if (sourceTarget instanceof PathTarget) {
-      return ((PathTarget) sourceTarget).getPath();
+    if (source instanceof FileSourceImpl) {
+      return ((FileSourceImpl) source).getPath();
+    } else if (source instanceof PathTarget) {
+      return ((PathTarget) source).getPath();
     }
     return null;
   }
@@ -64,9 +72,9 @@ public class MaterializableIterable<E> implements Iterable<E> {
 
   public void materialize() {
     try {
-      materialized = sourceTarget.read(pipeline.getConfiguration());
+      materialized = source.read(pipeline.getConfiguration());
     } catch (IOException e) {
-      LOG.error("Could not materialize: " + sourceTarget, e);
+      LOG.error("Could not materialize: " + source, e);
       throw new CrunchRuntimeException(e);
     }
   }

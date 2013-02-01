@@ -53,6 +53,10 @@ public class FileSourceImpl<T> implements Source<T> {
     this.inputBundle = inputBundle;
   }
 
+  public Path getPath() {
+    return path;
+  }
+  
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     if (inputId == -1) {

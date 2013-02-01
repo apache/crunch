@@ -25,6 +25,7 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
@@ -72,12 +73,13 @@ public class MapsideJoin {
     if (iterable instanceof MaterializableIterable) {
       MaterializableIterable<Pair<K, V>> mi = (MaterializableIterable<Pair<K, V>>) iterable;
       MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(), right.getPType());
-      ParallelDoOptions options = ParallelDoOptions.builder()
-          .sourceTargets(mi.getSourceTarget())
-          .build();
+      ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
+      if (mi.isSourceTarget()) {
+        optionsBuilder.sourceTargets((SourceTarget) mi.getSource());
+      }
       return left.parallelDo("mapjoin", mapJoinDoFn,
           tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())),
-          options);
+          optionsBuilder.build());
     } else { // in-memory pipeline
       return left.parallelDo(new InMemoryJoinFn<K, U, V>(iterable),
           tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())));
