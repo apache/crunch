@@ -192,8 +192,10 @@ public class AvrosTest {
     
     TaskInputOutputContext<?, ?, ?, ?> testContext = CrunchTestSupport.getTestContext(new Configuration());
     at.getInputMapFn().setContext(testContext);
+    at.getInputMapFn().initialize();
     at.getOutputMapFn().setContext(testContext);
-
+    at.getOutputMapFn().initialize();
+    
     LongWritable lw = new LongWritable(1729L);
     assertEquals(lw, at.getInputMapFn().map(at.getOutputMapFn().map(lw)));
   }

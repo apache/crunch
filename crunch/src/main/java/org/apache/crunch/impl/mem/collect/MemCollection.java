@@ -104,6 +104,7 @@ public class MemCollection<S> implements PCollection<S> {
       ParallelDoOptions options) {
     InMemoryEmitter<T> emitter = new InMemoryEmitter<T>();
     doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
+    doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
     }
@@ -126,6 +127,7 @@ public class MemCollection<S> implements PCollection<S> {
       ParallelDoOptions options) {
     InMemoryEmitter<Pair<K, V>> emitter = new InMemoryEmitter<Pair<K, V>>();
     doFn.setContext(getInMemoryContext(getPipeline().getConfiguration()));
+    doFn.initialize();
     for (S s : collect) {
       doFn.process(s, emitter);
     }

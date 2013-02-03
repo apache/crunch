@@ -91,9 +91,15 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       for (FilterFn<S> fn : fns) {
         fn.setContext(context);
       }
-      initialize();
     }
     
+    @Override
+    public void initialize() {
+      for (FilterFn<S> fn : fns) {
+        fn.initialize();
+      }
+    }
+
     @Override
     public void cleanup() {
       for (FilterFn<S> fn : fns) {
@@ -151,7 +157,13 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
       for (FilterFn<S> fn : fns) {
         fn.setContext(context);
       }
-      initialize();
+    }
+    
+    @Override
+    public void initialize() {
+      for (FilterFn<S> fn : fns) {
+        fn.initialize();
+      }
     }
     
     @Override
@@ -207,7 +219,11 @@ public abstract class FilterFn<T> extends DoFn<T, T> {
     @Override
     public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
       base.setContext(context);
-      initialize();
+    }
+    
+    @Override
+    public void initialize() {
+      base.initialize();
     }
     
     @Override

@@ -28,6 +28,7 @@ import org.apache.crunch.SourceTarget;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.Iterables;
 
@@ -87,10 +88,15 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
       values.configure(conf);
     }
     
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      keys.setContext(context);
+      values.setContext(context);
+    }
+    
     @Override
     public void initialize() {
-      keys.setContext(getContext());
-      values.setContext(getContext());
+      keys.initialize();
+      values.initialize();
     }
 
     @Override

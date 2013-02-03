@@ -20,6 +20,7 @@ package org.apache.crunch.fn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
 
@@ -32,9 +33,15 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
   }
 
   @Override
+  public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+    first.setContext(context);
+    second.setContext(context);
+  }
+  
+  @Override
   public void initialize() {
-    first.setContext(getContext());
-    second.setContext(getContext());
+    first.initialize();
+    second.initialize();
   }
 
   public MapFn<R, S> getFirst() {

@@ -21,6 +21,7 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
 
@@ -39,11 +40,17 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
   }
 
   @Override
-  public void initialize() {
-    keys.setContext(getContext());
-    values.setContext(getContext());
+  public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+    keys.setContext(context);
+    values.setContext(context);
   }
 
+  @Override
+  public void initialize() {
+    keys.initialize();
+    values.initialize();
+  }
+  
   @Override
   public Pair<S, T> map(Pair<K, V> input) {
     return Pair.of(keys.map(input.first()), values.map(input.second()));

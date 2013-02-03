@@ -27,6 +27,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.TupleDeepCopier;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 /**
  * The implementation of the PTableType interface for Avro-based serialization.
@@ -57,9 +58,15 @@ class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, 
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      keyMapFn.setContext(context);
+      valueMapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      keyMapFn.setContext(getContext());
-      valueMapFn.setContext(getContext());
+      keyMapFn.initialize();
+      valueMapFn.initialize();
       pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
           new Schema.Parser().parse(firstJson), new Schema.Parser().parse(secondJson)).toString();
     }
@@ -93,9 +100,15 @@ class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, 
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      firstMapFn.setContext(context);
+      secondMapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      firstMapFn.setContext(getContext());
-      secondMapFn.setContext(getContext());
+      firstMapFn.initialize();
+      secondMapFn.initialize();
     }
 
     @Override

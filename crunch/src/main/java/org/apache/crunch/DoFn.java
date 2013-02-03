@@ -103,7 +103,6 @@ public abstract class DoFn<S, T> implements Serializable {
    */
   public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
     this.context = context;
-    initialize();
   }
 
   /**

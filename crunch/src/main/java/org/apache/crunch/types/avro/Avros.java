@@ -56,6 +56,7 @@ import org.apache.crunch.types.TupleFactory;
 import org.apache.crunch.types.writable.WritableDeepCopier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -292,8 +293,13 @@ public class Avros {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      this.mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -331,8 +337,13 @@ public class Avros {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      this.mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -369,8 +380,13 @@ public class Avros {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      this.mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -396,8 +412,13 @@ public class Avros {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      this.mapFn.setContext(getContext());
+      this.mapFn.initialize();
     }
 
     @Override
@@ -441,9 +462,16 @@ public class Avros {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+    
+    @Override
     public void initialize() {
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.initialize();
       }
       this.values = new Object[fns.size()];
       tupleFactory.initialize();
@@ -499,12 +527,19 @@ public class Avros {
         fn.configure(conf);
       }
     }
-
+ 
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(getContext());
+      }
+    }
+    
     @Override
     public void initialize() {
       this.schema = new Schema.Parser().parse(jsonSchema);
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.initialize();
       }
     }
 

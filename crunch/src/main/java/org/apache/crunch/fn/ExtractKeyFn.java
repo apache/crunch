@@ -19,6 +19,7 @@ package org.apache.crunch.fn;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 /**
  * Wrapper function for converting a {@code MapFn} into a key-value pair that is
@@ -33,8 +34,13 @@ public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
   }
 
   @Override
+  public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+    mapFn.setContext(context);
+  }
+  
+  @Override
   public void initialize() {
-    this.mapFn.setContext(getContext());
+    mapFn.initialize();
   }
 
   @Override

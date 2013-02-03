@@ -64,6 +64,7 @@ public class RTNode implements Serializable {
     }
 
     fn.setContext(ctxt.getContext());
+    fn.initialize();
     for (RTNode child : children) {
       child.initialize(ctxt);
     }

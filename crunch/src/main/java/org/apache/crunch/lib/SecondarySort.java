@@ -102,6 +102,7 @@ public class SecondarySort {
     @Override
     public void initialize() {
       intern.setContext(getContext());
+      intern.initialize();
     }
     
     @Override

@@ -48,6 +48,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -297,9 +298,16 @@ public class Writables {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+    
+    @Override
     public void initialize() {
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.initialize();
       }
       // The rest of the methods allocate new
       // objects each time. However this one
@@ -346,13 +354,19 @@ public class Writables {
       }
     }
 
-
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+    
     @Override
     public void initialize() {
       this.values = new Writable[fns.size()];
       this.writable = new TupleWritable(values);
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.initialize();
       }
     }
 
@@ -426,10 +440,14 @@ public class Writables {
       mapFn.configure(conf);
     }
 
-
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
     @Override
     public void initialize() {
-      mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -457,10 +475,14 @@ public class Writables {
       mapFn.configure(conf);
     }
 
-
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
     @Override
     public void initialize() {
-      mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -495,8 +517,13 @@ public class Writables {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
@@ -525,8 +552,13 @@ public class Writables {
     }
 
     @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      mapFn.setContext(context);
+    }
+    
+    @Override
     public void initialize() {
-      mapFn.setContext(getContext());
+      mapFn.initialize();
     }
 
     @Override
