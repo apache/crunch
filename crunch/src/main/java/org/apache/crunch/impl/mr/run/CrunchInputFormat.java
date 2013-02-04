@@ -42,19 +42,17 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException, InterruptedException {
     List<InputSplit> splits = Lists.newArrayList();
-    Configuration conf = job.getConfiguration();
+    Configuration base = job.getConfiguration();
     Map<FormatBundle, Map<Integer, List<Path>>> formatNodeMap = CrunchInputs.getFormatNodeMap(job);
 
     // First, build a map of InputFormats to Paths
     for (Map.Entry<FormatBundle, Map<Integer, List<Path>>> entry : formatNodeMap.entrySet()) {
       FormatBundle inputBundle = entry.getKey();
+      Configuration conf = new Configuration(base);
+      inputBundle.configure(conf);
       Job jobCopy = new Job(conf);
-      inputBundle.configure(jobCopy.getConfiguration());
       InputFormat<?, ?> format = (InputFormat<?, ?>) ReflectionUtils.newInstance(inputBundle.getFormatClass(),
           jobCopy.getConfiguration());
-      if (format instanceof Configurable) {
-        ((Configurable) format).setConf(jobCopy.getConfiguration());
-      }
       for (Map.Entry<Integer, List<Path>> nodeEntry : entry.getValue().entrySet()) {
         Integer nodeIndex = nodeEntry.getKey();
         List<Path> paths = nodeEntry.getValue();
