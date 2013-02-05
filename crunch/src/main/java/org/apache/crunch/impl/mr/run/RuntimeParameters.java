@@ -28,6 +28,8 @@ public class RuntimeParameters {
 
   public static final String TMP_DIR = "crunch.tmp.dir";
 
+  public static final String LOG_JOB_PROGRESS = "crunch.log.job.progress";
+
   // Not instantiated
   private RuntimeParameters() {
   }

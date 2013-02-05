@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.crunch.impl.mr.plan.MSCROutputHandler;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
 import org.apache.hadoop.conf.Configuration;
@@ -36,6 +37,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 public class CrunchJob extends CrunchControlledJob {
@@ -45,6 +47,7 @@ public class CrunchJob extends CrunchControlledJob {
   private final Path workingPath;
   private final Map<Integer, PathTarget> multiPaths;
   private final boolean mapOnlyJob;
+  private String lastKnownProgress;
 
   public CrunchJob(Job job, Path workingPath, MSCROutputHandler handler) throws IOException {
     super(job, Lists.<CrunchControlledJob> newArrayList());
@@ -117,6 +120,10 @@ public class CrunchJob extends CrunchControlledJob {
           this.state = State.FAILED;
           this.message = "Job failed!";
         }
+      } else { // still running
+        if (job.getConfiguration().getBoolean(RuntimeParameters.LOG_JOB_PROGRESS, false)) {
+          logJobProgress();
+        }
       }
     } catch (IOException ioe) {
       this.state = State.FAILED;
@@ -139,6 +146,15 @@ public class CrunchJob extends CrunchControlledJob {
     } else {
       log.info("Error occurred starting job \"" + getJobName() + "\":");
       log.info(getMessage());
+    }
+  }
+
+  private void logJobProgress() throws IOException, InterruptedException {
+    String progress = String.format("map %.0f%% reduce %.0f%%",
+        100.0 * job.mapProgress(), 100.0 * job.reduceProgress());
+    if (!Objects.equal(lastKnownProgress, progress)) {
+      log.info(job.getJobName() + " progress: " + progress);
+      lastKnownProgress = progress;
     }
   }
 
