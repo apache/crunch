@@ -28,6 +28,10 @@ public class TupleN implements Tuple {
 
   private final Object values[];
 
+  public static TupleN of(Object... values) {
+    return new TupleN(values);
+  }
+
   public TupleN(Object... values) {
     this.values = new Object[values.length];
     System.arraycopy(values, 0, this.values, 0, values.length);
