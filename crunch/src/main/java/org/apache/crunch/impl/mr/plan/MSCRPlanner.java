@@ -266,16 +266,19 @@ public class MSCRPlanner {
         assignment.put(v, prototype);
       }
     } else {
+      Set<Edge> usedEdges = Sets.newHashSet();
       for (Vertex g : gbks) {
         Set<NodePath> inputs = Sets.newHashSet();
         for (Edge e : g.getIncomingEdges()) {
           inputs.addAll(e.getNodePaths());
+          usedEdges.add(e);
         }
         JobPrototype prototype = JobPrototype.createMapReduceJob(
             (PGroupedTableImpl) g.getPCollection(), inputs, pipeline.createTempPath());
         assignment.put(g, prototype);
         for (Edge e : g.getIncomingEdges()) {
           assignment.put(e.getHead(), prototype);
+          usedEdges.add(e);
         }
         HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
         for (Edge e : g.getOutgoingEdges()) {
@@ -284,6 +287,7 @@ public class MSCRPlanner {
             outputPaths.putAll(t, e.getNodePaths());
           }
           assignment.put(output, prototype);
+          usedEdges.add(e);
         }
         prototype.addReducePaths(outputPaths);
       }
@@ -299,7 +303,7 @@ public class MSCRPlanner {
         boolean vertexHasUnassignedIncomingEdges = false;
         if (v.isOutput()) {
           for (Edge e : v.getIncomingEdges()) {
-            if (!assignment.containsKey(e.getHead())) {
+            if (!usedEdges.contains(e)) {
               vertexHasUnassignedIncomingEdges = true;
             }
           }
@@ -308,7 +312,7 @@ public class MSCRPlanner {
         if (v.isOutput() && (vertexHasUnassignedIncomingEdges || !assignment.containsKey(v))) {
           orphans.add(v);
           for (Edge e : v.getIncomingEdges()) {
-            if (vertexHasUnassignedIncomingEdges && assignment.containsKey(e.getHead())) {
+            if (vertexHasUnassignedIncomingEdges && usedEdges.contains(e)) {
               // We've already dealt with this incoming edge
               continue;
             }

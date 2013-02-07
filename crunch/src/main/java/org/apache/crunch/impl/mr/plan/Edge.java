@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 
@@ -108,11 +110,16 @@ class Edge {
       return false;
     }
     Edge e = (Edge) other;
-    return head.equals(e.head) && tail.equals(e.tail);
+    return head.equals(e.head) && tail.equals(e.tail) && paths.equals(e.paths);
   }
   
   @Override
   public int hashCode() {
     return new HashCodeBuilder().append(head).append(tail).toHashCode();
+  }
+  
+  @Override
+  public String toString() {
+    return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
   }
 }

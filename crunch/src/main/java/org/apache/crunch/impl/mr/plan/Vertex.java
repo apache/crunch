@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.collect.InputCollection;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
@@ -119,6 +120,7 @@ class Vertex {
 
   @Override
   public String toString() {
-    return ReflectionToStringBuilder.toStringExclude(this, Lists.newArrayList("outgoing", "incoming"));
+    return new ReflectionToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE).setExcludeFieldNames(
+        new String[] { "outgoing", "incoming" }).toString();
   }
 }
