@@ -68,6 +68,12 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   PTable<K, V> write(Target target);
 
   /**
+   * Writes this {@code PTable} to the given {@code Target}, using the
+   * given {@code Target.WriteMode} to handle existing targets.
+   */
+  PTable<K, V> write(Target target, Target.WriteMode writeMode);
+
+  /**
    * Returns the {@code PTableType} of this {@code PTable}.
    */
   PTableType<K, V> getPTableType();

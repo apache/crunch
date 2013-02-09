@@ -87,6 +87,12 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
   }
 
   @Override
+  public PTable<K, V> write(Target target, Target.WriteMode writeMode) {
+    getPipeline().write(this, target, writeMode);
+    return this;
+  }
+  
+  @Override
   public PTableType<K, V> getPTableType() {
     return ptype;
   }

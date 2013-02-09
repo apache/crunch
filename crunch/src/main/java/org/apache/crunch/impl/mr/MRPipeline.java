@@ -34,6 +34,7 @@ import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
+import org.apache.crunch.Target.WriteMode;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.collect.InputCollection;
 import org.apache.crunch.impl.mr.collect.InputTable;
@@ -206,17 +207,36 @@ public class MRPipeline implements Pipeline {
     return read(From.textFile(pathName));
   }
 
-  @SuppressWarnings("unchecked")
   public void write(PCollection<?> pcollection, Target target) {
+    write(pcollection, target, Target.WriteMode.DEFAULT);
+  }
+  
+  @SuppressWarnings("unchecked")
+  public void write(PCollection<?> pcollection, Target target,
+      Target.WriteMode writeMode) {
     if (pcollection instanceof PGroupedTableImpl) {
       pcollection = ((PGroupedTableImpl<?, ?>) pcollection).ungroup();
     } else if (pcollection instanceof UnionCollection || pcollection instanceof UnionTable) {
       pcollection = pcollection.parallelDo("UnionCollectionWrapper",
           (MapFn) IdentityFn.<Object> getInstance(), pcollection.getPType());
     }
+    target.handleExisting(writeMode, getConfiguration());
+    if (writeMode != WriteMode.APPEND && targetInCurrentRun(target)) {
+      throw new CrunchRuntimeException("Target " + target + " is already written in current run." +
+          " Use WriteMode.APPEND in order to write additional data to it.");
+    }
     addOutput((PCollectionImpl<?>) pcollection, target);
   }
 
+  private boolean targetInCurrentRun(Target target) {
+    for (Set<Target> targets : outputTargets.values()) {
+      if (targets.contains(target)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   private void addOutput(PCollectionImpl<?> impl, Target target) {
     if (!outputTargets.containsKey(impl)) {
       outputTargets.put(impl, Sets.<Target> newHashSet());

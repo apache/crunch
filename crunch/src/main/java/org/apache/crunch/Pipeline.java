@@ -63,7 +63,9 @@ public interface Pipeline {
   <K, V> PTable<K, V> read(TableSource<K, V> tableSource);
 
   /**
-   * Write the given collection to the given target on the next pipeline run.
+   * Write the given collection to the given target on the next pipeline run. The
+   * system will check to see if the target's location already exists using the
+   * {@code WriteMode.DEFAULT} rule for the given {@code Target}.
    * 
    * @param collection
    *          The collection
@@ -73,6 +75,22 @@ public interface Pipeline {
   void write(PCollection<?> collection, Target target);
 
   /**
+  * Write the contents of the {@code PCollection} to the given {@code Target},
+  * using the storage format specified by the target and the given
+  * {@code WriteMode} for cases where the referenced {@code Target}
+  * already exists.
+  *
+  * @param collection
+  *          The collection
+  * @param target
+  *          The target to write to
+  * @param writeMode
+  *          The strategy to use for handling existing outputs
+  */
+ void write(PCollection<?> collection, Target target,
+     Target.WriteMode writeMode);
+
+ /**
    * Create the given PCollection and read the data it contains into the
    * returned Collection instance for client use.
    * 

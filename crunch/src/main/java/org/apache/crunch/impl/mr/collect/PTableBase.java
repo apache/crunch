@@ -28,7 +28,9 @@ import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
+import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Cogroup;
 import org.apache.crunch.lib.Join;
@@ -81,10 +83,26 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
 
   @Override
   public PTable<K, V> write(Target target) {
-    getPipeline().write(this, target);
+    if (getMaterializedAt() != null) {
+      getPipeline().write(new InputTable<K, V>(
+          (TableSource<K, V>) getMaterializedAt(), (MRPipeline) getPipeline()), target);
+    } else {
+      getPipeline().write(this, target);
+    }
     return this;
   }
 
+  @Override
+  public PTable<K, V> write(Target target, Target.WriteMode writeMode) {
+    if (getMaterializedAt() != null) {
+      getPipeline().write(new InputTable<K, V>(
+          (TableSource<K, V>) getMaterializedAt(), (MRPipeline) getPipeline()), target, writeMode);
+    } else {
+      getPipeline().write(this, target, writeMode);
+    }
+    return this;
+  }
+  
   @Override
   public PTable<K, V> filter(FilterFn<Pair<K, V>> filterFn) {
     return parallelDo(filterFn, getPTableType());

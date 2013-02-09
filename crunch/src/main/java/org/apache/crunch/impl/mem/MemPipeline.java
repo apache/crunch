@@ -19,9 +19,11 @@ package org.apache.crunch.impl.mem;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -30,6 +32,7 @@ import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
+import org.apache.crunch.Target.WriteMode;
 import org.apache.crunch.impl.mem.collect.MemCollection;
 import org.apache.crunch.impl.mem.collect.MemTable;
 import org.apache.crunch.io.At;
@@ -45,6 +48,7 @@ import org.apache.hadoop.mapreduce.Counters;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class MemPipeline implements Pipeline {
 
@@ -52,6 +56,8 @@ public class MemPipeline implements Pipeline {
   private static Counters COUNTERS = new Counters();
   private static final MemPipeline INSTANCE = new MemPipeline();
 
+  private int outputIndex = 0;
+  
   public static Counters getCounters() {
     return COUNTERS;
   }
@@ -103,7 +109,8 @@ public class MemPipeline implements Pipeline {
   }
 
   private Configuration conf = new Configuration();
-
+  private Set<Target> activeTargets = Sets.newHashSet();
+  
   private MemPipeline() {
   }
 
@@ -149,11 +156,24 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public void write(PCollection<?> collection, Target target) {
+    write(collection, target, Target.WriteMode.DEFAULT);
+  }
+  
+  @Override
+  public void write(PCollection<?> collection, Target target,
+      Target.WriteMode writeMode) {
+    target.handleExisting(writeMode, getConfiguration());
+    if (writeMode != WriteMode.APPEND && activeTargets.contains(target)) {
+      throw new CrunchRuntimeException("Target " + target + " is already written in the current run." +
+          " Use WriteMode.APPEND in order to write additional data to it.");
+    }
+    activeTargets.add(target);
     if (target instanceof PathTarget) {
       Path path = ((PathTarget) target).getPath();
       try {
         FileSystem fs = path.getFileSystem(conf);
-        FSDataOutputStream os = fs.create(new Path(path, "out"));
+        FSDataOutputStream os = fs.create(new Path(path, "out" + outputIndex));
+        outputIndex++;
         if (collection instanceof PTable) {
           for (Object o : collection.materialize()) {
             Pair p = (Pair) o;
@@ -193,12 +213,13 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public PipelineResult run() {
+    activeTargets.clear();
     return PipelineResult.EMPTY;
   }
 
   @Override
   public PipelineResult done() {
-    return PipelineResult.EMPTY;
+    return run();
   }
 
   @Override

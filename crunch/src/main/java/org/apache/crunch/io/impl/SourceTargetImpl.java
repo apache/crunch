@@ -81,4 +81,9 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   public String toString() {
     return source.toString();
   }
+
+  @Override
+  public void handleExisting(WriteMode strategy, Configuration conf) {
+    target.handleExisting(strategy, conf);  
+  }
 }

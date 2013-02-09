@@ -61,12 +61,34 @@ trait PipelineLike {
   def write(collection: PCollection[_], target: Target): Unit = jpipeline.write(collection.native, target)
 
   /**
+   * Writes a parallel collection to a target using an output strategy.
+   *
+   * @param collection The collection to write.
+   * @param target The destination target for this write.
+   * @param writeMode The WriteMode to use for handling existing outputs.
+   */
+  def write(collection: PCollection[_], target: Target, writeMode: Target.WriteMode): Unit = {
+    jpipeline.write(collection.native, target, writeMode)
+  }
+
+  /**
    * Writes a parallel table to a target.
    *
    * @param table The table to write.
    * @param target The destination target for this write.
    */
   def write(table: PTable[_, _], target: Target): Unit = jpipeline.write(table.native, target)
+
+  /**
+   * Writes a parallel table to a target.
+   *
+   * @param table The table to write.
+   * @param target The destination target for this write.
+   * @param writeMode The write mode to use on the target
+   */
+  def write(table: PTable[_, _], target: Target, writeMode: Target.WriteMode): Unit = {
+    jpipeline.write(table.native, target, writeMode)
+  }
 
   /**
    * Constructs and executes a series of MapReduce jobs in order

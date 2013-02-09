@@ -20,6 +20,8 @@ package org.apache.crunch.io.hbase;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.CrunchOutputs;
@@ -39,6 +41,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class HBaseTarget implements MapReduceTarget {
 
+  private static final Log LOG = LogFactory.getLog(HBaseTarget.class);
+  
   protected String table;
 
   public HBaseTarget(String table) {
@@ -109,5 +113,10 @@ public class HBaseTarget implements MapReduceTarget {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     return null;
+  }
+
+  @Override
+  public void handleExisting(WriteMode strategy, Configuration conf) {
+    LOG.info("HBaseTarget ignores checks for existing outputs...");
   }
 }

@@ -136,6 +136,18 @@ public interface PCollection<S> {
   PCollection<S> write(Target target);
 
   /**
+   * Write the contents of this {@code PCollection} to the given {@code Target},
+   * using the given {@code Target.WriteMode} to handle existing
+   * targets.
+   * 
+   * @param target
+   *          The target
+   * @param writeMode
+   *          The rule for handling existing outputs at the target location
+   */
+  PCollection<S> write(Target target, Target.WriteMode writeMode);
+  
+  /**
    * Returns a reference to the data set represented by this PCollection that
    * may be used by the client to read the data locally.
    */

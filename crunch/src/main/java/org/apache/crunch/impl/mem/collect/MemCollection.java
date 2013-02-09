@@ -142,6 +142,12 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
+  public PCollection<S> write(Target target, Target.WriteMode writeMode) {
+    getPipeline().write(this, target, writeMode);
+    return this;
+  }
+
+  @Override
   public Iterable<S> materialize() {
     return collect;
   }

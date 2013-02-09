@@ -54,7 +54,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   private final String name;
   protected MRPipeline pipeline;
-  private SourceTarget<S> materializedAt;
+  protected SourceTarget<S> materializedAt;
   private final ParallelDoOptions options;
   
   public PCollectionImpl(String name) {
@@ -129,6 +129,17 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return this;
   }
 
+  @Override
+  public PCollection<S> write(Target target, Target.WriteMode writeMode) {
+    if (materializedAt != null) {
+      getPipeline().write(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()), target,
+          writeMode);
+    } else {
+      getPipeline().write(this, target, writeMode);
+    }
+    return this;
+  }
+  
   @Override
   public Iterable<S> materialize() {
     if (getSize() == 0) {

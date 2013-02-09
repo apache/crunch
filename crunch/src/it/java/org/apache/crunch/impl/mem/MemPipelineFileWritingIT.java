@@ -40,10 +40,10 @@ public class MemPipelineFileWritingIT {
 
   @Test
   public void testMemPipelineFileWriter() throws Exception {
-    File tmpDir = baseTmpDir.getRootFile();
+    File tmpDir = baseTmpDir.getFile("mempipe");
     Pipeline p = MemPipeline.getInstance();
     PCollection<String> lines = MemPipeline.collectionOf("hello", "world");
-    p.writeTextFile(lines, tmpDir.getAbsolutePath());
+    p.writeTextFile(lines, tmpDir.toString());
     p.done();
     assertTrue(tmpDir.exists());
     File[] files = tmpDir.listFiles();
