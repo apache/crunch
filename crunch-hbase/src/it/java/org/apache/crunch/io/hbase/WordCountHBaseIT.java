@@ -180,6 +180,12 @@ public class WordCountHBaseIT {
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$1.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$2.class");
       jarUp(jos, baseDir, prefix + "WordCountHBaseIT$3.class");
+      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$StringifyFn.class");
+      
+      // Now for the OutputFormat (doesn't get copied by default, apparently)
+      baseDir = new File("target/classes");
+      jarUp(jos, baseDir, prefix + "TableOutputFormat.class");
+      jarUp(jos, baseDir, prefix + "TableOutputFormat$TableRecordWriter.class");
       jos.close();
 
       Path target = new Path(tmpPath, "WordCountHBaseIT.jar");
