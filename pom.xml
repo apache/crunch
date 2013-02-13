@@ -27,7 +27,7 @@ under the License.
 
   <groupId>org.apache.crunch</groupId>
   <artifactId>crunch-parent</artifactId>
-  <version>0.5.0-incubating-SNAPSHOT</version>
+  <version>0.5.0-incubating</version>
   <packaging>pom</packaging>
 
   <name>Apache Crunch</name>
@@ -91,7 +91,7 @@ under the License.
     <url>https://git-wip-us.apache.org/repos/asf?p=incubator-crunch.git</url>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</developerConnection>
-    <tag>apache-crunch-0.5-incubating</tag>
+    <tag>apache-crunch-0.5.0-incubating</tag>
   </scm>
 
   <issueManagement>
