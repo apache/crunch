@@ -49,7 +49,6 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -78,7 +77,7 @@ public class SortIT implements Serializable {
   }
 
   @Test
-  public void testWritableSortSecondDescFirstDesc() throws Exception {
+  public void testWritableSortSecondDescFirstAsc() throws Exception {
     runPair(new MRPipeline(SortIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
         "this doc has this text");
   }
@@ -117,14 +116,13 @@ public class SortIT implements Serializable {
   }
 
   @Test
-  public void testAvroSortPairAscAsc() throws Exception {
+  public void testAvroSortPairAscDesc() throws Exception {
     runPair(new MRPipeline(SortIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance(), by(1, ASCENDING), by(2, DESCENDING), "A",
         "this doc has this text");
   }
 
   @Test
-  @Ignore("Avro sorting only works in field order at the moment")
-  public void testAvroSortPairSecondAscFirstDesc() throws Exception {
+  public void testAvroSortPairSecondDescFirstAsc() throws Exception {
     runPair(new MRPipeline(SortIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance(), by(2, DESCENDING), by(1, ASCENDING), "A",
         "this doc has this text");
   }
@@ -220,15 +218,15 @@ public class SortIT implements Serializable {
     String inputPath = tmpDir.copyResourceFileName("docs.txt");
 
     PCollection<String> input = pipeline.readTextFile(inputPath);
-    PCollection<Pair<String, String>> kv = input.parallelDo(new DoFn<String, Pair<String, String>>() {
+    PTable<String, String> kv = input.parallelDo(new DoFn<String, Pair<String, String>>() {
       @Override
       public void process(String input, Emitter<Pair<String, String>> emitter) {
         String[] split = input.split("[\t]+");
         emitter.emit(Pair.of(split[0], split[1]));
       }
-    }, typeFamily.pairs(typeFamily.strings(), typeFamily.strings()));
+    }, typeFamily.tableOf(typeFamily.strings(), typeFamily.strings()));
     PCollection<Pair<String, String>> sorted = Sort.sortPairs(kv, first, second);
-    Iterable<Pair<String, String>> lines = sorted.materialize();
+    List<Pair<String, String>> lines = Lists.newArrayList(sorted.materialize());
     Pair<String, String> l = lines.iterator().next();
     assertEquals(firstField, l.first());
     assertEquals(secondField, l.second());
@@ -250,7 +248,7 @@ public class SortIT implements Serializable {
           }
         }, typeFamily.triples(typeFamily.strings(), typeFamily.strings(), typeFamily.strings()));
     PCollection<Tuple3<String, String, String>> sorted = Sort.sortTriples(kv, first, second, third);
-    Iterable<Tuple3<String, String, String>> lines = sorted.materialize();
+    List<Tuple3<String, String, String>> lines = Lists.newArrayList(sorted.materialize());
     Tuple3<String, String, String> l = lines.iterator().next();
     assertEquals(firstField, l.first());
     assertEquals(secondField, l.second());
