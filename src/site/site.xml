@@ -32,8 +32,8 @@
   </bannerLeft>
 
   <bannerRight>
-    <src>http://incubator.apache.org/images/apache-incubator-logo.png</src>
-    <href>http://incubator.apache.org/</href>
+    <src>http://apache.org/images/feather-small.gif</src>
+    <href>http://apache.org/</href>
   </bannerRight>
 
   <publishDate position="right"/>
@@ -43,7 +43,7 @@
     <!-- Note: Breadcrumbs for Doxia's Markdown parser are currently broken,
                see https://jira.codehaus.org/browse/DOXIA-472 -->
     <breadcrumbs>
-      <item name="Apache Incubator" href="http://incubator.apache.org/" />
+      <item name="Apache" href="http://apache.org/" />
     </breadcrumbs>
 
     <menu name="Apache Crunch" inherit="top">

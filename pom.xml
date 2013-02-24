@@ -27,16 +27,16 @@ under the License.
 
   <groupId>org.apache.crunch</groupId>
   <artifactId>crunch-parent</artifactId>
-  <version>0.6.0-incubating-SNAPSHOT</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Crunch</name>
-  <url>http://incubator.apache.org/crunch/</url>
+  <url>http://crunch.apache.org/</url>
   <description>
-    Apache Crunch (Incubating) is a Java library for writing, testing,
-    and running Hadoop MapReduce pipelines, based on Google's FlumeJava.
-    Its goal is to make pipelines that are composed of many user-defined
-    functions simple to write, easy to test, and efficient to run.
+    Apache Crunch is a Java library for writing, testing, and running
+    Hadoop MapReduce pipelines, based on Google's FlumeJava. Its goal
+    is to make pipelines that are composed of many user-defined functions
+    simple to write, easy to test, and efficient to run.
   </description>
 
   <prerequisites>
@@ -88,9 +88,9 @@ under the License.
   </properties>
 
   <scm>
-    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-crunch.git</url>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-crunch.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=crunch.git</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -98,30 +98,6 @@ under the License.
     <system>JIRA</system>
     <url>http://issues.apache.org/jira/browse/CRUNCH</url>
   </issueManagement>
-
-  <mailingLists>
-    <mailingList>
-      <name>User List</name>
-      <subscribe>crunch-user-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-user-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-user@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-user/</archive>
-    </mailingList>
-    <mailingList>
-      <name>Developer List</name>
-      <subscribe>crunch-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-dev-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-dev@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-dev/</archive>
-    </mailingList>
-    <mailingList>
-      <name>Commits List</name>
-      <subscribe>crunch-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>crunch-commits-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>crunch-commits@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-crunch-commits/</archive>
-    </mailingList>
-  </mailingLists>
 
   <dependencyManagement>
     <dependencies>

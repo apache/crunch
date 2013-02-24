@@ -1,5 +1,5 @@
-Welcome to Apache Crunch (Incubating)!
-======================================
+Welcome to Apache Crunch!
+=========================
 
 Apache Crunch is a Java library for writing, testing, and running Hadoop
 MapReduce pipelines, based on Google's FlumeJava. Its goal is to make
@@ -8,7 +8,7 @@ easy to test, and efficient to run.
 
 For more information please see the website:
 
-  http://incubator.apache.org/crunch/
+  http://crunch.apache.org/
 
 
 Building the Source Code

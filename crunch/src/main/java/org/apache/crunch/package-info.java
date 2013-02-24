@@ -19,7 +19,7 @@
 /**
  * Client-facing API and core abstractions.
  *
- * @see <a href="http://incubator.apache.org/crunch/intro.html">Introduction to
+ * @see <a href="http://crunch.apache.org/intro.html">Introduction to
  *      Apache Crunch</a>
  */
 package org.apache.crunch;
