@@ -234,7 +234,7 @@ public class Aggregate {
               emitter.emit(Pair.of(false, min));
             }
           }
-        }, tf.tableOf(tf.booleans(), collect.getPType())).groupByKey()
+        }, tf.tableOf(tf.booleans(), collect.getPType())).groupByKey(1)
         .combineValues(new CombineFn<Boolean, S>() {
           public void process(Pair<Boolean, Iterable<S>> input, Emitter<Pair<Boolean, S>> emitter) {
             S min = null;
