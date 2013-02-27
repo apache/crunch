@@ -29,6 +29,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
@@ -58,6 +59,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * Pipeline implementation that is executed within Hadoop MapReduce.
@@ -138,7 +140,14 @@ public class MRPipeline implements Pipeline {
   }
 
   public MRExecutor plan() {
-    MSCRPlanner planner = new MSCRPlanner(this, outputTargets);
+    Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize = Maps.newHashMap();
+    for (PCollectionImpl<?> c : outputTargets.keySet()) {
+      if (outputTargetsToMaterialize.containsKey(c)) {
+        toMaterialize.put(c, outputTargetsToMaterialize.get(c));
+        outputTargetsToMaterialize.remove(c);
+      }
+    }
+    MSCRPlanner planner = new MSCRPlanner(this, outputTargets, toMaterialize);
     try {
       return planner.plan(jarClass, conf);
     } catch (IOException e) {
@@ -148,39 +157,17 @@ public class MRPipeline implements Pipeline {
 
   @Override
   public PipelineResult run() {
-    PipelineResult res = null;
     try {
-      res = plan().execute();
-    } catch (CrunchRuntimeException e) {
-      LOG.error(e);
+      return runAsync().get();
+    } catch (Exception e) {
+      LOG.error("Exception running pipeline", e);
       return PipelineResult.EMPTY;
     }
-    for (PCollectionImpl<?> c : outputTargets.keySet()) {
-      if (outputTargetsToMaterialize.containsKey(c)) {
-        MaterializableIterable iter = outputTargetsToMaterialize.get(c);
-        if (iter.isSourceTarget()) {
-          iter.materialize();
-          c.materializeAt((SourceTarget) iter.getSource());
-        }
-        outputTargetsToMaterialize.remove(c);
-      } else {
-        boolean materialized = false;
-        for (Target t : outputTargets.get(c)) {
-          if (!materialized) {
-            if (t instanceof SourceTarget) {
-              c.materializeAt((SourceTarget) t);
-              materialized = true;
-            } else {
-              SourceTarget st = t.asSourceTarget(c.getPType());
-              if (st != null) {
-                c.materializeAt(st);
-                materialized = true;
-              }
-            }
-          }
-        }
-      }
-    }
+  }
+  
+  @Override
+  public PipelineExecution runAsync() {
+    PipelineExecution res = plan().execute();
     outputTargets.clear();
     return res;
   }

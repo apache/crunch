@@ -20,6 +20,10 @@ package org.apache.crunch.impl.mem;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,6 +32,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
@@ -49,6 +54,8 @@ import org.apache.hadoop.mapreduce.Counters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class MemPipeline implements Pipeline {
 
@@ -212,9 +219,56 @@ public class MemPipeline implements Pipeline {
   }
 
   @Override
-  public PipelineResult run() {
+  public PipelineExecution runAsync() {
     activeTargets.clear();
-    return PipelineResult.EMPTY;
+    final ListenableFuture<PipelineResult> lf = Futures.immediateFuture(PipelineResult.EMPTY);
+    return new PipelineExecution() {
+      @Override
+      public String getPlanDotFile() {
+        return "";
+      }
+      
+      @Override
+      public void addListener(Runnable listener, Executor executor) {
+        lf.addListener(listener, executor);
+      }
+
+      @Override
+      public boolean cancel(boolean mayInterruptIfRunning) {
+        return lf.cancel(mayInterruptIfRunning);
+      }
+
+      @Override
+      public PipelineResult get() throws InterruptedException, ExecutionException {
+        return lf.get();
+      }
+
+      @Override
+      public PipelineResult get(long timeout, TimeUnit unit) throws InterruptedException,
+          ExecutionException, TimeoutException {
+        return lf.get(timeout, unit);
+      }
+
+      @Override
+      public boolean isCancelled() {
+        return lf.isCancelled();
+      }
+
+      @Override
+      public boolean isDone() {
+        return lf.isDone();
+      }
+    };
+  }
+  
+  @Override
+  public PipelineResult run() {
+    try {
+      return runAsync().get();
+    } catch (Exception e) {
+      LOG.error("Exception running pipeline", e);
+      return PipelineResult.EMPTY;
+    }
   }
 
   @Override

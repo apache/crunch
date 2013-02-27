@@ -19,6 +19,8 @@ package org.apache.crunch;
 
 import org.apache.hadoop.conf.Configuration;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * Manages the state of a pipeline execution.
  * 
@@ -106,6 +108,14 @@ public interface Pipeline {
    */
   PipelineResult run();
 
+  /**
+   * Constructs and starts a series of MapReduce jobs in order ot write data to
+   * the output targets, but returns a {@code ListenableFuture} to allow clients to control
+   * job execution.
+   * @return
+   */
+  PipelineExecution runAsync();
+  
   /**
    * Run any remaining jobs required to generate outputs and then clean up any
    * intermediate data files that were created in this run or previous calls to
