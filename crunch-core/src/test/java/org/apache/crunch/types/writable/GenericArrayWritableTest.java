@@ -26,6 +26,7 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 
 import org.apache.crunch.test.Tests;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.junit.Test;
@@ -35,36 +36,38 @@ public class GenericArrayWritableTest {
 
   @Test
   public void testEmpty() {
-    GenericArrayWritable<Text> src = new GenericArrayWritable<Text>(Text.class);
-    src.set(new Text[0]);
+    GenericArrayWritable src = new GenericArrayWritable();
+    src.set(new BytesWritable[0]);
 
-    GenericArrayWritable<Text> dest = Tests.roundtrip(src, new GenericArrayWritable<Text>());
+    GenericArrayWritable dest = Tests.roundtrip(src, new GenericArrayWritable());
 
     assertThat(dest.get().length, is(0));
   }
 
   @Test
   public void testNonEmpty() {
-    GenericArrayWritable<Text> src = new GenericArrayWritable<Text>(Text.class);
-    src.set(new Text[] { new Text("foo"), new Text("bar") });
+    GenericArrayWritable src = new GenericArrayWritable();
+    src.set(new BytesWritable[] { new BytesWritable("foo".getBytes()), new BytesWritable("bar".getBytes()) });
 
-    GenericArrayWritable<Text> dest = Tests.roundtrip(src, new GenericArrayWritable<Text>());
+    GenericArrayWritable dest = Tests.roundtrip(src, new GenericArrayWritable());
 
     assertThat(src.get(), not(sameInstance(dest.get())));
     assertThat(dest.get().length, is(2));
-    assertThat(Arrays.asList(dest.get()), hasItems((Writable) new Text("foo"), new Text("bar")));
+    assertThat(Arrays.asList(dest.get()),
+        hasItems(new BytesWritable("foo".getBytes()), new BytesWritable("bar".getBytes())));
   }
 
   @Test
   public void testNulls() {
-    GenericArrayWritable<Text> src = new GenericArrayWritable<Text>(Text.class);
-    src.set(new Text[] { new Text("a"), null, new Text("b") });
+    GenericArrayWritable src = new GenericArrayWritable();
+    src.set(new BytesWritable[] { new BytesWritable("a".getBytes()), null, new BytesWritable("b".getBytes()) });
 
-    GenericArrayWritable<Text> dest = Tests.roundtrip(src, new GenericArrayWritable<Text>());
+    GenericArrayWritable dest = Tests.roundtrip(src, new GenericArrayWritable());
 
     assertThat(src.get(), not(sameInstance(dest.get())));
     assertThat(dest.get().length, is(3));
-    assertThat(Arrays.asList(dest.get()), hasItems((Writable) new Text("a"), new Text("b"), null));
+    assertThat(Arrays.asList(dest.get()),
+        hasItems(new BytesWritable("a".getBytes()), new BytesWritable("b".getBytes()), null));
   }
 
 }

@@ -58,7 +58,7 @@ public class WritableTypeTest {
   @Test
   public void testGetDetachedValue_Collection() {
     Collection<Text> textCollection = Lists.newArrayList(new Text("value"));
-    WritableType<Collection<Text>, GenericArrayWritable<Text>> ptype = Writables
+    WritableType<Collection<Text>, GenericArrayWritable> ptype = Writables
         .collections(Writables.writables(Text.class));
     ptype.initialize(new Configuration());
 

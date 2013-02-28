@@ -40,6 +40,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.writable.WritableType;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.util.PartitionUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -252,7 +253,11 @@ public class Sort {
       if (columnOrders.length == 1 && columnOrders[0].order == Order.DESCENDING) {
         builder.sortComparatorClass(ReverseWritableComparator.class);
       } else {
-        TupleWritableComparator.configureOrdering(conf, columnOrders);
+        WritableType[] wt = new WritableType[columnOrders.length];
+        for (int i = 0; i < wt.length; i++) {
+          wt[i] = (WritableType) keyType.getSubTypes().get(i);
+        }
+        TupleWritableComparator.configureOrdering(conf, wt, columnOrders);
         builder.sortComparatorClass(TupleWritableComparator.class);
       }
     } else if (tf == AvroTypeFamily.getInstance()) {

@@ -23,63 +23,46 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 import com.google.common.collect.Maps;
 
-class TextMapWritable<T extends Writable> implements Writable {
+class TextMapWritable implements Writable {
 
-  private Class<T> valueClazz;
-  private final Map<Text, T> instance;
+  private final Map<Text, BytesWritable> instance;
 
   public TextMapWritable() {
     this.instance = Maps.newHashMap();
   }
 
-  public TextMapWritable(Class<T> valueClazz) {
-    this.valueClazz = valueClazz;
-    this.instance = Maps.newHashMap();
-  }
-
-  public void put(Text txt, T value) {
+  public void put(Text txt, BytesWritable value) {
     instance.put(txt, value);
   }
 
-  public Set<Map.Entry<Text, T>> entrySet() {
+  public Set<Map.Entry<Text, BytesWritable>> entrySet() {
     return instance.entrySet();
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     instance.clear();
-    try {
-      this.valueClazz = (Class<T>) Class.forName(Text.readString(in));
-    } catch (ClassNotFoundException e) {
-      throw (IOException) new IOException("Failed map init").initCause(e);
-    }
     int entries = WritableUtils.readVInt(in);
-    try {
-      for (int i = 0; i < entries; i++) {
-        Text txt = new Text();
-        txt.readFields(in);
-        T value = valueClazz.newInstance();
-        value.readFields(in);
-        instance.put(txt, value);
-      }
-    } catch (IllegalAccessException e) {
-      throw (IOException) new IOException("Failed map init").initCause(e);
-    } catch (InstantiationException e) {
-      throw (IOException) new IOException("Failed map init").initCause(e);
+    for (int i = 0; i < entries; i++) {
+      Text txt = new Text();
+      txt.readFields(in);
+      BytesWritable value = new BytesWritable();
+      value.readFields(in);
+      instance.put(txt, value);
     }
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    Text.writeString(out, valueClazz.getName());
     WritableUtils.writeVInt(out, instance.size());
-    for (Map.Entry<Text, T> e : instance.entrySet()) {
+    for (Map.Entry<Text, BytesWritable> e : instance.entrySet()) {
       e.getKey().write(out);
       e.getValue().write(out);
     }

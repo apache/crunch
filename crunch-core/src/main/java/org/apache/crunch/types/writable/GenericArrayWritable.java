@@ -23,20 +23,17 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.crunch.CrunchRuntimeException;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableUtils;
 
 /**
  * A {@link Writable} for marshalling/unmarshalling Collections. Note that
  * element order is <em>undefined</em>!
  *
- * @param <T> The value type
  */
-class GenericArrayWritable<T> implements Writable {
-  private Writable[] values;
+class GenericArrayWritable implements Writable {
+  private BytesWritable[] values;
   private Class<? extends Writable> valueClass;
 
   public GenericArrayWritable(Class<? extends Writable> valueClass) {
@@ -47,40 +44,26 @@ class GenericArrayWritable<T> implements Writable {
     // for deserialization
   }
 
-  public void set(Writable[] values) {
+  public void set(BytesWritable[] values) {
     this.values = values;
   }
 
-  public Writable[] get() {
+  public BytesWritable[] get() {
     return values;
   }
 
   public void readFields(DataInput in) throws IOException {
-    values = new Writable[WritableUtils.readVInt(in)]; // construct values
+    values = new BytesWritable[WritableUtils.readVInt(in)]; // construct values
     if (values.length > 0) {
       int nulls = WritableUtils.readVInt(in);
       if (nulls == values.length) {
         return;
       }
-      String valueType = Text.readString(in);
-      setValueType(valueType);
       for (int i = 0; i < values.length - nulls; i++) {
-        Writable value = WritableFactories.newInstance(valueClass);
+        BytesWritable value = new BytesWritable();
         value.readFields(in); // read a value
         values[i] = value; // store it in values
       }
-    }
-  }
-
-  protected void setValueType(String valueType) {
-    if (valueClass == null) {
-      try {
-        valueClass = Class.forName(valueType).asSubclass(Writable.class);
-      } catch (ClassNotFoundException e) {
-        throw new CrunchRuntimeException(e);
-      }
-    } else if (!valueType.equals(valueClass.getName())) {
-      throw new IllegalStateException("Incoming " + valueType + " is not " + valueClass);
     }
   }
 
@@ -95,10 +78,6 @@ class GenericArrayWritable<T> implements Writable {
       }
       WritableUtils.writeVInt(out, nulls);
       if (values.length - nulls > 0) {
-        if (valueClass == null) {
-          throw new IllegalStateException("Value class not set by constructor or read");
-        }
-        Text.writeString(out, valueClass.getName());
         for (int i = 0; i < values.length; i++) {
           if (values[i] != null) {
             values[i].write(out);

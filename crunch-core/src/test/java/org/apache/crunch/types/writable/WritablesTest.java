@@ -43,6 +43,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -111,15 +112,22 @@ public class WritablesTest {
     String s = "abc";
     Collection<String> j = Lists.newArrayList();
     j.add(s);
-    GenericArrayWritable<Text> w = new GenericArrayWritable<Text>(Text.class);
-    w.set(new Text[] { new Text(s) });
+    GenericArrayWritable w = new GenericArrayWritable();
+    Text t = new Text(s);
+    BytesWritable bw = new BytesWritable(WritableUtils.toByteArray(t));
+    w.set(new BytesWritable[] { bw });
     testInputOutputFn(Writables.collections(Writables.strings()), j, w);
   }
 
   @Test
   public void testPairs() throws Exception {
     Pair<String, String> j = Pair.of("a", "b");
-    TupleWritable w = new TupleWritable(new Text[] { new Text("a"), new Text("b"), });
+    Text[] t = new Text[] { new Text("a"), new Text("b"), };
+    BytesWritable[] b = new BytesWritable[t.length];
+    for (int i = 0; i < t.length; i++) {
+      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
+    }
+    TupleWritable w = new TupleWritable(b);
     w.setWritten(0);
     w.setWritten(1);
     testInputOutputFn(Writables.pairs(Writables.strings(), Writables.strings()), j, w);
@@ -144,7 +152,12 @@ public class WritablesTest {
   @SuppressWarnings("rawtypes")
   public void testTriples() throws Exception {
     Tuple3 j = Tuple3.of("a", "b", "c");
-    TupleWritable w = new TupleWritable(new Text[] { new Text("a"), new Text("b"), new Text("c"), });
+    Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), };
+    BytesWritable[] b = new BytesWritable[t.length];
+    for (int i = 0; i < t.length; i++) {
+      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
+    }
+    TupleWritable w = new TupleWritable(b);
     w.setWritten(0);
     w.setWritten(1);
     w.setWritten(2);
@@ -156,7 +169,12 @@ public class WritablesTest {
   @SuppressWarnings("rawtypes")
   public void testQuads() throws Exception {
     Tuple4 j = Tuple4.of("a", "b", "c", "d");
-    TupleWritable w = new TupleWritable(new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"), });
+    Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"), };
+    BytesWritable[] b = new BytesWritable[t.length];
+    for (int i = 0; i < t.length; i++) {
+      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
+    }
+    TupleWritable w = new TupleWritable(b);
     w.setWritten(0);
     w.setWritten(1);
     w.setWritten(2);
@@ -169,8 +187,13 @@ public class WritablesTest {
   @Test
   public void testTupleN() throws Exception {
     TupleN j = new TupleN("a", "b", "c", "d", "e");
-    TupleWritable w = new TupleWritable(new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"),
-        new Text("e"), });
+    Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"),
+        new Text("e"), };
+    BytesWritable[] b = new BytesWritable[t.length];
+    for (int i = 0; i < t.length; i++) {
+      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
+    }
+    TupleWritable w = new TupleWritable(b);
     w.setWritten(0);
     w.setWritten(1);
     w.setWritten(2);

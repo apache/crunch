@@ -17,14 +17,19 @@
  */
 package org.apache.crunch.types.writable;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.Text;
+import org.apache.crunch.CrunchRuntimeException;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableUtils;
 
 /**
@@ -35,8 +40,9 @@ import org.apache.hadoop.io.WritableUtils;
 public class TupleWritable implements WritableComparable<TupleWritable> {
 
   private long written;
-  private Writable[] values;
-
+  private BytesWritable[] values;
+  private List<Class<Writable>> writableClasses;
+  
   /**
    * Create an empty tuple with no allocated storage for writables.
    */
@@ -47,11 +53,15 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
    * Initialize tuple with storage; unknown whether any of them contain
    * &quot;written&quot; values.
    */
-  public TupleWritable(Writable[] vals) {
+  public TupleWritable(BytesWritable[] vals) {
     written = 0L;
     values = vals;
   }
 
+  public void setWritableClasses(List<Class<Writable>> writableClasses) {
+    this.writableClasses = writableClasses;
+  }
+  
   /**
    * Return true if tuple has an element at the position provided.
    */
@@ -62,7 +72,7 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
   /**
    * Get ith Writable from Tuple.
    */
-  public Writable get(int i) {
+  public BytesWritable get(int i) {
     return values[i];
   }
 
@@ -110,7 +120,19 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
   public String toString() {
     StringBuffer buf = new StringBuffer("[");
     for (int i = 0; i < values.length; ++i) {
-      buf.append(has(i) ? values[i].toString() : "");
+      if (has(i)) {
+        if (writableClasses != null) {
+          Writable w = WritableFactories.newInstance(writableClasses.get(i));
+          try {
+            w.readFields(new DataInputStream(new ByteArrayInputStream(values[i].getBytes())));
+          } catch (IOException e) {
+            throw new CrunchRuntimeException(e);
+          }
+          buf.append(w.toString());
+        } else {
+          buf.append(values[i].toString());
+        }
+      }
       buf.append(",");
     }
     if (values.length != 0)
@@ -131,11 +153,6 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
     WritableUtils.writeVLong(out, written);
     for (int i = 0; i < values.length; ++i) {
       if (has(i)) {
-        Text.writeString(out, values[i].getClass().getName());
-      }
-    }
-    for (int i = 0; i < values.length; ++i) {
-      if (has(i)) {
         values[i].write(out);
       }
     }
@@ -144,31 +161,15 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
   /**
    * {@inheritDoc}
    */
-  @SuppressWarnings("unchecked")
-  // No static typeinfo on Tuples
   public void readFields(DataInput in) throws IOException {
     int card = WritableUtils.readVInt(in);
-    values = new Writable[card];
+    values = new BytesWritable[card];
     written = WritableUtils.readVLong(in);
-    Class<? extends Writable>[] cls = new Class[card];
-    try {
-      for (int i = 0; i < card; ++i) {
-        if (has(i)) {
-          cls[i] = Class.forName(Text.readString(in)).asSubclass(Writable.class);
-        }
+    for (int i = 0; i < card; ++i) {
+      if (has(i)) {
+        values[i] = new BytesWritable();
+        values[i].readFields(in);
       }
-      for (int i = 0; i < card; ++i) {
-        if (has(i)) {
-          values[i] = cls[i].newInstance();
-          values[i].readFields(in);
-        }
-      }
-    } catch (ClassNotFoundException e) {
-      throw (IOException) new IOException("Failed tuple init").initCause(e);
-    } catch (IllegalAccessException e) {
-      throw (IOException) new IOException("Failed tuple init").initCause(e);
-    } catch (InstantiationException e) {
-      throw (IOException) new IOException("Failed tuple init").initCause(e);
     }
   }
 
