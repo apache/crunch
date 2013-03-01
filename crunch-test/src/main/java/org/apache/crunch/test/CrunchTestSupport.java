@@ -58,7 +58,7 @@ public class CrunchTestSupport {
       @Override
       public Counter answer(InvocationOnMock invocation) throws Throwable {
         String group = (String) invocation.getArguments()[0];
-        String name = (String) invocation.getArguments()[0];
+        String name = (String) invocation.getArguments()[1];
         return TestCounters.getCounter(group, name);
       }
 
