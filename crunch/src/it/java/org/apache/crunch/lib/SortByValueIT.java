@@ -73,7 +73,10 @@ public class SortByValueIT {
     String sbv = tmpDir.copyResourceFileName("sort_by_value.txt");
     PTable<String, Long> letterCounts = pipeline.read(From.textFile(sbv)).parallelDo(new SplitFn("\t"),
         ptf.tableOf(ptf.strings(), ptf.longs()));
-    PCollection<Pair<String, Long>> sorted = Sort.sortPairs(letterCounts, new ColumnOrder(2, Order.DESCENDING));
+    PCollection<Pair<String, Long>> sorted = Sort.sortPairs(
+        letterCounts,
+        new ColumnOrder(2, Order.DESCENDING),
+        new ColumnOrder(1, Order.ASCENDING));
     assertEquals(
         ImmutableList.of(Pair.of("C", 3L), Pair.of("A", 2L), Pair.of("D", 2L), Pair.of("B", 1L), Pair.of("E", 1L)),
         ImmutableList.copyOf(sorted.materialize()));
