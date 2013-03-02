@@ -20,7 +20,7 @@ package org.apache.crunch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.CancellationException;
+import java.io.IOException;
 
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
@@ -36,36 +36,49 @@ public class CancelJobsIT {
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
-  
+
   @Test
   public void testRun() throws Exception {
-    run(false);
+    PipelineExecution pe = run();
+    pe.waitUntilDone();
+    PipelineResult pr = pe.getResult();
+    assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
+    assertEquals(2, pr.getStageResults().size());
   }
   
   @Test
-  public void testCancel() throws Exception {
-    run(true);
+  public void testKill() throws Exception {
+    PipelineExecution pe = run();
+    pe.kill();
+    pe.waitUntilDone();
+    assertEquals(PipelineExecution.Status.KILLED, pe.getStatus());
+  }
+
+  @Test
+  public void testKillMultipleTimes() throws Exception {
+    PipelineExecution pe = run();
+    for (int i = 0; i < 10; i++) {
+      pe.kill();
+    }
+    pe.waitUntilDone();
+    assertEquals(PipelineExecution.Status.KILLED, pe.getStatus());
+  }
+
+  @Test
+  public void testKillAfterDone() throws Exception {
+    PipelineExecution pe = run();
+    pe.waitUntilDone();
+    assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
+    pe.kill(); // expect no-op
+    assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
   }
   
-  public void run(boolean cancel) throws Exception {
+  public PipelineExecution run() throws IOException {
     String shakes = tmpDir.copyResourceFileName("shakes.txt");
     String out = tmpDir.getFileName("cancel");
     Pipeline p = new MRPipeline(CancelJobsIT.class, tmpDir.getDefaultConfiguration());
     PCollection<String> words = p.readTextFile(shakes);
     p.write(words.count().top(20), To.textFile(out));
-    PipelineExecution pe = p.runAsync();
-    if (cancel) {
-      boolean cancelled = false;
-      pe.cancel(true);
-      try {
-        pe.get();
-      } catch (CancellationException e) {
-        cancelled = true;
-      }
-      assertTrue(cancelled);
-    } else {
-      PipelineResult pr = pe.get();
-      assertEquals(2, pr.getStageResults().size());
-    }
+    return p.runAsync(); // need to hack to slow down job start up if this test becomes flaky.
   }
 }

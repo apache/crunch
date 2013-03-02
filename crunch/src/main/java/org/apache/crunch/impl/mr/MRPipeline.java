@@ -59,7 +59,6 @@ import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  * Pipeline implementation that is executed within Hadoop MapReduce.
@@ -158,8 +157,11 @@ public class MRPipeline implements Pipeline {
   @Override
   public PipelineResult run() {
     try {
-      return runAsync().get();
-    } catch (Exception e) {
+      PipelineExecution pipelineExecution = runAsync();
+      pipelineExecution.waitUntilDone();
+      return pipelineExecution.getResult();
+    } catch (InterruptedException e) {
+      // TODO: How to handle this without changing signature?
       LOG.error("Exception running pipeline", e);
       return PipelineResult.EMPTY;
     }

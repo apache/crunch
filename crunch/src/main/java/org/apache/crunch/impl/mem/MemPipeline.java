@@ -20,10 +20,7 @@ package org.apache.crunch.impl.mem;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -227,48 +224,37 @@ public class MemPipeline implements Pipeline {
       public String getPlanDotFile() {
         return "";
       }
-      
+
       @Override
-      public void addListener(Runnable listener, Executor executor) {
-        lf.addListener(listener, executor);
+      public void waitFor(long timeout, TimeUnit timeUnit) throws InterruptedException {
+        // no-po
       }
 
       @Override
-      public boolean cancel(boolean mayInterruptIfRunning) {
-        return lf.cancel(mayInterruptIfRunning);
+      public void waitUntilDone() throws InterruptedException {
+        // no-po
       }
 
       @Override
-      public PipelineResult get() throws InterruptedException, ExecutionException {
-        return lf.get();
+      public Status getStatus() {
+        return Status.SUCCEEDED;
       }
 
       @Override
-      public PipelineResult get(long timeout, TimeUnit unit) throws InterruptedException,
-          ExecutionException, TimeoutException {
-        return lf.get(timeout, unit);
+      public PipelineResult getResult() {
+        return PipelineResult.EMPTY;
       }
 
       @Override
-      public boolean isCancelled() {
-        return lf.isCancelled();
-      }
-
-      @Override
-      public boolean isDone() {
-        return lf.isDone();
+      public void kill() {
       }
     };
   }
   
   @Override
   public PipelineResult run() {
-    try {
-      return runAsync().get();
-    } catch (Exception e) {
-      LOG.error("Exception running pipeline", e);
-      return PipelineResult.EMPTY;
-    }
+    activeTargets.clear();
+    return PipelineResult.EMPTY;
   }
 
   @Override

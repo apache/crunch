@@ -20,6 +20,9 @@ package org.apache.crunch.impl.mr.exec;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,21 +36,24 @@ import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.materialize.MaterializableIterable;
 
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ListenableFuture;
 
 /**
  *
  *
  */
-public class MRExecutor {
+public class MRExecutor implements PipelineExecution {
 
   private static final Log LOG = LogFactory.getLog(MRExecutor.class);
 
   private final CrunchJobControl control;
   private final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
-  
+  private final CountDownLatch doneSignal = new CountDownLatch(1);
+  private final CountDownLatch killSignal = new CountDownLatch(1);
+  private AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
+  private PipelineResult result;
+  private Thread monitorThread;
+
   private String planDotFile;
   
   public MRExecutor(Class<?> jarClass, Map<PCollectionImpl<?>, Set<Target>> outputTargets,
@@ -55,6 +61,12 @@ public class MRExecutor {
     this.control = new CrunchJobControl(jarClass.toString());
     this.outputTargets = outputTargets;
     this.toMaterialize = toMaterialize;
+    this.monitorThread = new Thread(new Runnable() {
+      @Override
+      public void run() {
+        monitorLoop();
+      }
+    });
   }
 
   public void addJob(CrunchJob job) {
@@ -66,95 +78,117 @@ public class MRExecutor {
   }
   
   public PipelineExecution execute() {
-    FutureImpl fi = new FutureImpl();
-    fi.init();
-    return fi;
+    monitorThread.start();
+    return this;
   }
-  
-  private class FutureImpl extends AbstractFuture<PipelineResult> implements PipelineExecution {
-    @Override
-    public String getPlanDotFile() {
-      return planDotFile;
-    }
-    
-    public void init() {
-      Thread t = new Thread() {
-        @Override
-        public void run() {
-          try {
-            Thread controlThread = new Thread(control);
-            controlThread.start();
-            while (!control.allFinished()) {
-              Thread.sleep(1000);
-            }
-            control.stop();
-          } catch (InterruptedException e) {
-            setException(e);
-            return;
+
+  /** Monitors running status. It is called in {@code MonitorThread}. */
+  private void monitorLoop() {
+    try {
+      Thread controlThread = new Thread(control);
+      controlThread.start();
+      while (killSignal.getCount() > 0 && !control.allFinished()) {
+        killSignal.await(1, TimeUnit.SECONDS);
+      }
+      control.stop();
+      killAllRunningJobs();
+
+      List<CrunchControlledJob> failures = control.getFailedJobList();
+      if (!failures.isEmpty()) {
+        System.err.println(failures.size() + " job failure(s) occurred:");
+        for (CrunchControlledJob job : failures) {
+          System.err.println(job.getJobName() + "(" + job.getJobID() + "): " + job.getMessage());
+        }
+      }
+      List<PipelineResult.StageResult> stages = Lists.newArrayList();
+      for (CrunchControlledJob job : control.getSuccessfulJobList()) {
+        try {
+          stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
+        } catch (Exception e) {
+          LOG.error("Exception thrown fetching job counters for stage: " + job.getJobName(), e);
+        }
+      }
+
+      for (PCollectionImpl<?> c : outputTargets.keySet()) {
+        if (toMaterialize.containsKey(c)) {
+          MaterializableIterable iter = toMaterialize.get(c);
+          if (iter.isSourceTarget()) {
+            iter.materialize();
+            c.materializeAt((SourceTarget) iter.getSource());
           }
-          
-          List<CrunchControlledJob> failures = control.getFailedJobList();
-          if (!failures.isEmpty()) {
-            System.err.println(failures.size() + " job failure(s) occurred:");
-            for (CrunchControlledJob job : failures) {
-              System.err.println(job.getJobName() + "(" + job.getJobID() + "): " + job.getMessage());
-            }
-          }
-          List<PipelineResult.StageResult> stages = Lists.newArrayList();
-          for (CrunchControlledJob job : control.getSuccessfulJobList()) {
-            try {
-              stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
-            } catch (Exception e) {
-              LOG.error("Exception thrown fetching job counters for stage: " + job.getJobName(), e);
-            }
-          }
-          
-          for (PCollectionImpl<?> c : outputTargets.keySet()) {
-            if (toMaterialize.containsKey(c)) {
-              MaterializableIterable iter = toMaterialize.get(c);
-              if (iter.isSourceTarget()) {
-                iter.materialize();
-                c.materializeAt((SourceTarget) iter.getSource());
-              }
-            } else {
-              boolean materialized = false;
-              for (Target t : outputTargets.get(c)) {
-                if (!materialized) {
-                  if (t instanceof SourceTarget) {
-                    c.materializeAt((SourceTarget) t);
-                    materialized = true;
-                  } else {
-                    SourceTarget st = t.asSourceTarget(c.getPType());
-                    if (st != null) {
-                      c.materializeAt(st);
-                      materialized = true;
-                    }
-                  }
+        } else {
+          boolean materialized = false;
+          for (Target t : outputTargets.get(c)) {
+            if (!materialized) {
+              if (t instanceof SourceTarget) {
+                c.materializeAt((SourceTarget) t);
+                materialized = true;
+              } else {
+                SourceTarget st = t.asSourceTarget(c.getPType());
+                if (st != null) {
+                  c.materializeAt(st);
+                  materialized = true;
                 }
               }
             }
           }
+        }
+      }
 
-          set(new PipelineResult(stages));
-        }
-      };
-      t.start();
-    }
-    
-    @Override
-    public void interruptTask() {
-      if (!control.allFinished()) {
-        control.stop();
-      }
-      for (CrunchControlledJob job : control.getRunningJobList()) {
-        if (!job.isCompleted()) {
-          try {
-            job.killJob();
-          } catch (Exception e) {
-            LOG.error("Exception killing job: " + job.getJobName(), e);
-          }
+      synchronized (this) {
+        result = new PipelineResult(stages);
+        if (killSignal.getCount() == 0) {
+          status.set(Status.KILLED);
+        } else {
+          status.set(result.succeeded() ? Status.SUCCEEDED : Status.FAILED);
         }
       }
+    } catch (InterruptedException e) {
+      throw new AssertionError(e); // Nobody should interrupt us.
+    } finally {
+      doneSignal.countDown();
     }
+  }
+
+  private void killAllRunningJobs() {
+    for (CrunchControlledJob job : control.getRunningJobList()) {
+      if (!job.isCompleted()) {
+        try {
+          job.killJob();
+        } catch (Exception e) {
+          LOG.error("Exception killing job: " + job.getJobName(), e);
+        }
+      }
+    }
+  }
+
+  @Override
+  public String getPlanDotFile() {
+    return planDotFile;
+  }
+
+  @Override
+  public void waitFor(long timeout, TimeUnit timeUnit) throws InterruptedException {
+    doneSignal.await(timeout, timeUnit);
+  }
+
+  @Override
+  public void waitUntilDone() throws InterruptedException {
+    doneSignal.await();
+  }
+
+  @Override
+  public synchronized Status getStatus() {
+    return status.get();
+  }
+
+  @Override
+  public synchronized PipelineResult getResult() {
+    return result;
+  }
+
+  @Override
+  public void kill() throws InterruptedException {
+    killSignal.countDown();
   }
 }
