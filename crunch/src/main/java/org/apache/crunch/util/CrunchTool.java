@@ -17,9 +17,13 @@
  */
 package org.apache.crunch.util;
 
+import java.io.Serializable;
+
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineExecution;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
@@ -38,13 +42,14 @@ import org.apache.hadoop.util.Tool;
  * the Tool's run method.
  * 
  */
-public abstract class CrunchTool extends Configured implements Tool {
+public abstract class CrunchTool extends Configured implements Tool, Serializable {
 
   protected static final From from = new From();
   protected static final To to = new To();
   protected static final At at = new At();
 
-  private Pipeline pipeline;
+  // Pipeline object itself isn't necessarily serializable.
+  private transient Pipeline pipeline;
 
   public CrunchTool() {
     this(false);
@@ -90,12 +95,24 @@ public abstract class CrunchTool extends Configured implements Tool {
   public void writeTextFile(PCollection<?> pcollection, String pathName) {
     pipeline.writeTextFile(pcollection, pathName);
   }
-
-  public void run() {
-    pipeline.run();
+  
+  public <T> Iterable<T> materialize(PCollection<T> pcollection) {
+    return pipeline.materialize(pcollection);
   }
 
-  public void done() {
-    pipeline.done();
+  public PipelineResult run() {
+    return pipeline.run();
+  }
+
+  public PipelineExecution runAsync() {
+    return pipeline.runAsync();
+  }
+
+  public PipelineResult done() {
+    return pipeline.done();
+  }
+
+  protected Pipeline getPipeline() {
+    return pipeline;
   }
 }

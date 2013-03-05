@@ -19,8 +19,6 @@ package org.apache.crunch;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 /**
  * Manages the state of a pipeline execution.
  * 
