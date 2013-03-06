@@ -30,12 +30,8 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
-import org.apache.crunch.types.CollectionDeepCopier;
-import org.apache.crunch.types.DeepCopier;
-import org.apache.crunch.types.MapDeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypes;
-import org.apache.crunch.types.TupleDeepCopier;
 import org.apache.crunch.types.TupleFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
@@ -248,7 +244,12 @@ public class Writables {
     if (EXTENSIONS.containsKey(clazz)) {
       return (WritableType<T, W>) EXTENSIONS.get(clazz);
     }
-    return (WritableType<T, W>) writables(clazz.asSubclass(Writable.class));
+    if (Writable.class.isAssignableFrom(clazz)) {
+      return (WritableType<T, W>) writables(clazz.asSubclass(Writable.class));
+    } else {
+      throw new IllegalArgumentException(
+          "Cannot create Writable records from non-Writable class"+ clazz.getCanonicalName());
+    }
   }
 
   public static <W extends Writable> WritableType<W, W> writables(Class<W> clazz) {
@@ -580,8 +581,6 @@ public class Writables {
   public static <T> PType<T> jsons(Class<T> clazz) {
     return PTypes.jsonString(clazz, WritableTypeFamily.getInstance());
   }
-
-
 
   // Not instantiable
   private Writables() {
