@@ -29,6 +29,13 @@ import org.apache.crunch.types.PType;
  *
  */
 public interface PTable<K, V> extends PCollection<Pair<K, V>> {
+
+  /**
+   Returns a {@code PTable} instance that acts as the union of this
+   * {@code PTable} and the other {@code PTable}s.
+   */
+  PTable<K, V> union(PTable<K, V> other);
+  
   /**
    * Returns a {@code PTable} instance that acts as the union of this
    * {@code PTable} and the input {@code PTable}s.

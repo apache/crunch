@@ -77,6 +77,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
+  public PCollection<S> union(PCollection<S> other) {
+    return union(new PCollection[] { other });
+  }
+  
+  @Override
   public PCollection<S> union(PCollection<S>... collections) {
     List<PCollectionImpl<S>> internal = Lists.newArrayList();
     internal.add(this);

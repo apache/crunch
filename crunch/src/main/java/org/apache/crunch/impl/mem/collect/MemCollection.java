@@ -78,6 +78,11 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
+  public PCollection<S> union(PCollection<S> other) {
+    return union(new PCollection[] { other });
+  }
+  
+  @Override
   public PCollection<S> union(PCollection<S>... collections) {
     Collection<S> output = Lists.newArrayList();
     for (PCollection<S> pcollect : collections) {

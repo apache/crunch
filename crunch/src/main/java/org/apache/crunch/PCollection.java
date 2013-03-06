@@ -36,6 +36,12 @@ public interface PCollection<S> {
 
   /**
    * Returns a {@code PCollection} instance that acts as the union of this
+   * {@code PCollection} and the given {@code PCollection}.
+   */
+  PCollection<S> union(PCollection<S> other);
+  
+  /**
+   * Returns a {@code PCollection} instance that acts as the union of this
    * {@code PCollection} and the input {@code PCollection}s.
    */
   PCollection<S> union(PCollection<S>... collections);

@@ -72,6 +72,11 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
   }
 
   @Override
+  public PTable<K, V> union(PTable<K, V> other) {
+    return union(new PTable[] { other });
+  }
+  
+  @Override
   public PTable<K, V> union(PTable<K, V>... others) {
     List<PTableBase<K, V>> internal = Lists.newArrayList();
     internal.add(this);
