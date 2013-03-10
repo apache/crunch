@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mr.exec;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,12 +35,18 @@ import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.materialize.MaterializableIterable;
+import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Lists;
 
 /**
+ * Provides APIs for job control at runtime to clients.
  *
+ * This class has a thread that submits jobs when they become ready, monitors
+ * the states of the running jobs, and updates the states of jobs based on the
+ * state changes of their depending jobs states.
  *
+ * It is thread-safe.
  */
 public class MRExecutor implements PipelineExecution {
 
@@ -50,6 +57,7 @@ public class MRExecutor implements PipelineExecution {
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
   private final CountDownLatch doneSignal = new CountDownLatch(1);
   private final CountDownLatch killSignal = new CountDownLatch(1);
+  private final CappedExponentialCounter pollInterval;
   private AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
   private PipelineResult result;
   private Thread monitorThread;
@@ -67,6 +75,9 @@ public class MRExecutor implements PipelineExecution {
         monitorLoop();
       }
     });
+    this.pollInterval = isLocalMode()
+      ? new CappedExponentialCounter(50, 1000)
+      : new CappedExponentialCounter(500, 10000);
   }
 
   public void addJob(CrunchJob job) {
@@ -85,13 +96,11 @@ public class MRExecutor implements PipelineExecution {
   /** Monitors running status. It is called in {@code MonitorThread}. */
   private void monitorLoop() {
     try {
-      Thread controlThread = new Thread(control);
-      controlThread.start();
       while (killSignal.getCount() > 0 && !control.allFinished()) {
-        killSignal.await(1, TimeUnit.SECONDS);
+        control.pollJobStatusAndStartNewOnes();
+        killSignal.await(pollInterval.get(), TimeUnit.MILLISECONDS);
       }
-      control.stop();
-      killAllRunningJobs();
+      control.killAllRunningJobs();
 
       List<CrunchControlledJob> failures = control.getFailedJobList();
       if (!failures.isEmpty()) {
@@ -102,11 +111,7 @@ public class MRExecutor implements PipelineExecution {
       }
       List<PipelineResult.StageResult> stages = Lists.newArrayList();
       for (CrunchControlledJob job : control.getSuccessfulJobList()) {
-        try {
-          stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
-        } catch (Exception e) {
-          LOG.error("Exception thrown fetching job counters for stage: " + job.getJobName(), e);
-        }
+        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getJob().getCounters()));
       }
 
       for (PCollectionImpl<?> c : outputTargets.keySet()) {
@@ -145,20 +150,11 @@ public class MRExecutor implements PipelineExecution {
       }
     } catch (InterruptedException e) {
       throw new AssertionError(e); // Nobody should interrupt us.
+    } catch (IOException e) {
+      LOG.error("Pipeline failed due to exception", e);
+      status.set(Status.FAILED);
     } finally {
       doneSignal.countDown();
-    }
-  }
-
-  private void killAllRunningJobs() {
-    for (CrunchControlledJob job : control.getRunningJobList()) {
-      if (!job.isCompleted()) {
-        try {
-          job.killJob();
-        } catch (Exception e) {
-          LOG.error("Exception killing job: " + job.getJobName(), e);
-        }
-      }
     }
   }
 
@@ -190,5 +186,13 @@ public class MRExecutor implements PipelineExecution {
   @Override
   public void kill() throws InterruptedException {
     killSignal.countDown();
+  }
+
+  private static boolean isLocalMode() {
+    Configuration conf = new Configuration();
+    // Try to handle MapReduce version 0.20 or 0.22
+    String jobTrackerAddress = conf.get("mapreduce.jobtracker.address",
+        conf.get("mapred.job.tracker", "local"));
+    return "local".equals(jobTrackerAddress);
   }
 }

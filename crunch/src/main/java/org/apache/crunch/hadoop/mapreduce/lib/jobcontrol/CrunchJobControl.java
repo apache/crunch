@@ -27,7 +27,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -38,20 +37,8 @@ import org.apache.hadoop.conf.Configuration;
  * This class provides APIs for the client app to add a job to the group and to
  * get the jobs in the group in different states. When a job is added, an ID
  * unique to the group is assigned to the job.
- * 
- * This class has a thread that submits jobs when they become ready, monitors
- * the states of the running jobs, and updates the states of jobs based on the
- * state changes of their depending jobs states. The class provides APIs for
- * suspending/resuming the thread, and for stopping the thread.
  */
-public class CrunchJobControl implements Runnable {
-
-  // The thread can be in one of the following state
-  public static enum ThreadState {
-    RUNNING, SUSPENDED, STOPPED, STOPPING, READY
-  };
-
-  private ThreadState runnerState; // the thread state
+public class CrunchJobControl {
 
   private Map<String, CrunchControlledJob> waitingJobs;
   private Map<String, CrunchControlledJob> readyJobs;
@@ -63,7 +50,6 @@ public class CrunchJobControl implements Runnable {
 
   private long nextJobID;
   private String groupName;
-  private int jobPollInterval;
 
   /**
    * Construct a job control for a group of jobs.
@@ -79,8 +65,6 @@ public class CrunchJobControl implements Runnable {
     this.failedJobs = new Hashtable<String, CrunchControlledJob>();
     this.nextJobID = -1;
     this.groupName = groupName;
-    this.runnerState = ThreadState.READY;
-    this.jobPollInterval = isLocalMode() ? 500 : 5000;
   }
 
   private static List<CrunchControlledJob> toList(Map<String, CrunchControlledJob> jobs) {
@@ -183,39 +167,6 @@ public class CrunchJobControl implements Runnable {
     }
   }
 
-  /**
-   * @return the thread state
-   */
-  public ThreadState getThreadState() {
-    return this.runnerState;
-  }
-
-  /**
-   * set the thread state to STOPPING so that the thread will stop when it wakes
-   * up.
-   */
-  public void stop() {
-    this.runnerState = ThreadState.STOPPING;
-  }
-
-  /**
-   * suspend the running thread
-   */
-  public void suspend() {
-    if (this.runnerState == ThreadState.RUNNING) {
-      this.runnerState = ThreadState.SUSPENDED;
-    }
-  }
-
-  /**
-   * resume the suspended thread
-   */
-  public void resume() {
-    if (this.runnerState == ThreadState.SUSPENDED) {
-      this.runnerState = ThreadState.RUNNING;
-    }
-  }
-
   synchronized private void checkRunningJobs() throws IOException,
       InterruptedException {
 
@@ -253,56 +204,30 @@ public class CrunchJobControl implements Runnable {
     }
   }
 
+  synchronized public void killAllRunningJobs() {
+    for (CrunchControlledJob job : runningJobs.values()) {
+      if (!job.isCompleted()) {
+        try {
+          job.killJob();
+        } catch (Exception e) {
+          log.error("Exception killing job: " + job.getJobName(), e);
+        }
+      }
+    }
+  }
+
   synchronized public boolean allFinished() {
     return this.waitingJobs.size() == 0 && this.readyJobs.size() == 0
         && this.runningJobs.size() == 0;
   }
 
   /**
-   * The main loop for the thread. The loop does the following: Check the states
-   * of the running jobs Update the states of waiting jobs Submit the jobs in
-   * ready state
+   * Checks the states of the running jobs Update the states of waiting jobs, and submits the jobs in
+   * ready state (i.e. whose dependencies are all finished in success).
    */
-  public void run() {
-    this.runnerState = ThreadState.RUNNING;
-    while (true) {
-      while (this.runnerState == ThreadState.SUSPENDED) {
-        try {
-          Thread.sleep(5000);
-        } catch (Exception e) {
-
-        }
-      }
-      try {
-        checkRunningJobs();
-        checkWaitingJobs();
-        startReadyJobs();
-      } catch (Exception e) {
-        log.error("Error in run loop", e);
-        this.runnerState = ThreadState.STOPPED;
-      }
-      if (this.runnerState != ThreadState.RUNNING
-          && this.runnerState != ThreadState.SUSPENDED) {
-        break;
-      }
-      try {
-        Thread.sleep(jobPollInterval);
-      } catch (Exception e) {
-
-      }
-      if (this.runnerState != ThreadState.RUNNING
-          && this.runnerState != ThreadState.SUSPENDED) {
-        break;
-      }
-    }
-    this.runnerState = ThreadState.STOPPED;
+  public void pollJobStatusAndStartNewOnes() throws IOException, InterruptedException {
+    checkRunningJobs();
+    checkWaitingJobs();
+    startReadyJobs();
   }
-  
-  private boolean isLocalMode() {
-    Configuration conf = new Configuration();
-    // Try to handle MapReduce version 0.20 or 0.22
-    String jobTrackerAddress = conf.get("mapreduce.jobtracker.address", conf.get("mapred.job.tracker", "local"));
-    return "local".equals(jobTrackerAddress);
-  }
-
 }
