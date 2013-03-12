@@ -72,6 +72,12 @@
       <artifactId>commons-httpclient</artifactId>
       <version>${commons-httpclient.version}</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
