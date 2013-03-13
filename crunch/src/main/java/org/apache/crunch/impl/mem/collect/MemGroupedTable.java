@@ -88,7 +88,7 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
 
   @Override
   public long getSize() {
-    return parent.getSize();
+    return 1; // getSize is only used for pipeline optimization in MR
   }
 
   @Override

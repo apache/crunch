@@ -24,7 +24,7 @@ import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.Pair;
-import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -135,7 +135,7 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
   public abstract void configureShuffle(Job job, GroupingOptions options);
 
   @Override
-  public SourceTarget<Pair<K, Iterable<V>>> getDefaultFileSource(Path path) {
+  public ReadableSourceTarget<Pair<K, Iterable<V>>> getDefaultFileSource(Path path) {
     throw new UnsupportedOperationException("Grouped tables cannot be written out directly");
   }
 }

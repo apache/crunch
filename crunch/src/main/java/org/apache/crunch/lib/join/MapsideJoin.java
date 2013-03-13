@@ -30,9 +30,8 @@ import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -72,7 +71,8 @@ public class MapsideJoin {
 
     if (iterable instanceof MaterializableIterable) {
       MaterializableIterable<Pair<K, V>> mi = (MaterializableIterable<Pair<K, V>>) iterable;
-      MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(), right.getPType());
+      MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(),
+          right.getPType());
       ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
       if (mi.isSourceTarget()) {
         optionsBuilder.sourceTargets((SourceTarget) mi.getSource());
@@ -120,32 +120,24 @@ public class MapsideJoin {
     }
 
     private Path getCacheFilePath() {
-      Path input = new Path(inputPath);
-      try {
-        for (Path localPath : DistributedCache.getLocalCacheFiles(getConfiguration())) {
-          if (localPath.toString().endsWith(input.getName())) {
-            return localPath.makeQualified(FileSystem.getLocal(getConfiguration()));
-
-          }
-        }
-      } catch (IOException e) {
-        throw new CrunchRuntimeException(e);
+      Path local = DistCache.getPathToCacheFile(new Path(inputPath), getConfiguration());
+      if (local == null) {
+        throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
       }
-
-      throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
+      return local;
     }
 
     @Override
     public void configure(Configuration conf) {
-      DistributedCache.addCacheFile(new Path(inputPath).toUri(), conf);
+      DistCache.addCacheFile(new Path(inputPath), conf);
     }
     
     @Override
     public void initialize() {
       super.initialize();
 
-      ReadableSourceTarget<Pair<K, V>> sourceTarget = (ReadableSourceTarget<Pair<K, V>>) ptype
-          .getDefaultFileSource(getCacheFilePath());
+      ReadableSourceTarget<Pair<K, V>> sourceTarget = ptype.getDefaultFileSource(
+          getCacheFilePath());
       Iterable<Pair<K, V>> iterable = null;
       try {
         iterable = sourceTarget.read(getConfiguration());
@@ -168,7 +160,5 @@ public class MapsideJoin {
         emitter.emit(Pair.of(key, valuePair));
       }
     }
-
   }
-
 }

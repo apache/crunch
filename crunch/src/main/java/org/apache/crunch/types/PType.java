@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
-import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
@@ -77,7 +77,7 @@ public interface PType<T> extends Serializable {
    * Returns a {@code SourceTarget} that is able to read/write data using the serialization format
    * specified by this {@code PType}.
    */
-  SourceTarget<T> getDefaultFileSource(Path path);
+  ReadableSourceTarget<T> getDefaultFileSource(Path path);
 
   /**
    * Returns the sub-types that make up this PType if it is a composite instance, such as a tuple.

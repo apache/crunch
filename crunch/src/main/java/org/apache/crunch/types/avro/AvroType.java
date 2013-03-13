@@ -24,8 +24,8 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.IdentityFn;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
@@ -161,7 +161,7 @@ public class AvroType<T> implements PType<T> {
   }
 
   @Override
-  public SourceTarget<T> getDefaultFileSource(Path path) {
+  public ReadableSourceTarget<T> getDefaultFileSource(Path path) {
     return new AvroFileSourceTarget<T>(path, this);
   }
 

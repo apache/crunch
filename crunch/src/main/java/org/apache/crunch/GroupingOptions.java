@@ -17,9 +17,15 @@
  */
 package org.apache.crunch;
 
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * Options that can be passed to a {@code groupByKey} operation in order to
@@ -33,14 +39,18 @@ public class GroupingOptions {
   private final Class<? extends RawComparator> groupingComparatorClass;
   private final Class<? extends RawComparator> sortComparatorClass;
   private final int numReducers;
-
+  private final Map<String, String> extraConf;
+  private final Set<SourceTarget<?>> sourceTargets;
+  
   private GroupingOptions(Class<? extends Partitioner> partitionerClass,
       Class<? extends RawComparator> groupingComparatorClass, Class<? extends RawComparator> sortComparatorClass,
-      int numReducers) {
+      int numReducers, Map<String, String> extraConf, Set<SourceTarget<?>> sourceTargets) {
     this.partitionerClass = partitionerClass;
     this.groupingComparatorClass = groupingComparatorClass;
     this.sortComparatorClass = sortComparatorClass;
     this.numReducers = numReducers;
+    this.extraConf = extraConf;
+    this.sourceTargets = sourceTargets;
   }
 
   public int getNumReducers() {
@@ -59,6 +69,10 @@ public class GroupingOptions {
     return partitionerClass;
   }
   
+  public Set<SourceTarget<?>> getSourceTargets() {
+    return sourceTargets;
+  }
+  
   public void configure(Job job) {
     if (partitionerClass != null) {
       job.setPartitionerClass(partitionerClass);
@@ -72,6 +86,9 @@ public class GroupingOptions {
     if (numReducers > 0) {
       job.setNumReduceTasks(numReducers);
     }
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      job.getConfiguration().set(e.getKey(), e.getValue());
+    }
   }
 
   public boolean isCompatibleWith(GroupingOptions other) {
@@ -82,6 +99,9 @@ public class GroupingOptions {
       return false;
     }
     if (sortComparatorClass != other.sortComparatorClass) {
+      return false;
+    }
+    if (!extraConf.equals(other.extraConf)) {
       return false;
     }
     return true;
@@ -100,7 +120,9 @@ public class GroupingOptions {
     private Class<? extends RawComparator> groupingComparatorClass;
     private Class<? extends RawComparator> sortComparatorClass;
     private int numReducers;
-
+    private Map<String, String> extraConf = Maps.newHashMap();
+    private Set<SourceTarget<?>> sourceTargets = Sets.newHashSet();
+    
     public Builder() {
     }
 
@@ -127,8 +149,19 @@ public class GroupingOptions {
       return this;
     }
 
+    public Builder conf(String confKey, String confValue) {
+      this.extraConf.put(confKey, confValue);
+      return this;
+    }
+    
+    public Builder sourceTarget(SourceTarget<?> st) {
+      this.sourceTargets.add(st);
+      return this;
+    }
+    
     public GroupingOptions build() {
-      return new GroupingOptions(partitionerClass, groupingComparatorClass, sortComparatorClass, numReducers);
+      return new GroupingOptions(partitionerClass, groupingComparatorClass, sortComparatorClass,
+          numReducers, extraConf, sourceTargets);
     }
   }
 }

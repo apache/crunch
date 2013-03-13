@@ -20,6 +20,7 @@ package org.apache.crunch.io.avro;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.io.DatumReader;
@@ -29,6 +30,7 @@ import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.avro.AvroType;
@@ -39,7 +41,7 @@ import org.apache.hadoop.fs.Path;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
+public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
 
@@ -47,10 +49,15 @@ class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   private final MapFn<T, T> mapFn;
 
   public AvroFileReaderFactory(AvroType<T> atype) {
-    this.recordReader = AvroFileReaderFactory.createDatumReader(atype);
+    this.recordReader = createDatumReader(atype);
     this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
   }
 
+  public AvroFileReaderFactory(Schema schema) {
+    this.recordReader = new GenericDatumReader<T>(schema);
+    this.mapFn = IdentityFn.<T>getInstance();
+  }
+  
   static <T> DatumReader<T> createDatumReader(AvroType<T> avroType) {
     if (avroType.hasReflect()) {
       if (avroType.hasSpecific()) {

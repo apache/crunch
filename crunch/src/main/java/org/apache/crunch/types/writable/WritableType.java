@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
-import org.apache.crunch.SourceTarget;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
@@ -90,7 +90,7 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   }
 
   @Override
-  public SourceTarget<T> getDefaultFileSource(Path path) {
+  public ReadableSourceTarget<T> getDefaultFileSource(Path path) {
     return new SeqFileSourceTarget<T>(path, this);
   }
 

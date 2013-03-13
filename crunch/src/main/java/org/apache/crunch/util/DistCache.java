@@ -80,6 +80,23 @@ public class DistCache {
     return value;
   }
 
+  public static void addCacheFile(Path path, Configuration conf) {
+    DistributedCache.addCacheFile(path.toUri(), conf);
+  }
+  
+  public static Path getPathToCacheFile(Path path, Configuration conf) {
+    try {
+      for (Path localPath : DistributedCache.getLocalCacheFiles(conf)) {
+        if (localPath.toString().endsWith(path.getName())) {
+          return localPath.makeQualified(FileSystem.getLocal(conf));
+        }
+      }
+    } catch (IOException e) {
+      throw new CrunchRuntimeException(e);
+    }
+    return null;
+  }
+  
   /**
    * Adds the specified jar to the distributed cache of jobs using the provided
    * configuration. The jar will be placed on the classpath of tasks run by the
@@ -143,11 +160,11 @@ public class DistCache {
    * @throws IOException
    *           If there is a problem searching for the jar file.
    */
-  public static String findContainingJar(Class jarClass) throws IOException {
+  public static String findContainingJar(Class<?> jarClass) throws IOException {
     ClassLoader loader = jarClass.getClassLoader();
     String classFile = jarClass.getName().replaceAll("\\.", "/") + ".class";
-    for (Enumeration itr = loader.getResources(classFile); itr.hasMoreElements();) {
-      URL url = (URL) itr.nextElement();
+    for (Enumeration<URL> itr = loader.getResources(classFile); itr.hasMoreElements();) {
+      URL url = itr.nextElement();
       if ("jar".equals(url.getProtocol())) {
         String toReturn = url.getPath();
         if (toReturn.startsWith("file:")) {

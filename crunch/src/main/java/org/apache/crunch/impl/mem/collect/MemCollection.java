@@ -182,7 +182,7 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public long getSize() {
-    return collect.size();
+    return collect.isEmpty() ? 0 : 1; // getSize is only used for pipeline optimization in MR
   }
 
   @Override

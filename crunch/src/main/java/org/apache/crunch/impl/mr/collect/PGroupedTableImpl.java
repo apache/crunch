@@ -18,6 +18,7 @@
 package org.apache.crunch.impl.mr.collect;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,13 +30,17 @@ import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.util.PartitionUtils;
 import org.apache.hadoop.mapreduce.Job;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>>> implements PGroupedTable<K, V> {
 
@@ -59,8 +64,7 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   public void configureShuffle(Job job) {
     ptype.configureShuffle(job, groupingOptions);
     if (groupingOptions == null || groupingOptions.getNumReducers() <= 0) {
-      long bytesPerTask = job.getConfiguration().getLong("crunch.bytes.per.reduce.task", (1000L * 1000L * 1000L));
-      int numReduceTasks = 1 + (int) (getSize() / bytesPerTask);
+      int numReduceTasks = PartitionUtils.getRecommendedPartitions(this, getPipeline().getConfiguration());
       if (numReduceTasks > 0) {
         job.setNumReduceTasks(numReduceTasks);
         LOG.info(String.format("Setting num reduce tasks to %d", numReduceTasks));
@@ -108,6 +112,15 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
     visitor.visitGroupedTable(this);
   }
 
+  @Override
+  public Set<SourceTarget<?>> getTargetDependencies() {
+    Set<SourceTarget<?>> td = Sets.newHashSet(super.getTargetDependencies());
+    if (groupingOptions != null) {
+      td.addAll(groupingOptions.getSourceTargets());
+    }
+    return ImmutableSet.copyOf(td);
+  }
+  
   @Override
   public List<PCollectionImpl<?>> getParents() {
     return ImmutableList.<PCollectionImpl<?>> of(parent);

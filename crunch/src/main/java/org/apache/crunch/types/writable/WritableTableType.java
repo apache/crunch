@@ -22,8 +22,8 @@ import java.util.List;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.PairMapFn;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.seq.SeqFileTableSourceTarget;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
@@ -98,7 +98,7 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   }
 
   @Override
-  public SourceTarget<Pair<K, V>> getDefaultFileSource(Path path) {
+  public ReadableSourceTarget<Pair<K, V>> getDefaultFileSource(Path path) {
     return new SeqFileTableSourceTarget<K, V>(path, this);
   }
 

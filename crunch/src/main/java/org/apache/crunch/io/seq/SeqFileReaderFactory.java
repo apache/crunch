@@ -23,21 +23,24 @@ import java.util.Iterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
 
-class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
+public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(SeqFileReaderFactory.class);
 
@@ -59,6 +62,14 @@ class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
     }
   }
 
+  public SeqFileReaderFactory(Class clazz) {
+    PType<T> ptype = Writables.writables(clazz);
+    this.converter = ptype.getConverter();
+    this.mapFn = ptype.getInputMapFn();
+    this.key = NullWritable.get();
+    this.value = (Writable) ReflectionUtils.newInstance(clazz, null);
+  }
+  
   @Override
   public Iterator<T> read(FileSystem fs, final Path path) {
     mapFn.initialize();
