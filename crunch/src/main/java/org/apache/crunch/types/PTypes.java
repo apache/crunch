@@ -19,6 +19,7 @@ package org.apache.crunch.types;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
@@ -44,6 +45,10 @@ public class PTypes {
     return typeFamily.derived(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());
   }
 
+  public static PType<UUID> uuid(PTypeFamily ptf) {
+    return ptf.derived(UUID.class, BYTE_TO_UUID, UUID_TO_BYTE, ptf.bytes());
+  }
+  
   public static <T> PType<T> jsonString(Class<T> clazz, PTypeFamily typeFamily) {
     return typeFamily
         .derived(clazz, new JacksonInputMapFn<T>(clazz), new JacksonOutputMapFn<T>(), typeFamily.strings());
@@ -226,6 +231,22 @@ public class PTypes {
     @Override
     public String map(T input) {
       return input.name();
+    }
+  };
+  
+  private static MapFn<ByteBuffer, UUID> BYTE_TO_UUID = new MapFn<ByteBuffer, UUID>() {
+    @Override
+    public UUID map(ByteBuffer input) {
+      return new UUID(input.getLong(), input.getLong());
+    }
+  };
+  
+  private static MapFn<UUID, ByteBuffer> UUID_TO_BYTE = new MapFn<UUID, ByteBuffer>() {
+    @Override
+    public ByteBuffer map(UUID input) {
+      ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+      bb.asLongBuffer().put(input.getMostSignificantBits()).put(input.getLeastSignificantBits());
+      return bb;
     }
   };
 }
