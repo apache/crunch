@@ -25,10 +25,11 @@ import java.util.Set;
 
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
+import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.crunch.impl.mr.collect.DoTableImpl;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
-import org.apache.crunch.impl.mr.exec.CrunchJob;
+import org.apache.crunch.impl.mr.exec.CrunchJobHooks;
 import org.apache.crunch.impl.mr.run.CrunchCombiner;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
@@ -49,14 +50,16 @@ import com.google.common.collect.Sets;
 
 class JobPrototype {
 
-  public static JobPrototype createMapReduceJob(PGroupedTableImpl<?, ?> group, Set<NodePath> inputs, Path workingPath) {
-    return new JobPrototype(inputs, group, workingPath);
+  public static JobPrototype createMapReduceJob(int jobID, PGroupedTableImpl<?, ?> group,
+      Set<NodePath> inputs, Path workingPath) {
+    return new JobPrototype(jobID, inputs, group, workingPath);
   }
 
-  public static JobPrototype createMapOnlyJob(HashMultimap<Target, NodePath> mapNodePaths, Path workingPath) {
-    return new JobPrototype(mapNodePaths, workingPath);
+  public static JobPrototype createMapOnlyJob(int jobID, HashMultimap<Target, NodePath> mapNodePaths, Path workingPath) {
+    return new JobPrototype(jobID, mapNodePaths, workingPath);
   }
 
+  private final int jobID; // TODO: maybe stageID sounds better
   private final Set<NodePath> mapNodePaths;
   private final PGroupedTableImpl<?, ?> group;
   private final Set<JobPrototype> dependencies = Sets.newHashSet();
@@ -66,20 +69,26 @@ class JobPrototype {
   private HashMultimap<Target, NodePath> targetsToNodePaths;
   private DoTableImpl<?, ?> combineFnTable;
 
-  private CrunchJob job;
+  private CrunchControlledJob job;
 
-  private JobPrototype(Set<NodePath> inputs, PGroupedTableImpl<?, ?> group, Path workingPath) {
+  private JobPrototype(int jobID, Set<NodePath> inputs, PGroupedTableImpl<?, ?> group, Path workingPath) {
+    this.jobID = jobID;
     this.mapNodePaths = ImmutableSet.copyOf(inputs);
     this.group = group;
     this.workingPath = workingPath;
     this.targetsToNodePaths = null;
   }
 
-  private JobPrototype(HashMultimap<Target, NodePath> outputPaths, Path workingPath) {
+  private JobPrototype(int jobID, HashMultimap<Target, NodePath> outputPaths, Path workingPath) {
+    this.jobID = jobID;
     this.group = null;
     this.mapNodePaths = null;
     this.workingPath = workingPath;
     this.targetsToNodePaths = outputPaths;
+  }
+
+  public int getJobID() {
+    return jobID;
   }
 
   public boolean isMapOnly() {
@@ -109,7 +118,7 @@ class JobPrototype {
     this.dependencies.add(dependency);
   }
 
-  public CrunchJob getCrunchJob(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
+  public CrunchControlledJob getCrunchJob(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
     if (job == null) {
       job = build(jarClass, conf, pipeline);
       for (JobPrototype proto : dependencies) {
@@ -119,7 +128,7 @@ class JobPrototype {
     return job;
   }
 
-  private CrunchJob build(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
+  private CrunchControlledJob build(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
     Job job = new Job(conf);
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
@@ -190,7 +199,11 @@ class JobPrototype {
     }
     job.setJobName(createJobName(pipeline.getName(), inputNodes, reduceNode));
 
-    return new CrunchJob(job, outputPath, outputHandler);
+    return new CrunchControlledJob(
+        jobID,
+        job,
+        new CrunchJobHooks.PrepareHook(job),
+        new CrunchJobHooks.CompletionHook(job, outputPath, outputHandler.getMultiPaths(), group == null));
   }
 
   private void serialize(List<DoNode> nodes, Configuration conf, Path workingPath, NodeContext context)

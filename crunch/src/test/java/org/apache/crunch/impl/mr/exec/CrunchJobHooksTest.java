@@ -21,22 +21,22 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-public class CrunchJobTest {
+public class CrunchJobHooksTest {
 
   @Test
   public void testExtractPartitionNumber() {
-    assertEquals(0, CrunchJob.extractPartitionNumber("out1-r-00000"));
-    assertEquals(10, CrunchJob.extractPartitionNumber("out2-r-00010"));
-    assertEquals(99999, CrunchJob.extractPartitionNumber("out3-r-99999"));
+    assertEquals(0, CrunchJobHooks.extractPartitionNumber("out1-r-00000"));
+    assertEquals(10, CrunchJobHooks.extractPartitionNumber("out2-r-00010"));
+    assertEquals(99999, CrunchJobHooks.extractPartitionNumber("out3-r-99999"));
   }
 
   @Test
   public void testExtractPartitionNumber_WithSuffix() {
-    assertEquals(10, CrunchJob.extractPartitionNumber("out2-r-00010.avro"));
+    assertEquals(10, CrunchJobHooks.extractPartitionNumber("out2-r-00010.avro"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testExtractPartitionNumber_MapOutputFile() {
-    CrunchJob.extractPartitionNumber("out1-m-00000");
+    CrunchJobHooks.extractPartitionNumber("out1-m-00000");
   }
 }

@@ -46,7 +46,8 @@ public class MSCRPlanner {
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
-  
+  private int lastJobID = 0;
+
   public MSCRPlanner(MRPipeline pipeline, Map<PCollectionImpl<?>, Set<Target>> outputs,
       Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize) {
     this.pipeline = pipeline;
@@ -267,7 +268,7 @@ public class MSCRPlanner {
         throw new IllegalStateException("No outputs?");
       }
       JobPrototype prototype = JobPrototype.createMapOnlyJob(
-          outputPaths, pipeline.createTempPath()); 
+          ++lastJobID, outputPaths, pipeline.createTempPath());
       for (Vertex v : component) {
         assignment.put(v, prototype);
       }
@@ -280,7 +281,7 @@ public class MSCRPlanner {
           usedEdges.add(e);
         }
         JobPrototype prototype = JobPrototype.createMapReduceJob(
-            (PGroupedTableImpl) g.getPCollection(), inputs, pipeline.createTempPath());
+            ++lastJobID, (PGroupedTableImpl) g.getPCollection(), inputs, pipeline.createTempPath());
         assignment.put(g, prototype);
         for (Edge e : g.getIncomingEdges()) {
           assignment.put(e.getHead(), prototype);
@@ -335,7 +336,7 @@ public class MSCRPlanner {
       }
       if (!outputPaths.isEmpty()) {
         JobPrototype prototype = JobPrototype.createMapOnlyJob(
-            outputPaths, pipeline.createTempPath());
+            ++lastJobID, outputPaths, pipeline.createTempPath());
         for (Vertex orphan : orphans) {
           assignment.put(orphan, prototype);
         }

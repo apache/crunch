@@ -18,16 +18,17 @@
 package org.apache.crunch.hadoop.mapreduce.lib.jobcontrol;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.StringUtils;
+
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 /**
  * This class encapsulates a MapReduce job and its dependency. It monitors the
@@ -46,48 +47,50 @@ public class CrunchControlledJob {
     SUCCESS, WAITING, RUNNING, READY, FAILED, DEPENDENT_FAILED
   };
 
-  public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
-  protected State state;
-  protected Job job; // mapreduce job to be executed.
-  // some info for human consumption, e.g. the reason why the job failed
-  protected String message;
-  private String controlID; // assigned and used by JobControl class
-  // the jobs the current job depends on
-  private List<CrunchControlledJob> dependingJobs;
-
-  /**
-   * Construct a job.
-   * 
-   * @param job
-   *          a mapreduce job to be executed.
-   * @param dependingJobs
-   *          an array of jobs the current job depends on
-   */
-  public CrunchControlledJob(Job job, List<CrunchControlledJob> dependingJobs)
-      throws IOException {
-    this.job = job;
-    this.dependingJobs = dependingJobs;
-    this.state = State.WAITING;
-    this.controlID = "unassigned";
-    this.message = "just initialized";
+  public static interface Hook {
+    public void run() throws IOException;
   }
 
+  private static final Log LOG = LogFactory.getLog(CrunchControlledJob.class);
+
+  private final int jobID;
+  private final Job job; // mapreduce job to be executed.
+  // the jobs the current job depends on
+  private final List<CrunchControlledJob> dependingJobs;
+  private final Hook prepareHook;
+  private final Hook completionHook;
+  private State state;
+  // some info for human consumption, e.g. the reason why the job failed
+  private String message;
+  private String lastKnownProgress;
+
   /**
    * Construct a job.
-   * 
-   * @param conf
-   *          mapred job configuration representing a job to be executed.
-   * @throws IOException
+   *
+   * @param jobID
+   *          an ID used to match with its {@link org.apache.crunch.impl.mr.plan.JobPrototype}.
+   * @param job
+   *          a mapreduce job to be executed.
+   * @param prepareHook
+   *          a piece of code that will run before this job is submitted.
+   * @param completionHook
+   *          a piece of code that will run after this job gets completed.
    */
-  public CrunchControlledJob(Configuration conf) throws IOException {
-    this(new Job(conf), null);
+  public CrunchControlledJob(int jobID, Job job, Hook prepareHook, Hook completionHook) {
+    this.jobID = jobID;
+    this.job = job;
+    this.dependingJobs = Lists.newArrayList();
+    this.prepareHook = prepareHook;
+    this.completionHook = completionHook;
+    this.state = State.WAITING;
+    this.message = "just initialized";
   }
 
   @Override
   public String toString() {
     StringBuffer sb = new StringBuffer();
     sb.append("job name:\t").append(this.job.getJobName()).append("\n");
-    sb.append("job id:\t").append(this.controlID).append("\n");
+    sb.append("job id:\t").append(this.jobID).append("\n");
     sb.append("job state:\t").append(this.state).append("\n");
     sb.append("job mapred id:\t").append(this.job.getJobID()).append("\n");
     sb.append("job message:\t").append(this.message).append("\n");
@@ -114,7 +117,7 @@ public class CrunchControlledJob {
 
   /**
    * Set the job name for this job.
-   * 
+   *
    * @param jobName
    *          the job name
    */
@@ -123,20 +126,10 @@ public class CrunchControlledJob {
   }
 
   /**
-   * @return the job ID of this job assigned by JobControl
+   * @return the job ID of this job
    */
-  public String getJobID() {
-    return this.controlID;
-  }
-
-  /**
-   * Set the job ID for this job.
-   * 
-   * @param id
-   *          the job ID
-   */
-  public void setJobID(String id) {
-    this.controlID = id;
+  public int getJobID() {
+    return this.jobID;
   }
 
   /**
@@ -151,16 +144,6 @@ public class CrunchControlledJob {
    */
   public synchronized Job getJob() {
     return this.job;
-  }
-
-  /**
-   * Set the mapreduce job
-   * 
-   * @param job
-   *          the mapreduce job for this job.
-   */
-  public synchronized void setJob(Job job) {
-    this.job = job;
   }
 
   /**
@@ -214,9 +197,6 @@ public class CrunchControlledJob {
    */
   public synchronized boolean addDependingJob(CrunchControlledJob dependingJob) {
     if (this.state == State.WAITING) { // only allowed to add jobs when waiting
-      if (this.dependingJobs == null) {
-        this.dependingJobs = new ArrayList<CrunchControlledJob>();
-      }
       return this.dependingJobs.add(dependingJob);
     } else {
       return false;
@@ -246,7 +226,7 @@ public class CrunchControlledJob {
    * Check the state of this running job. The state may remain the same, become
    * SUCCEEDED or FAILED.
    */
-  protected void checkRunningState() throws IOException, InterruptedException {
+  private void checkRunningState() throws IOException, InterruptedException {
     try {
       if (job.isComplete()) {
         if (job.isSuccessful()) {
@@ -254,6 +234,11 @@ public class CrunchControlledJob {
         } else {
           this.state = State.FAILED;
           this.message = "Job failed!";
+        }
+      } else {
+        // still running
+        if (job.getConfiguration().getBoolean(RuntimeParameters.LOG_JOB_PROGRESS, false)) {
+          logJobProgress();
         }
       }
     } catch (IOException ioe) {
@@ -265,6 +250,9 @@ public class CrunchControlledJob {
         }
       } catch (IOException e) {
       }
+    }
+    if (isCompleted()) {
+      completionHook.run();
     }
   }
 
@@ -313,26 +301,25 @@ public class CrunchControlledJob {
    */
   protected synchronized void submit() {
     try {
-      Configuration conf = job.getConfiguration();
-      if (conf.getBoolean(CREATE_DIR, false)) {
-        Path[] inputPaths = FileInputFormat.getInputPaths(job);
-        for (Path inputPath : inputPaths) {
-          FileSystem fs = inputPath.getFileSystem(conf);
-          if (!fs.exists(inputPath)) {
-            try {
-              fs.mkdirs(inputPath);
-            } catch (IOException e) {
-
-            }
-          }
-        }
-      }
+      prepareHook.run();
       job.submit();
       this.state = State.RUNNING;
+      LOG.info("Running job \"" + getJobName() + "\"");
+      LOG.info("Job status available at: " + job.getTrackingURL());
     } catch (Exception ioe) {
       this.state = State.FAILED;
       this.message = StringUtils.stringifyException(ioe);
+      LOG.info("Error occurred starting job \"" + getJobName() + "\":");
+      LOG.info(getMessage());
     }
   }
 
+  private void logJobProgress() throws IOException, InterruptedException {
+    String progress = String.format("map %.0f%% reduce %.0f%%",
+        100.0 * job.mapProgress(), 100.0 * job.reduceProgress());
+    if (!Objects.equal(lastKnownProgress, progress)) {
+      LOG.info(job.getJobName() + " progress: " + progress);
+      lastKnownProgress = progress;
+    }
+  }
 }

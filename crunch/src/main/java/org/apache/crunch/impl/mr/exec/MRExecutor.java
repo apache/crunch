@@ -80,7 +80,7 @@ public class MRExecutor implements PipelineExecution {
       : new CappedExponentialCounter(500, 10000);
   }
 
-  public void addJob(CrunchJob job) {
+  public void addJob(CrunchControlledJob job) {
     this.control.addJob(job);
   }
 

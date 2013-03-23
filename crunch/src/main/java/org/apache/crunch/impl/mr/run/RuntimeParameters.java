@@ -30,6 +30,8 @@ public class RuntimeParameters {
 
   public static final String LOG_JOB_PROGRESS = "crunch.log.job.progress";
 
+  public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
+
   // Not instantiated
   private RuntimeParameters() {
   }
