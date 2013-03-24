@@ -27,6 +27,7 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.Pair;
+import org.apache.crunch.types.PType;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -65,12 +66,14 @@ class SampleUtils {
   
     private int[] sampleSizes;
     private Long seed;
+    private PType<T> valueType;
     private transient List<SortedMap<Double, T>> reservoirs;
     private transient Random random;
     
-    public ReservoirSampleFn(int[] sampleSizes, Long seed) {
+    public ReservoirSampleFn(int[] sampleSizes, Long seed, PType<T> valueType) {
       this.sampleSizes = sampleSizes;
       this.seed = seed;
+      this.valueType = valueType;
     }
     
     @Override
@@ -98,10 +101,10 @@ class SampleUtils {
         double score = Math.log(random.nextDouble()) / weight;
         SortedMap<Double, T> reservoir = reservoirs.get(id);
         if (reservoir.size() < sampleSizes[id]) { 
-          reservoir.put(score, p.first());        
+          reservoir.put(score, valueType.getDetachedValue(p.first()));        
         } else if (score > reservoir.firstKey()) {
           reservoir.remove(reservoir.firstKey());
-          reservoir.put(score, p.first());
+          reservoir.put(score, valueType.getDetachedValue(p.first()));
         }
       }
     }
@@ -120,10 +123,12 @@ class SampleUtils {
   static class WRSCombineFn<T> extends CombineFn<Integer, Pair<Double, T>> {
 
     private int[] sampleSizes;
+    private PType<T> valueType;
     private List<SortedMap<Double, T>> reservoirs;
     
-    public WRSCombineFn(int[] sampleSizes) {
+    public WRSCombineFn(int[] sampleSizes, PType<T> valueType) {
       this.sampleSizes = sampleSizes;
+      this.valueType = valueType;
     }
 
     @Override
@@ -140,10 +145,10 @@ class SampleUtils {
       SortedMap<Double, T> reservoir = reservoirs.get(input.first());
       for (Pair<Double, T> p : input.second()) {
         if (reservoir.size() < sampleSizes[input.first()]) { 
-          reservoir.put(p.first(), p.second());        
+          reservoir.put(p.first(), valueType.getDetachedValue(p.second()));        
         } else if (p.first() > reservoir.firstKey()) {
           reservoir.remove(reservoir.firstKey());
-          reservoir.put(p.first(), p.second());  
+          reservoir.put(p.first(), valueType.getDetachedValue(p.second()));  
         }
       }
     }

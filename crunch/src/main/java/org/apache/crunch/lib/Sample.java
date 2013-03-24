@@ -203,9 +203,9 @@ public class Sample {
     PTableType<Integer, Pair<Double, T>> ptt = ptf.tableOf(ptf.ints(),
         ptf.pairs(ptf.doubles(), ttype));
     
-    return input.parallelDo(new ReservoirSampleFn<T, N>(sampleSizes, seed), ptt)
+    return input.parallelDo(new ReservoirSampleFn<T, N>(sampleSizes, seed, ttype), ptt)
         .groupByKey(1)
-        .combineValues(new WRSCombineFn<T>(sampleSizes))
+        .combineValues(new WRSCombineFn<T>(sampleSizes, ttype))
         .parallelDo(new MapFn<Pair<Integer, Pair<Double, T>>, Pair<Integer, T>>() {
           @Override
           public Pair<Integer, T> map(Pair<Integer, Pair<Double, T>> p) {
