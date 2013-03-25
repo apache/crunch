@@ -79,6 +79,7 @@ class SampleUtils {
     @Override
     public void initialize() {
       this.reservoirs = Lists.newArrayList();
+      this.valueType.initialize(getConfiguration());
       for (int i = 0; i < sampleSizes.length; i++) {
         reservoirs.add(Maps.<Double, T>newTreeMap());
       }
@@ -137,6 +138,7 @@ class SampleUtils {
       for (int i = 0; i < sampleSizes.length; i++) {
         reservoirs.add(Maps.<Double, T>newTreeMap());
       }
+      this.valueType.initialize(getConfiguration());
     }
     
     @Override
