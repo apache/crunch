@@ -66,6 +66,10 @@ public class MemPipeline implements Pipeline {
     return COUNTERS;
   }
   
+  public static Counters clearCounters() {
+    return COUNTERS = new Counters();
+  }
+
   public static Pipeline getInstance() {
     return INSTANCE;
   }
@@ -254,7 +258,7 @@ public class MemPipeline implements Pipeline {
   @Override
   public PipelineResult run() {
     activeTargets.clear();
-    return PipelineResult.EMPTY;
+    return new PipelineResult(ImmutableList.of(new PipelineResult.StageResult("MemPipelineStage", COUNTERS)));
   }
 
   @Override
