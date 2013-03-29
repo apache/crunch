@@ -17,6 +17,8 @@
  */
 package org.apache.crunch.test;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Collection;
 
 import org.apache.crunch.Pipeline;
@@ -46,10 +48,24 @@ public final class Tests {
    * @throws IllegalArgumentException Thrown if the resource doesn't exist
    */
   public static String pathTo(Object testCase, String resourceName) {
+    String qualifiedName = resource(testCase, resourceName);
+    return Resources.getResource(qualifiedName).getFile();
+  }
+
+  /**
+   * This doesn't check whether the resource exists!
+   *
+   * @param testCase
+   * @param resourceName
+   * @return The path to the resource (never null)
+   */
+  public static String resource(Object testCase, String resourceName) {
+    checkNotNull(testCase);
+    checkNotNull(resourceName);
+
     // Note: We append "Data" because otherwise Eclipse would complain about the
     //       the case's class name clashing with the resource directory's name.
-    String path = testCase.getClass().getName().replaceAll("\\.", "/") + "Data/" + resourceName;
-    return Resources.getResource(path).getFile();
+    return testCase.getClass().getName().replaceAll("\\.", "/") + "Data/" + resourceName;
   }
 
   /**
