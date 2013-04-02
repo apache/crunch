@@ -51,7 +51,8 @@ public class Cogroup {
     PTable<K, Pair<U, V>> both = cgLeft.union(cgRight);
 
     PType<Pair<Collection<U>, Collection<V>>> otype = ptf.pairs(ptf.collections(leftType), ptf.collections(rightType));
-    return both.groupByKey().parallelDo("cogroup", new PostGroupFn<K, U, V>(), ptf.tableOf(keyType, otype));
+    return both.groupByKey().parallelDo("cogroup", 
+        new PostGroupFn<K, U, V>(leftType, rightType), ptf.tableOf(keyType, otype));
   }
 
   private static class CogroupFn1<K, V, U> extends MapValuesFn<K, V, Pair<V, U>> {
@@ -70,6 +71,22 @@ public class Cogroup {
 
   private static class PostGroupFn<K, V, U> extends
       DoFn<Pair<K, Iterable<Pair<V, U>>>, Pair<K, Pair<Collection<V>, Collection<U>>>> {
+    
+    private PType<V> ptypeV;
+    private PType<U> ptypeU;
+    
+    public PostGroupFn(PType<V> ptypeV, PType<U> ptypeU) {
+      this.ptypeV = ptypeV;
+      this.ptypeU = ptypeU;
+    }
+    
+    @Override
+    public void initialize() {
+      super.initialize();
+      ptypeV.initialize(getConfiguration());
+      ptypeU.initialize(getConfiguration());
+    }
+    
     @Override
     public void process(Pair<K, Iterable<Pair<V, U>>> input,
         Emitter<Pair<K, Pair<Collection<V>, Collection<U>>>> emitter) {
@@ -77,9 +94,9 @@ public class Cogroup {
       Collection<U> cu = Lists.newArrayList();
       for (Pair<V, U> pair : input.second()) {
         if (pair.first() != null) {
-          cv.add(pair.first());
+          cv.add(ptypeV.getDetachedValue(pair.first()));
         } else if (pair.second() != null) {
-          cu.add(pair.second());
+          cu.add(ptypeU.getDetachedValue(pair.second()));
         }
       }
       emitter.emit(Pair.of(input.first(), Pair.of(cv, cu)));

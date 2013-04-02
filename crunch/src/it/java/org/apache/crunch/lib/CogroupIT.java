@@ -17,16 +17,19 @@
  */
 package org.apache.crunch.lib;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -36,16 +39,21 @@ import org.apache.crunch.fn.MapKeysFn;
 import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
+import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.test.StringWrapper.StringToStringWrapperMapFn;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class CogroupIT {
@@ -122,5 +130,44 @@ public class CogroupIT {
       }
     }
     assertTrue(passed);
+  }
+  
+  static class ConstantMapFn extends MapFn<StringWrapper, StringWrapper> {
+
+    @Override
+    public StringWrapper map(StringWrapper input) {
+      return StringWrapper.wrap("key");
+    }
+    
+  }
+  
+  @Test
+  public void testCogroup_CheckObjectResultOnRichObjects() throws IOException {
+    Pipeline pipeline = new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration());
+    PTable<StringWrapper, StringWrapper> tableA = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"))
+      .parallelDo(new StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class))
+      .by(new ConstantMapFn(), Avros.reflects(StringWrapper.class));
+    PTable<StringWrapper, StringWrapper> tableB = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
+        .parallelDo(new StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class))
+        .by(new ConstantMapFn(), Avros.reflects(StringWrapper.class));
+    
+    List<String> set1Values = Lists.newArrayList();
+    List<String> set2Values = Lists.newArrayList();
+    PTable<StringWrapper, Pair<Collection<StringWrapper>, Collection<StringWrapper>>> cogroup = Cogroup.cogroup(tableA, tableB);
+    for (Pair<StringWrapper, Pair<Collection<StringWrapper>, Collection<StringWrapper>>> entry : cogroup.materialize()) {
+      for (StringWrapper stringWrapper : entry.second().first()) {
+        set1Values.add(stringWrapper.getValue());
+      }
+      for (StringWrapper stringWrapper : entry.second().second()) {
+        set2Values.add(stringWrapper.getValue());
+      }
+    }
+    
+    Collections.sort(set1Values);
+    Collections.sort(set2Values);
+    
+    assertEquals(ImmutableList.of("a", "b", "c", "e"), set1Values);
+    assertEquals(ImmutableList.of("a", "c", "d"), set2Values);
+    
   }
 }
