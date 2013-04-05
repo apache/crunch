@@ -38,7 +38,10 @@ import com.google.common.collect.Sets;
  * {@link PGroupedTable}, the function will be applied to the output of the map
  * stage before the data is passed to the reducer, which can improve the runtime
  * of certain classes of jobs.
- * 
+ * <p>
+ * Note that the incoming {@code Iterable} can only be used to create an 
+ * {@code Iterator} once. Calling {@link Iterable#iterator()} method a second
+ * time will throw an {@link IllegalStateException}.
  */
 public abstract class CombineFn<S, T> extends DoFn<Pair<S, Iterable<T>>, Pair<S, T>> {
 

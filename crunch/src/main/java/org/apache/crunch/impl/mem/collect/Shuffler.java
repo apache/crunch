@@ -29,6 +29,7 @@ import java.util.TreeMap;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.impl.SingleUseIterable;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -75,7 +76,7 @@ abstract class Shuffler<K, V> implements Iterable<Pair<K, Iterable<V>>> {
   private static class HFunction<K, V> implements Function<Map.Entry<K, Collection<V>>, Pair<K, Iterable<V>>> {
     @Override
     public Pair<K, Iterable<V>> apply(Map.Entry<K, Collection<V>> input) {
-      return Pair.of(input.getKey(), (Iterable<V>) input.getValue());
+      return Pair.<K, Iterable<V>>of(input.getKey(), new SingleUseIterable<V>(input.getValue()));
     }
   }
   

@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
+import org.apache.crunch.impl.SingleUseIterable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
@@ -52,6 +53,7 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
 
   @Override
   protected void reduce(Object key, Iterable<Object> values, Reducer<Object, Object, Object, Object>.Context context) {
+    values = new SingleUseIterable<Object>(values);
     if (debug) {
       try {
         node.processIterable(key, values);
