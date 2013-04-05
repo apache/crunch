@@ -69,7 +69,7 @@ public final class Distinct {
     PType<S> pt = input.getPType();
     PTypeFamily ptf = pt.getFamily();
     return input
-        .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery), ptf.tableOf(pt, ptf.nulls()))
+        .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery, pt), ptf.tableOf(pt, ptf.nulls()))
         .groupByKey()
         .parallelDo("post-distinct", new PostDistinctFn<S>(), pt);
   }
@@ -84,14 +84,22 @@ public final class Distinct {
   private static class PreDistinctFn<S> extends DoFn<S, Pair<S, Void>> {
     private final Set<S> values = Sets.newHashSet();
     private final int flushEvery;
+    private final PType<S> ptype;
     
-    public PreDistinctFn(int flushEvery) {
+    public PreDistinctFn(int flushEvery, PType<S> ptype) {
       this.flushEvery = flushEvery;
+      this.ptype = ptype;
+    }
+    
+    @Override
+    public void initialize() {
+      super.initialize();
+      ptype.initialize(getConfiguration());
     }
     
     @Override
     public void process(S input, Emitter<Pair<S, Void>> emitter) {
-      values.add(input);
+      values.add(ptype.getDetachedValue(input));
       if (values.size() > flushEvery) {
         cleanup(emitter);
       }
