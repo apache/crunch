@@ -29,6 +29,12 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableUtils;
 
+/**
+ * A {@link Writable} for marshalling/unmarshalling Collections. Note that
+ * element order is <em>undefined</em>!
+ *
+ * @param <T> The value type
+ */
 class GenericArrayWritable<T> implements Writable {
   private Writable[] values;
   private Class<? extends Writable> valueClass;
@@ -58,7 +64,7 @@ class GenericArrayWritable<T> implements Writable {
       }
       String valueType = Text.readString(in);
       setValueType(valueType);
-      for (int i = 0; i < values.length; i++) {
+      for (int i = 0; i < values.length - nulls; i++) {
         Writable value = WritableFactories.newInstance(valueClass);
         value.readFields(in); // read a value
         values[i] = value; // store it in values
@@ -80,21 +86,23 @@ class GenericArrayWritable<T> implements Writable {
 
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeVInt(out, values.length);
-    int nulls = 0;
-    for (int i = 0; i < values.length; i++) {
-      if (values[i] == null) {
-        nulls++;
-      }
-    }
-    WritableUtils.writeVInt(out, nulls);
-    if (values.length - nulls > 0) {
-      if (valueClass == null) {
-        throw new IllegalStateException("Value class not set by constructor or read");
-      }
-      Text.writeString(out, valueClass.getName());
+    if (values.length > 0) {
+      int nulls = 0;
       for (int i = 0; i < values.length; i++) {
-        if (values[i] != null) {
-          values[i].write(out);
+        if (values[i] == null) {
+          nulls++;
+        }
+      }
+      WritableUtils.writeVInt(out, nulls);
+      if (values.length - nulls > 0) {
+        if (valueClass == null) {
+          throw new IllegalStateException("Value class not set by constructor or read");
+        }
+        Text.writeString(out, valueClass.getName());
+        for (int i = 0; i < values.length; i++) {
+          if (values[i] != null) {
+            values[i].write(out);
+          }
         }
       }
     }

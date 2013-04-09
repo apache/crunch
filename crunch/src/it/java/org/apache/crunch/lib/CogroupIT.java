@@ -17,157 +17,96 @@
  */
 package org.apache.crunch.lib;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
-import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
-import org.apache.crunch.Pipeline;
-import org.apache.crunch.fn.Aggregators;
-import org.apache.crunch.fn.MapKeysFn;
-import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.io.From;
-import org.apache.crunch.test.StringWrapper;
-import org.apache.crunch.test.StringWrapper.StringToStringWrapperMapFn;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.test.Tests;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
-import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
+import com.google.common.collect.ImmutableMap;
+
 
 public class CogroupIT {
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
+  private MRPipeline pipeline;
+  private PCollection<String> lines1;
+  private PCollection<String> lines2;
 
-  private static class WordSplit extends DoFn<String, Pair<String, Long>> {
-    @Override
-    public void process(String input, Emitter<Pair<String, Long>> emitter) {
-      for (String word : Splitter.on(' ').split(input)) {
-        emitter.emit(Pair.of(word, 1L));
-      }
-    }
+
+  @Before
+  public void setUp() throws IOException {
+    pipeline = new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration());
+    lines1 = pipeline.readTextFile(tmpDir.copyResourceFileName(Tests.resource(this, "src1.txt")));
+    lines2 = pipeline.readTextFile(tmpDir.copyResourceFileName(Tests.resource(this, "src2.txt")));
   }
 
-  public static PTable<String, Long> join(PCollection<String> w1, PCollection<String> w2, PTypeFamily ptf) {
-    PTableType<String, Long> ntt = ptf.tableOf(ptf.strings(), ptf.longs());
-    PTable<String, Long> ws1 = w1.parallelDo("ws1", new WordSplit(), ntt);
-    PTable<String, Long> ws2 = w2.parallelDo("ws2", new WordSplit(), ntt);
-    PTable<String, Pair<Collection<Long>, Collection<Long>>> cg = Cogroup.cogroup(ws1, ws2);
-    PTable<String, Long> sums = cg.parallelDo("wc",
-        new MapValuesFn<String, Pair<Collection<Long>, Collection<Long>>, Long>() {
-          @Override
-          public Long map(Pair<Collection<Long>, Collection<Long>> v) {
-            long sum = 0L;
-            for (Long value : v.first()) {
-              sum += value;
-            }
-            for (Long value : v.second()) {
-              sum += value;
-            }
-            return sum;
-          }
-        }, ntt);
-    return sums.parallelDo("firstletters", new MapKeysFn<String, String, Long>() {
-      @Override
-      public String map(String k1) {
-        if (k1.length() > 0) {
-          return k1.substring(0, 1).toLowerCase();
-        } else {
-          return "";
-        }
-      }
-    }, ntt).groupByKey().combineValues(Aggregators.SUM_LONGS());
-  }
-
-  @Test
-  public void testWritableJoin() throws Exception {
-    run(new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
-  }
-
-  @Test
-  public void testAvroJoin() throws Exception {
-    run(new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
-  }
-
-  public void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
-    String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
-    String maughamInputPath = tmpDir.copyResourceFileName("maugham.txt");
-    File output = tmpDir.getFile("output");
-
-    PCollection<String> shakespeare = pipeline.read(From.textFile(shakesInputPath));
-    PCollection<String> maugham = pipeline.read(From.textFile(maughamInputPath));
-    pipeline.writeTextFile(join(shakespeare, maugham, typeFamily), output.getAbsolutePath());
+  @After
+  public void tearDown() {
     pipeline.done();
-
-    File outputFile = new File(output, "part-r-00000");
-    List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());
-    boolean passed = false;
-    for (String line : lines) {
-      if (line.equals("[j,705]")) {
-        passed = true;
-        break;
-      }
-    }
-    assertTrue(passed);
   }
-  
-  static class ConstantMapFn extends MapFn<StringWrapper, StringWrapper> {
 
-    @Override
-    public StringWrapper map(StringWrapper input) {
-      return StringWrapper.wrap("key");
-    }
-    
-  }
-  
   @Test
-  public void testCogroup_CheckObjectResultOnRichObjects() throws IOException {
-    Pipeline pipeline = new MRPipeline(CogroupIT.class, tmpDir.getDefaultConfiguration());
-    PTable<StringWrapper, StringWrapper> tableA = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"))
-      .parallelDo(new StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class))
-      .by(new ConstantMapFn(), Avros.reflects(StringWrapper.class));
-    PTable<StringWrapper, StringWrapper> tableB = pipeline.readTextFile(tmpDir.copyResourceFileName("set2.txt"))
-        .parallelDo(new StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class))
-        .by(new ConstantMapFn(), Avros.reflects(StringWrapper.class));
-    
-    List<String> set1Values = Lists.newArrayList();
-    List<String> set2Values = Lists.newArrayList();
-    PTable<StringWrapper, Pair<Collection<StringWrapper>, Collection<StringWrapper>>> cogroup = Cogroup.cogroup(tableA, tableB);
-    for (Pair<StringWrapper, Pair<Collection<StringWrapper>, Collection<StringWrapper>>> entry : cogroup.materialize()) {
-      for (StringWrapper stringWrapper : entry.second().first()) {
-        set1Values.add(stringWrapper.getValue());
-      }
-      for (StringWrapper stringWrapper : entry.second().second()) {
-        set2Values.add(stringWrapper.getValue());
-      }
-    }
-    
-    Collections.sort(set1Values);
-    Collections.sort(set2Values);
-    
-    assertEquals(ImmutableList.of("a", "b", "c", "e"), set1Values);
-    assertEquals(ImmutableList.of("a", "c", "d"), set2Values);
-    
+  public void testCogroupWritables() {
+    runCogroup(WritableTypeFamily.getInstance());
   }
+
+  @Test
+  public void testCogroupAvro() {
+    runCogroup(AvroTypeFamily.getInstance());
+  }
+
+  public void runCogroup(PTypeFamily ptf) {
+    PTableType<String, String> tt = ptf.tableOf(ptf.strings(), ptf.strings());
+
+    PTable<String, String> kv1 = lines1.parallelDo("kv1", new KeyValueSplit(), tt);
+    PTable<String, String> kv2 = lines2.parallelDo("kv2", new KeyValueSplit(), tt);
+
+    PTable<String, Pair<Collection<String>, Collection<String>>> cg = Cogroup.cogroup(kv1, kv2);
+
+    Map<String, Pair<Collection<String>, Collection<String>>> actual = cg.materializeToMap();
+
+    Map<String, Pair<Collection<String>, Collection<String>>> expected = ImmutableMap.of(
+        "a", Pair.of(coll("1-1", "1-4"), coll()),
+        "b", Pair.of(coll("1-2"), coll("2-1")),
+        "c", Pair.of(coll("1-3"), coll("2-2", "2-3")),
+        "d", Pair.of(coll(), coll("2-4"))
+    );
+
+    assertThat(actual, is(expected));
+  }
+
+
+  private static class KeyValueSplit extends DoFn<String, Pair<String, String>> {
+    @Override
+    public void process(String input, Emitter<Pair<String, String>> emitter) {
+      String[] fields = input.split(",");
+      emitter.emit(Pair.of(fields[0], fields[1]));
+    }
+  }
+
+  private static Collection<String> coll(String... values) {
+    return ImmutableList.copyOf(values);
+  }
+  
 }
