@@ -44,7 +44,7 @@ under the License.
   </prerequisites>
 
   <modules>
-    <module>crunch</module>
+    <module>crunch-core</module>
     <module>crunch-hbase</module>
     <module>crunch-test</module>
     <module>crunch-contrib</module>
@@ -103,7 +103,7 @@ under the License.
     <dependencies>
       <dependency>
         <groupId>org.apache.crunch</groupId>
-        <artifactId>crunch</artifactId>
+        <artifactId>crunch-core</artifactId>
         <version>${project.version}</version>
       </dependency>
 

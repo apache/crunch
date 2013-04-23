@@ -32,7 +32,7 @@ under the License.
   
     <dependency>
       <groupId>org.apache.crunch</groupId>
-      <artifactId>crunch</artifactId>
+      <artifactId>crunch-core</artifactId>
     </dependency>
     
     <dependency>
