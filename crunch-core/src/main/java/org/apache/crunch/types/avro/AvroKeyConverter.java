@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.types.avro;
 
+import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.types.Converter;
 import org.apache.hadoop.io.NullWritable;
@@ -53,7 +54,7 @@ class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, 
 
   private AvroWrapper<K> getWrapper() {
     if (wrapper == null) {
-      wrapper = new AvroWrapper<K>();
+      wrapper = new AvroKey<K>();
     }
     return wrapper;
   }
