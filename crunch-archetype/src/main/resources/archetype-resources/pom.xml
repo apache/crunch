@@ -42,7 +42,7 @@
          giving your libraries precedence. -->
     <dependency>
       <groupId>org.apache.crunch</groupId>
-      <artifactId>crunch</artifactId>
+      <artifactId>crunch-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
