@@ -42,8 +42,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 
 
 public class CogroupIT {
@@ -84,8 +85,13 @@ public class CogroupIT {
 
     PTable<String, Pair<Collection<String>, Collection<String>>> cg = Cogroup.cogroup(kv1, kv2);
 
-    Map<String, Pair<Collection<String>, Collection<String>>> actual = cg.materializeToMap();
-
+    Map<String, Pair<Collection<String>, Collection<String>>> result = cg.materializeToMap();
+    Map<String, Pair<Collection<String>, Collection<String>>> actual = Maps.newHashMap();
+    for (Map.Entry<String, Pair<Collection<String>, Collection<String>>> e : result.entrySet()) {
+      Collection<String> one = ImmutableSet.copyOf(e.getValue().first());
+      Collection<String> two = ImmutableSet.copyOf(e.getValue().second());
+      actual.put(e.getKey(), Pair.of(one, two));
+    }
     Map<String, Pair<Collection<String>, Collection<String>>> expected = ImmutableMap.of(
         "a", Pair.of(coll("1-1", "1-4"), coll()),
         "b", Pair.of(coll("1-2"), coll("2-1")),
@@ -106,7 +112,7 @@ public class CogroupIT {
   }
 
   private static Collection<String> coll(String... values) {
-    return ImmutableList.copyOf(values);
+    return ImmutableSet.copyOf(values);
   }
   
 }
