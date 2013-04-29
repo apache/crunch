@@ -15,28 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.exec;
+package org.apache.crunch.io.impl;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.crunch.io.impl.FileTargetImpl;
 import org.junit.Test;
 
 public class CrunchJobHooksTest {
 
   @Test
   public void testExtractPartitionNumber() {
-    assertEquals(0, CrunchJobHooks.extractPartitionNumber("out1-r-00000"));
-    assertEquals(10, CrunchJobHooks.extractPartitionNumber("out2-r-00010"));
-    assertEquals(99999, CrunchJobHooks.extractPartitionNumber("out3-r-99999"));
+    assertEquals(0, FileTargetImpl.extractPartitionNumber("out1-r-00000"));
+    assertEquals(10, FileTargetImpl.extractPartitionNumber("out2-r-00010"));
+    assertEquals(99999, FileTargetImpl.extractPartitionNumber("out3-r-99999"));
   }
 
   @Test
   public void testExtractPartitionNumber_WithSuffix() {
-    assertEquals(10, CrunchJobHooks.extractPartitionNumber("out2-r-00010.avro"));
+    assertEquals(10, FileTargetImpl.extractPartitionNumber("out2-r-00010.avro"));
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testExtractPartitionNumber_MapOutputFile() {
-    CrunchJobHooks.extractPartitionNumber("out1-m-00000");
+    FileTargetImpl.extractPartitionNumber("out1-m-00000");
   }
 }

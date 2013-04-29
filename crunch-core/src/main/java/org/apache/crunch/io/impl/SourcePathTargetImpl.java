@@ -17,10 +17,13 @@
  */
 package org.apache.crunch.io.impl;
 
+import java.io.IOException;
+
 import org.apache.crunch.Source;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -46,5 +49,11 @@ public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements Path
   @Override
   public FileNamingScheme getFileNamingScheme() {
     return fileNamingScheme;
+  }
+
+  @Override
+  public void handleOutputs(Configuration conf, Path workingPath, int index, boolean mapOnlyJob)
+      throws IOException {
+    ((PathTarget) target).handleOutputs(conf, workingPath, index, mapOnlyJob);
   }
 }

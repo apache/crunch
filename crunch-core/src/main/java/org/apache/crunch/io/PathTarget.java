@@ -17,6 +17,9 @@
  */
 package org.apache.crunch.io;
 
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
@@ -33,4 +36,16 @@ public interface PathTarget extends MapReduceTarget {
    * @return the naming scheme to be used
    */
   FileNamingScheme getFileNamingScheme();
+  
+  /**
+   * Handles moving the output data for this target from a temporary location on the
+   * filesystem to its target path at the end of a MapReduce job.
+   * 
+   * @param conf The job {@code Configuration}
+   * @param workingPath The temp directory that contains the output of the job
+   * @param index The index of this target for jobs that write multiple output files to a single directory
+   * @param mapOnlyJob Whether or not this is a map-only job
+   * @throws IOException
+   */
+  void handleOutputs(Configuration conf, Path workingPath, int index, boolean mapOnlyJob) throws IOException;
 }

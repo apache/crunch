@@ -18,12 +18,15 @@
 package org.apache.crunch.io.impl;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.OutputHandler;
@@ -31,8 +34,8 @@ import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -82,11 +85,73 @@ public class FileTargetImpl implements PathTarget {
     return true;
   }
 
+  public void handleOutputs(Configuration conf, Path workingPath, int index,
+      boolean mapOnlyJob) throws IOException {
+    FileSystem srcFs = workingPath.getFileSystem(conf);
+    Path src = getSourcePattern(workingPath, index);
+    Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(src), src);
+    FileSystem dstFs = FileSystem.get(conf);
+    if (!dstFs.exists(path)) {
+      dstFs.mkdirs(path);
+    }
+    boolean sameFs = isCompatible(srcFs, path);
+    for (Path s : srcs) {
+      Path d = getDestFile(conf, s, path, mapOnlyJob);
+      if (sameFs) {
+        srcFs.rename(s, d);
+      } else {
+        FileUtil.copy(srcFs, s, dstFs, d, true, true, conf);
+      }
+    }
+  }
+  
+  protected Path getSourcePattern(Path workingPath, int index) {
+    return new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index + "-*");
+  }
+  
   @Override
   public Path getPath() {
     return path;
   }
+  
+  protected static boolean isCompatible(FileSystem fs, Path path) {
+    try {
+      fs.makeQualified(path);
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+  }
 
+  protected Path getDestFile(Configuration conf, Path src, Path dir, boolean mapOnlyJob)
+      throws IOException {
+    String outputFilename = null;
+    if (mapOnlyJob) {
+      outputFilename = getFileNamingScheme().getMapOutputName(conf, dir);
+    } else {
+      outputFilename = getFileNamingScheme().getReduceOutputName(conf, dir, extractPartitionNumber(src.getName()));
+    }
+    if (src.getName().endsWith(org.apache.avro.mapred.AvroOutputFormat.EXT)) {
+      outputFilename += org.apache.avro.mapred.AvroOutputFormat.EXT;
+    }
+    return new Path(dir, outputFilename);
+  }
+  
+  /**
+   * Extract the partition number from a raw reducer output filename.
+   *
+   * @param reduceOutputFileName The raw reducer output file name
+   * @return The partition number encoded in the filename
+   */
+  public static int extractPartitionNumber(String reduceOutputFileName) {
+    Matcher matcher = Pattern.compile(".*-r-(\\d{5})").matcher(reduceOutputFileName);
+    if (matcher.find()) {
+      return Integer.parseInt(matcher.group(1), 10);
+    } else {
+      throw new IllegalArgumentException("Reducer output name '" + reduceOutputFileName + "' cannot be parsed");
+    }
+  }
+  
   @Override
   public FileNamingScheme getFileNamingScheme() {
     return fileNamingScheme;
