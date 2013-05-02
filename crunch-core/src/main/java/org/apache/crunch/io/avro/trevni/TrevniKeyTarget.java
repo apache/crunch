@@ -112,7 +112,11 @@ public class TrevniKeyTarget extends FileTargetImpl {
 
       //Set value which will be ignored but should get past the FileOutputFormat.checkOutputSpecs(..)
       //which requires the "mapred.output.dir" value to be set.
-      FileOutputFormat.setOutputPath(job, outputPath);
+      try{
+        FileOutputFormat.setOutputPath(job, outputPath);
+      } catch(Exception ioe){
+          throw new RuntimeException(ioe);
+      }
 
       CrunchOutputs.addNamedOutput(job, name,
           bundle,
