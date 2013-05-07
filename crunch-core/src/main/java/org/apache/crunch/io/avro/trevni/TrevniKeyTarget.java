@@ -38,7 +38,6 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.trevni.avro.mapreduce.AvroTrevniKeyOutputFormat;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -57,7 +56,7 @@ public class TrevniKeyTarget extends FileTargetImpl {
   }
 
   public TrevniKeyTarget(Path path, FileNamingScheme fileNamingScheme) {
-    super(path, AvroTrevniKeyOutputFormat.class, fileNamingScheme);
+    super(path, TrevniOutputFormat.class, fileNamingScheme);
   }
 
   @Override
@@ -84,11 +83,11 @@ public class TrevniKeyTarget extends FileTargetImpl {
       AvroJob.setMapOutputKeySchema(job, atype.getSchema());
 
       Avros.configureReflectDataFactory(conf);
-      configureForMapReduce(job, AvroKey.class, NullWritable.class, AvroTrevniKeyOutputFormat.class,
+      configureForMapReduce(job, AvroKey.class, NullWritable.class, TrevniOutputFormat.class,
           outputPath, name);
     } else {
-      FormatBundle<AvroTrevniKeyOutputFormat> bundle = FormatBundle.forOutput(
-          AvroTrevniKeyOutputFormat.class);
+      FormatBundle<TrevniOutputFormat> bundle = FormatBundle.forOutput(
+          TrevniOutputFormat.class);
 
       bundle.set("avro.schema.output.key", atype.getSchema().toString());
       bundle.set("mapred.output.value.groupfn.class", AvroKeyComparator.class.getName());
