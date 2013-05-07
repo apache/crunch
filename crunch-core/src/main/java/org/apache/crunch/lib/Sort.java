@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.lib;
 
-import static org.apache.crunch.lib.sort.Comparators.*;
 import static org.apache.crunch.lib.sort.SortFns.*;
 
 import org.apache.avro.Schema;
@@ -34,6 +33,9 @@ import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.lib.sort.TotalOrderPartitioner;
+import org.apache.crunch.lib.sort.ReverseAvroComparator;
+import org.apache.crunch.lib.sort.ReverseWritableComparator;
+import org.apache.crunch.lib.sort.TupleWritableComparator;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
