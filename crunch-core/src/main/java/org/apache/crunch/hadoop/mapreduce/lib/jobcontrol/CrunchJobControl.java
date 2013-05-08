@@ -23,9 +23,10 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob.State;
+import org.apache.crunch.impl.mr.MRJob.State;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -104,6 +105,19 @@ public class CrunchJobControl {
 
   public List<CrunchControlledJob> getFailedJobList() {
     return toList(this.failedJobs);
+  }
+
+  /**
+   * @return the jobs in all states
+   */
+  public synchronized List<CrunchControlledJob> getAllJobs() {
+    return ImmutableList.<CrunchControlledJob>builder()
+        .addAll(waitingJobs.values())
+        .addAll(readyJobs.values())
+        .addAll(runningJobs.values())
+        .addAll(successfulJobs.values())
+        .addAll(failedJobs.values())
+        .build();
   }
 
   private static void addToQueue(CrunchControlledJob aJob,

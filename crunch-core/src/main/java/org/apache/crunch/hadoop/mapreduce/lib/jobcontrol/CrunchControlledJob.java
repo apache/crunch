@@ -22,11 +22,13 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.util.StringUtils;
 
+import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -34,18 +36,13 @@ import com.google.common.collect.Lists;
  * This class encapsulates a MapReduce job and its dependency. It monitors the
  * states of the depending jobs and updates the state of this job. A job starts
  * in the WAITING state. If it does not have any depending jobs, or all of the
- * depending jobs are in SUCCEEDED state, then the job state will become READY. If
+ * depending jobs are in SUCCESS state, then the job state will become READY. If
  * any depending jobs fail, the job will fail too. When in READY state, the job
  * can be submitted to Hadoop for execution, with the state changing into
  * RUNNING state. From RUNNING state, the job can get into SUCCEEDED or FAILED
  * state, depending the status of the job execution.
  */
-public class CrunchControlledJob {
-
-  // A job will be in one of the following states
-  public static enum State {
-    SUCCESS, WAITING, RUNNING, READY, FAILED, DEPENDENT_FAILED
-  };
+public class CrunchControlledJob implements MRJob {
 
   public static interface Hook {
     public void run() throws IOException;
@@ -139,16 +136,22 @@ public class CrunchControlledJob {
     return this.job.getJobID();
   }
 
-  /**
-   * @return the mapreduce job
-   */
+  @Override
   public synchronized Job getJob() {
     return this.job;
   }
 
-  /**
-   * @return the state of this job
-   */
+  @Override
+  public List<MRJob> getDependentJobs() {
+    return Lists.transform(dependingJobs, new Function<CrunchControlledJob, MRJob>() {
+      @Override
+      public MRJob apply(CrunchControlledJob job) {
+        return job;
+      }
+    });
+  }
+
+  @Override
   public synchronized State getJobState() {
     return this.state;
   }
@@ -178,13 +181,6 @@ public class CrunchControlledJob {
    */
   public synchronized void setMessage(String message) {
     this.message = message;
-  }
-
-  /**
-   * @return the depending jobs of this job
-   */
-  public List<CrunchControlledJob> getDependentJobs() {
-    return this.dependingJobs;
   }
 
   /**

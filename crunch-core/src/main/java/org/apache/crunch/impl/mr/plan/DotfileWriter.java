@@ -201,19 +201,20 @@ public class DotfileWriter {
   public String buildDotfile() {
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.append("digraph G {\n");
-    int clusterIndex = 0;
 
     for (String globalDeclaration : globalNodeDeclarations) {
       stringBuilder.append(String.format("  %s\n", globalDeclaration));
     }
 
     for (JobPrototype jobPrototype : jobPrototypes){
+      // Must prefix subgraph name with "cluster", otherwise its border won't render. I don't know why.
       StringBuilder jobProtoStringBuilder = new StringBuilder();
-      jobProtoStringBuilder.append(String.format("  subgraph cluster%d {\n", clusterIndex++));
+      jobProtoStringBuilder.append(String.format("  subgraph \"cluster-job%d\" {\n", jobPrototype.getJobID()));
       for (MRTaskType taskType : MRTaskType.values()){
         Pair<JobPrototype,MRTaskType> jobTaskKey = Pair.of(jobPrototype, taskType);
         if (jobNodeDeclarations.containsKey(jobTaskKey)){
-          jobProtoStringBuilder.append(String.format("    subgraph cluster%d {\n", clusterIndex++));
+          jobProtoStringBuilder.append(String.format(
+              "    subgraph \"cluster-job%d-%s\" {\n", jobPrototype.getJobID(), taskType.name().toLowerCase()));
           jobProtoStringBuilder.append(String.format("      %s\n", getTaskGraphAttributes(taskType)));
           for (String declarationEntry : jobNodeDeclarations.get(jobTaskKey)){
             jobProtoStringBuilder.append(String.format("      %s\n", declarationEntry));

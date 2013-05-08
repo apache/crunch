@@ -27,16 +27,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
+import org.apache.crunch.impl.mr.MRJob;
+import org.apache.crunch.impl.mr.MRPipelineExecution;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 
 /**
@@ -48,7 +50,7 @@ import com.google.common.collect.Lists;
  *
  * It is thread-safe.
  */
-public class MRExecutor implements PipelineExecution {
+public class MRExecutor implements MRPipelineExecution {
 
   private static final Log LOG = LogFactory.getLog(MRExecutor.class);
 
@@ -88,7 +90,7 @@ public class MRExecutor implements PipelineExecution {
     this.planDotFile = planDotFile;
   }
   
-  public PipelineExecution execute() {
+  public MRPipelineExecution execute() {
     monitorThread.start();
     return this;
   }
@@ -194,5 +196,15 @@ public class MRExecutor implements PipelineExecution {
     String jobTrackerAddress = conf.get("mapreduce.jobtracker.address",
         conf.get("mapred.job.tracker", "local"));
     return "local".equals(jobTrackerAddress);
+  }
+
+  @Override
+  public List<MRJob> getJobs() {
+    return Lists.transform(control.getAllJobs(), new Function<CrunchControlledJob, MRJob>() {
+      @Override
+      public MRJob apply(CrunchControlledJob job) {
+        return job;
+      }
+    });
   }
 }

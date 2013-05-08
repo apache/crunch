@@ -168,8 +168,8 @@ public class MRPipeline implements Pipeline {
   }
   
   @Override
-  public PipelineExecution runAsync() {
-    PipelineExecution res = plan().execute();
+  public MRPipelineExecution runAsync() {
+    MRPipelineExecution res = plan().execute();
     outputTargets.clear();
     return res;
   }
