@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericContainer;
+import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
@@ -40,8 +44,10 @@ import org.apache.crunch.impl.mem.collect.MemTable;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.io.avro.AvroFileTarget;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.ReflectDataFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -180,7 +186,9 @@ public class MemPipeline implements Pipeline {
         FileSystem fs = path.getFileSystem(conf);
         FSDataOutputStream os = fs.create(new Path(path, "out" + outputIndex));
         outputIndex++;
-        if (collection instanceof PTable) {
+        if (target instanceof AvroFileTarget) {
+          writeAvroFile(os, collection.materialize());
+        } else if (collection instanceof PTable) {
           for (Object o : collection.materialize()) {
             Pair p = (Pair) o;
             os.writeBytes(p.first().toString());
@@ -200,6 +208,32 @@ public class MemPipeline implements Pipeline {
     } else {
       LOG.error("Target " + target + " is not a PathTarget instance");
     }
+  }
+
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private void writeAvroFile(FSDataOutputStream outputStream, Iterable genericRecords) throws IOException {
+    
+    Object r = genericRecords.iterator().next();
+    
+    Schema schema = null;
+    
+    if (r instanceof GenericContainer) {
+      schema = ((GenericContainer) r).getSchema();
+    } else {
+      schema = new ReflectDataFactory().getReflectData().getSchema(r.getClass());
+    }
+
+    GenericDatumWriter genericDatumWriter = new GenericDatumWriter(schema);
+
+    DataFileWriter dataFileWriter = new DataFileWriter(genericDatumWriter);
+    dataFileWriter.create(schema, outputStream);
+
+    for (Object record : genericRecords) {
+      dataFileWriter.append(record);
+    }
+
+    dataFileWriter.close();
+    outputStream.close();
   }
 
   @Override

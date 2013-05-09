@@ -142,7 +142,7 @@ public class UnionCollectionIT {
 
   private void checkFileContents(String filePath) throws IOException {
 
-    List<String> fileContentValues = (typeFamily != AvroTypeFamily.getInstance() || !(pipeline instanceof MRPipeline)) ? Lists
+    List<String> fileContentValues = (typeFamily != AvroTypeFamily.getInstance())? Lists
         .newArrayList(pipeline.read(At.textFile(filePath, typeFamily.strings())).materialize().iterator()) : Lists
         .newArrayList(pipeline.read(At.avroFile(filePath, Avros.strings())).materialize().iterator());
 
