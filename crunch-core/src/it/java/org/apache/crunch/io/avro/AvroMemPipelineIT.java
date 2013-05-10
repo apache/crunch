@@ -27,7 +27,6 @@ import java.util.List;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.util.Utf8;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.io.At;
@@ -56,8 +55,7 @@ public class AvroMemPipelineIT implements Serializable {
   @Test
   public void testMemPipelienWithSpecificRecord() {
 
-    List<CharSequence> siblingnames = Lists.newArrayList();
-    Person writeRecord = new Person("John", 41, siblingnames);
+    Person writeRecord = createSpecificRecord();
 
     final PCollection<Person> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
 
@@ -67,29 +65,34 @@ public class AvroMemPipelineIT implements Serializable {
         At.avroFile(avroFile.getAbsolutePath(), Avros.records(Person.class)));
 
     Person readRecord = readCollection.materialize().iterator().next();
-    
+
     assertEquals(writeRecord, readRecord);
+  }
+
+  private Person createSpecificRecord() {
+    List<CharSequence> siblingnames = Lists.newArrayList();
+    return new Person("John", 41, siblingnames);
   }
 
   @Test
   public void testMemPipelienWithGenericRecord() {
 
     GenericRecord writeRecord = createGenericRecord();
-    
-    final PCollection<GenericRecord> persons = MemPipeline.collectionOf(Collections.singleton(writeRecord));
 
-    persons.write(To.avroFile(avroFile.getAbsolutePath()));
+    final PCollection<GenericRecord> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
+
+    writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 
     PCollection<Record> readCollection = MemPipeline.getInstance().read(
         At.avroFile(avroFile.getAbsolutePath(), Avros.generics(writeRecord.getSchema())));
 
     Record readRecord = readCollection.materialize().iterator().next();
-    
+
     assertEquals(writeRecord, readRecord);
   }
 
   private GenericRecord createGenericRecord() {
-    
+
     GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
     savedRecord.put("name", "John Doe");
     savedRecord.put("age", 42);
@@ -97,21 +100,21 @@ public class AvroMemPipelineIT implements Serializable {
 
     return savedRecord;
   }
-  
+
   @Test
   public void testMemPipelienWithReflectionRecord() {
 
     String writeRecord = "John Doe";
-    
-    final PCollection<String> persons = MemPipeline.collectionOf(Collections.singleton(writeRecord));
 
-    persons.write(To.avroFile(avroFile.getAbsolutePath()));
+    final PCollection<String> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
+
+    writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 
     PCollection<? extends String> readCollection = MemPipeline.getInstance().read(
         At.avroFile(avroFile.getAbsolutePath(), Avros.reflects(writeRecord.getClass())));
 
     Object readRecord = readCollection.materialize().iterator().next();
-    
+
     assertEquals(writeRecord, readRecord.toString());
   }
 
