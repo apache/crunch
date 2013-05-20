@@ -119,19 +119,19 @@ public class PageRankIT {
       }
     }, ptf.tableOf(ptf.strings(), ptf.floats()));
 
-    return input.cogroup(outbound).parallelDo(
-        new MapFn<Pair<String, Pair<Collection<PageRankData>, Collection<Float>>>, Pair<String, PageRankData>>() {
+    return input.cogroup(outbound).mapValues(
+        new MapFn<Pair<Collection<PageRankData>, Collection<Float>>, PageRankData>() {
           @Override
-          public Pair<String, PageRankData> map(Pair<String, Pair<Collection<PageRankData>, Collection<Float>>> input) {
-            PageRankData prd = Iterables.getOnlyElement(input.second().first());
-            Collection<Float> propagatedScores = input.second().second();
+          public PageRankData map(Pair<Collection<PageRankData>, Collection<Float>> input) {
+            PageRankData prd = Iterables.getOnlyElement(input.first());
+            Collection<Float> propagatedScores = input.second();
             float sum = 0.0f;
             for (Float s : propagatedScores) {
               sum += s;
             }
-            return Pair.of(input.first(), prd.next(d + (1.0f - d) * sum));
+            return prd.next(d + (1.0f - d) * sum);
           }
-        }, input.getPTableType());
+        }, input.getValueType());
   }
 
   public static void run(Pipeline pipeline, String urlInput,
@@ -144,12 +144,12 @@ public class PageRankIT {
             return Pair.of(urls[0], urls[1]);
           }
         }, ptf.tableOf(ptf.strings(), ptf.strings())).groupByKey()
-        .parallelDo(new MapFn<Pair<String, Iterable<String>>, Pair<String, PageRankData>>() {
+        .mapValues(new MapFn<Iterable<String>, PageRankData>() {
           @Override
-          public Pair<String, PageRankData> map(Pair<String, Iterable<String>> input) {
-            return Pair.of(input.first(), new PageRankData(1.0f, 0.0f, input.second()));
+          public PageRankData map(Iterable<String> input) {
+            return new PageRankData(1.0f, 0.0f, input);
           }
-        }, ptf.tableOf(ptf.strings(), prType));
+        }, prType);
 
     Float delta = 1.0f;
     while (delta > 0.01) {

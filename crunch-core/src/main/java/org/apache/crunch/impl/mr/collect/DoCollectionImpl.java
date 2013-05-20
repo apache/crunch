@@ -18,16 +18,13 @@
 package org.apache.crunch.impl.mr.collect;
 
 import java.util.List;
-import java.util.Set;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.ParallelDoOptions;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 

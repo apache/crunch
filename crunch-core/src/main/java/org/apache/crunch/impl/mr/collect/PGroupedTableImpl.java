@@ -27,12 +27,14 @@ import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.plan.DoNode;
+import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.util.PartitionUtils;
@@ -103,10 +105,26 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
     }
   }
 
+  @Override
   public PTable<K, V> ungroup() {
     return parallelDo("ungroup", new Ungroup<K, V>(), parent.getPTableType());
   }
 
+  @Override
+  public <U> PTable<K, U> mapValues(MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(this, mapFn, ptype);
+  }
+  
+  @Override
+  public <U> PTable<K, U> mapValues(String name, MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(name, this, mapFn, ptype);
+  }
+  
+  @Override
+  public PGroupedTableType<K, V> getGroupedTableType() {
+    return ptype;
+  }
+  
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitGroupedTable(this);

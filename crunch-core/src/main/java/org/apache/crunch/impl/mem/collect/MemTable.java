@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PObject;
@@ -128,6 +129,26 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
     return parallelDo(name, filterFn, getPTableType());
   }
 
+  @Override
+  public <U> PTable<K, U> mapValues(MapFn<V, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(this, mapFn, ptype);
+  }
+  
+  @Override
+  public <U> PTable<K, U> mapValues(String name, MapFn<V, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(name, this, mapFn, ptype);
+  }
+  
+  @Override
+  public <K2> PTable<K2, V> mapKeys(MapFn<K, K2> mapFn, PType<K2> ptype) {
+    return PTables.mapKeys(this, mapFn, ptype);
+  }
+  
+  @Override
+  public <K2> PTable<K2, V> mapKeys(String name, MapFn<K, K2> mapFn, PType<K2> ptype) {
+    return PTables.mapKeys(name, this, mapFn, ptype);
+  }
+  
   @Override
   public PTable<K, V> top(int count) {
     return Aggregate.top(this, count, true);

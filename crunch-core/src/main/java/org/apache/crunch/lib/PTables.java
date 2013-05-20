@@ -21,11 +21,13 @@ import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.fn.IdentityFn;
+import org.apache.crunch.fn.PairMapFn;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -50,6 +52,103 @@ public class PTables {
     PTableType<K, V> ptt = ptf.tableOf(pt.getSubTypes().get(0), pt.getSubTypes().get(1));
     DoFn<Pair<K, V>, Pair<K, V>> id = IdentityFn.getInstance();
     return pcollect.parallelDo("asPTable", id, ptt);
+  }
+
+  /**
+   * Maps a {@code PTable<K1, V>} to a {@code PTable<K2, V>} using the given {@code MapFn<K1, K2>} on
+   * the keys of the {@code PTable}.
+   * 
+   * @param ptable The {@code PTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned keys
+   * @return A new {@code PTable<K2, V>} instance
+   */
+  public static <K1, K2, V> PTable<K2, V> mapKeys(PTable<K1, V> ptable, MapFn<K1, K2> mapFn,
+      PType<K2> ptype) {
+    return mapKeys("PTables.mapKeys", ptable, mapFn, ptype);
+  }
+  
+  /**
+   * Maps a {@code PTable<K1, V>} to a {@code PTable<K2, V>} using the given {@code MapFn<K1, K2>} on
+   * the keys of the {@code PTable}.
+   * 
+   * @param name The name of the transform
+   * @param ptable The {@code PTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned keys
+   * @return A new {@code PTable<K2, V>} instance
+   */
+  public static <K1, K2, V> PTable<K2, V> mapKeys(String name, PTable<K1, V> ptable, MapFn<K1, K2> mapFn,
+      PType<K2> ptype) {
+    PTypeFamily ptf = ptable.getTypeFamily();
+    return ptable.parallelDo(name,
+        new PairMapFn<K1, V, K2, V>(mapFn, IdentityFn.<V>getInstance()),
+        ptf.tableOf(ptype, ptable.getValueType()));
+  }
+  
+  /**
+   * Maps a {@code PTable<K, U>} to a {@code PTable<K, V>} using the given {@code MapFn<U, V>} on
+   * the values of the {@code PTable}.
+   * 
+   * @param ptable The {@code PTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned values
+   * @return A new {@code PTable<K, V>} instance
+   */
+  public static <K, U, V> PTable<K, V> mapValues(PTable<K, U> ptable, MapFn<U, V> mapFn,
+      PType<V> ptype) {
+    return mapValues("PTables.mapValues", ptable, mapFn, ptype);
+  }
+  
+  /**
+   * Maps a {@code PTable<K, U>} to a {@code PTable<K, V>} using the given {@code MapFn<U, V>} on
+   * the values of the {@code PTable}.
+   * 
+   * @param name The name of the transform
+   * @param ptable The {@code PTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned values
+   * @return A new {@code PTable<K, V>} instance
+   */
+  public static <K, U, V> PTable<K, V> mapValues(String name, PTable<K, U> ptable, MapFn<U, V> mapFn,
+      PType<V> ptype) {
+    PTypeFamily ptf = ptable.getTypeFamily();
+    return ptable.parallelDo(name,
+        new PairMapFn<K, U, K, V>(IdentityFn.<K>getInstance(), mapFn),
+        ptf.tableOf(ptable.getKeyType(), ptype));
+  }
+  
+  /**
+   * An analogue of the {@code mapValues} function for {@code PGroupedTable<K, U>} collections.
+   * 
+   * @param ptable The {@code PGroupedTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned values
+   * @return A new {@code PTable<K, V>} instance
+   */
+  public static <K, U, V> PTable<K, V> mapValues(PGroupedTable<K, U> ptable,
+      MapFn<Iterable<U>, V> mapFn,
+      PType<V> ptype) {
+    return mapValues("PTables.mapValues", ptable, mapFn, ptype);
+  }
+  
+  /**
+   * An analogue of the {@code mapValues} function for {@code PGroupedTable<K, U>} collections.
+   * 
+   * @param name The name of the operation
+   * @param ptable The {@code PGroupedTable} to be mapped
+   * @param mapFn The mapping function
+   * @param ptype The PType for the returned values
+   * @return A new {@code PTable<K, V>} instance
+   */
+  public static <K, U, V> PTable<K, V> mapValues(String name,
+      PGroupedTable<K, U> ptable,
+      MapFn<Iterable<U>, V> mapFn,
+      PType<V> ptype) {
+    PTypeFamily ptf = ptable.getTypeFamily();
+    return ptable.parallelDo(name,
+        new PairMapFn<K, Iterable<U>, K, V>(IdentityFn.<K>getInstance(), mapFn),
+        ptf.tableOf((PType<K>) ptable.getPType().getSubTypes().get(0), ptype));
   }
   
   /**

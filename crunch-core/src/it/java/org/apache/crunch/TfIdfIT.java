@@ -152,24 +152,22 @@ public class TfIdfIT implements Serializable {
      * Collection<Pair<title, tfidf>>>
      */
     return joinedResults
-        .parallelDo(
-            "calculate tfidf",
-            new MapFn<Pair<String, Pair<Long, Collection<Pair<String, Long>>>>, Pair<String, Collection<Pair<String, Double>>>>() {
+        .mapValues(
+            new MapFn<Pair<Long, Collection<Pair<String, Long>>>, Collection<Pair<String, Double>>>() {
               @Override
-              public Pair<String, Collection<Pair<String, Double>>> map(
-                  Pair<String, Pair<Long, Collection<Pair<String, Long>>>> input) {
+              public Collection<Pair<String, Double>> map(
+                  Pair<Long, Collection<Pair<String, Long>>> input) {
                 Collection<Pair<String, Double>> tfidfs = Lists.newArrayList();
-                String word = input.first();
-                double n = input.second().first();
+                double n = input.first();
                 double idf = Math.log(N / n);
-                for (Pair<String, Long> tf : input.second().second()) {
+                for (Pair<String, Long> tf : input.second()) {
                   double tfidf = tf.second() * idf;
                   tfidfs.add(Pair.of(tf.first(), tfidf));
                 }
-                return Pair.of(word, tfidfs);
+                return tfidfs;
               }
 
-            }, ptf.tableOf(ptf.strings(), ptf.collections(ptf.pairs(ptf.strings(), ptf.doubles()))));
+            }, ptf.collections(ptf.pairs(ptf.strings(), ptf.doubles())));
   }
 
   public void run(Pipeline pipeline, PTypeFamily typeFamily, boolean singleRun) throws IOException {
@@ -187,13 +185,13 @@ public class TfIdfIT implements Serializable {
       pipeline.run();
     }
 
-    PTable<String, Collection<Pair<String, Double>>> uppercased = results.parallelDo(
-        new MapKeysFn<String, String, Collection<Pair<String, Double>>>() {
+    PTable<String, Collection<Pair<String, Double>>> uppercased = results.mapKeys(
+        new MapFn<String, String>() {
           @Override
           public String map(String k1) {
             return k1.toUpperCase();
           }
-        }, results.getPTableType());
+        }, results.getKeyType());
     pipeline.writeTextFile(uppercased, outputPath2);
     pipeline.done();
 

@@ -96,6 +96,30 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   PType<V> getValueType();
 
   /**
+   * Returns a {@code PTable} that has the same keys as this instance, but
+   * uses the given function to map the values.
+   */
+  <U> PTable<K, U> mapValues(MapFn<V, U> mapFn, PType<U> ptype);
+
+  /**
+   * Returns a {@code PTable} that has the same keys as this instance, but
+   * uses the given function to map the values.
+   */
+  <U> PTable<K, U> mapValues(String name, MapFn<V, U> mapFn, PType<U> ptype);
+ 
+  /**
+   * Returns a {@code PTable} that has the same values as this instance, but
+   * uses the given function to map the keys.
+   */
+  <K2> PTable<K2, V> mapKeys(MapFn<K, K2> mapFn, PType<K2> ptype);
+  
+  /**
+   * Returns a {@code PTable} that has the same values as this instance, but
+   * uses the given function to map the keys.
+   */
+  <K2> PTable<K2, V> mapKeys(String name, MapFn<K, K2> mapFn, PType<K2> ptype);
+  
+  /**
    * Aggregate all of the values with the same key into a single key-value pair
    * in the returned PTable.
    */

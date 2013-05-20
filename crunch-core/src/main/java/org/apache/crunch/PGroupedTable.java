@@ -18,10 +18,12 @@
 package org.apache.crunch;
 
 import org.apache.crunch.Aggregator;
+import org.apache.crunch.types.PGroupedTableType;
+import org.apache.crunch.types.PType;
 
 /**
- * The Crunch representation of a grouped {@link PTable}.
- * 
+ * The Crunch representation of a grouped {@link PTable}, which corresponds to the output of
+ * the shuffle phase of a MapReduce job.
  */
 public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
 
@@ -45,9 +47,38 @@ public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
   PTable<K, V> combineValues(Aggregator<V> aggregator);
 
   /**
+   * Maps the {@code Iterable<V>} elements of each record to a new type. Just like
+   * any {@code parallelDo} operation on a {@code PGroupedTable}, this may only be
+   * called once.
+   * 
+   * @param mapFn The mapping function
+   * @param ptype The serialization information for the returned data
+   * @return A new {@code PTable} instance
+   */
+  <U> PTable<K, U> mapValues(MapFn<Iterable<V>, U> mapFn, PType<U> ptype);
+  
+  /**
+   * Maps the {@code Iterable<V>} elements of each record to a new type. Just like
+   * any {@code parallelDo} operation on a {@code PGroupedTable}, this may only be
+   * called once.
+   * 
+   * @param name A name for this operation
+   * @param mapFn The mapping function
+   * @param ptype The serialization information for the returned data
+   * @return A new {@code PTable} instance
+   */
+  <U> PTable<K, U> mapValues(String name, MapFn<Iterable<V>, U> mapFn, PType<U> ptype);
+
+  /**
    * Convert this grouping back into a multimap.
    * 
    * @return an ungrouped version of the data in this {@code PGroupedTable}.
    */
   PTable<K, V> ungroup();
+  
+  /**
+   * Return the {@code PGroupedTableType} containing serialization information for
+   * this {@code PGroupedTable}.
+   */
+  PGroupedTableType<K, V> getGroupedTableType();
 }

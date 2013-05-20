@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import org.apache.crunch.Aggregator;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
@@ -32,6 +33,8 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.Aggregators;
+import org.apache.crunch.lib.PTables;
+import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -74,13 +77,18 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
 
   @Override
   public PType<Pair<K, Iterable<V>>> getPType() {
+    return getGroupedTableType();
+  }
+
+  @Override
+  public PGroupedTableType<K, V> getGroupedTableType() {
     PTableType<K, V> parentType = parent.getPTableType();
     if (parentType != null) {
       return parentType.getGroupedTableType();
     }
     return null;
   }
-
+  
   @Override
   public PTypeFamily getTypeFamily() {
     return parent.getTypeFamily();
@@ -106,6 +114,16 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
     return combineValues(Aggregators.<K, V>toCombineFn(agg));
   }
 
+  @Override
+  public <U> PTable<K, U> mapValues(MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(this, mapFn, ptype);
+  }
+  
+  @Override
+  public <U> PTable<K, U> mapValues(String name, MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(name, this, mapFn, ptype);
+  }
+  
   @Override
   public PTable<K, V> ungroup() {
     return parent;
