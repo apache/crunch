@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.run;
 import java.io.IOException;
 
 import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -33,10 +34,15 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
   public CrunchRecordReader(InputSplit inputSplit, final TaskAttemptContext context) throws IOException,
       InterruptedException {
     CrunchInputSplit crunchSplit = (CrunchInputSplit) inputSplit;
+    Configuration conf = crunchSplit.getConf();
+    if (conf == null) {
+      conf = context.getConfiguration();
+      crunchSplit.setConf(conf);
+    }
     InputFormat<K, V> inputFormat = (InputFormat<K, V>) ReflectionUtils.newInstance(crunchSplit.getInputFormatClass(),
-        crunchSplit.getConf());
+        conf);
     this.delegate = inputFormat.createRecordReader(crunchSplit.getInputSplit(),
-        TaskAttemptContextFactory.create(crunchSplit.getConf(), context.getTaskAttemptID()));
+        TaskAttemptContextFactory.create(conf, context.getTaskAttemptID()));
   }
 
   @Override
@@ -62,9 +68,13 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
     CrunchInputSplit crunchSplit = (CrunchInputSplit) inputSplit;
+    Configuration conf = crunchSplit.getConf();
+    if (conf == null) {
+      conf = context.getConfiguration();
+    }
     InputSplit delegateSplit = crunchSplit.getInputSplit();
     delegate.initialize(delegateSplit,
-        TaskAttemptContextFactory.create(crunchSplit.getConf(), context.getTaskAttemptID()));
+        TaskAttemptContextFactory.create(conf, context.getTaskAttemptID()));
   }
 
   @Override

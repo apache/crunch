@@ -23,6 +23,8 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.crunch.io.FormatBundle;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -33,11 +35,11 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-class CrunchInputSplit extends InputSplit implements Writable {
+class CrunchInputSplit extends InputSplit implements Writable, Configurable {
 
   private InputSplit inputSplit;
-  private Class<? extends InputFormat<?, ?>> inputFormatClass;
   private int nodeIndex;
+  private FormatBundle<? extends InputFormat<?, ?>> bundle;
   private Configuration conf;
 
   public CrunchInputSplit() {
@@ -46,15 +48,24 @@ class CrunchInputSplit extends InputSplit implements Writable {
 
   public CrunchInputSplit(
       InputSplit inputSplit,
-      Class<? extends InputFormat<?, ?>> inputFormatClass,
+      FormatBundle<? extends InputFormat<?, ?>> bundle,
       int nodeIndex,
       Configuration conf) {
     this.inputSplit = inputSplit;
-    this.inputFormatClass = inputFormatClass;
+    this.bundle = bundle;
     this.nodeIndex = nodeIndex;
     this.conf = conf;
   }
 
+  @Override
+  public void setConf(Configuration conf) {
+    this.conf = conf;
+    if (bundle != null && conf != null) {
+      this.bundle.configure(conf);
+    }
+  }
+  
+  @Override
   public Configuration getConf() {
     return conf;
   }
@@ -68,7 +79,7 @@ class CrunchInputSplit extends InputSplit implements Writable {
   }
 
   public Class<? extends InputFormat<?, ?>> getInputFormatClass() {
-    return inputFormatClass;
+    return bundle.getFormatClass();
   }
 
   @Override
@@ -83,9 +94,10 @@ class CrunchInputSplit extends InputSplit implements Writable {
 
   public void readFields(DataInput in) throws IOException {
     nodeIndex = in.readInt();
-    conf = new Configuration();
-    conf.readFields(in);
-    inputFormatClass = (Class<? extends InputFormat<?, ?>>) readClass(in);
+    bundle = new FormatBundle();
+    bundle.setConf(conf);
+    bundle.readFields(in);
+    bundle.configure(conf); // yay bootstrap!
     Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
     inputSplit = (InputSplit) ReflectionUtils.newInstance(inputSplitClass, conf);
     SerializationFactory factory = new SerializationFactory(conf);
@@ -94,23 +106,22 @@ class CrunchInputSplit extends InputSplit implements Writable {
     inputSplit = (InputSplit) deserializer.deserialize(inputSplit);
   }
 
-  private Class<?> readClass(DataInput in) throws IOException {
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(nodeIndex);
+    bundle.write(out);
+    Text.writeString(out, inputSplit.getClass().getName());
+    SerializationFactory factory = new SerializationFactory(conf);
+    Serializer serializer = factory.getSerializer(inputSplit.getClass());
+    serializer.open((DataOutputStream) out);
+    serializer.serialize(inputSplit);
+  }
+
+  private Class readClass(DataInput in) throws IOException {
     String className = Text.readString(in);
     try {
       return conf.getClassByName(className);
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("readObject can't find class", e);
     }
-  }
-
-  public void write(DataOutput out) throws IOException {
-    out.writeInt(nodeIndex);
-    conf.write(out);
-    Text.writeString(out, inputFormatClass.getName());
-    Text.writeString(out, inputSplit.getClass().getName());
-    SerializationFactory factory = new SerializationFactory(conf);
-    Serializer serializer = factory.getSerializer(inputSplit.getClass());
-    serializer.open((DataOutputStream) out);
-    serializer.serialize(inputSplit);
   }
 }

@@ -19,6 +19,8 @@ package org.apache.crunch.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -27,7 +29,10 @@ import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.OutputFormat;
 
@@ -41,11 +46,12 @@ import com.google.common.collect.Maps;
  * if they are the only format that exists in a particular MapReduce job, even
  * when we have multiple types of inputs and outputs within a single job.
  */
-public class FormatBundle<K> implements Serializable {
+public class FormatBundle<K> implements Serializable, Writable, Configurable {
 
   private Class<K> formatClass;
   private Map<String, String> extraConf;
-
+  private Configuration conf;
+  
   public static <T> FormatBundle<T> fromSerialized(String serialized, Class<T> clazz) {
     ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(serialized));
     try {
@@ -66,6 +72,10 @@ public class FormatBundle<K> implements Serializable {
   
   public static <T extends OutputFormat<?, ?>> FormatBundle<T> forOutput(Class<T> inputFormatClass) {
     return new FormatBundle<T>(inputFormatClass);
+  }
+  
+  public FormatBundle() {
+    // For Writable support
   }
   
   private FormatBundle(Class<K> formatClass) {
@@ -117,5 +127,46 @@ public class FormatBundle<K> implements Serializable {
     }
     FormatBundle<K> oib = (FormatBundle<K>) other;
     return formatClass.equals(oib.formatClass) && extraConf.equals(oib.extraConf);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.formatClass = readClass(in);
+    int ecSize = in.readInt();
+    this.extraConf = Maps.newHashMap();
+    for (int i = 0; i  < ecSize; i++) {
+      String key = Text.readString(in);
+      String value = Text.readString(in);
+      extraConf.put(key, value);
+    }
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    Text.writeString(out, formatClass.getName());
+    out.writeInt(extraConf.size());
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      Text.writeString(out, e.getKey());
+      Text.writeString(out, e.getValue());
+    }
+  }
+  
+  private Class readClass(DataInput in) throws IOException {
+    String className = Text.readString(in);
+    try {
+      return conf.getClassByName(className);
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException("readObject can't find class", e);
+    }
+  }
+
+  @Override
+  public Configuration getConf() {
+    return conf;
+  }
+
+  @Override
+  public void setConf(Configuration conf) {
+    this.conf = conf;
   }
 }

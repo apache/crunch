@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FormatBundle;
-import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -62,8 +61,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
         // and Mapper types by wrapping in a TaggedInputSplit.
         List<InputSplit> pathSplits = format.getSplits(jobCopy);
         for (InputSplit pathSplit : pathSplits) {
-          splits.add(new CrunchInputSplit(pathSplit, inputBundle.getFormatClass(),
-              nodeIndex, jobCopy.getConfiguration()));
+          splits.add(new CrunchInputSplit(pathSplit, inputBundle, nodeIndex, conf));
         }
       }
     }
