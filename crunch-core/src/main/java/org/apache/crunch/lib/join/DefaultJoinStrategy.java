@@ -59,7 +59,7 @@ public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     return grouped.parallelDo(joinFn.getJoinType() + grouped.getName(), joinFn, ret);
   }
 
-  private PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(PTable<K, U> left, PTable<K, V> right) {
+  static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(PTable<K, U> left, PTable<K, V> right) {
     PTypeFamily ptf = left.getTypeFamily();
     PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
         ptf.pairs(left.getValueType(), right.getValueType()));

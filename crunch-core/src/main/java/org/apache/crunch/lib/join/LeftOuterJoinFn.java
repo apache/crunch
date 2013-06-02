@@ -37,7 +37,7 @@ public class LeftOuterJoinFn<K, U, V> extends JoinFn<K, U, V> {
   private transient int lastId;
   private transient K lastKey;
   private transient List<U> leftValues;
-
+  
   public LeftOuterJoinFn(PType<K> keyType, PType<U> leftValueType) {
     super(keyType, leftValueType);
   }
