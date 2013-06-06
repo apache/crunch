@@ -33,11 +33,11 @@ import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.fn.Aggregators;
-import org.apache.crunch.fn.MapValuesFn;
 import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.util.PartitionUtils;
 
 import com.google.common.collect.Lists;
 
@@ -52,15 +52,24 @@ public class Aggregate {
    * of their occurrences.
    */
   public static <S> PTable<S, Long> count(PCollection<S> collect) {
+    return count(collect, PartitionUtils.getRecommendedPartitions(collect));
+  }
+
+  /**
+   * Returns a {@code PTable} that contains the unique elements of this collection mapped to a count
+   * of their occurrences.
+   */
+  public static <S> PTable<S, Long> count(PCollection<S> collect, int numPartitions) {
     PTypeFamily tf = collect.getTypeFamily();
     return collect.parallelDo("Aggregate.count", new MapFn<S, Pair<S, Long>>() {
       public Pair<S, Long> map(S input) {
         return Pair.of(input, 1L);
       }
-    }, tf.tableOf(collect.getPType(), tf.longs())).groupByKey()
+    }, tf.tableOf(collect.getPType(), tf.longs()))
+        .groupByKey(numPartitions)
         .combineValues(Aggregators.SUM_LONGS());
   }
-
+  
   /**
    * Returns the number of elements in the provided PCollection.
    * 
@@ -252,9 +261,8 @@ public class Aggregate {
   public static <K, V> PTable<K, Collection<V>> collectValues(PTable<K, V> collect) {
     PTypeFamily tf = collect.getTypeFamily();
     final PType<V> valueType = collect.getValueType();
-    return collect.groupByKey().parallelDo("collect",
-        new MapValuesFn<K, Iterable<V>, Collection<V>>() {
-
+    return collect.groupByKey().mapValues("collect",
+        new MapFn<Iterable<V>, Collection<V>>() {
           @Override
           public void initialize() {
             valueType.initialize(getConfiguration());
@@ -267,6 +275,6 @@ public class Aggregate {
             }
             return collected;
           }
-        }, tf.tableOf(collect.getKeyType(), tf.collections(collect.getValueType())));
+        }, tf.collections(collect.getValueType()));
   }
 }

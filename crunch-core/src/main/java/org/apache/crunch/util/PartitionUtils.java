@@ -27,6 +27,10 @@ public class PartitionUtils {
   public static final String BYTES_PER_REDUCE_TASK = "crunch.bytes.per.reduce.task";
   public static final long DEFAULT_BYTES_PER_REDUCE_TASK = 1000L * 1000L * 1000L;
   
+  public static <T> int getRecommendedPartitions(PCollection<T> pcollection) {
+    return getRecommendedPartitions(pcollection, pcollection.getPipeline().getConfiguration());
+  }
+  
   public static <T> int getRecommendedPartitions(PCollection<T> pcollection, Configuration conf) {
     long bytesPerTask = conf.getLong(BYTES_PER_REDUCE_TASK, DEFAULT_BYTES_PER_REDUCE_TASK);
     return 1 + (int) (pcollection.getSize() / bytesPerTask);
