@@ -17,25 +17,17 @@
  */
 package org.apache.crunch.lib;
 
-import org.apache.crunch.GroupingOptions;
-import org.apache.crunch.MapFn;
-import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
-import org.apache.crunch.lib.join.FullOuterJoinFn;
-import org.apache.crunch.lib.join.InnerJoinFn;
-import org.apache.crunch.lib.join.JoinFn;
-import org.apache.crunch.lib.join.JoinUtils;
-import org.apache.crunch.lib.join.LeftOuterJoinFn;
-import org.apache.crunch.lib.join.RightOuterJoinFn;
-import org.apache.crunch.types.PTableType;
-import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.lib.join.DefaultJoinStrategy;
+import org.apache.crunch.lib.join.JoinType;
 
 /**
  * Utilities for joining multiple {@code PTable} instances based on a common
  * lastKey.
  */
 public class Join {
+  
   /**
    * Performs an inner join on the specified {@link PTable}s.
    * 
@@ -75,7 +67,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> innerJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new InnerJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
+    return new DefaultJoinStrategy<K, U, V>().join(left, right, JoinType.INNER_JOIN);
   }
 
   /**
@@ -97,7 +89,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> leftJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new LeftOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
+    return new DefaultJoinStrategy<K, U, V>().join(left, right, JoinType.LEFT_OUTER_JOIN);
   }
 
   /**
@@ -120,7 +112,7 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> rightJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new RightOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
+    return new DefaultJoinStrategy<K, U, V>().join(left, right, JoinType.RIGHT_OUTER_JOIN);
   }
 
   /**
@@ -141,41 +133,8 @@ public class Join {
    * @return The joined result.
    */
   public static <K, U, V> PTable<K, Pair<U, V>> fullJoin(PTable<K, U> left, PTable<K, V> right) {
-    return join(left, right, new FullOuterJoinFn<K, U, V>(left.getKeyType(), left.getValueType()));
+    return new DefaultJoinStrategy<K, U, V>().join(left, right, JoinType.FULL_OUTER_JOIN);
   }
 
-  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinFn<K, U, V> joinFn) {
-    PTypeFamily ptf = left.getTypeFamily();
-    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);
-    PTableType<K, Pair<U, V>> ret = ptf
-        .tableOf(left.getKeyType(), ptf.pairs(left.getValueType(), right.getValueType()));
-
-    return grouped.parallelDo(joinFn.getJoinType() + grouped.getName(), joinFn, ret);
-  }
-
-  private static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(PTable<K, U> left, PTable<K, V> right) {
-    PTypeFamily ptf = left.getTypeFamily();
-    PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
-        ptf.pairs(left.getValueType(), right.getValueType()));
-
-    PTable<Pair<K, Integer>, Pair<U, V>> tag1 = left.parallelDo("joinTagLeft",
-        new MapFn<Pair<K, U>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
-          @Override
-          public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, U> input) {
-            return Pair.of(Pair.of(input.first(), 0), Pair.of(input.second(), (V) null));
-          }
-        }, ptt);
-    PTable<Pair<K, Integer>, Pair<U, V>> tag2 = right.parallelDo("joinTagRight",
-        new MapFn<Pair<K, V>, Pair<Pair<K, Integer>, Pair<U, V>>>() {
-          @Override
-          public Pair<Pair<K, Integer>, Pair<U, V>> map(Pair<K, V> input) {
-            return Pair.of(Pair.of(input.first(), 1), Pair.of((U) null, input.second()));
-          }
-        }, ptt);
-
-    GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
-    optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
-
-    return (tag1.union(tag2)).groupByKey(optionsBuilder.build());
-  }
+  
 }

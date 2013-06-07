@@ -26,9 +26,9 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
-import org.apache.crunch.lib.Join;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTableType;
@@ -39,6 +39,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 public abstract class JoinTester implements Serializable {
+  
   private static class WordSplit extends DoFn<String, String> {
     @Override
     public void process(String input, Emitter<String> emitter) {
@@ -52,8 +53,10 @@ public abstract class JoinTester implements Serializable {
     PTableType<String, Long> ntt = ptf.tableOf(ptf.strings(), ptf.longs());
     PTable<String, Long> ws1 = Aggregate.count(w1.parallelDo("ws1", new WordSplit(), ptf.strings()));
     PTable<String, Long> ws2 = Aggregate.count(w2.parallelDo("ws2", new WordSplit(), ptf.strings()));
+    
+    JoinStrategy<String,Long,Long> joinStrategy = getJoinStrategy();
 
-    PTable<String, Pair<Long, Long>> join = Join.join(ws1, ws2, getJoinFn(ptf));
+    PTable<String, Pair<Long, Long>> join = joinStrategy.join(ws1, ws2, getJoinType());
 
     PTable<String, Long> sums = join.parallelDo("cnt", new DoFn<Pair<String, Pair<Long, Long>>, Pair<String, Long>>() {
       @Override
@@ -85,13 +88,29 @@ public abstract class JoinTester implements Serializable {
 
   @Test
   public void testWritableJoin() throws Exception {
-    run(new MRPipeline(InnerJoinIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
+    run(new MRPipeline(AbstractInnerJoinIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testAvroJoin() throws Exception {
-    run(new MRPipeline(InnerJoinIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
+    run(new MRPipeline(AbstractInnerJoinIT.class, tmpDir.getDefaultConfiguration()), AvroTypeFamily.getInstance());
   }
+  
+  @Test
+  public void testAvroJoin_MemPipeline() throws Exception {
+    run(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
+  }
+  
+  @Test
+  public void testWritableJoin_MemPipeline() throws Exception {
+    run(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
+  }
+  
+  /** 
+   * Return the JoinStrategy to be tested. 
+   */
+  protected abstract <K, U, V> JoinStrategy<K, U, V> getJoinStrategy();
+  
 
   /**
    * Used to check that the result of the join makes sense.
@@ -102,7 +121,7 @@ public abstract class JoinTester implements Serializable {
   public abstract void assertPassed(Iterable<Pair<String, Long>> lines);
 
   /**
-   * @return The JoinFn to use.
+   * @return The JoinType to be used in the test.
    */
-  protected abstract JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily);
+  protected abstract JoinType getJoinType();
 }

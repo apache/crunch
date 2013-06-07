@@ -17,35 +17,24 @@
  */
 package org.apache.crunch.lib.join;
 
-import static org.junit.Assert.assertTrue;
+import java.io.Serializable;
 
+import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
-import org.apache.crunch.types.PTypeFamily;
 
-public class InnerJoinIT extends JoinTester {
-  @Override
-  public void assertPassed(Iterable<Pair<String, Long>> lines) {
-    boolean passed1 = false;
-    boolean passed2 = true;
-    boolean passed3 = true;
-    for (Pair<String, Long> line : lines) {
-      if ("wretched".equals(line.first()) && 24 == line.second()) {
-        passed1 = true;
-      }
-      if ("againe".equals(line.first())) {
-        passed2 = false;
-      }
-      if ("Montparnasse.".equals(line.first())) {
-        passed3 = false;
-      }
-    }
-    assertTrue(passed1);
-    assertTrue(passed2);
-    assertTrue(passed3);
-  }
-
-  @Override
-  protected JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily) {
-    return new InnerJoinFn<String, Long, Long>(typeFamily.strings(), typeFamily.longs());
-  }
+/**
+ * Defines a strategy for joining two PTables together on a common key.
+ */
+public interface JoinStrategy<K, U, V> extends Serializable {
+  
+  /**
+   * Join two tables with the given join type.
+   * 
+   * @param left left table to be joined
+   * @param right right table to be joined
+   * @param joinType type of join to perform
+   * @return joined tables
+   */
+  PTable<K, Pair<U,V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType);
+  
 }

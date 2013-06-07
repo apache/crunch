@@ -18,6 +18,7 @@
 package org.apache.crunch.lib.join;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
@@ -46,33 +47,31 @@ import com.google.common.collect.Multimap;
  * a mapper. This style of join has the important implication that the output of
  * the join is not sorted, which is the case with a conventional (reducer-based)
  * join.
- * <p>
- * <b>Note:</b>This utility is only supported when running with a
- * {@link MRPipeline} as the pipeline.
  */
-public class MapsideJoin {
+public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
-  /**
-   * Join two tables using a map side join. The right-side table will be loaded
-   * fully in memory, so this method should only be used if the right side
-   * table's contents can fit in the memory allocated to mappers. The join
-   * performed by this method is an inner join.
-   * 
-   * @param left
-   *          The left-side table of the join
-   * @param right
-   *          The right-side table of the join, whose contents will be fully
-   *          read into memory
-   * @return A table keyed on the join key, containing pairs of joined values
-   */
-  public static <K, U, V> PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right) {
+  @Override
+  public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
+    switch (joinType) {
+    case INNER_JOIN:
+      return joinInternal(left, right, false);
+    case LEFT_OUTER_JOIN:
+      return joinInternal(left, right, true);
+    default:
+      throw new UnsupportedOperationException("Join type " + joinType
+          + " not supported by MapsideJoinStrategy");
+    }
+  }
+  
+
+  private PTable<K, Pair<U,V>> joinInternal(PTable<K, U> left, PTable<K, V> right, boolean includeUnmatchedLeftValues) {
     PTypeFamily tf = left.getTypeFamily();
     Iterable<Pair<K, V>> iterable = right.materialize();
 
     if (iterable instanceof MaterializableIterable) {
       MaterializableIterable<Pair<K, V>> mi = (MaterializableIterable<Pair<K, V>>) iterable;
       MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(),
-          right.getPType());
+          includeUnmatchedLeftValues, right.getPType());
       ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
       if (mi.isSourceTarget()) {
         optionsBuilder.sourceTargets((SourceTarget) mi.getSource());
@@ -81,7 +80,7 @@ public class MapsideJoin {
           tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())),
           optionsBuilder.build());
     } else { // in-memory pipeline
-      return left.parallelDo(new InMemoryJoinFn<K, U, V>(iterable),
+      return left.parallelDo(new InMemoryJoinFn<K, U, V>(iterable, includeUnmatchedLeftValues),
           tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())));
     }
   }
@@ -89,21 +88,28 @@ public class MapsideJoin {
   static class InMemoryJoinFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
     private Multimap<K, V> joinMap;
+    private boolean includeUnmatched;
     
-    public InMemoryJoinFn(Iterable<Pair<K, V>> iterable) {
+    public InMemoryJoinFn(Iterable<Pair<K, V>> iterable, boolean includeUnmatched) {
       joinMap = HashMultimap.create();
       for (Pair<K, V> joinPair : iterable) {
         joinMap.put(joinPair.first(), joinPair.second());
       }
+      this.includeUnmatched = includeUnmatched;
     }
     
     @Override
     public void process(Pair<K, U> input, Emitter<Pair<K, Pair<U, V>>> emitter) {
       K key = input.first();
       U value = input.second();
-      for (V joinValue : joinMap.get(key)) {
-        Pair<U, V> valuePair = Pair.of(value, joinValue);
-        emitter.emit(Pair.of(key, valuePair));
+      Collection<V> joinValues = joinMap.get(key);
+      if (includeUnmatched && joinValues.isEmpty()) {
+        emitter.emit(Pair.of(key, Pair.of(value, (V)null)));
+      } else {
+        for (V joinValue : joinValues) {
+          Pair<U, V> valuePair = Pair.of(value, joinValue);
+          emitter.emit(Pair.of(key, valuePair));
+        }
       }
     }
   }
@@ -111,11 +117,13 @@ public class MapsideJoin {
   static class MapsideJoinDoFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
     private String inputPath;
+    private final boolean includeUnmatched;
     private PType<Pair<K, V>> ptype;
     private Multimap<K, V> joinMap;
 
-    public MapsideJoinDoFn(String inputPath, PType<Pair<K, V>> ptype) {
+    public MapsideJoinDoFn(String inputPath, boolean includeUnmatched, PType<Pair<K, V>> ptype) {
       this.inputPath = inputPath;
+      this.includeUnmatched = includeUnmatched;
       this.ptype = ptype;
     }
 
@@ -155,9 +163,14 @@ public class MapsideJoin {
     public void process(Pair<K, U> input, Emitter<Pair<K, Pair<U, V>>> emitter) {
       K key = input.first();
       U value = input.second();
-      for (V joinValue : joinMap.get(key)) {
-        Pair<U, V> valuePair = Pair.of(value, joinValue);
-        emitter.emit(Pair.of(key, valuePair));
+      Collection<V> joinValues = joinMap.get(key);
+      if (includeUnmatched && joinValues.isEmpty()) {
+        emitter.emit(Pair.of(key, Pair.<U,V>of(value, null)));
+      } else {
+        for (V joinValue : joinValues) {
+          Pair<U, V> valuePair = Pair.of(value, joinValue);
+          emitter.emit(Pair.of(key, valuePair));
+        }
       }
     }
   }

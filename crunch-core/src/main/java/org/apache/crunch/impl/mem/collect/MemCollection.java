@@ -19,6 +19,7 @@ package org.apache.crunch.impl.mem.collect;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Set;
 
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
@@ -50,6 +51,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 public class MemCollection<S> implements PCollection<S> {
@@ -251,19 +253,22 @@ public class MemCollection<S> implements PCollection<S> {
     Class<TaskInputOutputContext> superType = TaskInputOutputContext.class;
     Class[] types = new Class[0];
     Object[] args = new Object[0];
+    final TaskAttemptID taskAttemptId = new TaskAttemptID();
     if (superType.isInterface()) {
       factory.setInterfaces(new Class[] { superType });
     } else {
       types = new Class[] { Configuration.class, TaskAttemptID.class, RecordWriter.class, OutputCommitter.class,
           StatusReporter.class };
-      args = new Object[] { conf, new TaskAttemptID(), null, null, null };
+      args = new Object[] { conf, taskAttemptId, null, null, null };
       factory.setSuperclass(superType);
     }
+
+    final Set<String> handledMethods = ImmutableSet.of("getConfiguration", "getCounter", 
+                                                  "progress", "getTaskAttemptID");
     factory.setFilter(new MethodFilter() {
       @Override
       public boolean isHandled(Method m) {
-        String name = m.getName();
-        return "getConfiguration".equals(name) || "getCounter".equals(name) || "progress".equals(name);
+        return handledMethods.contains(m.getName());
       }
     });
     MethodHandler handler = new MethodHandler() {
@@ -275,12 +280,16 @@ public class MemCollection<S> implements PCollection<S> {
         } else if ("progress".equals(name)) {
           // no-op
           return null;
-        } else { // getCounter
+        } else if ("getTaskAttemptID".equals(name)) {
+          return taskAttemptId;
+        } else if ("getCounter".equals(name)){ // getCounter
           if (args.length == 1) {
             return MemPipeline.getCounters().findCounter((Enum<?>) args[0]);
           } else {
             return MemPipeline.getCounters().findCounter((String) args[0], (String) args[1]);
           }
+        } else {
+          throw new IllegalStateException("Unhandled method " + name);
         }
       }
     };

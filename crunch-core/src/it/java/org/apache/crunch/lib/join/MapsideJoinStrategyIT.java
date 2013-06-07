@@ -43,7 +43,7 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-public class MapsideJoinIT {
+public class MapsideJoinStrategyIT {
   
   private static String saveTempDir;
   
@@ -93,17 +93,24 @@ public class MapsideJoinIT {
   public void testMapSideJoin_MemPipeline() {
     runMapsideJoin(MemPipeline.getInstance(), true);
   }
+  
+  @Test
+  public void testMapSideJoinLeftOuterJoin_MemPipeline() {
+    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true);
+  }
 
   @Test
   public void testMapsideJoin_RightSideIsEmpty() throws IOException {
-    MRPipeline pipeline = new MRPipeline(MapsideJoinIT.class, tmpDir.getDefaultConfiguration());
+    MRPipeline pipeline = new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration());
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
 
     PTable<Integer, String> filteredOrderTable = orderTable
         .parallelDo(FilterFns.<Pair<Integer, String>>REJECT_ALL(), orderTable.getPTableType());
 
-    PTable<Integer, Pair<String, String>> joined = MapsideJoin.join(customerTable, filteredOrderTable);
+    
+    MapsideJoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(customerTable, filteredOrderTable, JoinType.INNER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> materializedJoin = Lists.newArrayList(joined.materialize());
 
@@ -112,19 +119,25 @@ public class MapsideJoinIT {
 
   @Test
   public void testMapsideJoin() throws IOException {
-    runMapsideJoin(new MRPipeline(MapsideJoinIT.class, tmpDir.getDefaultConfiguration()), false);
+    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false);
+  }
+  
+  @Test
+  public void testMapsideJoin_LeftOuterJoin() throws IOException {
+    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false);
   }
 
   private void runMapsideJoin(Pipeline pipeline, boolean inMemory) {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
     
-    PTable<Integer, String> custOrders = MapsideJoin.join(customerTable, orderTable)
+    MapsideJoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.INNER_JOIN)
         .parallelDo("concat", new ConcatValuesFn(), Writables.tableOf(Writables.ints(), Writables.strings()));
 
     PTable<Integer, String> ORDER_TABLE = orderTable.parallelDo(new CapOrdersFn(), orderTable.getPTableType());
     
-    PTable<Integer, Pair<String, String>> joined = MapsideJoin.join(custOrders, ORDER_TABLE);
+    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.INNER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
     expectedJoinResult.add(Pair.of(111, Pair.of("[John Doe,Corn flakes]", "CORN FLAKES")));
@@ -133,6 +146,39 @@ public class MapsideJoinIT {
     expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PAPER")));
     expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PLUNGER")));
     expectedJoinResult.add(Pair.of(333, Pair.of("[Someone Else,Toilet brush]", "TOILET BRUSH")));
+    Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
+    
+    PipelineResult res = pipeline.run();
+    if (!inMemory) {
+      assertEquals(2, res.getStageResults().size());
+    }
+     
+    List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);
+    Collections.sort(joinedResultList);
+
+    assertEquals(expectedJoinResult, joinedResultList);
+  }
+  
+  private void runMapsideLeftOuterJoin(Pipeline pipeline, boolean inMemory) {
+    PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
+    PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
+    
+    MapsideJoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.LEFT_OUTER_JOIN)
+        .parallelDo("concat", new ConcatValuesFn(), Writables.tableOf(Writables.ints(), Writables.strings()));
+
+    PTable<Integer, String> ORDER_TABLE = orderTable.parallelDo(new CapOrdersFn(), orderTable.getPTableType());
+    
+    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.LEFT_OUTER_JOIN);
+
+    List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
+    expectedJoinResult.add(Pair.of(111, Pair.of("[John Doe,Corn flakes]", "CORN FLAKES")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PAPER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PLUNGER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PAPER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PLUNGER")));
+    expectedJoinResult.add(Pair.of(333, Pair.of("[Someone Else,Toilet brush]", "TOILET BRUSH")));
+    expectedJoinResult.add(Pair.of(444, Pair.<String,String>of("[Has No Orders,null]", null)));
     Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
     
     PipelineResult res = pipeline.run();

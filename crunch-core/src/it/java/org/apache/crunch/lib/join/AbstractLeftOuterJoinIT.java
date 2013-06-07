@@ -20,9 +20,8 @@ package org.apache.crunch.lib.join;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.crunch.Pair;
-import org.apache.crunch.types.PTypeFamily;
 
-public class LeftOuterJoinIT extends JoinTester {
+public abstract class AbstractLeftOuterJoinIT extends JoinTester {
   @Override
   public void assertPassed(Iterable<Pair<String, Long>> lines) {
     boolean passed1 = false;
@@ -45,7 +44,7 @@ public class LeftOuterJoinIT extends JoinTester {
   }
 
   @Override
-  protected JoinFn<String, Long, Long> getJoinFn(PTypeFamily typeFamily) {
-    return new LeftOuterJoinFn<String, Long, Long>(typeFamily.strings(), typeFamily.longs());
+  protected JoinType getJoinType() {
+    return JoinType.LEFT_OUTER_JOIN;
   }
 }
