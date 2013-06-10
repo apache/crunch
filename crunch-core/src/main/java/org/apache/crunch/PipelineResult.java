@@ -17,12 +17,11 @@
  */
 package org.apache.crunch;
 
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Counters;
 
-import com.google.common.collect.ImmutableList;
+import java.util.List;
 
 /**
  * Container for the results of a call to {@code run} or {@code done} on the
@@ -58,16 +57,20 @@ public class PipelineResult {
     }
   }
 
-  public static final PipelineResult EMPTY = new PipelineResult(ImmutableList.<StageResult> of());
+  public static final PipelineResult EMPTY = new PipelineResult(ImmutableList.<StageResult> of(), PipelineExecution.Status.READY);
 
   private final List<StageResult> stageResults;
 
-  public PipelineResult(List<StageResult> stageResults) {
+  public PipelineExecution.Status status;
+
+  public PipelineResult(List<StageResult> stageResults, PipelineExecution.Status status) {
     this.stageResults = ImmutableList.copyOf(stageResults);
+    this.status = status;
   }
 
   public boolean succeeded() {
-    return !stageResults.isEmpty();
+    // return !stageResults.isEmpty();
+    return this.status.equals(PipelineExecution.Status.SUCCEEDED);
   }
 
   public List<StageResult> getStageResults() {

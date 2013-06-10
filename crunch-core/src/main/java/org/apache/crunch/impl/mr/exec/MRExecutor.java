@@ -17,14 +17,8 @@
  */
 package org.apache.crunch.impl.mr.exec;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.PipelineResult;
@@ -38,8 +32,13 @@ import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Provides APIs for job control at runtime to clients.
@@ -143,12 +142,14 @@ public class MRExecutor implements MRPipelineExecution {
       }
 
       synchronized (this) {
-        result = new PipelineResult(stages);
         if (killSignal.getCount() == 0) {
           status.set(Status.KILLED);
+        } else if (!failures.isEmpty()) {
+          status.set(Status.FAILED);
         } else {
-          status.set(result.succeeded() ? Status.SUCCEEDED : Status.FAILED);
+          status.set(Status.SUCCEEDED);
         }
+        result = new PipelineResult(stages, status.get());
       }
     } catch (InterruptedException e) {
       throw new AssertionError(e); // Nobody should interrupt us.
