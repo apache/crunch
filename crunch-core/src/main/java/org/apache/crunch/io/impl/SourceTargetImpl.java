@@ -60,6 +60,9 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
 
   @Override
   public <S> SourceTarget<S> asSourceTarget(PType<S> ptype) {
+    if (ptype != null && ptype.equals(source.getType())) {
+      return (SourceTarget<S>) this;
+    }
     return target.asSourceTarget(ptype);
   }
 
@@ -83,7 +86,12 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   }
 
   @Override
-  public void handleExisting(WriteMode strategy, Configuration conf) {
-    target.handleExisting(strategy, conf);  
+  public boolean handleExisting(WriteMode strategy, long lastModifiedAt, Configuration conf) {
+    return target.handleExisting(strategy, lastModifiedAt, conf);  
+  }
+
+  @Override
+  public long getLastModifiedAt(Configuration configuration) {
+    return source.getLastModifiedAt(configuration);
   }
 }

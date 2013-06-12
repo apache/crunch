@@ -284,6 +284,8 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   protected abstract long getSizeInternal();
   
+  public abstract long getLastModifiedAt();
+  
   /**
    * Retrieve the PCollectionImpl to be used for chaining within PCollectionImpls further down the pipeline.
    * @return The PCollectionImpl instance to be chained

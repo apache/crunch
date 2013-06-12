@@ -22,6 +22,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
@@ -45,6 +47,8 @@ import org.apache.hadoop.mapreduce.Job;
 public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {
 
+  private static final Log LOG = LogFactory.getLog(HBaseSourceTarget.class);
+  
   private static final PTableType<ImmutableBytesWritable, Result> PTYPE = Writables.tableOf(
       Writables.writables(ImmutableBytesWritable.class), Writables.writables(Result.class));
 
@@ -119,5 +123,11 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   public long getSize(Configuration conf) {
     // TODO something smarter here.
     return 1000L * 1000L * 1000L;
+  }
+
+  @Override
+  public long getLastModifiedAt(Configuration configuration) {
+    LOG.warn("Cannot determine last modified time for source: " + toString());
+    return -1;
   }
 }

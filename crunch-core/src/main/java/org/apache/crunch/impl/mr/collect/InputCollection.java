@@ -71,6 +71,11 @@ public class InputCollection<S> extends PCollectionImpl<S> {
   }
 
   @Override
+  public long getLastModifiedAt() {
+    return source.getLastModifiedAt(pipeline.getConfiguration());
+  }
+  
+  @Override
   public boolean equals(Object obj) {
     if (obj == null || !(obj instanceof InputCollection)) {
       return false;

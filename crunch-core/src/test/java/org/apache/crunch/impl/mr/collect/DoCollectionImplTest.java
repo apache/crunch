@@ -107,6 +107,10 @@ public class DoCollectionImplTest {
       return internalSize;
     }
 
+    @Override
+    public long getLastModifiedAt() {
+      return -1;
+    }
   }
 
 }

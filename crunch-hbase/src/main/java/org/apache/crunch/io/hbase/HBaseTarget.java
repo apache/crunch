@@ -116,7 +116,8 @@ public class HBaseTarget implements MapReduceTarget {
   }
 
   @Override
-  public void handleExisting(WriteMode strategy, Configuration conf) {
+  public boolean handleExisting(WriteMode strategy, long lastModifiedAt, Configuration conf) {
     LOG.info("HBaseTarget ignores checks for existing outputs...");
+    return false;
   }
 }

@@ -154,6 +154,11 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   }
   
   @Override
+  public long getLastModifiedAt() {
+    return parent.getLastModifiedAt();
+  }
+  
+  @Override
   protected PCollectionImpl<Pair<K, Iterable<V>>> getChainingCollection() {
     // Use a copy for chaining to allow sending the output of a single grouped table to multiple outputs
     // TODO This should be implemented in a cleaner way in the planner

@@ -81,4 +81,9 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
   public boolean hasCombineFn() {
     return fn instanceof CombineFn;
   }
+  
+  @Override
+  public long getLastModifiedAt() {
+    return parent.getLastModifiedAt();
+  }
 }

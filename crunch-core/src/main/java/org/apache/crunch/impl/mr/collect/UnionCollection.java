@@ -29,7 +29,8 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
 
   private List<PCollectionImpl<S>> parents;
   private long size = 0;
-
+  private long lastModifiedAt = -1;
+  
   private static <S> String flatName(List<PCollectionImpl<S>> collections) {
     StringBuilder sb = new StringBuilder("union(");
     for (int i = 0; i < collections.size(); i++) {
@@ -50,6 +51,9 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
         throw new IllegalStateException("Cannot union PCollections from different Pipeline instances");
       }
       size += parent.getSize();
+      if (parent.getLastModifiedAt() > lastModifiedAt) {
+        this.lastModifiedAt = parent.getLastModifiedAt();
+      }
     }
   }
 
@@ -58,6 +62,11 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
     return size;
   }
 
+  @Override
+  public long getLastModifiedAt() {
+    return lastModifiedAt;
+  }
+  
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(this);

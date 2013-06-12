@@ -45,4 +45,18 @@ public class SourceTargetHelper {
     }
     return size;
   }
+  
+  public static long getLastModifiedAt(FileSystem fs, Path path) throws IOException {
+    FileStatus[] stati = fs.globStatus(path);
+    if (stati == null || stati.length == 0) {
+      return -1L;
+    }
+    long lastMod = -1;
+    for (FileStatus status : stati) {
+      if (lastMod < status.getModificationTime()) {
+        lastMod = status.getModificationTime();
+      }
+    }
+    return lastMod;
+  }
 }

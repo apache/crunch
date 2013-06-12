@@ -176,7 +176,7 @@ public class MemPipeline implements Pipeline {
   
   @Override
   public void write(PCollection<?> collection, Target target, Target.WriteMode writeMode) {
-    target.handleExisting(writeMode, getConfiguration());
+    target.handleExisting(writeMode, -1, getConfiguration());
     if (writeMode != Target.WriteMode.APPEND && activeTargets.contains(target)) {
       throw new CrunchRuntimeException("Target " + target
           + " is already written in the current run."

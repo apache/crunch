@@ -31,9 +31,7 @@ import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SourceTargetHelper;
-import org.apache.crunch.io.avro.AvroFileReaderFactory;
 import org.apache.crunch.types.PType;
-import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -135,6 +133,23 @@ public class FileSourceImpl<T> implements Source<T> {
       return paths.get(0).toString();
     }
     return paths.toString();
+  }
+
+  @Override
+  public long getLastModifiedAt(Configuration conf) {
+    long lastMod = -1;
+    for (Path path : paths) {
+      try {
+        FileSystem fs = path.getFileSystem(conf);
+        long lm = SourceTargetHelper.getLastModifiedAt(fs, path);
+        if (lm > lastMod) {
+          lastMod = lm;
+        }
+      } catch (IOException e) {
+        LOG.error("Could not determine last modification time for source: " + toString(), e);
+      }
+    }
+    return lastMod;
   }
 
   @Override

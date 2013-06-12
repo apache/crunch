@@ -33,7 +33,8 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   private PTableType<K, V> ptype;
   private List<PCollectionImpl<Pair<K, V>>> parents;
   private long size;
-
+  private long lastModifiedAt = -1;
+  
   private static <K, V> String flatName(List<PTableBase<K, V>> tables) {
     StringBuilder sb = new StringBuilder("union(");
     for (int i = 0; i < tables.size(); i++) {
@@ -56,6 +57,9 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
       }
       this.parents.add(parent);
       size += parent.getSize();
+      if (parent.getLastModifiedAt() > lastModifiedAt) {
+        this.lastModifiedAt = parent.getLastModifiedAt();
+      }
     }
   }
 
@@ -64,6 +68,11 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
     return size;
   }
 
+  @Override
+  public long getLastModifiedAt() {
+    return lastModifiedAt;
+  }
+  
   @Override
   public PTableType<K, V> getPTableType() {
     return ptype;

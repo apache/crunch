@@ -209,8 +209,17 @@ public class MRPipeline implements Pipeline {
       pcollection = pcollection.parallelDo("UnionCollectionWrapper",
           (MapFn) IdentityFn.<Object> getInstance(), pcollection.getPType());
     }
-    target.handleExisting(writeMode, getConfiguration());
-    if (writeMode != WriteMode.APPEND && targetInCurrentRun(target)) {
+    boolean exists = target.handleExisting(writeMode, ((PCollectionImpl) pcollection).getLastModifiedAt(),
+        getConfiguration());
+    if (exists && writeMode == WriteMode.CHECKPOINT) {
+      SourceTarget<?> st = target.asSourceTarget(pcollection.getPType());
+      if (st == null) {
+        throw new CrunchRuntimeException("Target " + target + " does not support checkpointing");
+      } else {
+        ((PCollectionImpl) pcollection).materializeAt(st);
+      }
+      return;
+    } else if (writeMode != WriteMode.APPEND && targetInCurrentRun(target)) {
       throw new CrunchRuntimeException("Target " + target + " is already written in current run." +
           " Use WriteMode.APPEND in order to write additional data to it.");
     }

@@ -114,6 +114,11 @@ public class DataBaseSource<T extends DBWritable & Writable> implements Source<T
   }
 
   @Override
+  public long getLastModifiedAt(Configuration configuration) {
+    return -1;
+  }
+
+  @Override
   public PType<T> getType() {
     return ptype;
   }

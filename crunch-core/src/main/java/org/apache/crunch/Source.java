@@ -49,4 +49,11 @@ public interface Source<T> {
    * Returns the number of bytes in this {@code Source}.
    */
   long getSize(Configuration configuration);
+  
+  /**
+   * Returns the time (in milliseconds) that this {@code Source} was most recently
+   * modified (e.g., because an input file was edited or new files were added to
+   * a directory.)
+   */
+  long getLastModifiedAt(Configuration configuration);
 }

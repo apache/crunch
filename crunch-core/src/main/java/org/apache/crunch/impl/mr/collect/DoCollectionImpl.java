@@ -68,4 +68,9 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   public DoNode createDoNode() {
     return DoNode.createFnNode(getName(), fn, ntype);
   }
+
+  @Override
+  public long getLastModifiedAt() {
+    return parent.getLastModifiedAt();
+  }
 }

@@ -75,6 +75,11 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
+  public long getLastModifiedAt() {
+    return source.getLastModifiedAt(pipeline.getConfiguration());
+  }
+  
+  @Override
   public int hashCode() {
     return asCollection.hashCode();
   }

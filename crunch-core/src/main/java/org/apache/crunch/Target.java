@@ -50,7 +50,13 @@ public interface Target {
      * add the output of this pipeline to the target. This was the
      * behavior in Crunch up to version 0.4.0.
      */
-    APPEND
+    APPEND,
+    
+    /**
+     * If the output target exists and is newer than any of its source inputs, don't rewrite it,
+     * just start the pipeline from here. Only works with {@code SourceTarget} instances.
+     */
+    CHECKPOINT
   }
 
   /**
@@ -58,8 +64,9 @@ public interface Target {
    * 
    * @param writeMode The strategy for handling existing outputs
    * @param conf The ever-useful {@code Configuration} instance
+   * @return true if the target did exist
    */
-  void handleExisting(WriteMode writeMode, Configuration conf);
+  boolean handleExisting(WriteMode writeMode, long lastModifiedAt, Configuration conf);
   
   /**
    * Checks to see if this {@code Target} instance is compatible with the

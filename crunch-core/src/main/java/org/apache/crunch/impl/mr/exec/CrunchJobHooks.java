@@ -79,7 +79,7 @@ public final class CrunchJobHooks {
     }
 
     private synchronized void handleMultiPaths() throws IOException {
-      if (!multiPaths.isEmpty()) {
+      if (job.isSuccessful() && !multiPaths.isEmpty()) {
         // Need to handle moving the data from the output directory of the
         // job to the output locations specified in the paths.
         FileSystem srcFs = workingPath.getFileSystem(job.getConfiguration());

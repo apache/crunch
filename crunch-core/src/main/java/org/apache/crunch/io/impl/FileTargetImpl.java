@@ -31,6 +31,7 @@ import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
+import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -103,6 +104,11 @@ public class FileTargetImpl implements PathTarget {
         FileUtil.copy(srcFs, s, dstFs, d, true, true, conf);
       }
     }
+    dstFs.create(getSuccessIndicator(), true).close();
+  }
+  
+  private Path getSuccessIndicator() {
+    return new Path(path, "_SUCCESS");
   }
   
   protected Path getSourcePattern(Path workingPath, int index) {
@@ -184,7 +190,7 @@ public class FileTargetImpl implements PathTarget {
   }
 
   @Override
-  public void handleExisting(WriteMode strategy, Configuration conf) {
+  public boolean handleExisting(WriteMode strategy, long lastModForSource, Configuration conf) {
     FileSystem fs = null;
     try {
       fs = path.getFileSystem(conf);
@@ -194,8 +200,14 @@ public class FileTargetImpl implements PathTarget {
     }
     
     boolean exists = false;
+    boolean successful = false;
+    long lastModForTarget = -1;
     try {
       exists = fs.exists(path);
+      if (exists) {
+        successful = fs.exists(getSuccessIndicator());
+        lastModForTarget = SourceTargetHelper.getLastModifiedAt(fs, path);
+      }
     } catch (IOException e) {
       LOG.error("Exception checking existence of path: " + path, e);
       throw new CrunchRuntimeException(e);
@@ -217,11 +229,29 @@ public class FileTargetImpl implements PathTarget {
       case APPEND:
         LOG.info("Adding output files to existing path: " + path);
         break;
+      case CHECKPOINT:
+        if (successful && lastModForTarget > lastModForSource) {
+          LOG.info("Re-starting pipeline from checkpoint path: " + path);
+          break;
+        } else {
+          if (!successful) {
+            LOG.info("_SUCCESS file not found, Removing data at existing checkpoint path: " + path);
+          } else {
+            LOG.info("Source data has recent updates. Removing data at existing checkpoint path: " + path);
+          }
+          try {
+            fs.delete(path, true);
+          } catch (IOException e) {
+            LOG.error("Exception thrown removing data at checkpoint path: " + path, e);
+          }
+          return false;
+        }
       default:
         throw new CrunchRuntimeException("Unknown WriteMode:  " + strategy);
       }
     } else {
       LOG.info("Will write output files to new path: " + path);
     }
+    return exists;
   }
 }
