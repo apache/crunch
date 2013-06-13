@@ -73,7 +73,8 @@ public class MSCRPlanner {
   };  
 
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
-    Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
+    Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps =
+        Maps.<PCollectionImpl<?>, PCollectionImpl<?>, Set<SourceTarget<?>>>newTreeMap(DEPTH_COMPARATOR);
     for (PCollectionImpl<?> pcollect : outputs.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
