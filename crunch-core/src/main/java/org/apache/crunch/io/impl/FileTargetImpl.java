@@ -187,7 +187,7 @@ public class FileTargetImpl implements PathTarget {
   public void handleExisting(WriteMode strategy, Configuration conf) {
     FileSystem fs = null;
     try {
-      fs = FileSystem.get(conf);
+      fs = path.getFileSystem(conf);
     } catch (IOException e) {
       LOG.error("Could not retrieve FileSystem object to check for existing path", e);
       throw new CrunchRuntimeException(e);
