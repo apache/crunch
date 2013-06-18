@@ -235,7 +235,7 @@ public class WordCountHBaseIT {
       key = put(inputTable, key, "cat");
       key = put(inputTable, key, "dog");
       Scan scan = new Scan();
-      scan.addColumn(WORD_COLFAM, null);
+      scan.addFamily(WORD_COLFAM);
       HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
       PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
       PCollection<Put> puts = wordCount(words);
@@ -257,7 +257,7 @@ public class WordCountHBaseIT {
       key = put(joinTable, key, "horse");
       
       Scan joinScan = new Scan();
-      joinScan.addColumn(WORD_COLFAM, null);
+      joinScan.addFamily(WORD_COLFAM);
       PTable<ImmutableBytesWritable, Result> other = pipeline.read(FromHBase.table(joinTableName, joinScan));
       PCollection<String> joined = words.join(other).parallelDo(new StringifyFn(), Writables.strings());
       assertEquals(ImmutableSet.of("cat,zebra", "cat,donkey", "dog,bird"),
@@ -266,7 +266,7 @@ public class WordCountHBaseIT {
 
       //verify HBaseTarget supports deletes.
       Scan clearScan = new Scan();
-      clearScan.addColumn(COUNTS_COLFAM, null);
+      clearScan.addFamily(COUNTS_COLFAM);
       pipeline = new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration());
       HBaseSourceTarget clearSource = new HBaseSourceTarget(outputTableName, clearScan);
       PTable<ImmutableBytesWritable, Result> counts = pipeline.read(clearSource);
@@ -291,7 +291,7 @@ public class WordCountHBaseIT {
 
   protected void assertIsLong(HTable table, String key, long i) throws IOException {
     Get get = new Get(Bytes.toBytes(key));
-    get.addColumn(COUNTS_COLFAM, null);
+    get.addFamily(COUNTS_COLFAM);
     Result result = table.get(get);
 
     byte[] rawCount = result.getValue(COUNTS_COLFAM, null);
@@ -301,7 +301,7 @@ public class WordCountHBaseIT {
   
   protected void assertDeleted(HTable table, String key) throws IOException {
       Get get = new Get(Bytes.toBytes(key));
-      get.addColumn(COUNTS_COLFAM, null);
+      get.addFamily(COUNTS_COLFAM);
       Result result = table.get(get);
       assertTrue(result.isEmpty());
     }
