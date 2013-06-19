@@ -38,7 +38,8 @@ public class CompositePathIterable<T> implements Iterable<T> {
   private static final PathFilter FILTER = new PathFilter() {
     @Override
     public boolean accept(Path path) {
-      return !path.getName().startsWith("_");
+      String name = path.getName();
+      return !name.startsWith("_") && !name.startsWith(".");
     }
   };
 

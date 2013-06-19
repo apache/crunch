@@ -81,4 +81,23 @@ public class CompositePathIterableIT {
         Writables.strings()));
   }
 
+  @Test
+  public void testCreate_HiddenFiles() throws IOException {
+    File file = tmpDir.copyResourceFile("set1.txt");
+    assertTrue(file.renameTo(new File(tmpDir.getRootFile(), "_set1.txt")));
+
+    file = tmpDir.copyResourceFile("set1.txt");
+    assertTrue(file.renameTo(new File(tmpDir.getRootFile(), ".set1.txt")));
+
+    Path emptyInputDir = tmpDir.getRootPath();
+
+    Configuration conf = new Configuration();
+    LocalFileSystem local = FileSystem.getLocal(conf);
+
+    Iterable<String> iterable = CompositePathIterable.create(local, emptyInputDir,
+        new TextFileReaderFactory<String>(Writables.strings()));
+
+    assertTrue(Lists.newArrayList(iterable).isEmpty());
+  }
+
 }
