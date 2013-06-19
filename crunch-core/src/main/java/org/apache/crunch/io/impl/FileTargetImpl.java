@@ -90,7 +90,7 @@ public class FileTargetImpl implements PathTarget {
     FileSystem srcFs = workingPath.getFileSystem(conf);
     Path src = getSourcePattern(workingPath, index);
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(src), src);
-    FileSystem dstFs = FileSystem.get(conf);
+    FileSystem dstFs = path.getFileSystem(conf);
     if (!dstFs.exists(path)) {
       dstFs.mkdirs(path);
     }
