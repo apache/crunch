@@ -17,9 +17,11 @@
  */
 package org.apache.crunch.impl.mem;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericContainer;
@@ -42,6 +44,8 @@ import org.apache.crunch.io.At;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.avro.AvroFileTarget;
+import org.apache.crunch.io.seq.SeqFileTarget;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.ReflectDataFactory;
@@ -49,12 +53,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapreduce.Counters;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class MemPipeline implements Pipeline {
 
@@ -170,36 +175,48 @@ public class MemPipeline implements Pipeline {
   }
   
   @Override
-  public void write(PCollection<?> collection, Target target,
-      Target.WriteMode writeMode) {
+  public void write(PCollection<?> collection, Target target, Target.WriteMode writeMode) {
     target.handleExisting(writeMode, getConfiguration());
     if (writeMode != Target.WriteMode.APPEND && activeTargets.contains(target)) {
-      throw new CrunchRuntimeException("Target " + target + " is already written in the current run." +
-          " Use WriteMode.APPEND in order to write additional data to it.");
+      throw new CrunchRuntimeException("Target " + target
+          + " is already written in the current run."
+          + " Use WriteMode.APPEND in order to write additional data to it.");
     }
     activeTargets.add(target);
     if (target instanceof PathTarget) {
       Path path = ((PathTarget) target).getPath();
       try {
         FileSystem fs = path.getFileSystem(conf);
-        FSDataOutputStream os = fs.create(new Path(path, "out" + outputIndex));
         outputIndex++;
-        if (target instanceof AvroFileTarget) {
-          writeAvroFile(os, collection.materialize());
-        } else if (collection instanceof PTable) {
-          for (Object o : collection.materialize()) {
-            Pair p = (Pair) o;
-            os.writeBytes(p.first().toString());
-            os.writeBytes("\t");
-            os.writeBytes(p.second().toString());
-            os.writeBytes("\r\n");
+        if (target instanceof SeqFileTarget) {
+          if (collection instanceof PTable) {
+            writeSequenceFileFromPTable(fs, path, (PTable<?, ?>) collection);
+          } else {
+            writeSequenceFileFromPCollection(fs, path, collection);
           }
         } else {
-          for (Object o : collection.materialize()) {
-            os.writeBytes(o.toString() + "\r\n");
+          FSDataOutputStream os = fs.create(new Path(path, "out" + outputIndex));
+          if (target instanceof AvroFileTarget && !(collection instanceof PTable)) {
+
+            writeAvroFile(os, collection.materialize());
+          } else {
+            LOG.warn("Defaulting to write to a text file from MemPipeline");
+            if (collection instanceof PTable) {
+              for (Object o : collection.materialize()) {
+                Pair p = (Pair) o;
+                os.writeBytes(p.first().toString());
+                os.writeBytes("\t");
+                os.writeBytes(p.second().toString());
+                os.writeBytes("\r\n");
+              }
+            } else {
+              for (Object o : collection.materialize()) {
+                os.writeBytes(o.toString() + "\r\n");
+              }
+            }
           }
+          os.close();
         }
-        os.close();
       } catch (IOException e) {
         LOG.error("Exception writing target: " + target, e);
       }
@@ -233,7 +250,44 @@ public class MemPipeline implements Pipeline {
     dataFileWriter.close();
     outputStream.close();
   }
+  
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  private void writeSequenceFileFromPTable(final FileSystem fs, final Path path, final PTable table)
+      throws IOException {
+    final PTableType pType = table.getPTableType();
+    final Class<?> keyClass = pType.getConverter().getKeyClass();
+    final Class<?> valueClass = pType.getConverter().getValueClass();
 
+    final SequenceFile.Writer writer = new SequenceFile.Writer(fs, fs.getConf(), path, keyClass,
+        valueClass);
+
+    for (final Object o : table.materialize()) {
+      final Pair<?,?> p = (Pair) o;
+      final Object key = pType.getKeyType().getOutputMapFn().map(p.first());
+      final Object value = pType.getValueType().getOutputMapFn().map(p.second());
+      writer.append(key, value);
+    }
+
+    writer.close();
+  }
+  
+  private void writeSequenceFileFromPCollection(final FileSystem fs, final Path path,
+      final PCollection collection) throws IOException {
+    final PType pType = collection.getPType();
+    final Converter converter = pType.getConverter();
+    final Class valueClass = converter.getValueClass();
+
+    final SequenceFile.Writer writer = new SequenceFile.Writer(fs, fs.getConf(), path,
+        NullWritable.class, valueClass);
+
+    for (final Object o : collection.materialize()) {
+      final Object value = pType.getOutputMapFn().map(o);
+      writer.append(NullWritable.get(), value);
+    }
+
+    writer.close();
+  }
+   
   @Override
   public PCollection<String> readTextFile(String pathName) {
     return read(At.textFile(pathName));
