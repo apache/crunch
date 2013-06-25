@@ -19,8 +19,8 @@ package org.apache.crunch.io.avro;
 
 import java.io.IOException;
 
+import java.util.List;
 import org.apache.avro.mapred.AvroJob;
-import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -28,7 +28,6 @@ import org.apache.crunch.types.avro.AvroInputFormat;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
@@ -45,14 +44,17 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
     super(path, ptype, getBundle(ptype));
   }
 
+  public AvroFileSource(List<Path> paths, AvroType<T> ptype) {
+    super(paths, ptype, getBundle(ptype));
+  }
+
   @Override
   public String toString() {
-    return "Avro(" + path.toString() + ")";
+    return "Avro(" + pathsAsString() + ")";
   }
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    FileSystem fs = path.getFileSystem(conf);
-    return CompositePathIterable.create(fs, path, new AvroFileReaderFactory<T>((AvroType<T>) ptype));
+    return read(conf, new AvroFileReaderFactory<T>((AvroType<T>) ptype));
   }
 }

@@ -19,8 +19,8 @@ package org.apache.crunch.io.text;
 
 import java.io.IOException;
 
+import java.util.List;
 import org.apache.crunch.Pair;
-import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
@@ -58,6 +58,10 @@ public class TextFileTableSource<K, V> extends FileTableSourceImpl<K, V>
   public TextFileTableSource(Path path, PTableType<K, V> tableType) {
     this(path, tableType, "\t");
   }
+
+  public TextFileTableSource(List<Path> paths, PTableType<K, V> tableType) {
+    this(paths, tableType, "\t");
+  }
   
   public TextFileTableSource(String path, PTableType<K, V> tableType, String separator) {
     this(new Path(path), tableType, separator);
@@ -68,14 +72,20 @@ public class TextFileTableSource<K, V> extends FileTableSourceImpl<K, V>
     this.separator = separator;
   }
 
+  public TextFileTableSource(List<Path> paths, PTableType<K, V> tableType, String separator) {
+    super(paths, tableType, getBundle(separator));
+    this.separator = separator;
+  }
+
   @Override
   public String toString() {
-    return "KeyValueText(" + path + ")";
+    return "KeyValueText(" + pathsAsString() + ")";
   }
 
   @Override
   public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(path.getFileSystem(conf), path,
-        new TextFileReaderFactory<Pair<K, V>>(LineParser.forTableType(getTableType(), separator)));
+    return read(conf,
+        new TextFileReaderFactory<Pair<K, V>>(LineParser.forTableType(getTableType(),
+            separator)));
   }
 }

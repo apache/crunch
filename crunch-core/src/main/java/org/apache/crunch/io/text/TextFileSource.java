@@ -19,7 +19,7 @@ package org.apache.crunch.io.text;
 
 import java.io.IOException;
 
-import org.apache.crunch.io.CompositePathIterable;
+import java.util.List;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
@@ -51,6 +51,10 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
     super(path, ptype, getInputFormat(path, ptype));
   }
 
+  public TextFileSource(List<Path> paths, PType<T> ptype) {
+    super(paths, ptype, getInputFormat(paths.get(0), ptype));
+  }
+
   @Override
   public long getSize(Configuration conf) {
     long sz = super.getSize(conf);
@@ -62,12 +66,11 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   @Override
   public String toString() {
-    return "Text(" + path + ")";
+    return "Text(" + pathsAsString() + ")";
   }
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(path.getFileSystem(conf), path,
-        new TextFileReaderFactory<T>(LineParser.forType(ptype)));
+    return read(conf, new TextFileReaderFactory<T>(LineParser.forType(ptype)));
   }
 }

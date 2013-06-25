@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.impl;
 
+import java.util.List;
 import org.apache.crunch.Pair;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.io.FormatBundle;
@@ -30,8 +31,16 @@ public class FileTableSourceImpl<K, V> extends FileSourceImpl<Pair<K, V>> implem
     super(path, tableType, formatClass);
   }
 
+  public FileTableSourceImpl(List<Path> paths, PTableType<K, V> tableType, Class<? extends FileInputFormat> formatClass) {
+    super(paths, tableType, formatClass);
+  }
+
   public FileTableSourceImpl(Path path, PTableType<K, V> tableType, FormatBundle bundle) {
     super(path, tableType, bundle);
+  }
+
+  public FileTableSourceImpl(List<Path> paths, PTableType<K, V> tableType, FormatBundle bundle) {
+    super(paths, tableType, bundle);
   }
   
   @Override

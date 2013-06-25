@@ -17,15 +17,14 @@
  */
 package org.apache.crunch.io.avro.trevni;
 
+import java.util.List;
 import org.apache.avro.mapred.AvroJob;
-import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.trevni.avro.mapreduce.AvroTrevniKeyInputFormat;
 
@@ -45,14 +44,17 @@ public class TrevniKeySource<T> extends FileSourceImpl<T> implements ReadableSou
     super(path, ptype, getBundle(ptype));
   }
 
+  public TrevniKeySource(List<Path> paths, AvroType<T> ptype) {
+    super(paths, ptype, getBundle(ptype));
+  }
+
   @Override
   public String toString() {
-    return "TrevniKey(" + path.toString() + ")";
+    return "TrevniKey(" + pathsAsString() + ")";
   }
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    FileSystem fs = path.getFileSystem(conf);
-    return CompositePathIterable.create(fs, path, new TrevniFileReaderFactory<T>((AvroType<T>) ptype));
+    return read(conf, new TrevniFileReaderFactory<T>((AvroType<T>) ptype));
   }
 }

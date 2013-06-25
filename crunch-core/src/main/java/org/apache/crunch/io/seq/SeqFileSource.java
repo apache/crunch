@@ -19,12 +19,11 @@ package org.apache.crunch.io.seq;
 
 import java.io.IOException;
 
-import org.apache.crunch.io.CompositePathIterable;
+import java.util.List;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
@@ -34,14 +33,17 @@ public class SeqFileSource<T> extends FileSourceImpl<T> implements ReadableSourc
     super(path, ptype, SequenceFileInputFormat.class);
   }
 
+  public SeqFileSource(List<Path> paths, PType<T> ptype) {
+    super(paths, ptype, SequenceFileInputFormat.class);
+  }
+
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    FileSystem fs = path.getFileSystem(conf);
-    return CompositePathIterable.create(fs, path, new SeqFileReaderFactory<T>(ptype));
+    return read(conf, new SeqFileReaderFactory<T>(ptype));
   }
 
   @Override
   public String toString() {
-    return "SeqFile(" + path.toString() + ")";
+    return "SeqFile(" + pathsAsString() + ")";
   }
 }

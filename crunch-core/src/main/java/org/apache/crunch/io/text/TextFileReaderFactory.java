@@ -62,11 +62,17 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
     final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
     return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
+      boolean nextChecked = false;
       private String nextLine;
 
       @Override
       public boolean hasNext() {
+        if (nextChecked) {
+          return nextLine != null;
+        }
+
         try {
+          nextChecked = true;
           return (nextLine = reader.readLine()) != null;
         } catch (IOException e) {
           LOG.info("Exception reading text file stream", e);
@@ -76,6 +82,10 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
 
       @Override
       public T next() {
+        if (!nextChecked && !hasNext()) {
+          return null;
+        }
+        nextChecked = false;
         return parser.parse(nextLine);
       }
     });

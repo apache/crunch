@@ -17,17 +17,25 @@
  */
 package org.apache.crunch.io.impl;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 
+import java.util.List;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Source;
+import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.CrunchInputs;
+import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SourceTargetHelper;
+import org.apache.crunch.io.avro.AvroFileReaderFactory;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -37,34 +45,58 @@ public class FileSourceImpl<T> implements Source<T> {
 
   private static final Log LOG = LogFactory.getLog(FileSourceImpl.class);
 
+  @Deprecated
   protected final Path path;
+  protected final List<Path> paths;
   protected final PType<T> ptype;
   protected final FormatBundle<? extends InputFormat> inputBundle;
 
   public FileSourceImpl(Path path, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
-    this.path = path;
-    this.ptype = ptype;
-    this.inputBundle = FormatBundle.forInput(inputFormatClass);
+    this(path, ptype, FormatBundle.forInput(inputFormatClass));
   }
 
   public FileSourceImpl(Path path, PType<T> ptype, FormatBundle<? extends InputFormat> inputBundle) {
-    this.path = path;
+    this(Lists.newArrayList(path), ptype, inputBundle);
+  }
+
+  public FileSourceImpl(List<Path> paths, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
+    this(paths, ptype, FormatBundle.forInput(inputFormatClass));
+  }
+
+  public FileSourceImpl(List<Path> paths, PType<T> ptype, FormatBundle<? extends InputFormat> inputBundle) {
+    this.path = paths.isEmpty() ? null : paths.get(0);
+    this.paths = paths;
     this.ptype = ptype;
     this.inputBundle = inputBundle;
   }
 
+  @Deprecated
   public Path getPath() {
-    return path;
+    if (paths.isEmpty()) {
+      return null;
+    } else if (paths.size() > 1) {
+      LOG.warn("getPath() called for source with multiple paths, only " +
+          "returning first. Source: " + this);
+    }
+    return paths.get(0);
+  }
+
+  public List<Path> getPaths() {
+    return paths;
   }
   
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     if (inputId == -1) {
-      FileInputFormat.addInputPath(job, path);
+      for (Path path : paths) {
+        FileInputFormat.addInputPath(job, path);
+      }
       job.setInputFormatClass(inputBundle.getFormatClass());
       inputBundle.configure(job.getConfiguration());
     } else {
-      CrunchInputs.addInputPath(job, path, inputBundle, inputId);
+      for (Path path : paths) {
+        CrunchInputs.addInputPath(job, path, inputBundle, inputId);
+      }
     }
   }
 
@@ -75,12 +107,34 @@ public class FileSourceImpl<T> implements Source<T> {
 
   @Override
   public long getSize(Configuration configuration) {
-    try {
-      return SourceTargetHelper.getPathSize(configuration, path);
-    } catch (IOException e) {
-      LOG.warn(String.format("Exception thrown looking up size of: %s", path), e);
-      throw new IllegalStateException("Failed to get the file size of:" + path, e);
+    long size = 0;
+    for (Path path : paths) {
+      try {
+        size += SourceTargetHelper.getPathSize(configuration, path);
+      } catch (IOException e) {
+        LOG.warn(String.format("Exception thrown looking up size of: %s", path), e);
+        throw new IllegalStateException("Failed to get the file size of:" + path, e);
+      }
     }
+    return size;
+  }
+
+  protected Iterable<T> read(Configuration conf, FileReaderFactory<T> readerFactory)
+      throws IOException {
+    List<Iterable<T>> iterables = Lists.newArrayList();
+    for (Path path : paths) {
+      FileSystem fs = path.getFileSystem(conf);
+      iterables.add(CompositePathIterable.create(fs, path, readerFactory));
+    }
+    return Iterables.concat(iterables);
+  }
+
+  /* Retain string format for single-path sources */
+  protected String pathsAsString() {
+    if (paths.size() == 1) {
+      return paths.get(0).toString();
+    }
+    return paths.toString();
   }
 
   @Override
@@ -89,16 +143,16 @@ public class FileSourceImpl<T> implements Source<T> {
       return false;
     }
     FileSourceImpl o = (FileSourceImpl) other;
-    return ptype.equals(o.ptype) && path.equals(o.path) && inputBundle.equals(o.inputBundle);
+    return ptype.equals(o.ptype) && paths.equals(o.paths) && inputBundle.equals(o.inputBundle);
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(ptype).append(path).append(inputBundle).toHashCode();
+    return new HashCodeBuilder().append(ptype).append(paths).append(inputBundle).toHashCode();
   }
 
   @Override
   public String toString() {
-    return new StringBuilder().append(inputBundle.getName()).append("(").append(path).append(")").toString();
+    return new StringBuilder().append(inputBundle.getName()).append("(").append(pathsAsString()).append(")").toString();
   }
 }

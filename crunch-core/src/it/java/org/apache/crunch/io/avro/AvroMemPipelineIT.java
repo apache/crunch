@@ -18,12 +18,14 @@ package org.apache.crunch.io.avro;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
+import java.util.Set;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
@@ -35,6 +37,7 @@ import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -116,6 +119,38 @@ public class AvroMemPipelineIT implements Serializable {
     Object readRecord = readCollection.materialize().iterator().next();
 
     assertEquals(writeRecord, readRecord.toString());
+  }
+
+  @Test
+  public void testMemPipelineWithMultiplePaths() {
+
+    GenericRecord writeRecord1 = createGenericRecord("John Doe");
+    final PCollection<GenericRecord> writeCollection1 = MemPipeline.collectionOf(Collections.singleton(writeRecord1));
+    writeCollection1.write(To.avroFile(avroFile.getAbsolutePath()));
+
+    File avroFile2 = tmpDir.getFile("test2.avro");
+    GenericRecord writeRecord2 = createGenericRecord("Jane Doe");
+    final PCollection<GenericRecord> writeCollection2 = MemPipeline.collectionOf(Collections.singleton(writeRecord2));
+    writeCollection2.write(To.avroFile(avroFile2.getAbsolutePath()));
+
+    List<Path> paths = Lists.newArrayList(new Path(avroFile.getAbsolutePath()),
+        new Path(avroFile2.getAbsolutePath()));
+    PCollection<Record> readCollection = MemPipeline.getInstance().read(
+        new AvroFileSource<Record>(paths, Avros.generics(writeRecord1.getSchema())));
+
+    Set<Record> readSet = Sets.newHashSet(readCollection.materialize());
+
+    assertEquals(Sets.newHashSet(writeRecord1, writeRecord2), readSet);
+  }
+
+  private GenericRecord createGenericRecord(String name) {
+
+    GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
+    savedRecord.put("name", name);
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy"));
+
+    return savedRecord;
   }
 
 }

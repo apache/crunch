@@ -19,7 +19,7 @@ package org.apache.crunch.io.text;
 
 import java.io.IOException;
 
-import org.apache.crunch.io.CompositePathIterable;
+import java.util.List;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -64,14 +64,24 @@ public class NLineFileSource<T> extends FileSourceImpl<T> implements ReadableSou
     super(path, ptype, getBundle(linesPerTask));
   }
 
+  /**
+   * Create a new {@code NLineFileSource} instance.
+   *
+   * @param paths The {@code Path}s to the input data
+   * @param ptype The PType to use for processing the data
+   * @param linesPerTask The number of lines from the input each map task will process
+   */
+  public NLineFileSource(List<Path> paths, PType<T> ptype, int linesPerTask) {
+    super(paths, ptype, getBundle(linesPerTask));
+  }
+
   @Override
   public String toString() {
-    return "NLine(" + path + ")";
+    return "NLine(" + pathsAsString() + ")";
   }
   
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return CompositePathIterable.create(path.getFileSystem(conf), path,
-        new TextFileReaderFactory<T>(LineParser.forType(ptype)));
+    return read(conf, new TextFileReaderFactory<T>(LineParser.forType(ptype)));
   }
 }
