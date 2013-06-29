@@ -19,6 +19,7 @@ package org.apache.crunch.impl.mr.plan;
 
 import java.util.Map;
 
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Target;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.OutputHandler;
@@ -48,7 +49,10 @@ public class MSCROutputHandler implements OutputHandler {
 
   public void configureNode(DoNode node, Target target) {
     workingNode = node;
-    target.accept(this, node.getPType());
+    if (!target.accept(this, node.getPType())) {
+      throw new CrunchRuntimeException("Target " + target + " cannot serialize PType of class: " +
+          node.getPType().getClass());
+    }
   }
 
   public boolean configure(Target target, PType<?> ptype) {
