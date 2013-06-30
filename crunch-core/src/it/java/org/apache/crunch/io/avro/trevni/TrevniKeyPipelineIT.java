@@ -91,7 +91,7 @@ public class TrevniKeyPipelineIT implements Serializable {
 
     Person person = genericCollection.materialize().iterator().next();
 
-    File trvFile = new File(outputFile, "part-m-00000-part-0.trv");
+    File trvFile = new File(outputFile, "part-m-00000.trv-part-0.trv");
 
     AvroColumnReader.Params params = new AvroColumnReader.Params(trvFile);
     params.setSchema(Person.SCHEMA$);
@@ -125,8 +125,8 @@ public class TrevniKeyPipelineIT implements Serializable {
 
     Person person = genericCollection.materialize().iterator().next();
 
-    File trv1File = new File(output1File, "part-m-00000-part-0.trv");
-    File trv2File = new File(output2File, "part-m-00000-part-0.trv");
+    File trv1File = new File(output1File, "part-m-00000.trv-part-0.trv");
+    File trv2File = new File(output2File, "part-m-00000.trv-part-0.trv");
 
     AvroColumnReader.Params params = new AvroColumnReader.Params(trv1File);
     params.setSchema(Person.SCHEMA$);
@@ -178,7 +178,7 @@ public class TrevniKeyPipelineIT implements Serializable {
 
     assertThat(retrievedPerson, is(person));
 
-    File trvFile = new File(outputFile, "part-m-00000-part-0.trv");
+    File trvFile = new File(outputFile, "part-m-00000.trv-part-0.trv");
 
     AvroColumnReader.Params params = new AvroColumnReader.Params(trvFile);
     params.setSchema(Person.SCHEMA$);

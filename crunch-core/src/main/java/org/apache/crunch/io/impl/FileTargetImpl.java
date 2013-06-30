@@ -132,13 +132,14 @@ public class FileTargetImpl implements PathTarget {
   protected Path getDestFile(Configuration conf, Path src, Path dir, boolean mapOnlyJob)
       throws IOException {
     String outputFilename = null;
+    String sourceFilename = src.getName();
     if (mapOnlyJob) {
       outputFilename = getFileNamingScheme().getMapOutputName(conf, dir);
     } else {
-      outputFilename = getFileNamingScheme().getReduceOutputName(conf, dir, extractPartitionNumber(src.getName()));
+      outputFilename = getFileNamingScheme().getReduceOutputName(conf, dir, extractPartitionNumber(sourceFilename));
     }
-    if (src.getName().endsWith(org.apache.avro.mapred.AvroOutputFormat.EXT)) {
-      outputFilename += org.apache.avro.mapred.AvroOutputFormat.EXT;
+    if (sourceFilename.contains(".")) {
+      outputFilename += sourceFilename.substring(sourceFilename.indexOf("."));
     }
     return new Path(dir, outputFilename);
   }
