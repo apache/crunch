@@ -79,13 +79,17 @@ public final class CrunchJobHooks {
     }
 
     private synchronized void handleMultiPaths() throws IOException {
-      if (job.isSuccessful() && !multiPaths.isEmpty()) {
-        // Need to handle moving the data from the output directory of the
-        // job to the output locations specified in the paths.
-        FileSystem srcFs = workingPath.getFileSystem(job.getConfiguration());
-        for (Map.Entry<Integer, PathTarget> entry : multiPaths.entrySet()) {
-          entry.getValue().handleOutputs(job.getConfiguration(), workingPath, entry.getKey(), mapOnlyJob);
+      try {
+        if (job.isSuccessful() && !multiPaths.isEmpty()) {
+          // Need to handle moving the data from the output directory of the
+          // job to the output locations specified in the paths.
+          FileSystem srcFs = workingPath.getFileSystem(job.getConfiguration());
+          for (Map.Entry<Integer, PathTarget> entry : multiPaths.entrySet()) {
+            entry.getValue().handleOutputs(job.getConfiguration(), workingPath, entry.getKey(), mapOnlyJob);
+          }
         }
+      } catch(InterruptedException ie) {
+        throw new IOException(ie);
       }
     }
   }
