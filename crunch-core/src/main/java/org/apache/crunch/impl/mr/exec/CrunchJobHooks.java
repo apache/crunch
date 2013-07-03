@@ -88,7 +88,7 @@ public final class CrunchJobHooks {
             entry.getValue().handleOutputs(job.getConfiguration(), workingPath, entry.getKey(), mapOnlyJob);
           }
         }
-      } catch(InterruptedException ie) {
+      } catch(Exception ie) {
         throw new IOException(ie);
       }
     }
