@@ -45,9 +45,13 @@ public class RTNode implements Serializable {
 
   private transient Emitter<Object> emitter;
 
-  public RTNode(DoFn<Object, Object> fn, PType<Object> outputPType, String name, List<RTNode> children,
+  public RTNode(DoFn<Object, Object> fn,
+      PType<Object> outputPType,
+      String name,
+      List<RTNode> children,
       Converter inputConverter,
-      Converter outputConverter, String outputName) {
+      Converter outputConverter,
+      String outputName) {
     this.fn = fn;
     this.outputPType = outputPType;
     this.nodeName = name;

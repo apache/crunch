@@ -32,11 +32,21 @@ class CrunchTaskContext {
 
   private final TaskInputOutputContext<Object, Object, Object, Object> taskContext;
   private final NodeContext nodeContext;
+  private final List<RTNode> nodes;
   private CrunchOutputs<Object, Object> multipleOutputs;
-
-  public CrunchTaskContext(TaskInputOutputContext<Object, Object, Object, Object> taskContext, NodeContext nodeContext) {
+  
+  public CrunchTaskContext(TaskInputOutputContext<Object, Object, Object, Object> taskContext,
+      NodeContext nodeContext) {
     this.taskContext = taskContext;
     this.nodeContext = nodeContext;
+    Configuration conf = taskContext.getConfiguration();
+    Path path = new Path(new Path(conf.get(PlanningParameters.CRUNCH_WORKING_DIRECTORY)),
+        nodeContext.toString());
+    try {
+      this.nodes = (List<RTNode>) DistCache.read(conf, path);
+    } catch (IOException e) {
+      throw new CrunchRuntimeException("Could not read runtime node information", e);
+    }
   }
 
   public TaskInputOutputContext<Object, Object, Object, Object> getContext() {
@@ -47,16 +57,7 @@ class CrunchTaskContext {
     return nodeContext;
   }
 
-  public List<RTNode> getNodes() throws IOException {
-    Configuration conf = taskContext.getConfiguration();
-    Path path = new Path(new Path(conf.get(PlanningParameters.CRUNCH_WORKING_DIRECTORY)), nodeContext.toString());
-    @SuppressWarnings("unchecked")
-    List<RTNode> nodes = (List<RTNode>) DistCache.read(conf, path);
-    if (nodes != null) {
-      for (RTNode node : nodes) {
-        node.initialize(this);
-      }
-    }
+  public List<RTNode> getNodes() {
     return nodes;
   }
 

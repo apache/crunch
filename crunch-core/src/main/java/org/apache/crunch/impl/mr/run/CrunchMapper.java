@@ -17,12 +17,10 @@
  */
 package org.apache.crunch.impl.mr.run;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
@@ -35,21 +33,19 @@ public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
 
   @Override
   protected void setup(Mapper<Object, Object, Object, Object>.Context context) {
-    List<RTNode> nodes;
-    this.ctxt = new CrunchTaskContext(context, NodeContext.MAP);
-    try {
-      nodes = ctxt.getNodes();
-    } catch (IOException e) {
-      LOG.info("Crunch deserialization error", e);
-      throw new CrunchRuntimeException(e);
+    if (ctxt == null) {
+      ctxt = new CrunchTaskContext(context, NodeContext.MAP);
+      this.debug = ctxt.isDebugRun();
     }
+    
+    List<RTNode> nodes = ctxt.getNodes();
     if (nodes.size() == 1) {
       this.node = nodes.get(0);
     } else {
       CrunchInputSplit split = (CrunchInputSplit) context.getInputSplit();
       this.node = nodes.get(split.getNodeIndex());
     }
-    this.debug = ctxt.isDebugRun();
+    this.node.initialize(ctxt);
   }
 
   @Override

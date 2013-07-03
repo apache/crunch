@@ -17,12 +17,8 @@
  */
 package org.apache.crunch.impl.mr.run;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.impl.SingleUseIterable;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -40,15 +36,12 @@ public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
 
   @Override
   protected void setup(Reducer<Object, Object, Object, Object>.Context context) {
-    this.ctxt = new CrunchTaskContext(context, getNodeContext());
-    try {
-      List<RTNode> nodes = ctxt.getNodes();
-      this.node = nodes.get(0);
-    } catch (IOException e) {
-      LOG.info("Crunch deserialization error", e);
-      throw new CrunchRuntimeException(e);
+    if (ctxt == null) {
+      this.ctxt = new CrunchTaskContext(context, getNodeContext());
+      this.debug = ctxt.isDebugRun();
     }
-    this.debug = ctxt.isDebugRun();
+    this.node = ctxt.getNodes().get(0);
+    this.node.initialize(ctxt);
   }
 
   @Override
