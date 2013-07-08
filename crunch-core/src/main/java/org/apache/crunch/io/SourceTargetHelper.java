@@ -41,7 +41,13 @@ public class SourceTargetHelper {
     }
     long size = 0;
     for (FileStatus status : stati) {
-      size += fs.getContentSummary(status.getPath()).getLength();
+      if (status.isDir()) {
+        for (FileStatus st : fs.listStatus(status.getPath())) {
+          size += st.getLen();
+        }
+      } else {
+        size += status.getLen();
+      }
     }
     return size;
   }
