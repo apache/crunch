@@ -101,7 +101,7 @@ public class SecondarySortExample extends Configured implements Tool, Serializab
                   timestamp = Long.parseLong(element);
                 } catch (NumberFormatException e) {
                   System.out.println("Timestamp not in long format '" + line + "'");
-                  this.getCounter(COUNTERS.CORRUPT_TIMESTAMP).increment(1);
+                  this.increment(COUNTERS.CORRUPT_TIMESTAMP);
                 }
                 break;
               case 3:
@@ -116,7 +116,7 @@ public class SecondarySortExample extends Configured implements Tool, Serializab
               Long sortby = new Long(timestamp);
               emitter.emit(Pair.of(key, Pair.of(sortby, value)));
             } else {
-              this.getCounter(COUNTERS.CORRUPT_LINE).increment(1);
+              this.increment(COUNTERS.CORRUPT_LINE);
             }
           }}, Avros.tableOf(Avros.strings(), Avros.pairs(Avros.longs(), Avros.strings())));
 

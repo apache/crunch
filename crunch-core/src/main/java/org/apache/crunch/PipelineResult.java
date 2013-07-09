@@ -18,7 +18,12 @@
 package org.apache.crunch;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import java.util.Map;
+import java.util.Set;
 import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 
 import java.util.List;
@@ -44,16 +49,55 @@ public class PipelineResult {
       return stageName;
     }
 
+    /**
+     * @deprecated The {@link Counter} class changed incompatibly between Hadoop 1 and 2
+     * (from a class to an interface) so user programs should avoid this method and use
+     * {@link #getCounterNames()}.
+     */
+    @Deprecated
     public Counters getCounters() {
       return counters;
     }
 
+    /**
+     * @return a map of group names to counter names.
+     */
+    public Map<String, Set<String>> getCounterNames() {
+      Map<String, Set<String>> names = Maps.newHashMap();
+      for (CounterGroup counterGroup : counters) {
+        Set<String> counterNames = Sets.newHashSet();
+        for (Counter counter : counterGroup) {
+          counterNames.add(counter.getName());
+        }
+        names.put(counterGroup.getName(), counterNames);
+      }
+      return names;
+    }
+
+    /**
+     * @deprecated The {@link Counter} class changed incompatibly between Hadoop 1 and 2
+     * (from a class to an interface) so user programs should avoid this method and use
+     * {@link #getCounterValue(Enum)} and/or {@link #getCounterDisplayName(Enum)}.
+     */
+    @Deprecated
     public Counter findCounter(Enum<?> key) {
       return counters.findCounter(key);
     }
 
+    public long getCounterValue(String groupName, String counterName) {
+      return counters.findCounter(groupName, counterName).getValue();
+    }
+
+    public String getCounterDisplayName(String groupName, String counterName) {
+      return counters.findCounter(groupName, counterName).getDisplayName();
+    }
+
     public long getCounterValue(Enum<?> key) {
-      return findCounter(key).getValue();
+      return counters.findCounter(key).getValue();
+    }
+
+    public String getCounterDisplayName(Enum<?> key) {
+      return counters.findCounter(key).getDisplayName();
     }
   }
 

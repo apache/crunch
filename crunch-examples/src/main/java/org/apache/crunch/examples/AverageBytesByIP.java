@@ -124,10 +124,10 @@ public class AverageBytesByIP extends Configured implements Tool, Serializable {
           String remoteAddr = matcher.group(1);
           emitter.emit(Pair.of(remoteAddr, sumCount));
         } catch (NumberFormatException e) {
-          this.getCounter(COUNTERS.CORRUPT_SIZE).increment(1);
+          this.increment(COUNTERS.CORRUPT_SIZE);
         }
       } else {
-        this.getCounter(COUNTERS.NO_MATCH).increment(1);
+        this.increment(COUNTERS.NO_MATCH);
       }
     }
   };

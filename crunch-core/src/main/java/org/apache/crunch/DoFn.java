@@ -127,12 +127,32 @@ public abstract class DoFn<S, T> implements Serializable {
     return context.getConfiguration();
   }
 
+  /**
+   * @deprecated The {@link Counter} class changed incompatibly between Hadoop 1 and 2
+   * (from a class to an interface) so user programs should avoid this method and use
+   * one of the <code>increment</code> methods instead, such as {@link #increment(Enum)}.
+   */
+  @Deprecated
   protected Counter getCounter(Enum<?> counterName) {
     return context.getCounter(counterName);
   }
 
+  /**
+   * @deprecated The {@link Counter} class changed incompatibly between Hadoop 1 and 2
+   * (from a class to an interface) so user programs should avoid this method and use
+   * one of the <code>increment</code> methods instead, such as {@link #increment(Enum)}.
+   */
+  @Deprecated
   protected Counter getCounter(String groupName, String counterName) {
     return context.getCounter(groupName, counterName);
+  }
+
+  protected void increment(String groupName, String counterName) {
+    increment(groupName, counterName, 1);
+  }
+
+  protected void increment(String groupName, String counterName, long value) {
+    context.getCounter(groupName, counterName).increment(value);
   }
 
   protected void increment(Enum<?> counterName) {
@@ -140,7 +160,7 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected void increment(Enum<?> counterName, long value) {
-    getCounter(counterName).increment(value);
+    context.getCounter(counterName).increment(value);
   }
 
   protected void progress() {

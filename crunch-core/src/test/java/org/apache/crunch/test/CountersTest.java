@@ -42,9 +42,9 @@ public class CountersTest {
 
     @Override
     public void process(String input, Emitter<String> emitter) {
-      getCounter(CT.ONE).increment(1);
-      getCounter(CT.TWO).increment(4);
-      getCounter(CT.THREE).increment(7);
+      increment(CT.ONE, 1);
+      increment(CT.TWO, 4);
+      increment(CT.THREE, 7);
     }
   }
 

@@ -21,7 +21,6 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +34,6 @@ import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
-import org.apache.hadoop.mapreduce.Counter;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -107,7 +105,7 @@ public class StageResultsCountersIT {
 
           for (String token : tokens) {
             if (SPECIAL_KEYWORDS.contains(token)) {
-              getCounter(KEYWORDS_COUNTER_GROUP, token).increment(1);
+              increment(KEYWORDS_COUNTER_GROUP, token);
             }
           }
         }
@@ -122,10 +120,9 @@ public class StageResultsCountersIT {
     Map<String, Long> countersMap = Maps.newHashMap();
 
     for (StageResult sr : stages) {
-      Iterator<Counter> iterator = sr.getCounters().getGroup(counterGroupName).iterator();
-      while (iterator.hasNext()) {
-        Counter counter = (Counter) iterator.next();
-        countersMap.put(counter.getDisplayName(), counter.getValue());
+      for (String counterName : sr.getCounterNames().get(counterGroupName)) {
+        countersMap.put(sr.getCounterDisplayName(counterGroupName, counterName),
+            sr.getCounterValue(counterGroupName, counterName));
       }
     }
 

@@ -118,10 +118,10 @@ public final class Parse {
     public void cleanup(Emitter<T> emitter) {
       if (getContext() != null) {
         ExtractorStats stats = extractor.getStats();
-        getCounter(groupName, "OVERALL_ERRORS").increment(stats.getErrorCount());
+        increment(groupName, "OVERALL_ERRORS", stats.getErrorCount());
         List<Integer> fieldErrors = stats.getFieldErrors();
         for (int i = 0; i < fieldErrors.size(); i++) {
-          getCounter(groupName, "ERRORS_FOR_FIELD_" + i).increment(fieldErrors.get(i));
+          increment(groupName, "ERRORS_FOR_FIELD_" + i, fieldErrors.get(i));
         }
       }
     }
