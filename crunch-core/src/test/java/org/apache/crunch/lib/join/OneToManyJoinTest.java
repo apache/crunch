@@ -99,6 +99,7 @@ public class OneToManyJoinTest {
 
     @Override
     public Pair<String, String> map(Pair<String, Iterable<String>> input) {
+      increment("counters", "inputcount");
       return Pair.of(input.first(), Joiner.on(',').join(input.second()));
     }
 

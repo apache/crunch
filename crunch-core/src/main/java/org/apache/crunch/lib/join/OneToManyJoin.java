@@ -29,6 +29,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.lib.Join;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -90,6 +91,12 @@ public class OneToManyJoin {
       super.initialize();
       postProcessFn.initialize();
       leftValueType.initialize(getConfiguration());
+    }
+    
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      super.setContext(context);
+      postProcessFn.setContext(context);
     }
 
     @Override
