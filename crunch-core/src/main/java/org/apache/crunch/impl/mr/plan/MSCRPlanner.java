@@ -80,7 +80,6 @@ public class MSCRPlanner {
     }
     
     Multimap<Vertex, JobPrototype> assignments = HashMultimap.create();
-    Multimap<PCollectionImpl<?>, Vertex> protoDependency = HashMultimap.create();
     while (!targetDeps.isEmpty()) {
       Set<Target> allTargets = Sets.newHashSet();
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
@@ -113,42 +112,34 @@ public class MSCRPlanner {
       // depending on its profile.
       // For dependency handling, we only need to care about which
       // job prototype a particular GBK is assigned to.
+      Multimap<Vertex, JobPrototype> newAssignments = HashMultimap.create();
       for (List<Vertex> component : components) {
-        assignments.putAll(constructJobPrototypes(component));
+        newAssignments.putAll(constructJobPrototypes(component));
       }
 
       // Add in the job dependency information here.
-      for (Map.Entry<Vertex, JobPrototype> e : assignments.entries()) {
+      for (Map.Entry<Vertex, JobPrototype> e : newAssignments.entries()) {
         JobPrototype current = e.getValue();
         List<Vertex> parents = graph.getParents(e.getKey());
         for (Vertex parent : parents) {
-          for (JobPrototype parentJobProto : assignments.get(parent)) {
+          for (JobPrototype parentJobProto : newAssignments.get(parent)) {
             current.addDependency(parentJobProto);
           }
         }
       }
-      
-      // Add cross-stage dependencies.
-      for (PCollectionImpl<?> output : currentStage) {
-        Set<Target> targets = outputs.get(output);
-        Vertex vertex = graph.getVertexAt(output);
-        for (PCollectionImpl<?> later : laterStage) {
-          if (!Sets.intersection(targets, targetDeps.get(later)).isEmpty()) {
-            protoDependency.put(later, vertex);
-          }
+
+      // Make all of the jobs in this stage dependent on existing job
+      // prototypes.
+      for (JobPrototype newPrototype : newAssignments.values()) {
+        for (JobPrototype oldPrototype : assignments.values()) {
+          newPrototype.addDependency(oldPrototype);
         }
-        targetDeps.remove(output);
       }
-    }
-    
-    // Cross-job dependencies.
-    for (Entry<PCollectionImpl<?>, Vertex> pd : protoDependency.entries()) {
-      Vertex d = new Vertex(pd.getKey());
-      Vertex dj = pd.getValue();
-      for (JobPrototype parent : assignments.get(dj)) {
-        for (JobPrototype child : assignments.get(d)) {
-          child.addDependency(parent);
-        }
+      assignments.putAll(newAssignments);
+      
+      // Remove completed outputs.
+      for (PCollectionImpl<?> output : currentStage) {
+        targetDeps.remove(output);
       }
     }
     
