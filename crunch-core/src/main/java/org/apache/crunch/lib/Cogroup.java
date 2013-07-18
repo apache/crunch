@@ -23,8 +23,13 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.Tuple;
+import org.apache.crunch.Tuple3;
+import org.apache.crunch.Tuple4;
+import org.apache.crunch.TupleN;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.TupleFactory;
 
 import com.google.common.collect.Lists;
 
@@ -38,88 +43,250 @@ public class Cogroup {
    * @return a {@code PTable} representing the co-grouped tables
    */
   public static <K, U, V> PTable<K, Pair<Collection<U>, Collection<V>>> cogroup(PTable<K, U> left, PTable<K, V> right) {
-    return cogroup(left, right, 0);
+    return cogroup(0, left, right);
   }
   
   /**
    * Co-groups the two {@link PTable} arguments with a user-specified degree of parallelism (a.k.a, number of
    * reducers.)
    * 
+   * @param numReducers The number of reducers to use
    * @param left The left (smaller) PTable
    * @param right The right (larger) PTable
-   * @param numReducers The number of reducers to use
    * @return A new {@code PTable} representing the co-grouped tables
    */
   public static <K, U, V> PTable<K, Pair<Collection<U>, Collection<V>>> cogroup(
+      int numReducers,
       PTable<K, U> left,
-      PTable<K, V> right,
-      int numReducers) {
-    PTypeFamily ptf = left.getTypeFamily();
-    PType<U> leftType = left.getPTableType().getValueType();
-    PType<V> rightType = right.getPTableType().getValueType();
-    PType<Pair<U, V>> itype = ptf.pairs(leftType, rightType);
+      PTable<K, V> right) {
+    PTypeFamily tf = left.getTypeFamily();
+    return cogroup(
+        tf.pairs(tf.collections(left.getValueType()),
+                 tf.collections(right.getValueType())),
+        TupleFactory.PAIR,
+        numReducers,
+        left, right);
+  }
 
-    PTable<K, Pair<U, V>> cgLeft = left.mapValues("coGroupTag1", new CogroupFn1<U, V>(),
+  /**
+   * Co-groups the three {@link PTable} arguments.
+   * 
+   * @param first The smallest PTable
+   * @param second The second-smallest PTable
+   * @param third The largest PTable
+   * @return a {@code PTable} representing the co-grouped tables
+   */
+  public static <K, V1, V2, V3> PTable<K, Tuple3.Collect<V1, V2, V3>> cogroup(
+      PTable<K, V1> first,
+      PTable<K, V2> second,
+      PTable<K, V3> third) {
+    return cogroup(0, first, second, third);
+  }
+  
+  /**
+   * Co-groups the three {@link PTable} arguments with a user-specified degree of parallelism (a.k.a, number of
+   * reducers.)
+   * 
+   * @param numReducers The number of reducers to use
+   * @param first The smallest PTable
+   * @param second The second-smallest PTable
+   * @param third The largest PTable
+   * @return A new {@code PTable} representing the co-grouped tables
+   */
+  public static <K, V1, V2, V3> PTable<K, Tuple3.Collect<V1, V2, V3>> cogroup(
+      int numReducers,
+      PTable<K, V1> first,
+      PTable<K, V2> second,
+      PTable<K, V3> third) {
+    return cogroup(
+        Tuple3.Collect.derived(first.getValueType(), second.getValueType(), third.getValueType()),
+        new TupleFactory<Tuple3.Collect<V1, V2, V3>>() {
+          @Override
+          public Tuple3.Collect<V1, V2, V3> makeTuple(Object... values) {
+            return new Tuple3.Collect<V1, V2, V3>(
+                (Collection<V1>) values[0],
+                (Collection<V2>) values[1],
+                (Collection<V3>) values[2]);
+          }
+        },
+        numReducers,
+        first, second, third);
+  }
+  
+  /**
+   * Co-groups the three {@link PTable} arguments.
+   * 
+   * @param first The smallest PTable
+   * @param second The second-smallest PTable
+   * @param third The largest PTable
+   * @return a {@code PTable} representing the co-grouped tables
+   */
+  public static <K, V1, V2, V3, V4> PTable<K, Tuple4.Collect<V1, V2, V3, V4>> cogroup(
+      PTable<K, V1> first,
+      PTable<K, V2> second,
+      PTable<K, V3> third,
+      PTable<K, V4> fourth) {
+    return cogroup(0, first, second, third, fourth);
+  }
+  
+  /**
+   * Co-groups the three {@link PTable} arguments with a user-specified degree of parallelism (a.k.a, number of
+   * reducers.)
+   * 
+   * @param numReducers The number of reducers to use
+   * @param first The smallest PTable
+   * @param second The second-smallest PTable
+   * @param third The largest PTable
+   * @return A new {@code PTable} representing the co-grouped tables
+   */
+  public static <K, V1, V2, V3, V4> PTable<K, Tuple4.Collect<V1, V2, V3, V4>> cogroup(
+      int numReducers,
+      PTable<K, V1> first,
+      PTable<K, V2> second,
+      PTable<K, V3> third,
+      PTable<K, V4> fourth) {
+    return cogroup(
+        Tuple4.Collect.derived(first.getValueType(), second.getValueType(), third.getValueType(),
+            fourth.getValueType()),
+        new TupleFactory<Tuple4.Collect<V1, V2, V3, V4>>() {
+          @Override
+          public Tuple4.Collect<V1, V2, V3, V4> makeTuple(Object... values) {
+            return new Tuple4.Collect<V1, V2, V3, V4>(
+                (Collection<V1>) values[0],
+                (Collection<V2>) values[1],
+                (Collection<V3>) values[2],
+                (Collection<V4>) values[3]);
+          }
+        },
+        numReducers,
+        first, second, third);
+  }
+  
+  /**
+   * Co-groups an arbitrary number of {@link PTable} arguments. The largest table should
+   * come last in the ordering.
+   * 
+   * @param first The first (smallest) PTable to co-group
+   * @param rest The other (larger) PTables to co-group
+   * @return a {@code PTable} representing the co-grouped tables
+   */
+  public static <K> PTable<K, TupleN> cogroup(PTable<K, ?> first, PTable<K, ?>... rest) {
+    return cogroup(0, first, rest);
+  }
+  
+  /**
+   * Co-groups an arbitrary number of {@link PTable} arguments with a user-specified degree of parallelism
+   * (a.k.a, number of reducers.) The largest table should come last in the ordering.
+   * 
+   * @param numReducers The number of reducers to use
+   * @param first The first (smallest) PTable to co-group
+   * @param rest The other (larger) PTables to co-group
+   * @return A new {@code PTable} representing the co-grouped tables
+   */
+  public static <K, U, V> PTable<K, TupleN> cogroup(
+      int numReducers,
+      PTable<K, ?> first,
+      PTable<K, ?>... rest) {
+    PTypeFamily tf = first.getTypeFamily();
+    PType[] components = new PType[1 + rest.length];
+    components[0] = tf.collections(first.getValueType());
+    for (int i = 0; i < rest.length; i++) {
+      components[i + 1] = rest[i].getValueType();
+    }
+    return cogroup(
+        tf.tuples(components),
+        TupleFactory.TUPLEN,
+        numReducers,
+        first, rest);
+  }
+  
+  private static <K, T extends Tuple> PTable<K, T> cogroup(
+      PType<T> outputType,
+      TupleFactory tupleFactory,
+      int numReducers,
+      PTable<K, ?> first, PTable<K, ?>... rest) {
+    PTypeFamily ptf = first.getTypeFamily();
+    PType[] ptypes = new PType[1 + rest.length];
+    ptypes[0] = first.getValueType();
+    for (int i = 0; i < rest.length; i++) {
+      ptypes[i + 1] = rest[i].getValueType();
+    }
+    PType<TupleN> itype = ptf.tuples(ptypes);
+    
+    PTable<K, TupleN> firstInter = first.mapValues("coGroupTag1",
+        new CogroupFn(0, 1 + rest.length),
         itype);
-    PTable<K, Pair<U, V>> cgRight = right.mapValues("coGroupTag2", new CogroupFn2<U, V>(),
-        itype);
-
-    PType<Pair<Collection<U>, Collection<V>>> otype = ptf.pairs(ptf.collections(leftType),
-        ptf.collections(rightType));
-    PTable<K, Pair<U, V>> both = cgLeft.union(cgRight);
-    PGroupedTable<K, Pair<U, V>> grouped = null;
+    PTable<K, TupleN>[] inter = new PTable[rest.length];
+    for (int i = 0; i < rest.length; i++) {
+      inter[i] = rest[i].mapValues("coGroupTag" + (i + 2),
+          new CogroupFn(i + 1, 1 + rest.length),
+          itype);
+    }
+    
+    PTable<K, TupleN> union = firstInter.union(inter);
+    PGroupedTable<K, TupleN> grouped = null;
     if (numReducers > 0) {
-      grouped = both.groupByKey(numReducers);
+      grouped = union.groupByKey(numReducers);
     } else {
-      grouped = both.groupByKey();
+      grouped = union.groupByKey();
     }
-    return grouped.mapValues("cogroup", new PostGroupFn<U, V>(leftType, rightType), otype);
-  }
-
-  private static class CogroupFn1<V, U> extends MapFn<V, Pair<V, U>> {
-    @Override
-    public Pair<V, U> map(V v) {
-      return Pair.of(v, null);
-    }
-  }
-
-  private static class CogroupFn2<V, U> extends MapFn<U, Pair<V, U>> {
-    @Override
-    public Pair<V, U> map(U u) {
-      return Pair.of(null, u);
-    }
-  }
-
-  private static class PostGroupFn<V, U> extends
-      MapFn<Iterable<Pair<V, U>>, Pair<Collection<V>, Collection<U>>> {
     
-    private PType<V> ptypeV;
-    private PType<U> ptypeU;
+    return grouped.mapValues("cogroup", 
+        new PostGroupFn<T>(tupleFactory, ptypes),
+        outputType);
+  }
+  
+  private static class CogroupFn<T> extends MapFn<T, TupleN> {
+    private final int index;
+    private final int size;
     
-    public PostGroupFn(PType<V> ptypeV, PType<U> ptypeU) {
-      this.ptypeV = ptypeV;
-      this.ptypeU = ptypeU;
+    public CogroupFn(int index, int size) {
+      this.index = index;
+      this.size = size;
+    }
+
+    @Override
+    public TupleN map(T input) {
+      Object[] v = new Object[size];
+      v[index] = input;
+      return TupleN.of(v);
+    }
+  }
+
+  private static class PostGroupFn<T extends Tuple> extends
+      MapFn<Iterable<TupleN>, T> {
+    
+    private final TupleFactory factory;
+    private final PType[] ptypes;
+    
+    public PostGroupFn(TupleFactory tf, PType... ptypes) {
+      this.factory = tf;
+      this.ptypes = ptypes;
     }
     
     @Override
     public void initialize() {
       super.initialize();
-      ptypeV.initialize(getConfiguration());
-      ptypeU.initialize(getConfiguration());
+      for (PType pt : ptypes) {
+        pt.initialize(getConfiguration());
+      }
     }
     
     @Override
-    public Pair<Collection<V>, Collection<U>> map(Iterable<Pair<V, U>> input) {
-      Collection<V> cv = Lists.newArrayList();
-      Collection<U> cu = Lists.newArrayList();
-      for (Pair<V, U> pair : input) {
-        if (pair.first() != null) {
-          cv.add(ptypeV.getDetachedValue(pair.first()));
-        } else if (pair.second() != null) {
-          cu.add(ptypeU.getDetachedValue(pair.second()));
+    public T map(Iterable<TupleN> input) {
+      Collection[] collections = new Collection[ptypes.length];
+      for (int i = 0; i < ptypes.length; i++) {
+        collections[i] = Lists.newArrayList();
+      }
+      for (TupleN t : input) {
+        for (int i = 0; i < ptypes.length; i++) {
+          if (t.get(i) != null) {
+            collections[i].add(ptypes[i].getDetachedValue(t.get(i)));
+            break;
+          }
         }
       }
-      return Pair.of(cv, cu);
+      return (T) factory.makeTuple(collections);
     }
   }
 

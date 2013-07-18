@@ -17,13 +17,50 @@
  */
 package org.apache.crunch;
 
+import java.util.Collection;
+
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.PTypeFamily;
 
 /**
  * A convenience class for three-element {@link Tuple}s.
  */
 public class Tuple3<V1, V2, V3> implements Tuple {
 
+  public static class Collect<V1, V2, V3> extends Tuple3<Collection<V1>, Collection<V2>, Collection<V3>> {
+
+    public static <V1, V2, V3> PType<Tuple3.Collect<V1, V2, V3>> derived(PType<V1> first,
+        PType<V2> second, PType<V3> third) {
+      PTypeFamily tf = first.getFamily();
+      PType<Tuple3<Collection<V1>, Collection<V2>, Collection<V3>>> pt = 
+          tf.triples(
+              tf.collections(first),
+              tf.collections(second),
+              tf.collections(third));
+      Object clazz = Tuple3.Collect.class;
+      return tf.derived((Class<Tuple3.Collect<V1, V2, V3>>) clazz,
+          new MapFn<Tuple3<Collection<V1>, Collection<V2>, Collection<V3>>, Collect<V1, V2, V3>>() {
+        @Override
+        public Collect<V1, V2, V3> map(
+            Tuple3<Collection<V1>, Collection<V2>, Collection<V3>> in) {
+          return new Collect<V1, V2, V3>(in.first(), in.second(), in.third());
+        }
+      },
+      new MapFn<Collect<V1, V2, V3>, Tuple3<Collection<V1>, Collection<V2>, Collection<V3>>>() {
+        @Override
+        public Tuple3<Collection<V1>, Collection<V2>, Collection<V3>> map(
+            Collect<V1, V2, V3> in) {
+          return in;
+        }
+      }, pt);
+    }
+    
+    public Collect(Collection<V1> first, Collection<V2> second, Collection<V3> third) {
+      super(first, second, third);
+    }
+  }
+  
   private final V1 first;
   private final V2 second;
   private final V3 third;
