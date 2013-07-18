@@ -50,7 +50,15 @@ public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     }
   }
 
-  PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinFn<K, U, V> joinFn) {
+  /**
+   * Perform a default join on the given {@code PTable} instances using a user-specified {@code JoinFn}.
+   *
+   * @param left left table to be joined
+   * @param right right table to be joined
+   * @param joinFn The user-specified implementation of the {@code JoinFn} class
+   * @return joined tables
+   */
+  public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinFn<K, U, V> joinFn) {
     PTypeFamily ptf = left.getTypeFamily();
     PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);
     PTableType<K, Pair<U, V>> ret = ptf
