@@ -52,8 +52,8 @@ public class SourcePathTargetImpl<T> extends SourceTargetImpl<T> implements Path
   }
 
   @Override
-  public void handleOutputs(Configuration conf, Path workingPath, int index, boolean mapOnlyJob)
+  public void handleOutputs(Configuration conf, Path workingPath, int index)
       throws IOException {
-    ((PathTarget) target).handleOutputs(conf, workingPath, index, mapOnlyJob);
+    ((PathTarget) target).handleOutputs(conf, workingPath, index);
   }
 }

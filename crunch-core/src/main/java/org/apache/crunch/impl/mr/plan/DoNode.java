@@ -107,7 +107,7 @@ public class DoNode {
     // TODO: This is sort of terrible, refactor the code to make this make more sense.
     boolean exists = false;
     for (DoNode child : children) {
-      if (node == child) {
+      if (node == child || (node.isOutputNode() && node.equals(child))) {
         exists = true;
         break;
       }
@@ -152,7 +152,7 @@ public class DoNode {
       return true;
     }
     DoNode o = (DoNode) other;
-    return (name.equals(o.name) && fn.equals(o.fn) && source == o.source && outputConverter == o.outputConverter);
+    return name.equals(o.name) && fn.equals(o.fn) && source == o.source && outputConverter == o.outputConverter;
   }
 
   @Override

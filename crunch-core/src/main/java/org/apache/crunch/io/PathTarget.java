@@ -44,8 +44,7 @@ public interface PathTarget extends MapReduceTarget {
    * @param conf The job {@code Configuration}
    * @param workingPath The temp directory that contains the output of the job
    * @param index The index of this target for jobs that write multiple output files to a single directory
-   * @param mapOnlyJob Whether or not this is a map-only job
    * @throws IOException
    */
-  void handleOutputs(Configuration conf, Path workingPath, int index, boolean mapOnlyJob) throws IOException;
+  void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException;
 }

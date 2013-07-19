@@ -66,6 +66,7 @@ class JobPrototype {
   private final Map<PCollectionImpl<?>, DoNode> nodes = Maps.newHashMap();
   private final Path workingPath;
 
+  private HashMultimap<Target, NodePath> mapSideNodePaths;
   private HashMultimap<Target, NodePath> targetsToNodePaths;
   private DoTableImpl<?, ?> combineFnTable;
 
@@ -107,6 +108,13 @@ class JobPrototype {
     return targetsToNodePaths;
   }
 
+  public void addMapSideOutputs(HashMultimap<Target, NodePath> mapSideNodePaths) {
+    if (group == null) {
+      throw new IllegalStateException("Cannot side-outputs to a map-only job");
+    }
+    this.mapSideNodePaths = mapSideNodePaths;
+  }
+  
   public void addReducePaths(HashMultimap<Target, NodePath> outputPaths) {
     if (group == null) {
       throw new IllegalStateException("Cannot add a reduce phase to a map-only job");
@@ -135,10 +143,9 @@ class JobPrototype {
     job.setJarByClass(jarClass);
 
     Set<DoNode> outputNodes = Sets.newHashSet();
-    Set<Target> targets = targetsToNodePaths.keySet();
     Path outputPath = new Path(workingPath, "output");
     MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath, group == null);
-    for (Target target : targets) {
+    for (Target target : targetsToNodePaths.keySet()) {
       DoNode node = null;
       for (NodePath nodePath : targetsToNodePaths.get(target)) {
         if (node == null) {
@@ -150,6 +157,22 @@ class JobPrototype {
       }
     }
 
+    Set<DoNode> mapSideNodes = Sets.newHashSet();
+    if (mapSideNodePaths != null) {
+      for (Target target : mapSideNodePaths.keySet()) {
+        DoNode node = null;
+        for (NodePath nodePath : mapSideNodePaths.get(target)) {
+          if (node == null) {
+            PCollectionImpl<?> collect = nodePath.tail();
+            node = DoNode.createOutputNode(target.toString(), collect.getPType());
+            outputHandler.configureNode(node, target);
+          }
+          mapSideNodes.add(walkPath(nodePath.descendingIterator(), node));
+        }
+        
+      }
+    }
+    
     job.setMapperClass(CrunchMapper.class);
     List<DoNode> inputNodes;
     DoNode reduceNode = null;
@@ -171,7 +194,7 @@ class JobPrototype {
       group.configureShuffle(job);
 
       DoNode mapOutputNode = group.getGroupingNode();
-      Set<DoNode> mapNodes = Sets.newHashSet();
+      Set<DoNode> mapNodes = Sets.newHashSet(mapSideNodes);
       for (NodePath nodePath : mapNodePaths) {
         // Advance these one step, since we've already configured
         // the grouping node, and the PGroupedTableImpl is the tail
@@ -192,8 +215,7 @@ class JobPrototype {
       inputNode.getSource().configureSource(job, -1);
     } else {
       for (int i = 0; i < inputNodes.size(); i++) {
-        DoNode inputNode = inputNodes.get(i);
-        inputNode.getSource().configureSource(job, i);
+        inputNodes.get(i).getSource().configureSource(job, i);
       }
       job.setInputFormatClass(CrunchInputFormat.class);
     }

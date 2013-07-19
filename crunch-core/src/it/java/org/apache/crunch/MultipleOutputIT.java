@@ -18,15 +18,19 @@
 package org.apache.crunch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
+import org.apache.crunch.io.To;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
@@ -47,7 +51,6 @@ public class MultipleOutputIT {
 
   public static PCollection<String> evenCountLetters(PCollection<String> words, PTypeFamily typeFamily) {
     return words.parallelDo("even", new FilterFn<String>() {
-
       @Override
       public boolean accept(String input) {
         return input.length() % 2 == 0;
@@ -57,7 +60,6 @@ public class MultipleOutputIT {
 
   public static PCollection<String> oddCountLetters(PCollection<String> words, PTypeFamily typeFamily) {
     return words.parallelDo("odd", new FilterFn<String>() {
-
       @Override
       public boolean accept(String input) {
         return input.length() % 2 != 0;
@@ -100,7 +102,8 @@ public class MultipleOutputIT {
     String inputPath = tmpDir.copyResourceFileName("letters.txt");
     String outputPathEven = tmpDir.getFileName("even");
     String outputPathOdd = tmpDir.getFileName("odd");
-
+    String outputPathReduce = tmpDir.getFileName("reduce");
+    
     PCollection<String> words = pipeline.read(At.textFile(inputPath, typeFamily.strings()));
 
     PCollection<String> evenCountWords = evenCountLetters(words, typeFamily);
@@ -108,14 +111,27 @@ public class MultipleOutputIT {
     pipeline.writeTextFile(evenCountWords, outputPathEven);
     pipeline.writeTextFile(oddCountWords, outputPathOdd);
 
+    evenCountWords.by(new FirstLetterFn(), typeFamily.strings())
+        .groupByKey()
+        .combineValues(Aggregators.<String>FIRST_N(10))
+        .write(To.textFile(outputPathReduce));
+    
     PipelineResult result = pipeline.done();
 
     checkFileContents(outputPathEven, Arrays.asList("bb"));
     checkFileContents(outputPathOdd, Arrays.asList("a"));
-
+    checkNotEmpty(outputPathReduce);
+    
     return result;
   }
 
+  static class FirstLetterFn extends MapFn<String, String> {
+    @Override
+    public String map(String input) {
+      return input.substring(0, 1);
+    }
+  }
+  
   /**
    * Mutates the state of an input and then emits the mutated object.
    */
@@ -167,6 +183,18 @@ public class MultipleOutputIT {
 
   }
 
+  private void checkNotEmpty(String filePath) throws IOException {
+    File dir = new File(filePath);
+    File[] partFiles = dir.listFiles(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        return name.startsWith("part");
+      } 
+    });
+    assertTrue(partFiles.length > 0);
+    assertTrue(Files.readLines(partFiles[0], Charset.defaultCharset()).size() > 0);
+  }
+  
   private void checkFileContents(String filePath, List<String> expected) throws IOException {
     File outputFile = new File(filePath, "part-m-00000");
     List<String> lines = Files.readLines(outputFile, Charset.defaultCharset());

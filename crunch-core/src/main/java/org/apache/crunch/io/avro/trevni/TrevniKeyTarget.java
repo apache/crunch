@@ -134,7 +134,7 @@ public class TrevniKeyTarget extends FileTargetImpl {
 
   @Override
   protected Path getDestFile(final Configuration conf, final Path src, final Path dir, final boolean mapOnlyJob) throws IOException {
-    Path outputFilename = super.getDestFile(conf, src, dir, mapOnlyJob);
+    Path outputFilename = super.getDestFile(conf, src, dir, true);
     //make sure the dst file is unique in the case there are multiple part-#.trv files per partition.
     return new Path(outputFilename.toString()+"-"+src.getName());
   }

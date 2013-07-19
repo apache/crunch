@@ -86,8 +86,7 @@ public class FileTargetImpl implements PathTarget {
     return true;
   }
 
-  public void handleOutputs(Configuration conf, Path workingPath, int index,
-      boolean mapOnlyJob) throws IOException {
+  public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
     Path src = getSourcePattern(workingPath, index);
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(src), src);
@@ -97,7 +96,7 @@ public class FileTargetImpl implements PathTarget {
     }
     boolean sameFs = isCompatible(srcFs, path);
     for (Path s : srcs) {
-      Path d = getDestFile(conf, s, path, mapOnlyJob);
+      Path d = getDestFile(conf, s, path, s.getName().contains("-m-"));
       if (sameFs) {
         srcFs.rename(s, d);
       } else {

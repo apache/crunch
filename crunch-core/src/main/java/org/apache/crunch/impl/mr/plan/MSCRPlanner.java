@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -268,17 +267,36 @@ public class MSCRPlanner {
       Set<Edge> usedEdges = Sets.newHashSet();
       for (Vertex g : gbks) {
         Set<NodePath> inputs = Sets.newHashSet();
+        HashMultimap<Target, NodePath> mapSideOutputPaths = HashMultimap.create();
         for (Edge e : g.getIncomingEdges()) {
           inputs.addAll(e.getNodePaths());
           usedEdges.add(e);
+          if (e.getHead().isInput()) {
+            for (Edge ep : e.getHead().getOutgoingEdges()) {
+              if (ep.getTail().isOutput() && !usedEdges.contains(ep)) { // map-side output
+                for (Target t : outputs.get(ep.getTail().getPCollection())) {
+                  mapSideOutputPaths.putAll(t, ep.getNodePaths());
+                }
+                usedEdges.add(ep);
+              }
+            }
+          }
         }
         JobPrototype prototype = JobPrototype.createMapReduceJob(
             ++lastJobID, (PGroupedTableImpl) g.getPCollection(), inputs, pipeline.createTempPath());
+        prototype.addMapSideOutputs(mapSideOutputPaths);
         assignment.put(g, prototype);
         for (Edge e : g.getIncomingEdges()) {
           assignment.put(e.getHead(), prototype);
-          usedEdges.add(e);
+          if (e.getHead().isInput()) {
+            for (Edge ep : e.getHead().getOutgoingEdges()) {
+              if (ep.getTail().isOutput() && !assignment.containsKey(ep.getTail())) { // map-side output
+                assignment.put(ep.getTail(), prototype);
+              }
+            }
+          }
         }
+        
         HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
         for (Edge e : g.getOutgoingEdges()) {
           Vertex output = e.getTail();
@@ -290,13 +308,12 @@ public class MSCRPlanner {
         }
         prototype.addReducePaths(outputPaths);
       }
-      
+
       // Check for any un-assigned vertices, which should be map-side outputs
       // that we will need to run in a map-only job.
       HashMultimap<Target, NodePath> outputPaths = HashMultimap.create();
       Set<Vertex> orphans = Sets.newHashSet();
       for (Vertex v : component) {
-
         // Check if this vertex has multiple inputs but only a subset of
         // them have already been assigned
         boolean vertexHasUnassignedIncomingEdges = false;
@@ -334,7 +351,7 @@ public class MSCRPlanner {
         }
       }
     }
-    
+  
     return assignment;
   }
   

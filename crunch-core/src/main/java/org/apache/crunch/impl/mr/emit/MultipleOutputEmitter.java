@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.impl.mr.emit;
 
-import java.io.IOException;
-
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.io.CrunchOutputs;
