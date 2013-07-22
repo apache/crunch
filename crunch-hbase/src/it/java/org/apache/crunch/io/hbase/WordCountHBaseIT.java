@@ -30,6 +30,7 @@ import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
@@ -213,6 +214,10 @@ public class WordCountHBaseIT {
     hbaseTestUtil.shutdownMiniMapReduceCluster();
     hbaseTestUtil.shutdownMiniCluster();
     hbaseTestUtil.shutdownMiniZKCluster();
+
+    //Delete the build directory that gets created in the root of the project when starting
+    //the MiniMapReduceCluster
+    FileUtils.deleteDirectory(new File("build"));
   }
 
   public void run(Pipeline pipeline) throws IOException {
