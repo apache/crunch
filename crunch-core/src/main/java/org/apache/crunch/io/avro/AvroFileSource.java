@@ -20,6 +20,7 @@ package org.apache.crunch.io.avro;
 import java.io.IOException;
 
 import java.util.List;
+import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
@@ -39,14 +40,26 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName());
     return bundle;
   }
+
+  private DatumReader<T> reader;
   
   public AvroFileSource(Path path, AvroType<T> ptype) {
     super(path, ptype, getBundle(ptype));
   }
 
+  public AvroFileSource(Path path, AvroType<T> ptype, DatumReader<T> reader) {
+    super(path, ptype, getBundle(ptype));
+    this.reader = reader;
+  }
+
   public AvroFileSource(List<Path> paths, AvroType<T> ptype) {
     super(paths, ptype, getBundle(ptype));
   }
+  
+  public AvroFileSource(List<Path> paths, AvroType<T> ptype, DatumReader<T> reader) {
+    super(paths, ptype, getBundle(ptype));
+    this.reader = reader;
+  }  
 
   @Override
   public String toString() {
@@ -55,6 +68,10 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
-    return read(conf, new AvroFileReaderFactory<T>((AvroType<T>) ptype));
+    return read(conf, getFileReaderFactory((AvroType<T>) ptype));
+  }
+
+  protected AvroFileReaderFactory<T> getFileReaderFactory(AvroType<T> ptype){
+    return new AvroFileReaderFactory(reader, ptype);
   }
 }

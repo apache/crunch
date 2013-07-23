@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.avro;
 
+import org.apache.avro.io.DatumReader;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
@@ -28,9 +29,17 @@ public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
     this(path, atype, new SequentialFileNamingScheme());
   }
 
+  public AvroFileSourceTarget(Path path, AvroType<T> atype, DatumReader<T> reader) {
+    this(path, atype, reader, new SequentialFileNamingScheme());
+  }
+
   public AvroFileSourceTarget(Path path, AvroType<T> atype, FileNamingScheme fileNamingScheme) {
     super(new AvroFileSource<T>(path, atype), new AvroFileTarget(path), fileNamingScheme);
   }
+
+  public AvroFileSourceTarget(Path path, AvroType<T> atype, DatumReader<T> reader, FileNamingScheme fileNamingScheme) {
+    super(new AvroFileSource<T>(path, atype, reader), new AvroFileTarget(path), fileNamingScheme);
+  }  
 
   @Override
   public String toString() {

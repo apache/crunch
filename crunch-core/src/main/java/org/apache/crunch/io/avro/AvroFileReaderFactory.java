@@ -49,7 +49,11 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
   private final MapFn<T, T> mapFn;
 
   public AvroFileReaderFactory(AvroType<T> atype) {
-    this.recordReader = createDatumReader(atype);
+    this(createDatumReader(atype), atype);
+  }
+
+  public AvroFileReaderFactory(DatumReader<T> reader, AvroType<T> atype) {
+    this.recordReader = reader != null ? reader : createDatumReader(atype);
     this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
   }
 
