@@ -19,6 +19,7 @@ package org.apache.crunch;
 
 import java.io.IOException;
 
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -34,6 +35,12 @@ public interface Source<T> {
    */
   PType<T> getType();
 
+  /**
+   * Returns the {@code Converter} used for mapping the inputs from this instance
+   * into {@code PCollection} or {@code PTable} values.
+   */
+  Converter<?, ?, ?, ?> getConverter();
+  
   /**
    * Configure the given job to use this source as an input.
    * 

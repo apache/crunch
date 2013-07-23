@@ -63,8 +63,7 @@ public class DoNode {
     return new DoNode(fn, name, ptype, NO_CHILDREN, ptype.getGroupingConverter(), null);
   }
 
-  public static <S> DoNode createOutputNode(String name, PType<S> ptype) {
-    Converter outputConverter = ptype.getConverter();
+  public static DoNode createOutputNode(String name, Converter outputConverter, PType<?> ptype) {
     DoFn<?, ?> fn = ptype.getOutputMapFn();
     return new DoNode(fn, name, ptype, NO_CHILDREN, outputConverter, null);
   }
@@ -135,7 +134,7 @@ public class DoNode {
     Converter inputConverter = null;
     if (inputNode) {
       if (nodeContext == NodeContext.MAP) {
-        inputConverter = ptype.getConverter();
+        inputConverter = source.getConverter();
       } else {
         inputConverter = ((PGroupedTableType<?, ?>) ptype).getGroupingConverter();
       }

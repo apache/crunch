@@ -24,6 +24,7 @@ import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.io.OutputHandler;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -93,5 +94,15 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   @Override
   public long getLastModifiedAt(Configuration configuration) {
     return source.getLastModifiedAt(configuration);
+  }
+
+  @Override
+  public Converter<?, ?, ?, ?> getConverter() {
+    return source.getConverter();
+  }
+
+  @Override
+  public Converter<?, ?, ?, ?> getConverter(PType<?> ptype) {
+    return target.getConverter(ptype);
   }
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.sql.Driver;
 
 import org.apache.crunch.Source;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -123,4 +124,8 @@ public class DataBaseSource<T extends DBWritable & Writable> implements Source<T
     return ptype;
   }
 
+  @Override
+  public Converter<?, ?, ?, ?> getConverter() {
+    return ptype.getConverter();
+  }
 }

@@ -18,6 +18,7 @@
 package org.apache.crunch;
 
 import org.apache.crunch.io.OutputHandler;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 
@@ -79,6 +80,15 @@ public interface Target {
    */
   boolean accept(OutputHandler handler, PType<?> ptype);
 
+  /**
+   * Returns the {@code Converter} to use for mapping from the output {@code PCollection}
+   * into the output values expected by this instance.
+   * 
+   * @param ptype The {@code PType} of the data that is being written to this instance
+   * @return A valid {@code Converter} for the output represented by this instance
+   */
+  Converter<?, ?, ?, ?> getConverter(PType<?> ptype);
+  
   /**
    * Attempt to create the {@code SourceTarget} type that corresponds to this {@code Target}
    * for the given {@code PType}, if possible. If it is not possible, return {@code null}.

@@ -30,7 +30,7 @@ public class JobNameBuilderTest {
   public void testBuild() {
     final String pipelineName = "PipelineName";
     final String nodeName = "outputNode";
-    DoNode doNode = DoNode.createOutputNode(nodeName, Writables.strings());
+    DoNode doNode = DoNode.createOutputNode(nodeName, Writables.strings().getConverter(), Writables.strings());
     JobNameBuilder jobNameBuilder = new JobNameBuilder(pipelineName);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
     String jobName = jobNameBuilder.build();

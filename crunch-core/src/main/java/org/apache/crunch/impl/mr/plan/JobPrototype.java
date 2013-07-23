@@ -36,6 +36,7 @@ import org.apache.crunch.impl.mr.run.CrunchMapper;
 import org.apache.crunch.impl.mr.run.CrunchReducer;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -149,8 +150,8 @@ class JobPrototype {
       DoNode node = null;
       for (NodePath nodePath : targetsToNodePaths.get(target)) {
         if (node == null) {
-          PCollectionImpl<?> collect = nodePath.tail();
-          node = DoNode.createOutputNode(target.toString(), collect.getPType());
+          PType<?> ptype = nodePath.tail().getPType();
+          node = DoNode.createOutputNode(target.toString(), target.getConverter(ptype), ptype);
           outputHandler.configureNode(node, target);
         }
         outputNodes.add(walkPath(nodePath.descendingIterator(), node));
@@ -163,8 +164,8 @@ class JobPrototype {
         DoNode node = null;
         for (NodePath nodePath : mapSideNodePaths.get(target)) {
           if (node == null) {
-            PCollectionImpl<?> collect = nodePath.tail();
-            node = DoNode.createOutputNode(target.toString(), collect.getPType());
+            PType<?> ptype = nodePath.tail().getPType();
+            node = DoNode.createOutputNode(target.toString(), target.getConverter(ptype), ptype);
             outputHandler.configureNode(node, target);
           }
           mapSideNodes.add(walkPath(nodePath.descendingIterator(), node));

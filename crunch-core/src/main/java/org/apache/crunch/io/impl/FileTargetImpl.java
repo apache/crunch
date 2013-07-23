@@ -86,6 +86,12 @@ public class FileTargetImpl implements PathTarget {
     return true;
   }
 
+  @Override
+  public Converter<?, ?, ?, ?> getConverter(PType<?> ptype) {
+    return ptype.getConverter();
+  }
+
+  @Override
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
     Path src = getSourcePattern(workingPath, index);
@@ -254,4 +260,5 @@ public class FileTargetImpl implements PathTarget {
     }
     return exists;
   }
+
 }

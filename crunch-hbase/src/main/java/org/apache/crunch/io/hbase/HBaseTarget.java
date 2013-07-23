@@ -28,6 +28,7 @@ import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.OutputHandler;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -119,5 +120,10 @@ public class HBaseTarget implements MapReduceTarget {
   public boolean handleExisting(WriteMode strategy, long lastModifiedAt, Configuration conf) {
     LOG.info("HBaseTarget ignores checks for existing outputs...");
     return false;
+  }
+
+  @Override
+  public Converter<?, ?, ?, ?> getConverter(final PType<?> ptype) {
+    return ptype.getConverter();
   }
 }

@@ -31,6 +31,7 @@ import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SourceTargetHelper;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -81,6 +82,11 @@ public class FileSourceImpl<T> implements Source<T> {
 
   public List<Path> getPaths() {
     return paths;
+  }
+  
+  @Override
+  public Converter<?, ?, ?, ?> getConverter() {
+    return ptype.getConverter();
   }
   
   @Override

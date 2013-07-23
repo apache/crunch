@@ -30,6 +30,7 @@ import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FormatBundle;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
@@ -129,5 +130,10 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   public long getLastModifiedAt(Configuration configuration) {
     LOG.warn("Cannot determine last modified time for source: " + toString());
     return -1;
+  }
+
+  @Override
+  public Converter<?, ?, ?, ?> getConverter() {
+    return PTYPE.getConverter();
   }
 }
