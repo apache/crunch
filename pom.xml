@@ -91,7 +91,7 @@ under the License.
     <url>https://git-wip-us.apache.org/repos/asf?p=crunch.git</url>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>apache-crunch-0.7</tag>
   </scm>
 
   <issueManagement>
