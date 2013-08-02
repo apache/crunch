@@ -17,23 +17,24 @@
  */
 package org.apache.crunch.io.hbase;
 
-import org.apache.crunch.Target;
+import org.apache.crunch.io.SequentialFileNamingScheme;
+import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.hadoop.fs.Path;
 
-/**
- * Static factory methods for creating HBase {@link Target} types.
- */
-public class ToHBase {
+public class HFileTarget extends FileTargetImpl {
 
-  public static Target table(String table) {
-    return new HBaseTarget(table);
+  // TODO(chaoshi): configurable compression algorithm, block size, data block encoder for hfile...
+
+  public HFileTarget(String path) {
+    this(new Path(path));
   }
 
-  public static Target hfile(String path) {
-    return new HFileTarget(path);
+  public HFileTarget(Path path) {
+    super(path, HFileOutputFormatForCrunch.class, new SequentialFileNamingScheme());
   }
 
-  public static Target hfile(Path path) {
-    return new HFileTarget(path);
+  @Override
+  public String toString() {
+    return "HFile(" + path + ")";
   }
 }
