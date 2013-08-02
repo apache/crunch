@@ -100,8 +100,6 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
 
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
-    Configuration conf = job.getConfiguration();
-    HBaseConfiguration.addHbaseResources(conf);
     TableMapReduceUtil.addDependencyJars(job);
     if (inputId == -1) {
       job.setMapperClass(CrunchMapper.class);
