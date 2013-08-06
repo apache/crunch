@@ -136,8 +136,15 @@ public class MSCRPlanner {
       }
       assignments.putAll(newAssignments);
       
-      // Remove completed outputs.
+      // Remove completed outputs and mark materialized output locations
+      // for subsequent job processing.
       for (PCollectionImpl<?> output : currentStage) {
+        if (toMaterialize.containsKey(output)) {
+          MaterializableIterable mi = toMaterialize.get(output);
+          if (mi.isSourceTarget()) {
+            output.materializeAt((SourceTarget) mi.getSource());
+          }
+        }
         targetDeps.remove(output);
       }
     }
