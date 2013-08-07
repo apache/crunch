@@ -42,37 +42,66 @@ public abstract class PGroupedTableType<K, V> implements PType<Pair<K, Iterable<
 
   protected static class PTypeIterable<V> implements Iterable<V> {
     private final Iterable<Object> iterable;
-    private final MapFn<Object, V> mapFn;
+    private final HoldLastIterator<V> holdLastIter;
 
     public PTypeIterable(MapFn<Object, V> mapFn, Iterable<Object> iterable) {
-      this.mapFn = mapFn;
       this.iterable = iterable;
+      this.holdLastIter = new HoldLastIterator<V>(mapFn);
     }
 
     public Iterator<V> iterator() {
-      return new Iterator<V>() {
-        Iterator<Object> iter = iterable.iterator();
-
-        public boolean hasNext() {
-          return iter.hasNext();
-        }
-
-        public V next() {
-          return mapFn.map(iter.next());
-        }
-
-        public void remove() {
-          iter.remove();
-        }
-      };
+      return holdLastIter.reset(iterable.iterator());
     }
     
     @Override
     public String toString() {
-      return Iterables.toString(this);
+      return holdLastIter.toString();
     }
   }
 
+  protected static class HoldLastIterator<V> implements Iterator<V> {
+
+    private Iterator<Object> iter;
+    private V lastReturned = null;
+    private final MapFn<Object, V> mapFn;
+    
+    public HoldLastIterator(MapFn<Object, V> mapFn) {
+      this.mapFn = mapFn;
+    }
+    
+    public HoldLastIterator<V> reset(Iterator<Object> iter) {
+      this.iter = iter;
+      return this;
+    }
+    
+    @Override
+    public boolean hasNext() {
+      return iter.hasNext();
+    }
+
+    @Override
+    public V next() {
+      lastReturned = mapFn.map(iter.next());
+      return lastReturned;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder().append('[');
+      if (lastReturned != null) {
+        sb.append(lastReturned).append(", ...]");
+      } else if (iter != null) {
+        sb.append("...]");
+      }
+      return sb.toString();
+    }
+  }
+  
   public static class PairIterableMapFn<K, V> extends MapFn<Pair<Object, Iterable<Object>>, Pair<K, Iterable<V>>> {
     private final MapFn<Object, K> keys;
     private final MapFn<Object, V> values;

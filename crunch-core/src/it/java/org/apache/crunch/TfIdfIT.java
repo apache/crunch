@@ -26,7 +26,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.crunch.fn.MapKeysFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
 import org.apache.crunch.lib.Aggregate;
