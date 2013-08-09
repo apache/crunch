@@ -19,28 +19,17 @@ package org.apache.crunch.contrib.io.jdbc;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
-import org.apache.crunch.contrib.io.jdbc.DataBaseSource;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.CrunchTestSupport;
 import org.apache.crunch.types.writable.Writables;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapreduce.lib.db.DBWritable;
 import org.h2.tools.RunScript;
 import org.h2.tools.Server;
 import org.junit.After;
@@ -63,36 +52,6 @@ public class DataBaseSourceIT extends CrunchTestSupport implements Serializable 
   @After
   public void stop() throws Exception {
     server.stop();
-  }
-
-  public static class IdentifiableName implements DBWritable, Writable {
-
-    public IntWritable id = new IntWritable();
-    public Text name = new Text();
-
-    @Override
-    public void readFields(DataInput in) throws IOException {
-      id.readFields(in);
-      name.readFields(in);
-    }
-
-    @Override
-    public void write(DataOutput out) throws IOException {
-      id.write(out);
-      name.write(out);
-    }
-
-    @Override
-    public void readFields(ResultSet resultSet) throws SQLException {
-      id.set(resultSet.getInt(1));
-      name.set(resultSet.getString(2));
-    }
-
-    @Override
-    public void write(PreparedStatement preparedStatement) throws SQLException {
-      throw new UnsupportedOperationException("Not implemented");
-    }
-
   }
 
   @Test

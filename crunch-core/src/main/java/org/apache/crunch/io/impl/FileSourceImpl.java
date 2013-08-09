@@ -26,6 +26,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Source;
+import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FileReaderFactory;
@@ -91,17 +92,15 @@ public class FileSourceImpl<T> implements Source<T> {
   
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
-    if (inputId == -1) {
-      for (Path path : paths) {
-        FileInputFormat.addInputPath(job, path);
-      }
-      job.setInputFormatClass(inputBundle.getFormatClass());
-      inputBundle.configure(job.getConfiguration());
-    } else {
-      for (Path path : paths) {
-        CrunchInputs.addInputPath(job, path, inputBundle, inputId);
-      }
+    // Use Crunch to handle the combined input splits
+    job.setInputFormatClass(CrunchInputFormat.class);
+    for (Path path : paths) {
+      CrunchInputs.addInputPath(job, path, inputBundle, inputId);
     }
+  }
+
+  public FormatBundle<? extends InputFormat> getBundle() {
+    return inputBundle;
   }
 
   @Override

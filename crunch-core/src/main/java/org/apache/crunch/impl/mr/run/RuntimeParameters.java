@@ -22,13 +22,13 @@ package org.apache.crunch.impl.mr.run;
  */
 public class RuntimeParameters {
 
-  public static final String AGGREGATOR_BUCKETS = "crunch.aggregator.buckets";
-
   public static final String DEBUG = "crunch.debug";
 
   public static final String TMP_DIR = "crunch.tmp.dir";
 
   public static final String LOG_JOB_PROGRESS = "crunch.log.job.progress";
+
+  public static final String DISABLE_COMBINE_FILE = "crunch.disable.combine.file";
 
   public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
 

@@ -21,10 +21,13 @@ import java.io.IOException;
 import java.sql.Driver;
 
 import org.apache.crunch.Source;
+import org.apache.crunch.io.CrunchInputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.db.DBConfiguration;
@@ -104,8 +107,16 @@ public class DataBaseSource<T extends DBWritable & Writable> implements Source<T
   public void configureSource(Job job, int inputId) throws IOException {
     Configuration configuration = job.getConfiguration();
     DBConfiguration.configureDB(configuration, driverClass, url, username, password);
-    job.setInputFormatClass(DBInputFormat.class);
-    DBInputFormat.setInput(job, inputClass, selectClause, countClause);
+    if (inputId == -1) {
+      job.setInputFormatClass(DBInputFormat.class);
+      DBInputFormat.setInput(job, inputClass, selectClause, countClause);
+    } else {
+      FormatBundle<DBInputFormat> bundle = FormatBundle.forInput(DBInputFormat.class)
+          .set(DBConfiguration.INPUT_CLASS_PROPERTY, inputClass.getCanonicalName())
+          .set(DBConfiguration.INPUT_QUERY, selectClause)
+          .set(DBConfiguration.INPUT_COUNT_QUERY, countClause);
+      CrunchInputs.addInputPath(job, new Path("dbsource"), bundle, inputId);
+    }
   }
 
   @Override

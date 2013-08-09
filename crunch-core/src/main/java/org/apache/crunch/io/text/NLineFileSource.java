@@ -20,6 +20,8 @@ package org.apache.crunch.io.text;
 import java.io.IOException;
 
 import java.util.List;
+
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -39,6 +41,7 @@ public class NLineFileSource<T> extends FileSourceImpl<T> implements ReadableSou
   private static FormatBundle getBundle(int linesPerTask) {
     FormatBundle bundle = FormatBundle.forInput(NLineInputFormat.class);
     bundle.set(NLineInputFormat.LINES_PER_MAP, String.valueOf(linesPerTask));
+    bundle.set(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
     return bundle;
   }
   

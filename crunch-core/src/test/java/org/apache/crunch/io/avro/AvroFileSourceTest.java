@@ -26,6 +26,8 @@ import java.io.IOException;
 
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.mapred.AvroJob;
+import org.apache.crunch.io.CrunchInputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.types.avro.AvroType;
@@ -58,7 +60,8 @@ public class AvroFileSourceTest {
     AvroFileSource<Person> personFileSource = new AvroFileSource<Person>(new Path(tempFile.getAbsolutePath()),
         avroSpecificType);
 
-    personFileSource.configureSource(job, -1);
+    FormatBundle bundle = personFileSource.getBundle();
+    bundle.configure(job.getConfiguration());
 
     assertFalse(job.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, true));
     assertEquals(Person.SCHEMA$.toString(), job.getConfiguration().get(AvroJob.INPUT_SCHEMA));
@@ -70,7 +73,8 @@ public class AvroFileSourceTest {
     AvroFileSource<Record> personFileSource = new AvroFileSource<Record>(new Path(tempFile.getAbsolutePath()),
         avroGenericType);
 
-    personFileSource.configureSource(job, -1);
+    FormatBundle bundle = personFileSource.getBundle();
+    bundle.configure(job.getConfiguration());
 
     assertFalse(job.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, true));
 
@@ -82,8 +86,8 @@ public class AvroFileSourceTest {
     AvroFileSource<StringWrapper> personFileSource = new AvroFileSource<StringWrapper>(new Path(
         tempFile.getAbsolutePath()), avroReflectType);
 
-    personFileSource.configureSource(job, -1);
-
+    FormatBundle bundle = personFileSource.getBundle();
+    bundle.configure(job.getConfiguration());
     assertTrue(job.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, false));
 
   }
