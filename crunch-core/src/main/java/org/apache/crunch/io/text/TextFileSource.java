@@ -32,16 +32,9 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  private static boolean isBZip2(Path path) {
-    String strPath = path.toString();
-    return strPath.endsWith(".bz") || strPath.endsWith(".bz2");
-  }
-
   private static <S> Class<? extends FileInputFormat<?, ?>> getInputFormat(Path path, PType<S> ptype) {
     if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
       return AvroUtf8InputFormat.class;
-    } else if (isBZip2(path)) {
-      return BZip2TextInputFormat.class;
     } else {
       return TextInputFormat.class;
     }
@@ -53,15 +46,6 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   public TextFileSource(List<Path> paths, PType<T> ptype) {
     super(paths, ptype, getInputFormat(paths.get(0), ptype));
-  }
-
-  @Override
-  public long getSize(Configuration conf) {
-    long sz = super.getSize(conf);
-    if (isBZip2(path)) {
-      sz *= 10; // Arbitrary compression factor
-    }
-    return sz;
   }
 
   @Override
