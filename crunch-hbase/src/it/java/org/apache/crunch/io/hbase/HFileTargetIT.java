@@ -53,6 +53,8 @@ import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.StoreFileScanner;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MiniMRCluster;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -63,11 +65,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class HFileTargetIT implements Serializable {
 
@@ -96,6 +100,38 @@ public class HFileTargetIT implements Serializable {
       splits[i] = new byte[] { b };
     }
     admin.createTable(htable, splits);
+
+    // Set classpath for yarn, otherwise it won't be able to find MRAppMaster
+    // (see CRUNCH-249 and HBASE-8528).
+    HBASE_TEST_UTILITY.getConfiguration().setBoolean("yarn.is.minicluster", true);
+    dirtyFixForJobHistoryServerAddress();
+  }
+
+  /**
+   * We need to set the address of JobHistory server, as it randomly picks a unused port
+   * to listen. Unfortunately, HBaseTestingUtility neither does that nor provides a way
+   * for us to know the picked address. We have to access it using reflection.
+   *
+   * This is necessary when testing with MRv2, but does no harm to MRv1.
+   */
+  private static void dirtyFixForJobHistoryServerAddress() {
+    try {
+      // Retrieve HBASE_TEST_UTILITY.mrCluster via reflection, as it is private.
+      Field mrClusterField = HBaseTestingUtility.class.getDeclaredField("mrCluster");
+      mrClusterField.setAccessible(true);
+      MiniMRCluster mrCluster = (MiniMRCluster) mrClusterField.get(HBASE_TEST_UTILITY);
+      JobConf jobConf = mrCluster.createJobConf();
+      Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
+      String proprety = "mapreduce.jobhistory.address";
+      String value = jobConf.get(proprety);
+      if (value != null) { // maybe null if we're running MRv1
+        conf.set(proprety, value);
+      }
+    } catch (IllegalAccessException e) {
+      throw new AssertionError(e);
+    } catch (NoSuchFieldException e) {
+      throw new AssertionError(e);
+    }
   }
 
   @AfterClass
