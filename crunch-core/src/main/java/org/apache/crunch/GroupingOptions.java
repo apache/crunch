@@ -17,6 +17,8 @@
  */
 package org.apache.crunch;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -153,12 +155,23 @@ public class GroupingOptions {
       this.extraConf.put(confKey, confValue);
       return this;
     }
-    
+
+    @Deprecated
     public Builder sourceTarget(SourceTarget<?> st) {
       this.sourceTargets.add(st);
       return this;
     }
-    
+
+    public Builder sourceTargets(SourceTarget<?>... st) {
+      Collections.addAll(this.sourceTargets, st);
+      return this;
+    }
+
+    public Builder sourceTargets(Collection<SourceTarget<?>> st) {
+      this.sourceTargets.addAll(st);
+      return this;
+    }
+
     public GroupingOptions build() {
       return new GroupingOptions(partitionerClass, groupingComparatorClass, sortComparatorClass,
           numReducers, extraConf, sourceTargets);

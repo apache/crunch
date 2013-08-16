@@ -17,6 +17,7 @@
  */
 package org.apache.crunch;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -54,7 +55,12 @@ public class ParallelDoOptions {
       Collections.addAll(this.sourceTargets, sourceTargets);
       return this;
     }
-    
+
+    public Builder sourceTargets(Collection<SourceTarget<?>> sourceTargets) {
+      this.sourceTargets.addAll(sourceTargets);
+      return this;
+    }
+
     public ParallelDoOptions build() {
       return new ParallelDoOptions(sourceTargets);
     }

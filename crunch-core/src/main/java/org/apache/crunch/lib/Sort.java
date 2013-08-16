@@ -285,7 +285,7 @@ public class Sort {
       Iterable<K> iter = Sample.reservoirSample(ptable.keys(), numReducers - 1).materialize();
       MaterializableIterable<K> mi = (MaterializableIterable<K>) iter;
       if (mi.isSourceTarget()) {
-        builder.sourceTarget((SourceTarget) mi.getSource());
+        builder.sourceTargets((SourceTarget) mi.getSource());
       }
       builder.partitionerClass(TotalOrderPartitioner.class);
       builder.conf(TotalOrderPartitioner.PARTITIONER_PATH, mi.getPath().toString());
