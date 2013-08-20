@@ -38,15 +38,25 @@ public class PipelineResult {
   public static class StageResult {
 
     private final String stageName;
+    private final String stageId;
     private final Counters counters;
 
     public StageResult(String stageName, Counters counters) {
+      this(stageName, stageName, counters);
+    }
+
+    public StageResult(String stageName, String stageId, Counters counters){
       this.stageName = stageName;
+      this.stageId = stageId;
       this.counters = counters;
     }
 
     public String getStageName() {
       return stageName;
+    }
+
+    public String getStageId(){
+      return stageId;
     }
 
     /**

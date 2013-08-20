@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.crunch.PipelineResult.StageResult;
 import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
@@ -68,7 +69,11 @@ public class MRPipelineIT implements Serializable {
     
     pipeline.writeTextFile(ungroupedTableA, outputDirA.getAbsolutePath());
     pipeline.writeTextFile(ungroupedTableB, outputDirB.getAbsolutePath());
-    pipeline.done();
+    PipelineResult result = pipeline.done();
+    for(StageResult stageResult : result.getStageResults()){
+      assertTrue(stageResult.getStageName().length() > 1);
+      assertTrue(stageResult.getStageId().length() > 1);
+    }
 
     // Verify that output from a single PGroupedTable can be sent to multiple collections
     assertTrue(new File(outputDirA, "part-r-00000").exists());
