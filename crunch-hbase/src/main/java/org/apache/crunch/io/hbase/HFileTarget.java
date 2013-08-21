@@ -17,20 +17,62 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.base.Preconditions;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.crunch.io.CrunchOutputs;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
+import org.apache.crunch.types.PType;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class HFileTarget extends FileTargetImpl {
 
-  // TODO(chaoshi): configurable compression algorithm, block size, data block encoder for hfile...
+  private static final HColumnDescriptor DEFAULT_COLUMN_DESCRIPTOR = new HColumnDescriptor();
+  private final HColumnDescriptor hcol;
 
   public HFileTarget(String path) {
     this(new Path(path));
   }
 
   public HFileTarget(Path path) {
+    this(path, DEFAULT_COLUMN_DESCRIPTOR);
+  }
+
+  public HFileTarget(Path path, HColumnDescriptor hcol) {
     super(path, HFileOutputFormatForCrunch.class, new SequentialFileNamingScheme());
+    this.hcol = Preconditions.checkNotNull(hcol);
+  }
+
+  @Override
+  protected void configureForMapReduce(
+      Job job,
+      Class keyClass,
+      Class valueClass,
+      Class outputFormatClass,
+      Path outputPath,
+      String name) {
+    try {
+      FileOutputFormat.setOutputPath(job, outputPath);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    String hcolStr = Hex.encodeHexString(WritableUtils.toByteArray(hcol));
+    if (name == null) {
+      job.setOutputFormatClass(HFileOutputFormatForCrunch.class);
+      job.setOutputKeyClass(keyClass);
+      job.setOutputValueClass(valueClass);
+      job.getConfiguration().set(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, hcolStr);
+    } else {
+      FormatBundle<HFileOutputFormatForCrunch> bundle = FormatBundle.forOutput(HFileOutputFormatForCrunch.class);
+      bundle.set(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, hcolStr);
+      CrunchOutputs.addNamedOutput(job, name, bundle, keyClass, valueClass);
+    }
   }
 
   @Override

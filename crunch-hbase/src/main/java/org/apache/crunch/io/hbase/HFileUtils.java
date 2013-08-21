@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.sun.org.apache.commons.logging.Log;
 import com.sun.org.apache.commons.logging.LogFactory;
+import org.apache.crunch.DoFn;
+import org.apache.crunch.Emitter;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
@@ -34,6 +36,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.RawComparator;
@@ -104,8 +107,25 @@ public final class HFileUtils {
       byte[] family = f.getName();
       PCollection<KeyValue> sorted = sortAndPartition(
           kvs.filter(new FilterByFamilyFn(family)), table);
-      sorted.write(new HFileTarget(new Path(outputPath, Bytes.toString(family))));
+      sorted.write(new HFileTarget(new Path(outputPath, Bytes.toString(family)), f));
     }
+  }
+
+  public static void writePutsToHFilesForIncrementalLoad(
+      PCollection<Put> puts,
+      HTable table,
+      Path outputPath) throws IOException {
+    PCollection<KeyValue> kvs = puts.parallelDo("ConvertPutToKeyValue", new DoFn<Put, KeyValue>() {
+      @Override
+      public void process(Put input, Emitter<KeyValue> emitter) {
+        for (List<KeyValue> keyValues : input.getFamilyMap().values()) {
+          for (KeyValue keyValue : keyValues) {
+            emitter.emit(keyValue);
+          }
+        }
+      }
+    }, writables(KeyValue.class));
+    writeToHFilesForIncrementalLoad(kvs, table, outputPath);
   }
 
   public static PCollection<KeyValue> sortAndPartition(PCollection<KeyValue> kvs, HTable table) throws IOException {

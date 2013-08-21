@@ -19,17 +19,18 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.sun.org.apache.commons.logging.Log;
+import com.sun.org.apache.commons.logging.LogFactory;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
-import org.apache.hadoop.hbase.io.hfile.Compression;
 import org.apache.hadoop.hbase.io.hfile.HFile;
-import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoder;
 import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
-import org.apache.hadoop.hbase.io.hfile.NoOpDataBlockEncoder;
 import org.apache.hadoop.hbase.regionserver.Store;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.TimeRangeTracker;
@@ -39,6 +40,8 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
@@ -53,13 +56,10 @@ import java.io.IOException;
  */
 public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValue> {
 
-  private static final String COMPACTION_EXCLUDE_CONF_KEY =
-      "hbase.mapreduce.hfileoutputformat.compaction.exclude";
-  private static final String DATABLOCK_ENCODING_CONF_KEY =
-      "hbase.mapreduce.hfileoutputformat.datablock.encoding";
-  private static final String BLOCK_SIZE_CONF_KEY =
-      "hbase.mapreduce.hfileoutputformat.blocksize";
-  private static final String COMPRESSION_CONF_KEY = "hbase.hfileoutputformat.families.compression";
+  public static final String HCOLUMN_DESCRIPTOR_KEY = "hbase.hfileoutputformat.column.descriptor";
+  private static final String COMPACTION_EXCLUDE_CONF_KEY = "hbase.mapreduce.hfileoutputformat.compaction.exclude";
+  private static final Log LOG = LogFactory.getLog(HFileOutputFormatForCrunch.class);
+
   private final byte [] now = Bytes.toBytes(System.currentTimeMillis());
   private final TimeRangeTracker trt = new TimeRangeTracker();
 
@@ -68,20 +68,30 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
     Path outputPath = getDefaultWorkFile(context, "");
     Configuration conf = context.getConfiguration();
     FileSystem fs = outputPath.getFileSystem(conf);
-    int blocksize = conf.getInt(BLOCK_SIZE_CONF_KEY,
-        HFile.DEFAULT_BLOCKSIZE);
-    String compression = conf.get(
-        COMPRESSION_CONF_KEY, Compression.Algorithm.NONE.getName());
+
     final boolean compactionExclude = conf.getBoolean(
         COMPACTION_EXCLUDE_CONF_KEY, false);
-    HFileDataBlockEncoder encoder = getDataBlockEncoder(
-        conf.get(DATABLOCK_ENCODING_CONF_KEY));
+
+    String hcolStr = conf.get(HCOLUMN_DESCRIPTOR_KEY);
+    if (hcolStr == null) {
+      throw new AssertionError(HCOLUMN_DESCRIPTOR_KEY + " is not set in conf");
+    }
+    byte[] hcolBytes;
+    try {
+      hcolBytes = Hex.decodeHex(hcolStr.toCharArray());
+    } catch (DecoderException e) {
+      throw new AssertionError("Bad hex string: " + hcolStr);
+    }
+    HColumnDescriptor hcol = new HColumnDescriptor();
+    hcol.readFields(new DataInputStream(new ByteArrayInputStream(hcolBytes)));
+    LOG.info("Output path: " + outputPath);
+    LOG.info("HColumnDescriptor: " + hcol.toString());
     final HFile.Writer writer = HFile.getWriterFactoryNoCache(conf)
         .withPath(fs, outputPath)
-        .withBlockSize(blocksize)
-        .withCompression(compression)
+        .withBlockSize(hcol.getBlocksize())
+        .withCompression(hcol.getCompression())
         .withComparator(KeyValue.KEY_COMPARATOR)
-        .withDataBlockEncoder(encoder)
+        .withDataBlockEncoder(new HFileDataBlockEncoderImpl(hcol.getDataBlockEncoding()))
         .withChecksumType(Store.getChecksumType(conf))
         .withBytesPerChecksum(Store.getBytesPerChecksum(conf))
         .create();
@@ -111,23 +121,5 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         writer.close();
       }
     };
-  }
-
-  private HFileDataBlockEncoder getDataBlockEncoder(String dataBlockEncodingStr) {
-    final HFileDataBlockEncoder encoder;
-    if (dataBlockEncodingStr == null) {
-      encoder = NoOpDataBlockEncoder.INSTANCE;
-    } else {
-      try {
-        encoder = new HFileDataBlockEncoderImpl(DataBlockEncoding
-            .valueOf(dataBlockEncodingStr));
-      } catch (IllegalArgumentException ex) {
-        throw new RuntimeException(
-            "Invalid data block encoding type configured for the param "
-                + DATABLOCK_ENCODING_CONF_KEY + " : "
-                + dataBlockEncodingStr);
-      }
-    }
-    return encoder;
   }
 }

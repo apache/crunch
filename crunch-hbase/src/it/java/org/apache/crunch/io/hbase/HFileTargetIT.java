@@ -47,8 +47,10 @@ import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
+import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
 import org.apache.hadoop.hbase.regionserver.KeyValueHeap;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
@@ -107,9 +109,13 @@ public class HFileTargetIT implements Serializable {
   }
 
   private static HTable createTable(int splits) throws IOException {
+    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
+    return createTable(splits, hcol);
+  }
+
+  private static HTable createTable(int splits, HColumnDescriptor hcol) throws IOException {
     byte[] tableName = Bytes.toBytes("test_table_" + tableCounter);
     HBaseAdmin admin = HBASE_TEST_UTILITY.getHBaseAdmin();
-    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
     HTableDescriptor htable = new HTableDescriptor(tableName);
     htable.addFamily(hcol);
     admin.createTable(htable, Bytes.split(Bytes.toBytes("a"), Bytes.toBytes("z"), splits));
@@ -166,8 +172,8 @@ public class HFileTargetIT implements Serializable {
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
     PCollection<String> words = split(shakespeare, "\\s+");
     PTable<String,Long> wordCounts = words.count();
-    PCollection<KeyValue> wordCountKvs = convertToKeyValues(wordCounts);
-    pipeline.write(wordCountKvs, ToHBase.hfile(outputPath));
+    PCollection<KeyValue> wordCountKeyValues = convertToKeyValues(wordCounts);
+    pipeline.write(wordCountKeyValues, ToHBase.hfile(outputPath));
 
     PipelineResult result = pipeline.run();
     assertTrue(result.succeeded());
@@ -188,9 +194,9 @@ public class HFileTargetIT implements Serializable {
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
     PCollection<String> words = split(shakespeare, "\\s+");
     PTable<String,Long> wordCounts = words.count();
-    PCollection<KeyValue> wordCountKvs = convertToKeyValues(wordCounts);
-    HFileUtils.writeToHFilesForIncrementalLoad(
-        wordCountKvs,
+    PCollection<Put> wordCountPuts = convertToPuts(wordCounts);
+    HFileUtils.writePutsToHFilesForIncrementalLoad(
+        wordCountPuts,
         testTable,
         outputPath);
 
@@ -231,12 +237,12 @@ public class HFileTargetIT implements Serializable {
     PCollection<String> longWords = words.filter(FilterFns.not(SHORT_WORD_FILTER));
     PTable<String, Long> shortWordCounts = shortWords.count();
     PTable<String, Long> longWordCounts = longWords.count();
-    HFileUtils.writeToHFilesForIncrementalLoad(
-        convertToKeyValues(shortWordCounts),
+    HFileUtils.writePutsToHFilesForIncrementalLoad(
+        convertToPuts(shortWordCounts),
         table1,
         outputPath1);
-    HFileUtils.writeToHFilesForIncrementalLoad(
-        convertToKeyValues(longWordCounts),
+    HFileUtils.writePutsToHFilesForIncrementalLoad(
+        convertToPuts(longWordCounts),
         table2,
         outputPath2);
 
@@ -245,9 +251,65 @@ public class HFileTargetIT implements Serializable {
     loader.doBulkLoad(outputPath1, table1);
     loader.doBulkLoad(outputPath2, table2);
 
-    FileSystem fs = FileSystem.get(conf);
     assertEquals(396L, getWordCountFromTable(table1, "of"));
     assertEquals(427L, getWordCountFromTable(table2, "and"));
+  }
+
+  @Test
+  public void testHFileUsesFamilyConfig() throws IOException {
+    DataBlockEncoding newBlockEncoding = DataBlockEncoding.PREFIX;
+    assertTrue(newBlockEncoding != DataBlockEncoding.valueOf(HColumnDescriptor.DEFAULT_DATA_BLOCK_ENCODING));
+
+    Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
+    Pipeline pipeline = new MRPipeline(HFileTargetIT.class, conf);
+    Path inputPath = copyResourceFileToHDFS("shakes.txt");
+    Path outputPath = getTempPathOnHDFS("out");
+    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
+    hcol.setDataBlockEncoding(newBlockEncoding);
+    HTable testTable = createTable(10, hcol);
+
+    PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
+    PCollection<String> words = split(shakespeare, "\\s+");
+    PTable<String,Long> wordCounts = words.count();
+    PCollection<Put> wordCountPuts = convertToPuts(wordCounts);
+    HFileUtils.writePutsToHFilesForIncrementalLoad(
+        wordCountPuts,
+        testTable,
+        outputPath);
+
+    PipelineResult result = pipeline.run();
+    assertTrue(result.succeeded());
+
+    int hfilesCount = 0;
+    FileSystem fs = outputPath.getFileSystem(conf);
+    for (FileStatus e : fs.listStatus(new Path(outputPath, Bytes.toString(TEST_FAMILY)))) {
+      Path f = e.getPath();
+      if (!f.getName().startsWith("part-")) { // filter out "_SUCCESS"
+        continue;
+      }
+      HFile.Reader reader = null;
+      try {
+        reader = HFile.createReader(fs, f, new CacheConfig(conf));
+        assertEquals(DataBlockEncoding.PREFIX, reader.getEncodingOnDisk());
+      } finally {
+        reader.close();
+      }
+      hfilesCount++;
+    }
+    assertTrue(hfilesCount > 0);
+  }
+
+  private PCollection<Put> convertToPuts(PTable<String, Long> in) {
+    return in.parallelDo(new MapFn<Pair<String, Long>, Put>() {
+      @Override
+      public Put map(Pair<String, Long> input) {
+        String w = input.first();
+        long c = input.second();
+        Put p = new Put(Bytes.toBytes(w));
+        p.add(TEST_FAMILY, TEST_QUALIFIER, Bytes.toBytes(c));
+        return p;
+      }
+    }, Writables.writables(Put.class));
   }
 
   private PCollection<KeyValue> convertToKeyValues(PTable<String, Long> in) {
