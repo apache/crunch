@@ -23,12 +23,14 @@ import com.google.common.io.Resources;
 import org.apache.commons.io.IOUtils;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.test.TemporaryPath;
@@ -76,10 +78,17 @@ import static org.junit.Assert.fail;
 public class HFileTargetIT implements Serializable {
 
   private static final HBaseTestingUtility HBASE_TEST_UTILITY = new HBaseTestingUtility();
-  private static final byte[] TEST_TABLE = Bytes.toBytes("test_table");
   private static final byte[] TEST_FAMILY = Bytes.toBytes("test_family");
   private static final byte[] TEST_QUALIFIER = Bytes.toBytes("count");
   private static final Path TEMP_DIR = new Path("/tmp");
+  private static int tableCounter = 0;
+
+  private static FilterFn<String> SHORT_WORD_FILTER = new FilterFn<String>() {
+    @Override
+    public boolean accept(String input) {
+      return input.length() <= 2;
+    }
+  };
 
   @Rule
   public transient TemporaryPath tmpDir = TemporaryPaths.create();
@@ -90,21 +99,22 @@ public class HFileTargetIT implements Serializable {
     // (we will need it to test bulk load against multiple regions).
     HBASE_TEST_UTILITY.startMiniCluster();
     HBASE_TEST_UTILITY.startMiniMapReduceCluster();
-    HBaseAdmin admin = HBASE_TEST_UTILITY.getHBaseAdmin();
-    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
-    HTableDescriptor htable = new HTableDescriptor(TEST_TABLE);
-    htable.addFamily(hcol);
-    byte[][] splits = new byte[26][];
-    for (int i = 0; i < 26; i++) {
-      byte b = (byte)('a' + i);
-      splits[i] = new byte[] { b };
-    }
-    admin.createTable(htable, splits);
 
     // Set classpath for yarn, otherwise it won't be able to find MRAppMaster
     // (see CRUNCH-249 and HBASE-8528).
     HBASE_TEST_UTILITY.getConfiguration().setBoolean("yarn.is.minicluster", true);
     dirtyFixForJobHistoryServerAddress();
+  }
+
+  private static HTable createTable(int splits) throws IOException {
+    byte[] tableName = Bytes.toBytes("test_table_" + tableCounter);
+    HBaseAdmin admin = HBASE_TEST_UTILITY.getHBaseAdmin();
+    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
+    HTableDescriptor htable = new HTableDescriptor(tableName);
+    htable.addFamily(hcol);
+    admin.createTable(htable, Bytes.split(Bytes.toBytes("a"), Bytes.toBytes("z"), splits));
+    tableCounter++;
+    return new HTable(HBASE_TEST_UTILITY.getConfiguration(), tableName);
   }
 
   /**
@@ -144,7 +154,6 @@ public class HFileTargetIT implements Serializable {
   public void setUp() throws IOException {
     FileSystem fs = FileSystem.get(HBASE_TEST_UTILITY.getConfiguration());
     fs.delete(TEMP_DIR, true);
-    HBASE_TEST_UTILITY.truncateTable(TEST_TABLE);
   }
 
   @Test
@@ -174,12 +183,12 @@ public class HFileTargetIT implements Serializable {
     Pipeline pipeline = new MRPipeline(HFileTargetIT.class, conf);
     Path inputPath = copyResourceFileToHDFS("shakes.txt");
     Path outputPath = getTempPathOnHDFS("out");
+    HTable testTable = createTable(26);
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
     PCollection<String> words = split(shakespeare, "\\s+");
     PTable<String,Long> wordCounts = words.count();
     PCollection<KeyValue> wordCountKvs = convertToKeyValues(wordCounts);
-    HTable testTable = new HTable(HBASE_TEST_UTILITY.getConfiguration(), TEST_TABLE);
     HFileUtils.writeToHFilesForIncrementalLoad(
         wordCountKvs,
         testTable,
@@ -199,9 +208,46 @@ public class HFileTargetIT implements Serializable {
         .put("to", 367L)
         .build();
     for (Map.Entry<String, Long> e : EXPECTED.entrySet()) {
-      assertEquals((long) e.getValue(), Bytes.toLong(
-          testTable.get(new Get(Bytes.toBytes(e.getKey()))).getColumnLatest(TEST_FAMILY, TEST_QUALIFIER).getValue()));
+      long actual = getWordCountFromTable(testTable, e.getKey());
+      assertEquals((long) e.getValue(), actual);
     }
+  }
+
+  /** @seealso CRUNCH-251 */
+  @Test
+  public void testMultipleHFileTargets() throws Exception {
+    Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
+    Pipeline pipeline = new MRPipeline(HFileTargetIT.class, conf);
+    Path inputPath = copyResourceFileToHDFS("shakes.txt");
+    Path outputPath1 = getTempPathOnHDFS("out1");
+    Path outputPath2 = getTempPathOnHDFS("out2");
+    HTable table1 = createTable(10);
+    HTable table2 = createTable(20);
+    LoadIncrementalHFiles loader = new LoadIncrementalHFiles(HBASE_TEST_UTILITY.getConfiguration());
+
+    PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
+    PCollection<String> words = split(shakespeare, "\\s+");
+    PCollection<String> shortWords = words.filter(SHORT_WORD_FILTER);
+    PCollection<String> longWords = words.filter(FilterFns.not(SHORT_WORD_FILTER));
+    PTable<String, Long> shortWordCounts = shortWords.count();
+    PTable<String, Long> longWordCounts = longWords.count();
+    HFileUtils.writeToHFilesForIncrementalLoad(
+        convertToKeyValues(shortWordCounts),
+        table1,
+        outputPath1);
+    HFileUtils.writeToHFilesForIncrementalLoad(
+        convertToKeyValues(longWordCounts),
+        table2,
+        outputPath2);
+
+    PipelineResult result = pipeline.run();
+    assertTrue(result.succeeded());
+    loader.doBulkLoad(outputPath1, table1);
+    loader.doBulkLoad(outputPath2, table2);
+
+    FileSystem fs = FileSystem.get(conf);
+    assertEquals(396L, getWordCountFromTable(table1, "of"));
+    assertEquals(427L, getWordCountFromTable(table2, "and"));
   }
 
   private PCollection<KeyValue> convertToKeyValues(PTable<String, Long> in) {
@@ -280,5 +326,14 @@ public class HFileTargetIT implements Serializable {
     FileSystem fs = FileSystem.get(conf);
     Path result = new Path(TEMP_DIR, fileName);
     return result.makeQualified(fs);
+  }
+
+  private long getWordCountFromTable(HTable table, String word) throws IOException {
+    Get get = new Get(Bytes.toBytes(word));
+    KeyValue keyValue = table.get(get).getColumnLatest(TEST_FAMILY, TEST_QUALIFIER);
+    if (keyValue == null) {
+      fail("no such row: " +  word);
+    }
+    return Bytes.toLong(keyValue.getValue());
   }
 }

@@ -119,9 +119,9 @@ public final class HFileUtils {
     List <KeyValue> splitPoints = getSplitPoints(table);
     Path partitionFile = new Path(((MRPipeline) kvs.getPipeline()).createTempPath(), "partition");
     writePartitionInfo(conf, partitionFile, splitPoints);
-    TotalOrderPartitioner.setPartitionFile(conf, partitionFile);
     GroupingOptions options = GroupingOptions.builder()
         .partitionerClass(TotalOrderPartitioner.class)
+        .conf(TotalOrderPartitioner.PARTITIONER_PATH, partitionFile.toString())
         .numReducers(splitPoints.size() + 1)
         .sortComparatorClass(KeyValueComparator.class)
         .build();
