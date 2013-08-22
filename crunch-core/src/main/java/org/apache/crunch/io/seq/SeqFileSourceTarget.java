@@ -30,7 +30,7 @@ public class SeqFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   }
 
   public SeqFileSourceTarget(Path path, PType<T> ptype) {
-    this(path, ptype, new SequentialFileNamingScheme());
+    this(path, ptype, SequentialFileNamingScheme.getInstance());
   }
 
   public SeqFileSourceTarget(Path path, PType<T> ptype, FileNamingScheme fileNamingScheme) {

@@ -44,7 +44,7 @@ public class HFileTarget extends FileTargetImpl {
   }
 
   public HFileTarget(Path path, HColumnDescriptor hcol) {
-    super(path, HFileOutputFormatForCrunch.class, new SequentialFileNamingScheme());
+    super(path, HFileOutputFormatForCrunch.class, SequentialFileNamingScheme.getInstance());
     this.hcol = Preconditions.checkNotNull(hcol);
   }
 

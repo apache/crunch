@@ -82,7 +82,7 @@ public class To {
    */
   public static <K extends Writable, V extends Writable> Target formattedFile(
       Path path, Class<? extends FileOutputFormat<K, V>> formatClass) {
-    return new FileTargetImpl(path, formatClass, new SequentialFileNamingScheme());
+    return new FileTargetImpl(path, formatClass, SequentialFileNamingScheme.getInstance());
   }
 
   /**

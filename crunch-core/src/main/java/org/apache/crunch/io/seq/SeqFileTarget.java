@@ -32,7 +32,7 @@ public class SeqFileTarget extends FileTargetImpl {
   }
 
   public SeqFileTarget(Path path) {
-    this(path, new SequentialFileNamingScheme());
+    this(path, SequentialFileNamingScheme.getInstance());
   }
 
   public SeqFileTarget(Path path, FileNamingScheme fileNamingScheme) {

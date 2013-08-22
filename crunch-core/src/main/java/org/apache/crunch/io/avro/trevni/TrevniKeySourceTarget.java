@@ -26,7 +26,7 @@ import org.apache.hadoop.fs.Path;
 
 public class TrevniKeySourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public TrevniKeySourceTarget(Path path, AvroType<T> atype) {
-    this(path, atype, new SequentialFileNamingScheme());
+    this(path, atype, SequentialFileNamingScheme.getInstance());
   }
 
   public TrevniKeySourceTarget(Path path, AvroType<T> atype, FileNamingScheme fileNamingScheme) {

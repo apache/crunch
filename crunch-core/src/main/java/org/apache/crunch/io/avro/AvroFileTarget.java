@@ -39,7 +39,7 @@ public class AvroFileTarget extends FileTargetImpl {
   }
 
   public AvroFileTarget(Path path) {
-    this(path, new SequentialFileNamingScheme());
+    this(path, SequentialFileNamingScheme.getInstance());
   }
 
   public AvroFileTarget(Path path, FileNamingScheme fileNamingScheme) {

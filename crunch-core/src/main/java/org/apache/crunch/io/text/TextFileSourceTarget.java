@@ -30,7 +30,7 @@ public class TextFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   }
 
   public TextFileSourceTarget(Path path, PType<T> ptype) {
-    this(path, ptype, new SequentialFileNamingScheme());
+    this(path, ptype, SequentialFileNamingScheme.getInstance());
   }
 
   public TextFileSourceTarget(Path path, PType<T> ptype, FileNamingScheme fileNamingScheme) {

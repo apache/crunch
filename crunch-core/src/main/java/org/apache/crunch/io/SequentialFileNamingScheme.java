@@ -18,7 +18,9 @@
 package org.apache.crunch.io;
 
 import java.io.IOException;
+import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,6 +30,18 @@ import org.apache.hadoop.fs.Path;
  * order to generate unique file names.
  */
 public class SequentialFileNamingScheme implements FileNamingScheme {
+
+  private static final SequentialFileNamingScheme INSTANCE = new SequentialFileNamingScheme();
+
+  public static SequentialFileNamingScheme getInstance() {
+    return INSTANCE;
+  }
+
+  private final Map<Path, Integer> cache;
+
+  private SequentialFileNamingScheme() {
+    this.cache = Maps.newHashMap();
+  }
 
   @Override
   public String getMapOutputName(Configuration configuration, Path outputDirectory) throws IOException {
@@ -42,10 +56,19 @@ public class SequentialFileNamingScheme implements FileNamingScheme {
 
   private String getSequentialFileName(Configuration configuration, Path outputDirectory, String jobTypeName)
       throws IOException {
-    FileSystem fileSystem = outputDirectory.getFileSystem(configuration);
-    int fileSequenceNumber = fileSystem.listStatus(outputDirectory).length;
-
-    return String.format("part-%s-%05d", jobTypeName, fileSequenceNumber);
+    return String.format("part-%s-%05d", jobTypeName, getSequenceNumber(configuration, outputDirectory));
   }
 
+  private synchronized int getSequenceNumber(Configuration conf, Path outputDirectory) throws IOException {
+    if (cache.containsKey(outputDirectory)) {
+      int next = cache.get(outputDirectory);
+      cache.put(outputDirectory, next + 1);
+      return next;
+    } else {
+      FileSystem fileSystem = outputDirectory.getFileSystem(conf);
+      int next = fileSystem.listStatus(outputDirectory).length;
+      cache.put(outputDirectory, next + 1);
+      return next;
+    }
+  }
 }

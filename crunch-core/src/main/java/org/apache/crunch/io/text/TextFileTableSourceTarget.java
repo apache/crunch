@@ -41,7 +41,7 @@ public class TextFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImp
   }
 
   public TextFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
-    this(path, tableType, new SequentialFileNamingScheme());
+    this(path, tableType, SequentialFileNamingScheme.getInstance());
   }
 
   public TextFileTableSourceTarget(Path path, PTableType<K, V> tableType,

@@ -44,7 +44,7 @@ public class SequentialFileNamingSchemeTest {
   @Before
   public void setUp() throws IOException {
     configuration = new Configuration();
-    namingScheme = new SequentialFileNamingScheme();
+    namingScheme = SequentialFileNamingScheme.getInstance();
   }
 
   @Test

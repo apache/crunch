@@ -34,7 +34,7 @@ public class SeqFileTableSourceTarget<K, V> extends ReadableSourcePathTargetImpl
   }
 
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType) {
-    this(path, tableType, new SequentialFileNamingScheme());
+    this(path, tableType, SequentialFileNamingScheme.getInstance());
   }
 
   public SeqFileTableSourceTarget(Path path, PTableType<K, V> tableType, FileNamingScheme fileNamingScheme) {

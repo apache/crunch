@@ -27,7 +27,7 @@ import org.apache.crunch.types.PTableType;
 public class TableSourcePathTargetImpl<K, V> extends SourcePathTargetImpl<Pair<K, V>> implements TableSource<K, V> {
 
   public TableSourcePathTargetImpl(TableSource<K, V> source, PathTarget target) {
-    this(source, target, new SequentialFileNamingScheme());
+    this(source, target, SequentialFileNamingScheme.getInstance());
   }
 
   public TableSourcePathTargetImpl(TableSource<K, V> source, PathTarget target, FileNamingScheme fileNamingScheme) {

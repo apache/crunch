@@ -50,7 +50,7 @@ public class TextFileTarget extends FileTargetImpl {
   }
 
   public <T> TextFileTarget(Path path) {
-    this(path, new SequentialFileNamingScheme());
+    this(path, SequentialFileNamingScheme.getInstance());
   }
 
   public <T> TextFileTarget(Path path, FileNamingScheme fileNamingScheme) {

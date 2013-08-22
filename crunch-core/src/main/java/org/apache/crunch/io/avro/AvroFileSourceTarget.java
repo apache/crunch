@@ -26,11 +26,11 @@ import org.apache.hadoop.fs.Path;
 
 public class AvroFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
   public AvroFileSourceTarget(Path path, AvroType<T> atype) {
-    this(path, atype, new SequentialFileNamingScheme());
+    this(path, atype, SequentialFileNamingScheme.getInstance());
   }
 
   public AvroFileSourceTarget(Path path, AvroType<T> atype, DatumReader<T> reader) {
-    this(path, atype, reader, new SequentialFileNamingScheme());
+    this(path, atype, reader, SequentialFileNamingScheme.getInstance());
   }
 
   public AvroFileSourceTarget(Path path, AvroType<T> atype, FileNamingScheme fileNamingScheme) {
