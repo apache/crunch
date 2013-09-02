@@ -19,6 +19,8 @@ package org.apache.crunch.io.hbase;
 
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -36,4 +38,11 @@ public class FromHBase {
     return new HBaseSourceTarget(table, scan);
   }
 
+  public static Source<KeyValue> hfile(String path) {
+    return hfile(new Path(path));
+  }
+
+  public static Source<KeyValue> hfile(Path path) {
+    return new HFileSource(path);
+  }
 }
