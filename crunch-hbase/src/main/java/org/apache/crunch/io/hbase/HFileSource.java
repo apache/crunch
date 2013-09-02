@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.crunch.io.FormatBundle;
@@ -31,7 +32,6 @@ import org.apache.hadoop.hbase.client.Scan;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 import static org.apache.crunch.types.writable.Writables.writables;
 
@@ -55,10 +55,10 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
 
   private static FormatBundle<HFileInputFormat> createInputFormatBundle(Scan scan) {
     FormatBundle<HFileInputFormat> bundle = FormatBundle.forInput(HFileInputFormat.class);
-    if (!Objects.equals(scan.getStartRow(), HConstants.EMPTY_START_ROW)) {
+    if (!Objects.equal(scan.getStartRow(), HConstants.EMPTY_START_ROW)) {
       bundle.set(HFileInputFormat.START_ROW_KEY, Hex.encodeHexString(scan.getStartRow()));
     }
-    if (!Objects.equals(scan.getStopRow(), HConstants.EMPTY_END_ROW)) {
+    if (!Objects.equal(scan.getStopRow(), HConstants.EMPTY_END_ROW)) {
       bundle.set(HFileInputFormat.STOP_ROW_KEY, Hex.encodeHexString(scan.getStopRow()));
     }
     return bundle;
