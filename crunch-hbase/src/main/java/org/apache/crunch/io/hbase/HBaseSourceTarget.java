@@ -20,16 +20,17 @@ package org.apache.crunch.io.hbase;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FormatBundle;
+import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -37,7 +38,9 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
@@ -45,7 +48,8 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.util.Base64;
 import org.apache.hadoop.mapreduce.Job;
 
-public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<ImmutableBytesWritable, Result>>,
+public class HBaseSourceTarget extends HBaseTarget implements
+    ReadableSourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {
 
   private static final Log LOG = LogFactory.getLog(HBaseSourceTarget.class);
@@ -133,5 +137,69 @@ public class HBaseSourceTarget extends HBaseTarget implements SourceTarget<Pair<
   @Override
   public Converter<?, ?, ?, ?> getConverter() {
     return PTYPE.getConverter();
+  }
+
+  @Override
+  public Iterable<Pair<ImmutableBytesWritable, Result>> read(Configuration conf) throws IOException {
+    Configuration hconf = HBaseConfiguration.create(conf);
+    HTable htable = new HTable(hconf, table);
+    return new HTableIterable(htable, scan);
+  }
+
+  private static class HTableIterable implements Iterable<Pair<ImmutableBytesWritable, Result>> {
+    private final HTable table;
+    private final Scan scan;
+
+    public HTableIterable(HTable table, Scan scan) {
+      this.table = table;
+      this.scan = scan;
+    }
+
+    @Override
+    public Iterator<Pair<ImmutableBytesWritable, Result>> iterator() {
+      try {
+        return new HTableIterator(table, table.getScanner(scan));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private static class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
+
+    private final HTable table;
+    private final ResultScanner scanner;
+    private final Iterator<Result> iter;
+
+    public HTableIterator(HTable table, ResultScanner scanner) {
+      this.table = table;
+      this.scanner = scanner;
+      this.iter = scanner.iterator();
+    }
+
+    @Override
+    public boolean hasNext() {
+      boolean hasNext = iter.hasNext();
+      if (!hasNext) {
+        scanner.close();
+        try {
+          table.close();
+        } catch (IOException e) {
+          LOG.error("Exception closing HTable: " + table.getTableName(), e);
+        }
+      }
+      return hasNext;
+    }
+
+    @Override
+    public Pair<ImmutableBytesWritable, Result> next() {
+      Result next = iter.next();
+      return Pair.of(new ImmutableBytesWritable(next.getRow()), next);
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
   }
 }

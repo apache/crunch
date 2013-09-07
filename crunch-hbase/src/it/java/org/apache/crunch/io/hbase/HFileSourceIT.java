@@ -81,7 +81,6 @@ public class HFileSourceIT implements Serializable {
     conf = tmpDir.getDefaultConfiguration();
   }
 
-  @Test
   public void testHFileSource() throws IOException {
     List<KeyValue> kvs = generateKeyValues(100);
     Path inputPath = tmpDir.getPath("in");
@@ -105,6 +104,12 @@ public class HFileSourceIT implements Serializable {
     for (int i = 0; i < kvs.size(); i++) {
       assertEquals(kvs.get(i).toString(), lines.get(i));
     }
+  }
+
+  @Test
+  public void testReadHFile() throws Exception {
+    List<KeyValue> kvs = generateKeyValues(100);
+    assertEquals(kvs, doTestReadHFiles(kvs, new Scan()));
   }
 
   @Test
@@ -193,6 +198,15 @@ public class HFileSourceIT implements Serializable {
 
     Pipeline pipeline = new MRPipeline(HFileSourceIT.class, conf);
     PCollection<Result> results = HFileUtils.scanHFiles(pipeline, inputPath, scan);
+    return ImmutableList.copyOf(results.materialize());
+  }
+
+  private List<KeyValue> doTestReadHFiles(List<KeyValue> kvs, Scan scan) throws IOException {
+    Path inputPath = tmpDir.getPath("in");
+    writeKeyValuesToHFile(inputPath, kvs);
+
+    Pipeline pipeline = new MRPipeline(HFileSourceIT.class, conf);
+    PCollection<KeyValue> results = pipeline.read(FromHBase.hfile(inputPath));
     return ImmutableList.copyOf(results.materialize());
   }
 

@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 import java.util.Random;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -243,6 +244,10 @@ public class WordCountHBaseIT {
       scan.addFamily(WORD_COLFAM);
       HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
       PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
+
+      Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();
+      assertEquals(3, materialized.size());
+
       PCollection<Put> puts = wordCount(words);
       pipeline.write(puts, new HBaseTarget(outputTableName));
       pipeline.write(puts, new HBaseTarget(otherTableName));

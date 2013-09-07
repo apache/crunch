@@ -66,7 +66,13 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
 
   @Override
   public Iterable<KeyValue> read(Configuration conf) throws IOException {
-    throw new UnsupportedOperationException("HFileSource#read(Configuration) is not implemented yet");
+    conf = new Configuration(conf);
+    inputBundle.configure(conf);
+    if (conf.get(HFileInputFormat.START_ROW_KEY) != null ||
+        conf.get(HFileInputFormat.STOP_ROW_KEY) != null) {
+      throw new IllegalStateException("Cannot filter row ranges in HFileSource.read");
+    }
+    return read(conf, new HFileReaderFactory());
   }
 
   @Override
