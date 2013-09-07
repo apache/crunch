@@ -17,20 +17,27 @@
  */
 package org.apache.crunch.impl.mr.run;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.CombineFileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.CombineFileRecordReader;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 import java.io.IOException;
 
 public class CrunchCombineFileInputFormat<K, V> extends CombineFileInputFormat<K, V> {
-  private FileInputFormat<K, V> inputFormat;
 
-  public CrunchCombineFileInputFormat(FileInputFormat<K, V> inputFormat) {
-    this.inputFormat = inputFormat;
+  public CrunchCombineFileInputFormat(JobContext jobContext) {
+    if (getMaxSplitSize(jobContext) == Long.MAX_VALUE) {
+      Configuration conf = jobContext.getConfiguration();
+      if (conf.get(RuntimeParameters.COMBINE_FILE_BLOCK_SIZE) != null) {
+        setMaxSplitSize(conf.getLong(RuntimeParameters.COMBINE_FILE_BLOCK_SIZE, 0));
+      } else {
+        setMaxSplitSize(jobContext.getConfiguration().getLong("dfs.block.size", 134217728L));
+      }
+    }
   }
 
   @Override

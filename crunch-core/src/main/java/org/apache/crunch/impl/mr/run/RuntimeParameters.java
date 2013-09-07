@@ -30,6 +30,8 @@ public class RuntimeParameters {
 
   public static final String DISABLE_COMBINE_FILE = "crunch.disable.combine.file";
 
+  public static final String COMBINE_FILE_BLOCK_SIZE = "crunch.combine.file.block.size";
+
   public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
 
   // Not instantiated
