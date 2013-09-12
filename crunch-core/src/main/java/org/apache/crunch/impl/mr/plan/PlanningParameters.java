@@ -33,6 +33,8 @@ public class PlanningParameters {
    */
   public static final String PIPELINE_PLAN_DOTFILE = "crunch.planner.dotfile";
 
+  public static final String JOB_NAME_MAX_STACK_LENGTH = "crunch.job.name.max.stack.length";
+
   private PlanningParameters() {
   }
 }

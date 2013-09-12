@@ -113,7 +113,7 @@ public class MSCRPlanner {
       // job prototype a particular GBK is assigned to.
       Multimap<Vertex, JobPrototype> newAssignments = HashMultimap.create();
       for (List<Vertex> component : components) {
-        newAssignments.putAll(constructJobPrototypes(component));
+        newAssignments.putAll(constructJobPrototypes(component, components.size()));
       }
 
       // Add in the job dependency information here.
@@ -154,7 +154,7 @@ public class MSCRPlanner {
     MRExecutor exec = new MRExecutor(jarClass, outputs, toMaterialize);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
       dotfileWriter.addJobPrototype(proto);
-      exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline));
+      exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline, lastJobID));
     }
 
     String planDotFile = dotfileWriter.buildDotfile();
@@ -239,7 +239,7 @@ public class MSCRPlanner {
     return graph;
   }
   
-  private Multimap<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component) {
+  private Multimap<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component, int numOfJobs) {
     Multimap<Vertex, JobPrototype> assignment = HashMultimap.create();
     List<Vertex> gbks = Lists.newArrayList();
     for (Vertex v : component) {

@@ -17,25 +17,44 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
-import static org.junit.Assert.assertEquals;
-
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class JobNameBuilderTest {
+
+  private static final Configuration CONF = new Configuration();
 
   @Test
   public void testBuild() {
     final String pipelineName = "PipelineName";
     final String nodeName = "outputNode";
-    DoNode doNode = DoNode.createOutputNode(nodeName, Writables.strings().getConverter(), Writables.strings());
-    JobNameBuilder jobNameBuilder = new JobNameBuilder(pipelineName);
+    DoNode doNode = createDoNode(nodeName);
+    JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
     String jobName = jobNameBuilder.build();
 
-    assertEquals(String.format("%s: %s", pipelineName, nodeName), jobName);
+    assertEquals(String.format("%s: %s (1/1)", pipelineName, nodeName), jobName);
   }
 
+  @Test
+  public void testNodeNameTooLong() {
+    final String pipelineName = "PipelineName";
+    final String nodeName = Strings.repeat("very_long_node_name", 100);
+    DoNode doNode = createDoNode(nodeName);
+    JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
+    jobNameBuilder.visit(Lists.newArrayList(doNode));
+    String jobName = jobNameBuilder.build();
+
+    assertFalse(jobName.contains(nodeName)); // Tests that the very long node name was shorten
+  }
+
+  private DoNode createDoNode(String nodeName) {
+    return DoNode.createOutputNode(nodeName, Writables.strings().getConverter(), Writables.strings());
+  }
 }

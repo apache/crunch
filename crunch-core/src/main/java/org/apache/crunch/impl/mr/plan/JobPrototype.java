@@ -127,17 +127,19 @@ class JobPrototype {
     this.dependencies.add(dependency);
   }
 
-  public CrunchControlledJob getCrunchJob(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
+  public CrunchControlledJob getCrunchJob(
+      Class<?> jarClass, Configuration conf, Pipeline pipeline, int numOfJobs) throws IOException {
     if (job == null) {
-      job = build(jarClass, conf, pipeline);
+      job = build(jarClass, conf, pipeline, numOfJobs);
       for (JobPrototype proto : dependencies) {
-        job.addDependingJob(proto.getCrunchJob(jarClass, conf, pipeline));
+        job.addDependingJob(proto.getCrunchJob(jarClass, conf, pipeline, numOfJobs));
       }
     }
     return job;
   }
 
-  private CrunchControlledJob build(Class<?> jarClass, Configuration conf, Pipeline pipeline) throws IOException {
+  private CrunchControlledJob build(
+      Class<?> jarClass, Configuration conf, Pipeline pipeline, int numOfJobs) throws IOException {
     Job job = new Job(conf);
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
@@ -220,7 +222,7 @@ class JobPrototype {
       }
       job.setInputFormatClass(CrunchInputFormat.class);
     }
-    job.setJobName(createJobName(pipeline.getName(), inputNodes, reduceNode));
+    job.setJobName(createJobName(conf, pipeline.getName(), inputNodes, reduceNode, numOfJobs));
 
     return new CrunchControlledJob(
         jobID,
@@ -239,8 +241,9 @@ class JobPrototype {
     DistCache.write(conf, path, rtNodes);
   }
 
-  private String createJobName(String pipelineName, List<DoNode> mapNodes, DoNode reduceNode) {
-    JobNameBuilder builder = new JobNameBuilder(pipelineName);
+  private String createJobName(
+      Configuration conf, String pipelineName, List<DoNode> mapNodes, DoNode reduceNode, int numOfJobs) {
+    JobNameBuilder builder = new JobNameBuilder(conf, pipelineName, jobID, numOfJobs);
     builder.visit(mapNodes);
     if (reduceNode != null) {
       builder.visit(reduceNode);
