@@ -32,7 +32,17 @@ import org.apache.crunch.types.PTypeFamily;
  * efficient due to its passing all data through the shuffle phase.
  */
 public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
-  
+
+  private final int numReducers;
+
+  public DefaultJoinStrategy() {
+    this(-1);
+  }
+
+  public DefaultJoinStrategy(int numReducers) {
+    this.numReducers = numReducers;
+  }
+
   @Override
   public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
     switch (joinType) {
@@ -60,14 +70,15 @@ public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
    */
   public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinFn<K, U, V> joinFn) {
     PTypeFamily ptf = left.getTypeFamily();
-    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right);
+    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = preJoin(left, right, numReducers);
     PTableType<K, Pair<U, V>> ret = ptf
         .tableOf(left.getKeyType(), ptf.pairs(left.getValueType(), right.getValueType()));
 
     return grouped.parallelDo(joinFn.getJoinType() + grouped.getName(), joinFn, ret);
   }
 
-  static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(PTable<K, U> left, PTable<K, V> right) {
+  static <K, U, V> PGroupedTable<Pair<K, Integer>, Pair<U, V>> preJoin(PTable<K, U> left, PTable<K, V> right,
+                                                                       int numReducers) {
     PTypeFamily ptf = left.getTypeFamily();
     PTableType<Pair<K, Integer>, Pair<U, V>> ptt = ptf.tableOf(ptf.pairs(left.getKeyType(), ptf.ints()),
         ptf.pairs(left.getValueType(), right.getValueType()));
@@ -89,7 +100,9 @@ public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
     optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
-
+    if (numReducers > 0) {
+      optionsBuilder.numReducers(numReducers);
+    }
     return (tag1.union(tag2)).groupByKey(optionsBuilder.build());
   }
 

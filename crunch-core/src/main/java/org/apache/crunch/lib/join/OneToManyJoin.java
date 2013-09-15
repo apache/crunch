@@ -62,9 +62,24 @@ public class OneToManyJoin {
    * @return the post-processed output of the join
    */
   public static <K, U, V, T> PCollection<T> oneToManyJoin(PTable<K, U> left, PTable<K, V> right,
-      DoFn<Pair<U, Iterable<V>>, T> postProcessFn, PType<T> ptype) {
+                                                          DoFn<Pair<U, Iterable<V>>, T> postProcessFn, PType<T> ptype) {
+    return oneToManyJoin(left, right, postProcessFn, ptype, -1);
+  }
 
-    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = DefaultJoinStrategy.preJoin(left, right);
+  /**
+   * Supports a user-specified number of reducers for the one-to-many join.
+   *
+   * @param left left-side table to join
+   * @param right right-side table to join
+   * @param postProcessFn DoFn to process the results of the join
+   * @param ptype type of the output of the postProcessFn
+   * @param numReducers The number of reducers to use
+   * @return the post-processed output of the join
+   */
+  public static <K, U, V, T> PCollection<T> oneToManyJoin(PTable<K, U> left, PTable<K, V> right,
+      DoFn<Pair<U, Iterable<V>>, T> postProcessFn, PType<T> ptype, int numReducers) {
+
+    PGroupedTable<Pair<K, Integer>, Pair<U, V>> grouped = DefaultJoinStrategy.preJoin(left, right, numReducers);
     return grouped.parallelDo("One to many join " + grouped.getName(),
         new OneToManyJoinFn<K, U, V, T>(left.getValueType(), postProcessFn), ptype);
   }
