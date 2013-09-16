@@ -96,12 +96,12 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
     @Override
     protected DatumWriter<T> createDatumWriter(Configuration conf) {
-      return new SpecificDatumWriter<T>(getSchema());
+      return new SpecificDatumWriter<T>(valueClass);
     }
 
     @Override
     protected DatumReader<T> createDatumReader(Configuration conf) {
-      return new SpecificDatumReader<T>(getSchema());
+      return new SpecificDatumReader<T>(valueClass);
     }
 
   }
@@ -188,12 +188,10 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
       binaryEncoder.flush();
       binaryDecoder = DecoderFactory.get()
           .binaryDecoder(byteOutStream.toByteArray(), binaryDecoder);
-      datumReader.read(target, binaryDecoder);
+      return datumReader.read(target, binaryDecoder);
     } catch (Exception e) {
       throw new CrunchRuntimeException("Error while deep copying avro value " + source, e);
     }
-
-    return target;
   }
 
   protected T createNewInstance(Class<T> targetClass) {
