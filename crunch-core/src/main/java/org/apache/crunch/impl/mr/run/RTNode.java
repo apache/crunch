@@ -30,6 +30,8 @@ import org.apache.crunch.impl.mr.emit.MultipleOutputEmitter;
 import org.apache.crunch.impl.mr.emit.OutputEmitter;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 public class RTNode implements Serializable {
 
@@ -66,7 +68,6 @@ public class RTNode implements Serializable {
       // Already initialized
       return;
     }
-
     fn.setContext(ctxt.getContext());
     fn.initialize();
     for (RTNode child : children) {
@@ -81,8 +82,9 @@ public class RTNode implements Serializable {
         this.emitter = new OutputEmitter(outputConverter, ctxt.getContext());
       }
     } else if (!children.isEmpty()) {
-      this.emitter = new IntermediateEmitter(outputPType, children,
-          ctxt.getContext().getConfiguration());
+      Configuration conf = ctxt.getContext().getConfiguration();
+      boolean disableDeepCopy = conf.getBoolean(RuntimeParameters.DISABLE_DEEP_COPY, false);
+      this.emitter = new IntermediateEmitter(outputPType, children, conf, disableDeepCopy || fn.disableDeepCopy());
     } else {
       throw new CrunchRuntimeException("Invalid RTNode config: no emitter for: " + nodeName);
     }

@@ -50,7 +50,7 @@ public class IntermediateEmitterTest {
   public void testEmit_SingleChild() {
     RTNode singleChild = mock(RTNode.class);
     IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(singleChild),
-        new Configuration());
+        new Configuration(), false);
     emitter.emit(stringWrapper);
 
     ArgumentCaptor<StringWrapper> argumentCaptor = ArgumentCaptor.forClass(StringWrapper.class);
@@ -63,7 +63,7 @@ public class IntermediateEmitterTest {
     RTNode childA = mock(RTNode.class);
     RTNode childB = mock(RTNode.class);
     IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(childA, childB),
-        new Configuration());
+        new Configuration(), false);
     emitter.emit(stringWrapper);
 
     ArgumentCaptor<StringWrapper> argumentCaptorA = ArgumentCaptor.forClass(StringWrapper.class);
@@ -80,4 +80,25 @@ public class IntermediateEmitterTest {
     assertNotSame(stringWrapper, argumentCaptorB.getValue());
   }
 
+  @Test
+  public void testEmit_MultipleChildrenDisableDeepCopy() {
+    RTNode childA = mock(RTNode.class);
+    RTNode childB = mock(RTNode.class);
+    IntermediateEmitter emitter = new IntermediateEmitter(ptype, Lists.newArrayList(childA, childB),
+        new Configuration(), true);
+    emitter.emit(stringWrapper);
+
+    ArgumentCaptor<StringWrapper> argumentCaptorA = ArgumentCaptor.forClass(StringWrapper.class);
+    ArgumentCaptor<StringWrapper> argumentCaptorB = ArgumentCaptor.forClass(StringWrapper.class);
+
+    verify(childA).process(argumentCaptorA.capture());
+    verify(childB).process(argumentCaptorB.capture());
+
+    assertEquals(stringWrapper, argumentCaptorA.getValue());
+    assertEquals(stringWrapper, argumentCaptorB.getValue());
+
+    // Make sure that multiple children without deep copies are the same instance
+    assertSame(stringWrapper, argumentCaptorA.getValue());
+    assertSame(stringWrapper, argumentCaptorB.getValue());
+  }
 }

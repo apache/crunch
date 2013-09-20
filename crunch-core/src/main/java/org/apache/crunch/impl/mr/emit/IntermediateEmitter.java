@@ -39,13 +39,14 @@ public class IntermediateEmitter implements Emitter<Object> {
   private final PType<Object> outputPType;
   private final boolean needDetachedValues;
 
-  public IntermediateEmitter(PType<Object> outputPType, List<RTNode> children, Configuration conf) {
+  public IntermediateEmitter(PType<Object> outputPType, List<RTNode> children, Configuration conf,
+                             boolean disableDeepCopy) {
     this.outputPType = outputPType;
     this.children = ImmutableList.copyOf(children);
     this.conf = conf;
 
     outputPType.initialize(conf);
-    needDetachedValues = this.children.size() > 1;
+    needDetachedValues = !disableDeepCopy && this.children.size() > 1;
   }
 
   public void emit(Object emitted) {

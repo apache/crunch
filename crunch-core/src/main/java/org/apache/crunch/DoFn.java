@@ -119,6 +119,19 @@ public abstract class DoFn<S, T> implements Serializable {
     return 1.2f;
   }
 
+  /**
+   * By default, Crunch will do a defensive deep copy of the outputs of a
+   * DoFn when there are multiple downstream consumers of that item, in order to
+   * prevent the downstream functions from making concurrent modifications to
+   * data objects. This introduces some extra overhead in cases where you know
+   * that the downstream code is only reading the objects and not modifying it,
+   * so you can disable this feature by overriding this function to
+   * return {@code true}.
+   */
+  public boolean disableDeepCopy() {
+    return false;
+  }
+
   protected TaskInputOutputContext<?, ?, ?, ?> getContext() {
     return context;
   }

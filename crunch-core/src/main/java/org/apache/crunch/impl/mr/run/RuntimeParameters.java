@@ -34,6 +34,8 @@ public class RuntimeParameters {
 
   public static final String CREATE_DIR = "mapreduce.jobcontrol.createdir.ifnotexist";
 
+  public static final String DISABLE_DEEP_COPY = "crunch.disable.deep.copy";
+
   // Not instantiated
   private RuntimeParameters() {
   }
