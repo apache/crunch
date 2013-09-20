@@ -23,11 +23,16 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
@@ -35,6 +40,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
@@ -604,16 +610,23 @@ public class Avros {
         ptypes), new TupleDeepCopier(clazz, ptypes), ptypes);
   }
 
-  private static Schema createTupleSchema(PType<?>... ptypes) {
+  private static Schema createTupleSchema(PType<?>... ptypes) throws RuntimeException {
     // Guarantee each tuple schema has a globally unique name
-    String tupleName = "tuple" + UUID.randomUUID().toString().replace('-', 'x');
-    Schema schema = Schema.createRecord(tupleName, "", "crunch", false);
     List<Schema.Field> fields = Lists.newArrayList();
+    MessageDigest md;
+    try {
+     md = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
     for (int i = 0; i < ptypes.length; i++) {
       AvroType atype = (AvroType) ptypes[i];
       Schema fieldSchema = allowNulls(atype.getSchema());
       fields.add(new Schema.Field("v" + i, fieldSchema, "", null));
+      md.update(fieldSchema.toString().getBytes(Charsets.UTF_8));
     }
+    String schemaName = "tuple" + Base64.encodeBase64URLSafeString(md.digest()).replace('-', 'x');
+    Schema schema = Schema.createRecord(schemaName, "", "crunch", false);
     schema.setFields(fields);
     return schema;
   }

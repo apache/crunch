@@ -142,6 +142,13 @@ public class AvroTypeTest {
   }
 
   @Test
+  public void testStableTupleNames() {
+    AvroType<Pair<Long, Float>> at1 = Avros.pairs(Avros.longs(), Avros.floats());
+    AvroType<Pair<Long, Float>> at2 = Avros.pairs(Avros.longs(), Avros.floats());
+    assertEquals(at1.getSchema(), at2.getSchema());
+  }
+
+  @Test
   public void testGetDetachedValue_AlreadyMappedAvroType() {
     Integer value = 42;
     AvroType<Integer> intType = Avros.ints();
