@@ -17,10 +17,10 @@
  */
 package org.apache.crunch.io.hbase;
 
-import com.sun.org.apache.commons.logging.Log;
-import com.sun.org.apache.commons.logging.LogFactory;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -32,6 +32,7 @@ import org.apache.hadoop.hbase.fs.HFileSystem;
 import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.FixedFileTrailer;
+import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFile.Reader;
 import org.apache.hadoop.hbase.io.hfile.HFileReaderV2;
 import org.apache.hadoop.hbase.io.hfile.HFileScanner;
@@ -62,7 +63,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
    * a more general purpose utility; it accounts for the presence of metadata files created
    * in the way we're doing exports.
    */
-  private static final PathFilter HIDDEN_FILE_FILTER = new PathFilter() {
+  static final PathFilter HIDDEN_FILE_FILTER = new PathFilter() {
     public boolean accept(Path p) {
       String name = p.getName();
       return !name.startsWith("_") && !name.startsWith(".");
@@ -86,6 +87,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
     private byte[] stopRow = null;
     private boolean reachedStopRow = false;
     private long count;
+    private boolean seeked = false;
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -93,16 +95,8 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       conf = context.getConfiguration();
       Path path = fileSplit.getPath();
       FileSystem fs = path.getFileSystem(conf);
-
-      long fileSize = fs.getFileStatus(path).getLen();
-
-      // Open the underlying input stream; it will be closed by the HFileReader below.
-      FSDataInputStream iStream = fs.open(path);
-      FixedFileTrailer fileTrailer = FixedFileTrailer.readFromStream(iStream, fileSize);
-
-      // If this class is generalized, it may need to account for different data block encodings.
-      this.in = new HFileReaderV2(path, fileTrailer, iStream, iStream, fileSize, true, new CacheConfig(conf),
-          DataBlockEncoding.NONE, new  HFileSystem(fs));
+      LOG.info("Initialize HFileRecordReader for " + path);
+      this.in = HFile.createReader(fs, path, new CacheConfig(conf));
 
       // The file info must be loaded before the scanner can be used.
       // This seems like a bug in HBase, but it's easily worked around.
@@ -133,15 +127,16 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
         return false;
       }
       boolean hasNext;
-      if (!scanner.isSeeked()) {
+      if (!seeked) {
         if (startRow != null) {
           LOG.info("Seeking to start row " + Bytes.toStringBinary(startRow));
           KeyValue kv = KeyValue.createFirstOnRow(startRow);
-          hasNext = (scanner.seekTo(kv.getBuffer(), kv.getKeyOffset(), kv.getKeyLength()) >= 0);
+          hasNext = seekAtOrAfter(scanner, kv);
         } else {
           LOG.info("Seeking to start");
           hasNext = scanner.seekTo();
         }
+        seeked = true;
       } else {
         hasNext = scanner.next();
       }
@@ -182,18 +177,34 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
     public void close() throws IOException {
       in.close();
     }
+
+    // This method is copied from o.a.h.hbase.regionserver.StoreFileScanner, as we don't want
+    // to depend on it.
+    private static boolean seekAtOrAfter(HFileScanner s, KeyValue k)
+        throws IOException {
+      int result = s.seekTo(k.getBuffer(), k.getKeyOffset(), k.getKeyLength());
+      if(result < 0) {
+        // Passed KV is smaller than first KV in file, work from start of file
+        return s.seekTo();
+      } else if(result > 0) {
+        // Passed KV is larger than current KV in file, if there is a next
+        // it is the "after", if not then this scanner is done.
+        return s.next();
+      }
+      // Seeked to the exact key
+      return true;
+    }
   }
 
   @Override
   protected List<FileStatus> listStatus(JobContext job) throws IOException {
     List<FileStatus> result = new ArrayList<FileStatus>();
 
-    FileSystem fs = FileSystem.get(job.getConfiguration());
-
     // Explode out directories that match the original FileInputFormat filters since HFiles are written to directories where the
     // directory name is the column name
     for (FileStatus status : super.listStatus(job)) {
       if (status.isDir()) {
+        FileSystem fs = status.getPath().getFileSystem(job.getConfiguration());
         for (FileStatus match : fs.listStatus(status.getPath(), HIDDEN_FILE_FILTER)) {
           result.add(match);
         }

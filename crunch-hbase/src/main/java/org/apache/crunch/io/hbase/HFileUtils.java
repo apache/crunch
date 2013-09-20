@@ -20,6 +20,7 @@ package org.apache.crunch.io.hbase;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Longs;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.DoFn;
@@ -53,6 +54,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -66,6 +68,51 @@ import static org.apache.crunch.types.writable.Writables.writables;
 public final class HFileUtils {
 
   private static final Log LOG = LogFactory.getLog(HFileUtils.class);
+
+  /** Compares {@code KeyValue} by its family, qualifier, timestamp (reversely), type (reversely) and memstoreTS. */
+  private static final Comparator<KeyValue> KEY_VALUE_COMPARATOR = new Comparator<KeyValue>() {
+    @Override
+    public int compare(KeyValue l, KeyValue r) {
+      int cmp;
+      if ((cmp = compareFamily(l, r)) != 0) {
+        return cmp;
+      }
+      if ((cmp = compareQualifier(l, r)) != 0) {
+        return cmp;
+      }
+      if ((cmp = compareTimestamp(l, r)) != 0) {
+        return cmp;
+      }
+      if ((cmp = compareType(l, r)) != 0) {
+        return cmp;
+      }
+      return compareMemstoreTS(l, r);
+    }
+
+    private int compareFamily(KeyValue l, KeyValue r) {
+      return Bytes.compareTo(
+          l.getBuffer(), l.getFamilyOffset(), l.getFamilyLength(),
+          r.getBuffer(), r.getFamilyOffset(), r.getFamilyLength());
+    }
+
+    private int compareQualifier(KeyValue l, KeyValue r) {
+      return Bytes.compareTo(
+          l.getBuffer(), l.getQualifierOffset(), l.getQualifierLength(),
+          r.getBuffer(), r.getQualifierOffset(), r.getQualifierLength());
+    }
+
+    private int compareTimestamp(KeyValue l, KeyValue r) {
+      return -Longs.compare(l.getTimestamp(), r.getTimestamp());
+    }
+
+    private int compareType(KeyValue l, KeyValue r) {
+      return (int) r.getType() - (int) l.getType();
+    }
+
+    private int compareMemstoreTS(KeyValue l, KeyValue r) {
+      return Longs.compare(l.getMemstoreTS(), r.getMemstoreTS());
+    }
+  };
 
   private static class FilterByFamilyFn extends FilterFn<KeyValue> {
 
@@ -241,10 +288,12 @@ public final class HFileUtils {
    * @see #combineIntoRow(org.apache.crunch.PCollection, org.apache.hadoop.hbase.client.Scan)
    */
   public static PCollection<Result> scanHFiles(Pipeline pipeline, Path path, Scan scan) {
-    // TODO(chaoshi): HFileInputFormat may skip some HFiles if their KVs do not fall into
-    //                the range specified by this scan.
-    PCollection<KeyValue> in = pipeline.read(new HFileSource(ImmutableList.of(path), scan));
-    return combineIntoRow(in, scan);
+      return scanHFiles(pipeline, ImmutableList.of(path), scan);
+  }
+
+  public static PCollection<Result> scanHFiles(Pipeline pipeline, List<Path> paths, Scan scan) {
+      PCollection<KeyValue> in = pipeline.read(new HFileSource(paths, scan));
+      return combineIntoRow(in, scan);
   }
 
   public static PCollection<Result> combineIntoRow(PCollection<KeyValue> kvs) {
@@ -393,8 +442,8 @@ public final class HFileUtils {
 
     kvs = maybeDeleteFamily(kvs);
 
-    // In-place sort KeyValues by family, qualifier and then timestamp reversely.
-    Collections.sort(kvs, KeyValue.COMPARATOR);
+    // In-place sort KeyValues by family, qualifier and then timestamp reversely (whenever ties, deletes appear first).
+    Collections.sort(kvs, KEY_VALUE_COMPARATOR);
 
     List<KeyValue> results = Lists.newArrayListWithCapacity(kvs.size());
     for (int i = 0, j; i < kvs.size(); i = j) {
@@ -404,6 +453,9 @@ public final class HFileUtils {
       }
       results.addAll(getLatestKeyValuesOfColumn(kvs.subList(i, j), versions));
     }
+    if (results.isEmpty()) {
+      return null;
+    }
     return new Result(results);
   }
 
@@ -412,7 +464,7 @@ public final class HFileUtils {
    * delete family timestamp. Also removes the delete family {@code KeyValue}s.
    */
   private static List<KeyValue> maybeDeleteFamily(List<KeyValue> kvs) {
-    long deleteFamilyCut = 0;
+    long deleteFamilyCut = -1;
     for (KeyValue kv : kvs) {
       if (kv.getType() == KeyValue.Type.DeleteFamily.getCode()) {
         deleteFamilyCut = Math.max(deleteFamilyCut, kv.getTimestamp());
@@ -437,7 +489,7 @@ public final class HFileUtils {
   private static boolean hasSameFamilyAndQualifier(KeyValue l, KeyValue r) {
     return Bytes.equals(
         l.getBuffer(), l.getFamilyOffset(), l.getFamilyLength(),
-        r.getBuffer(), r.getFamilyOffset(), r.getFamilyOffset())
+        r.getBuffer(), r.getFamilyOffset(), r.getFamilyLength())
         && Bytes.equals(
         l.getBuffer(), l.getQualifierOffset(), l.getQualifierLength(),
         r.getBuffer(), r.getQualifierOffset(), r.getQualifierLength());
@@ -467,9 +519,10 @@ public final class HFileUtils {
       }
       if (kv.getType() == KeyValue.Type.DeleteColumn.getCode()) {
         break;
-      } else if (kv.getType() == KeyValue.Type.Put.getCode()
-          && kv.getTimestamp() != previousDeleteTimestamp) {
-        results.add(kv);
+      } else if (kv.getType() == KeyValue.Type.Put.getCode()) {
+        if (kv.getTimestamp() != previousDeleteTimestamp) {
+          results.add(kv);
+        }
       } else if (kv.getType() == KeyValue.Type.Delete.getCode()) {
         previousDeleteTimestamp = kv.getTimestamp();
       } else {

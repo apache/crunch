@@ -20,11 +20,16 @@ package org.apache.crunch.io.hbase;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
@@ -37,6 +42,7 @@ import static org.apache.crunch.types.writable.Writables.writables;
 
 public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSource<KeyValue> {
 
+  private static final Log LOG = LogFactory.getLog(HFileSource.class);
   private static final PType<KeyValue> KEY_VALUE_PTYPE = writables(KeyValue.class);
 
   public HFileSource(Path path) {
@@ -78,5 +84,37 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
   @Override
   public String toString() {
     return "HFile(" + pathsAsString() + ")";
+  }
+
+  @Override
+  public long getSize(Configuration conf) {
+    // HFiles are stored into <family>/<file>, but the default implementation does not support this.
+    // This is used for estimating the number of reducers. (Otherwise we will always get 1 reducer.)
+    long sum = 0;
+    for (Path path : getPaths()) {
+      try {
+        sum += getSizeInternal(conf, path);
+      } catch (IOException e) {
+        LOG.warn("Failed to estimate size of " + path);
+      }
+    }
+    return sum;
+  }
+
+  private long getSizeInternal(Configuration conf, Path path) throws IOException {
+    FileSystem fs = path.getFileSystem(conf);
+    FileStatus[] statuses = fs.listStatus(path, HFileInputFormat.HIDDEN_FILE_FILTER);
+    if (statuses == null) {
+      return 0;
+    }
+    long sum = 0;
+    for (FileStatus status : statuses) {
+      if (status.isDir()) {
+        sum += SourceTargetHelper.getPathSize(fs, status.getPath());
+      } else {
+        sum += status.getLen();
+      }
+    }
+    return sum;
   }
 }

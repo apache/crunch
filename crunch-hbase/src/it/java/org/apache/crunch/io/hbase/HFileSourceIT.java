@@ -53,6 +53,7 @@ import static org.apache.crunch.types.writable.Writables.strings;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class HFileSourceIT implements Serializable {
@@ -81,6 +82,7 @@ public class HFileSourceIT implements Serializable {
     conf = tmpDir.getDefaultConfiguration();
   }
 
+  @Test
   public void testHFileSource() throws IOException {
     List<KeyValue> kvs = generateKeyValues(100);
     Path inputPath = tmpDir.getPath("in");
@@ -160,6 +162,42 @@ public class HFileSourceIT implements Serializable {
   }
 
   @Test
+  public void testScanHFiles_startRowIsTooSmall() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW2, FAMILY1, QUALIFIER1, 0, VALUE1),
+        new KeyValue(ROW3, FAMILY1, QUALIFIER1, 0, VALUE1));
+    Scan scan = new Scan();
+    scan.setStartRow(ROW1);
+    List<Result> results = doTestScanHFiles(kvs, scan);
+    assertEquals(2, results.size());
+    assertArrayEquals(ROW2, kvs.get(0).getRow());
+    assertArrayEquals(ROW3, kvs.get(1).getRow());
+  }
+
+  @Test
+  public void testScanHFiles_startRowIsTooLarge() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 0, VALUE1),
+        new KeyValue(ROW2, FAMILY1, QUALIFIER1, 0, VALUE1));
+    Scan scan = new Scan();
+    scan.setStartRow(ROW3);
+    List<Result> results = doTestScanHFiles(kvs, scan);
+    assertEquals(0, results.size());
+  }
+
+  @Test
+  public void testScanHFiles_startRowDoesNotExist() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 0, VALUE1),
+        new KeyValue(ROW3, FAMILY3, QUALIFIER3, 0, VALUE3));
+    Scan scan = new Scan();
+    scan.setStartRow(ROW2);
+    List<Result> results = doTestScanHFiles(kvs, scan);
+    assertEquals(1, results.size());
+    assertArrayEquals(ROW3, results.get(0).getRow());
+  }
+
+  @Test
   public void testScanHFiles_familyMap() throws IOException {
     List<KeyValue> kvs = ImmutableList.of(
         new KeyValue(ROW1, FAMILY1, QUALIFIER1, 0, VALUE1),
@@ -190,6 +228,41 @@ public class HFileSourceIT implements Serializable {
     Result result = Iterables.getOnlyElement(results);
     assertEquals(1, result.size());
     assertNotNull(result.getColumnLatest(FAMILY1, QUALIFIER2));
+  }
+
+  @Test
+  public void testScanHFiles_delete() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 1, VALUE1),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 2, VALUE2),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 2, KeyValue.Type.Delete));
+    List<Result> results = doTestScanHFiles(kvs, new Scan());
+    assertEquals(1, results.size());
+    assertArrayEquals(VALUE1, results.get(0).getValue(FAMILY1, QUALIFIER1));
+  }
+
+  @Test
+  public void testScanHFiles_deleteColumn() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 1, VALUE1),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 2, VALUE2),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 2, KeyValue.Type.DeleteColumn));
+    List<Result> results = doTestScanHFiles(kvs, new Scan());
+    assertEquals(0, results.size());
+  }
+
+  @Test
+  public void testScanHFiles_deleteFamily() throws IOException {
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 1, VALUE1),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER2, 2, VALUE2),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER3, 3, VALUE3),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 2, KeyValue.Type.DeleteFamily));
+    List<Result> results = doTestScanHFiles(kvs, new Scan());
+    assertEquals(1, results.size());
+    assertNull(results.get(0).getValue(FAMILY1, QUALIFIER1));
+    assertNull(results.get(0).getValue(FAMILY1, QUALIFIER2));
+    assertArrayEquals(VALUE3, results.get(0).getValue(FAMILY1, QUALIFIER3));
   }
 
   private List<Result> doTestScanHFiles(List<KeyValue> kvs, Scan scan) throws IOException {
