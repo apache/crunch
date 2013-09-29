@@ -112,7 +112,7 @@ public class MRExecutor implements MRPipelineExecution {
       }
       List<PipelineResult.StageResult> stages = Lists.newArrayList();
       for (CrunchControlledJob job : control.getSuccessfulJobList()) {
-        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getMapredJobID().toString(), job.getJob().getCounters()));
+        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getMapredJobID().toString(), job.getCounters()));
       }
 
       for (PCollectionImpl<?> c : outputTargets.keySet()) {

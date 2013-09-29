@@ -18,6 +18,7 @@
 package org.apache.crunch;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class PipelineResult {
       this(stageName, stageName, counters);
     }
 
-    public StageResult(String stageName, String stageId, Counters counters){
+    public StageResult(String stageName, String stageId, Counters counters) {
       this.stageName = stageName;
       this.stageId = stageId;
       this.counters = counters;
@@ -73,6 +74,9 @@ public class PipelineResult {
      * @return a map of group names to counter names.
      */
     public Map<String, Set<String>> getCounterNames() {
+      if (counters == null) {
+        return ImmutableMap.of();
+      }
       Map<String, Set<String>> names = Maps.newHashMap();
       for (CounterGroup counterGroup : counters) {
         Set<String> counterNames = Sets.newHashSet();
@@ -91,22 +95,37 @@ public class PipelineResult {
      */
     @Deprecated
     public Counter findCounter(Enum<?> key) {
+      if (counters == null) {
+        return null;
+      }
       return counters.findCounter(key);
     }
 
     public long getCounterValue(String groupName, String counterName) {
+      if (counters == null) {
+        return 0L;
+      }
       return counters.findCounter(groupName, counterName).getValue();
     }
 
     public String getCounterDisplayName(String groupName, String counterName) {
+      if (counters == null) {
+        return null;
+      }
       return counters.findCounter(groupName, counterName).getDisplayName();
     }
 
     public long getCounterValue(Enum<?> key) {
+      if (counters == null) {
+        return 0L;
+      }
       return counters.findCounter(key).getValue();
     }
 
     public String getCounterDisplayName(Enum<?> key) {
+      if (counters == null) {
+        return null;
+      }
       return counters.findCounter(key).getDisplayName();
     }
   }

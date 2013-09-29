@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.util.StringUtils;
@@ -60,6 +61,7 @@ public class CrunchControlledJob implements MRJob {
   // some info for human consumption, e.g. the reason why the job failed
   private String message;
   private String lastKnownProgress;
+  private Counters counters;
 
   /**
    * Construct a job.
@@ -134,6 +136,10 @@ public class CrunchControlledJob implements MRJob {
    */
   public JobID getMapredJobID() {
     return this.job.getJobID();
+  }
+
+  public Counters getCounters() {
+    return counters;
   }
 
   @Override
@@ -225,6 +231,7 @@ public class CrunchControlledJob implements MRJob {
   private void checkRunningState() throws IOException, InterruptedException {
     try {
       if (job.isComplete()) {
+        this.counters = job.getCounters();
         if (job.isSuccessful()) {
           this.state = State.SUCCESS;
         } else {
