@@ -101,8 +101,8 @@ class JobPrototype {
     return mapNodePaths;
   }
 
-  PGroupedTableImpl<?, ?> getGroupingTable() {
-    return group;
+  HashMultimap<Target, NodePath> getMapSideNodePaths() {
+    return mapSideNodePaths;
   }
 
   HashMultimap<Target, NodePath> getTargetsToNodePaths() {

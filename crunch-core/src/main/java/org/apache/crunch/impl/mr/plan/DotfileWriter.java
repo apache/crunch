@@ -133,7 +133,8 @@ public class DotfileWriter {
         }
 
         MRTaskType taskType = groupingEncountered ? MRTaskType.REDUCE : MRTaskType.MAP;
-        jobNodeDeclarations.put(Pair.of(jobPrototype, taskType), formatPCollectionNodeDeclaration(pcollectionImpl, jobPrototype));
+        jobNodeDeclarations.put(Pair.of(jobPrototype, taskType),
+            formatPCollectionNodeDeclaration(pcollectionImpl, jobPrototype));
       }
     }
   }
@@ -164,6 +165,21 @@ public class DotfileWriter {
     }
   }
 
+  private void processNodePaths(JobPrototype jobPrototype, HashMultimap<Target, NodePath> nodePaths) {
+    if (nodePaths != null) {
+      for (Target target : nodePaths.keySet()) {
+        globalNodeDeclarations.add(formatTargetNodeDeclaration(target));
+        for (NodePath nodePath : nodePaths.get(target)) {
+          addNodePathDeclarations(jobPrototype, nodePath);
+          addNodePathChain(nodePath, jobPrototype);
+          nodePathChains.add(formatNodeCollection(
+              Lists.newArrayList(formatPCollection(nodePath.descendingIterator().next(), jobPrototype),
+                  String.format("\"%s\"", target.toString()))));
+        }
+      }
+    }
+  }
+
   /**
    * Add the contents of a {@link JobPrototype} to the graph describing a
    * pipeline.
@@ -178,18 +194,9 @@ public class DotfileWriter {
         addNodePathDeclarations(jobPrototype, nodePath);
         addNodePathChain(nodePath, jobPrototype);
       }
+      processNodePaths(jobPrototype, jobPrototype.getMapSideNodePaths());
     }
-
-    HashMultimap<Target, NodePath> targetsToNodePaths = jobPrototype.getTargetsToNodePaths();
-    for (Target target : targetsToNodePaths.keySet()) {
-      globalNodeDeclarations.add(formatTargetNodeDeclaration(target));
-      for (NodePath nodePath : targetsToNodePaths.get(target)) {
-        addNodePathDeclarations(jobPrototype, nodePath);
-        addNodePathChain(nodePath, jobPrototype);
-        nodePathChains.add(formatNodeCollection(Lists.newArrayList(formatPCollection(nodePath.descendingIterator()
-            .next(), jobPrototype), String.format("\"%s\"", target.toString()))));
-      }
-    }
+    processNodePaths(jobPrototype, jobPrototype.getTargetsToNodePaths());
   }
 
   /**
