@@ -19,6 +19,7 @@ package org.apache.crunch.impl.mr.exec;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AbstractFuture;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.PipelineResult;
@@ -37,7 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -49,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * It is thread-safe.
  */
-public class MRExecutor implements MRPipelineExecution {
+public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipelineExecution {
 
   private static final Log LOG = LogFactory.getLog(MRExecutor.class);
 
@@ -62,6 +65,7 @@ public class MRExecutor implements MRPipelineExecution {
   private AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
   private PipelineResult result;
   private Thread monitorThread;
+  private boolean started;
 
   private String planDotFile;
   
@@ -89,13 +93,17 @@ public class MRExecutor implements MRPipelineExecution {
     this.planDotFile = planDotFile;
   }
   
-  public MRPipelineExecution execute() {
-    monitorThread.start();
+  public synchronized MRPipelineExecution execute() {
+    if (!started) {
+      monitorThread.start();
+      started = true;
+    }
     return this;
   }
 
   /** Monitors running status. It is called in {@code MonitorThread}. */
   private void monitorLoop() {
+    status.set(Status.RUNNING);
     try {
       while (killSignal.getCount() > 0 && !control.allFinished()) {
         control.pollJobStatusAndStartNewOnes();
@@ -150,12 +158,14 @@ public class MRExecutor implements MRPipelineExecution {
           status.set(Status.SUCCEEDED);
         }
         result = new PipelineResult(stages, status.get());
+        set(result);
       }
     } catch (InterruptedException e) {
       throw new AssertionError(e); // Nobody should interrupt us.
     } catch (IOException e) {
       LOG.error("Pipeline failed due to exception", e);
       status.set(Status.FAILED);
+      setException(e);
     } finally {
       doneSignal.countDown();
     }
@@ -177,6 +187,23 @@ public class MRExecutor implements MRPipelineExecution {
   }
 
   @Override
+  public PipelineResult get() throws InterruptedException, ExecutionException {
+    if (getStatus() == Status.READY) {
+      execute();
+    }
+    return super.get();
+  }
+
+  @Override
+  public PipelineResult get(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException,
+      ExecutionException {
+    if (getStatus() == Status.READY) {
+      execute();
+    }
+    return super.get(timeout, unit);
+  }
+
+  @Override
   public synchronized Status getStatus() {
     return status.get();
   }
@@ -189,6 +216,15 @@ public class MRExecutor implements MRPipelineExecution {
   @Override
   public void kill() throws InterruptedException {
     killSignal.countDown();
+  }
+
+  @Override
+  protected void interruptTask() {
+    try {
+      kill();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static boolean isLocalMode() {

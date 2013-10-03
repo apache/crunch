@@ -20,8 +20,11 @@ package org.apache.crunch.impl.mem;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import com.google.common.util.concurrent.AbstractFuture;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericContainer;
@@ -306,44 +309,16 @@ public class MemPipeline implements Pipeline {
   @Override
   public PipelineExecution runAsync() {
     activeTargets.clear();
-    return new PipelineExecution() {
-      @Override
-      public String getPlanDotFile() {
-        return "";
-      }
-
-      @Override
-      public void waitFor(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        // no-po
-      }
-
-      @Override
-      public void waitUntilDone() throws InterruptedException {
-        // no-po
-      }
-
-      @Override
-      public Status getStatus() {
-        return Status.SUCCEEDED;
-      }
-
-      @Override
-      public PipelineResult getResult() {
-        return new PipelineResult(ImmutableList.of(new PipelineResult.StageResult("MemPipelineStage", COUNTERS)),
-            Status.SUCCEEDED);
-      }
-
-      @Override
-      public void kill() {
-      }
-    };
+    return new MemExecution();
   }
   
   @Override
   public PipelineResult run() {
-    activeTargets.clear();
-    return new PipelineResult(ImmutableList.of(new PipelineResult.StageResult("MemPipelineStage", COUNTERS)),
-        PipelineExecution.Status.SUCCEEDED);
+    try {
+      return runAsync().get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
@@ -359,5 +334,59 @@ public class MemPipeline implements Pipeline {
   @Override
   public String getName() {
     return "Memory Pipeline";
+  }
+
+  private static class MemExecution extends AbstractFuture<PipelineResult> implements PipelineExecution {
+
+    private PipelineResult res;
+
+    public MemExecution() {
+      this.res = new PipelineResult(
+          ImmutableList.of(new PipelineResult.StageResult("MemPipelineStage", COUNTERS)),
+          PipelineExecution.Status.SUCCEEDED);
+    }
+
+    @Override
+    public String getPlanDotFile() {
+      return "";
+    }
+
+    @Override
+    public void waitFor(long timeout, TimeUnit timeUnit) throws InterruptedException {
+      set(res);
+    }
+
+    @Override
+    public void waitUntilDone() throws InterruptedException {
+      set(res);
+    }
+
+    @Override
+    public PipelineResult get() throws ExecutionException, InterruptedException {
+      set(res);
+      return super.get();
+    }
+
+    @Override
+    public PipelineResult get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException,
+        TimeoutException {
+      set(res);
+      return super.get(timeout, timeUnit);
+    }
+
+    @Override
+    public Status getStatus() {
+      return isDone() ? Status.SUCCEEDED : Status.READY;
+    }
+
+    @Override
+    public PipelineResult getResult() {
+      return isDone() ? res : null;
+    }
+
+    @Override
+    public void kill() {
+      // No-op
+    }
   }
 }

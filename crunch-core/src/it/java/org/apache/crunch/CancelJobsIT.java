@@ -18,6 +18,7 @@
 package org.apache.crunch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -45,11 +46,44 @@ public class CancelJobsIT {
     assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
     assertEquals(2, pr.getStageResults().size());
   }
-  
+
+  @Test
+  public void testGet() throws Exception {
+    PipelineExecution pe = run();
+    PipelineResult pr = pe.get();
+    assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
+    assertEquals(2, pr.getStageResults().size());
+  }
+
   @Test
   public void testKill() throws Exception {
     PipelineExecution pe = run();
     pe.kill();
+    pe.waitUntilDone();
+    assertEquals(PipelineExecution.Status.KILLED, pe.getStatus());
+  }
+
+  @Test
+  public void testKillGet() throws Exception {
+    PipelineExecution pe = run();
+    pe.kill();
+    PipelineResult res = pe.get();
+    assertFalse(res.succeeded());
+    assertEquals(PipelineExecution.Status.KILLED, pe.getStatus());
+  }
+
+  @Test
+  public void testCancelNoInterrupt() throws Exception {
+    PipelineExecution pe = run();
+    pe.cancel(false);
+    pe.waitUntilDone();
+    assertEquals(PipelineExecution.Status.SUCCEEDED, pe.getStatus());
+  }
+
+  @Test
+  public void testCancelMayInterrupt() throws Exception {
+    PipelineExecution pe = run();
+    pe.cancel(true);
     pe.waitUntilDone();
     assertEquals(PipelineExecution.Status.KILLED, pe.getStatus());
   }

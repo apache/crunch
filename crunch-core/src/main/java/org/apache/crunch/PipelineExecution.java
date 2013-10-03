@@ -17,6 +17,8 @@
  */
 package org.apache.crunch;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  *
  * This interface is thread-safe.
  */
-public interface PipelineExecution {
+public interface PipelineExecution extends ListenableFuture<PipelineResult> {
 
   enum Status { READY, RUNNING, SUCCEEDED, FAILED, KILLED }
 
