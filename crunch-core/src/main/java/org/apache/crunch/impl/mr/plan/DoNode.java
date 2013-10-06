@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.DoFn;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
@@ -42,16 +43,18 @@ public class DoNode {
   private final List<DoNode> children;
   private final Converter outputConverter;
   private final Source<?> source;
+  private final ParallelDoOptions options;
   private String outputName;
 
   private DoNode(DoFn fn, String name, PType<?> ptype, List<DoNode> children, Converter outputConverter,
-      Source<?> source) {
+      Source<?> source, ParallelDoOptions options) {
     this.fn = fn;
     this.name = name;
     this.ptype = ptype;
     this.children = children;
     this.outputConverter = outputConverter;
     this.source = source;
+    this.options = options;
   }
 
   private static List<DoNode> allowsChildren() {
@@ -60,26 +63,22 @@ public class DoNode {
 
   public static <K, V> DoNode createGroupingNode(String name, PGroupedTableType<K, V> ptype) {
     DoFn<?, ?> fn = ptype.getOutputMapFn();
-    return new DoNode(fn, name, ptype, NO_CHILDREN, ptype.getGroupingConverter(), null);
+    return new DoNode(fn, name, ptype, NO_CHILDREN, ptype.getGroupingConverter(), null, null);
   }
 
   public static DoNode createOutputNode(String name, Converter outputConverter, PType<?> ptype) {
     DoFn<?, ?> fn = ptype.getOutputMapFn();
-    return new DoNode(fn, name, ptype, NO_CHILDREN, outputConverter, null);
+    return new DoNode(fn, name, ptype, NO_CHILDREN, outputConverter, null, null);
   }
 
-  public static DoNode createFnNode(String name, DoFn<?, ?> function, PType<?> ptype) {
-    return new DoNode(function, name, ptype, allowsChildren(), null, null);
+  public static DoNode createFnNode(String name, DoFn<?, ?> function, PType<?> ptype, ParallelDoOptions options) {
+    return new DoNode(function, name, ptype, allowsChildren(), null, null, options);
   }
 
   public static <S> DoNode createInputNode(Source<S> source) {
     PType<?> ptype = source.getType();
     DoFn<?, ?> fn = ptype.getInputMapFn();
-    return new DoNode(fn, source.toString(), ptype, allowsChildren(), null, source);
-  }
-
-  public boolean isInputNode() {
-    return source != null;
+    return new DoNode(fn, source.toString(), ptype, allowsChildren(), null, source, null);
   }
 
   public boolean isOutputNode() {
@@ -126,6 +125,9 @@ public class DoNode {
 
   public RTNode toRTNode(boolean inputNode, Configuration conf, NodeContext nodeContext) {
     List<RTNode> childRTNodes = Lists.newArrayList();
+    if (options != null) {
+      options.configure(conf);
+    }
     fn.configure(conf);
     for (DoNode child : children) {
       childRTNodes.add(child.toRTNode(false, conf, nodeContext));

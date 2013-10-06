@@ -66,7 +66,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 
   @Override
   public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(), fn, ntype);
+    return DoNode.createFnNode(getName(), fn, ntype, doOptions);
   }
 
   @Override

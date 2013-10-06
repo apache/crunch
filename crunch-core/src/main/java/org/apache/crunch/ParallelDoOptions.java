@@ -19,9 +19,12 @@ package org.apache.crunch;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Container class that includes optional information about a {@code parallelDo} operation
@@ -31,24 +34,39 @@ import com.google.common.collect.Sets;
  */
 public class ParallelDoOptions {
   private final Set<SourceTarget<?>> sourceTargets;
-  
-  private ParallelDoOptions(Set<SourceTarget<?>> sourceTargets) {
+  private final Map<String, String> extraConf;
+
+  private ParallelDoOptions(Set<SourceTarget<?>> sourceTargets, Map<String, String> extraConf) {
     this.sourceTargets = sourceTargets;
+    this.extraConf = extraConf;
   }
   
   public Set<SourceTarget<?>> getSourceTargets() {
     return sourceTargets;
   }
-  
+
+  /**
+   * Applies the key-value pairs that were associated with this instance to the given {@code Configuration}
+   * object. This is called just before the {@code configure} method on the {@code DoFn} corresponding to this
+   * instance is called, so it is possible for the {@code DoFn} to see (and possibly override) these settings.
+   */
+  public void configure(Configuration conf) {
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      conf.set(e.getKey(), e.getValue());
+    }
+  }
+
   public static Builder builder() {
     return new Builder();
   }
   
   public static class Builder {
     private Set<SourceTarget<?>> sourceTargets;
-    
+    private Map<String, String> extraConf;
+
     public Builder() {
       this.sourceTargets = Sets.newHashSet();
+      this.extraConf = Maps.newHashMap();
     }
     
     public Builder sourceTargets(SourceTarget<?>... sourceTargets) {
@@ -61,8 +79,20 @@ public class ParallelDoOptions {
       return this;
     }
 
+    /**
+     * Specifies key-value pairs that should be added to the {@code Configuration} object associated with the
+     * {@code Job} that includes these options.
+     * @param confKey The key
+     * @param confValue The value
+     * @return This {@code Builder} instance
+     */
+    public Builder conf(String confKey, String confValue) {
+      this.extraConf.put(confKey, confValue);
+      return this;
+    }
+
     public ParallelDoOptions build() {
-      return new ParallelDoOptions(sourceTargets);
+      return new ParallelDoOptions(sourceTargets, extraConf);
     }
   }
 }

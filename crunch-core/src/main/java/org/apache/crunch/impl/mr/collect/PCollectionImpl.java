@@ -55,15 +55,15 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   private final String name;
   protected MRPipeline pipeline;
   protected SourceTarget<S> materializedAt;
-  private final ParallelDoOptions options;
+  protected final ParallelDoOptions doOptions;
   
   public PCollectionImpl(String name) {
     this(name, ParallelDoOptions.builder().build());
   }
   
-  public PCollectionImpl(String name, ParallelDoOptions options) {
+  public PCollectionImpl(String name, ParallelDoOptions doOptions) {
     this.name = name;
-    this.options = options;
+    this.doOptions = doOptions;
   }
 
   @Override
@@ -234,7 +234,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
   
   public Set<SourceTarget<?>> getTargetDependencies() {
-    Set<SourceTarget<?>> targetDeps = options.getSourceTargets();
+    Set<SourceTarget<?>> targetDeps = doOptions.getSourceTargets();
     for (PCollectionImpl<?> parent : getParents()) {
       targetDeps = Sets.union(targetDeps, parent.getTargetDependencies());
     }

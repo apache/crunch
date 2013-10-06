@@ -75,7 +75,7 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
 
   @Override
   public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(), fn, type);
+    return DoNode.createFnNode(getName(), fn, type, doOptions);
   }
 
   public boolean hasCombineFn() {

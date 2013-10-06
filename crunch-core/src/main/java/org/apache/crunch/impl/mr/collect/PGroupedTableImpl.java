@@ -146,7 +146,7 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
 
   @Override
   public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(), ptype.getInputMapFn(), ptype);
+    return DoNode.createFnNode(getName(), ptype.getInputMapFn(), ptype, doOptions);
   }
 
   public DoNode getGroupingNode() {
