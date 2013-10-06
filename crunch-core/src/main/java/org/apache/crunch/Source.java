@@ -30,6 +30,14 @@ import org.apache.hadoop.mapreduce.Job;
  * 
  */
 public interface Source<T> {
+
+  /**
+   * Adds the given key-value pair to the {@code Configuration} instance that is used to read
+   * this {@code Source<T></T>}. Allows for multiple inputs to re-use the same config keys with
+   * different values when necessary.
+   */
+  Source<T> inputConf(String key, String value);
+
   /**
    * Returns the {@code PType} for this source.
    */

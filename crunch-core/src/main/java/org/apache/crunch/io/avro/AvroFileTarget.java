@@ -20,6 +20,7 @@ package org.apache.crunch.io.avro;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
@@ -63,21 +64,16 @@ public class AvroFileTarget extends FileTargetImpl {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     AvroType<?> atype = (AvroType<?>) ptype;
-    Configuration conf = job.getConfiguration();
+    FormatBundle bundle = FormatBundle.forOutput(AvroOutputFormat.class);
     String schemaParam = null;
     if (name == null) {
       schemaParam = "avro.output.schema";
     } else {
       schemaParam = "avro.output.schema." + name;
     }
-    String outputSchema = conf.get(schemaParam);
-    if (outputSchema == null) {
-      conf.set(schemaParam, atype.getSchema().toString());
-    } else if (!outputSchema.equals(atype.getSchema().toString())) {
-      throw new IllegalStateException("Avro targets must use the same output schema");
-    }
-    Avros.configureReflectDataFactory(conf);
-    configureForMapReduce(job, AvroWrapper.class, NullWritable.class, AvroOutputFormat.class,
+    bundle.set(schemaParam, atype.getSchema().toString());
+    Avros.configureReflectDataFactory(job.getConfiguration());
+    configureForMapReduce(job, AvroWrapper.class, NullWritable.class, bundle,
         outputPath, name);
   }
 

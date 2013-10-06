@@ -18,17 +18,21 @@
 package org.apache.crunch.io.impl;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.SourceTargetHelper;
@@ -46,14 +50,30 @@ public class FileTargetImpl implements PathTarget {
   private static final Log LOG = LogFactory.getLog(FileTargetImpl.class);
   
   protected final Path path;
-  private final Class<? extends FileOutputFormat> outputFormatClass;
+  private final FormatBundle<? extends FileOutputFormat> formatBundle;
   private final FileNamingScheme fileNamingScheme;
 
   public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass,
-      FileNamingScheme fileNamingScheme) {
+                        FileNamingScheme fileNamingScheme) {
+    this(path, outputFormatClass, fileNamingScheme, ImmutableMap.<String, String>of());
+  }
+
+  public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass,
+      FileNamingScheme fileNamingScheme, Map<String, String> extraConf) {
     this.path = path;
-    this.outputFormatClass = outputFormatClass;
+    this.formatBundle = FormatBundle.forOutput(outputFormatClass);
     this.fileNamingScheme = fileNamingScheme;
+    if (extraConf != null && !extraConf.isEmpty()) {
+      for (Map.Entry<String, String> e : extraConf.entrySet()) {
+        formatBundle.set(e.getKey(), e.getValue());
+      }
+    }
+  }
+
+  @Override
+  public Target outputConf(String key, String value) {
+    formatBundle.set(key, value);
+    return this;
   }
 
   @Override
@@ -61,22 +81,29 @@ public class FileTargetImpl implements PathTarget {
     Converter converter = ptype.getConverter();
     Class keyClass = converter.getKeyClass();
     Class valueClass = converter.getValueClass();
-    configureForMapReduce(job, keyClass, valueClass, outputFormatClass, outputPath, name);
+    configureForMapReduce(job, keyClass, valueClass, formatBundle, outputPath, name);
+  }
+
+  @Deprecated
+  protected void configureForMapReduce(Job job, Class keyClass, Class valueClass,
+      Class outputFormatClass, Path outputPath, String name) {
+    configureForMapReduce(job, keyClass, valueClass, FormatBundle.forOutput(outputFormatClass), outputPath, name);
   }
 
   protected void configureForMapReduce(Job job, Class keyClass, Class valueClass,
-      Class outputFormatClass, Path outputPath, String name) {
+      FormatBundle formatBundle, Path outputPath, String name) {
     try {
       FileOutputFormat.setOutputPath(job, outputPath);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
     if (name == null) {
-      job.setOutputFormatClass(outputFormatClass);
+      job.setOutputFormatClass(formatBundle.getFormatClass());
+      formatBundle.configure(job.getConfiguration());
       job.setOutputKeyClass(keyClass);
       job.setOutputValueClass(valueClass);
     } else {
-      CrunchOutputs.addNamedOutput(job, name, outputFormatClass, keyClass, valueClass);
+      CrunchOutputs.addNamedOutput(job, name, formatBundle, keyClass, valueClass);
     }
   }
 
@@ -185,7 +212,11 @@ public class FileTargetImpl implements PathTarget {
 
   @Override
   public String toString() {
-    return new StringBuilder().append(outputFormatClass.getSimpleName()).append("(").append(path).append(")")
+    return new StringBuilder()
+        .append(formatBundle.getFormatClass().getSimpleName())
+        .append("(")
+        .append(path)
+        .append(")")
         .toString();
   }
 

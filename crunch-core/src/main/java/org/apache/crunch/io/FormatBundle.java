@@ -70,8 +70,8 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
     return new FormatBundle<T>(inputFormatClass);
   }
   
-  public static <T extends OutputFormat<?, ?>> FormatBundle<T> forOutput(Class<T> inputFormatClass) {
-    return new FormatBundle<T>(inputFormatClass);
+  public static <T extends OutputFormat<?, ?>> FormatBundle<T> forOutput(Class<T> outputFormatClass) {
+    return new FormatBundle<T>(outputFormatClass);
   }
   
   public FormatBundle() {

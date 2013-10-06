@@ -84,7 +84,13 @@ public class FileSourceImpl<T> implements Source<T> {
   public List<Path> getPaths() {
     return paths;
   }
-  
+
+  @Override
+  public Source<T> inputConf(String key, String value) {
+    inputBundle.set(key, value);
+    return this;
+  }
+
   @Override
   public Converter<?, ?, ?, ?> getConverter() {
     return ptype.getConverter();

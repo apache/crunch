@@ -33,7 +33,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class HFileTarget extends FileTargetImpl {
 
   private static final HColumnDescriptor DEFAULT_COLUMN_DESCRIPTOR = new HColumnDescriptor();
-  private final HColumnDescriptor hcol;
 
   public HFileTarget(String path) {
     this(new Path(path));
@@ -45,34 +44,8 @@ public class HFileTarget extends FileTargetImpl {
 
   public HFileTarget(Path path, HColumnDescriptor hcol) {
     super(path, HFileOutputFormatForCrunch.class, SequentialFileNamingScheme.getInstance());
-    this.hcol = Preconditions.checkNotNull(hcol);
-  }
-
-  @Override
-  protected void configureForMapReduce(
-      Job job,
-      Class keyClass,
-      Class valueClass,
-      Class outputFormatClass,
-      Path outputPath,
-      String name) {
-    try {
-      FileOutputFormat.setOutputPath(job, outputPath);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-
-    String hcolStr = Hex.encodeHexString(WritableUtils.toByteArray(hcol));
-    if (name == null) {
-      job.setOutputFormatClass(HFileOutputFormatForCrunch.class);
-      job.setOutputKeyClass(keyClass);
-      job.setOutputValueClass(valueClass);
-      job.getConfiguration().set(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, hcolStr);
-    } else {
-      FormatBundle<HFileOutputFormatForCrunch> bundle = FormatBundle.forOutput(HFileOutputFormatForCrunch.class);
-      bundle.set(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, hcolStr);
-      CrunchOutputs.addNamedOutput(job, name, bundle, keyClass, valueClass);
-    }
+    Preconditions.checkNotNull(hcol);
+    outputConf(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, Hex.encodeHexString(WritableUtils.toByteArray(hcol)));
   }
 
   @Override

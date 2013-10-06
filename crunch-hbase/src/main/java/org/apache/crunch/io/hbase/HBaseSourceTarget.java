@@ -26,6 +26,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
+import org.apache.crunch.Source;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
 import org.apache.crunch.io.CrunchInputs;
@@ -70,6 +72,12 @@ public class HBaseSourceTarget extends HBaseTarget implements
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public Source<Pair<ImmutableBytesWritable, Result>> inputConf(String key, String value) {
+    inputBundle.set(key, value);
+    return this;
   }
 
   @Override
@@ -144,6 +152,13 @@ public class HBaseSourceTarget extends HBaseTarget implements
     Configuration hconf = HBaseConfiguration.create(conf);
     HTable htable = new HTable(hconf, table);
     return new HTableIterable(htable, scan);
+  }
+
+  @Override
+  public SourceTarget<Pair<ImmutableBytesWritable, Result>> conf(String key, String value) {
+    inputConf(key, value);
+    outputConf(key, value);
+    return this;
   }
 
   private static class HTableIterable implements Iterable<Pair<ImmutableBytesWritable, Result>> {

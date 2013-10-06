@@ -20,6 +20,7 @@ package org.apache.crunch.io.text;
 import org.apache.avro.Schema;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.Converter;
@@ -72,7 +73,7 @@ public class TextFileTarget extends FileTargetImpl {
     Converter converter = ptype.getConverter();
     Class keyClass = converter.getKeyClass();
     Class valueClass = converter.getValueClass();
-    configureForMapReduce(job, keyClass, valueClass, getOutputFormat(ptype), outputPath, name);
+    configureForMapReduce(job, keyClass, valueClass, FormatBundle.forOutput(getOutputFormat(ptype)), outputPath, name);
   }
 
   @Override

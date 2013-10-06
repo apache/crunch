@@ -23,4 +23,10 @@ package org.apache.crunch;
  *
  */
 public interface SourceTarget<T> extends Source<T>, Target {
+  /**
+   * Adds the given key-value pair to the {@code Configuration} instance(s) that are used to
+   * read and write this {@code SourceTarget<T>}. Allows for multiple inputs and outputs to
+   * re-use the same config keys with different values when necessary.
+   */
+  SourceTarget<T> conf(String key, String value);
 }

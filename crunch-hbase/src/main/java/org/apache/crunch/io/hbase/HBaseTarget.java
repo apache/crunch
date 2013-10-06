@@ -18,12 +18,15 @@
 package org.apache.crunch.io.hbase;
 
 import java.io.IOException;
+import java.util.Map;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.MapReduceTarget;
@@ -45,6 +48,7 @@ public class HBaseTarget implements MapReduceTarget {
   private static final Log LOG = LogFactory.getLog(HBaseTarget.class);
   
   protected String table;
+  private Map<String, String> extraConf = Maps.newHashMap();
 
   public HBaseTarget(String table) {
     this.table = table;
@@ -100,10 +104,16 @@ public class HBaseTarget implements MapReduceTarget {
       job.setOutputKeyClass(ImmutableBytesWritable.class);
       job.setOutputValueClass(typeClass);
       conf.set(TableOutputFormat.OUTPUT_TABLE, table);
+      for (Map.Entry<String, String> e : extraConf.entrySet()) {
+        conf.set(e.getKey(), e.getValue());
+      }
     } else {
       FormatBundle<TableOutputFormat> bundle = FormatBundle.forOutput(
           TableOutputFormat.class);
       bundle.set(TableOutputFormat.OUTPUT_TABLE, table);
+      for (Map.Entry<String, String> e : extraConf.entrySet()) {
+        bundle.set(e.getKey(), e.getValue());
+      }
       CrunchOutputs.addNamedOutput(job, name,
           bundle,
           ImmutableBytesWritable.class,
@@ -114,6 +124,12 @@ public class HBaseTarget implements MapReduceTarget {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     return null;
+  }
+
+  @Override
+  public Target outputConf(String key, String value) {
+    extraConf.put(key, value);
+    return this;
   }
 
   @Override

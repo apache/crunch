@@ -40,6 +40,12 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   }
 
   @Override
+  public Source<T> inputConf(String key, String value) {
+    source.inputConf(key, value);
+    return this;
+  }
+
+  @Override
   public PType<T> getType() {
     return source.getType();
   }
@@ -87,6 +93,12 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   }
 
   @Override
+  public Target outputConf(String key, String value) {
+    target.outputConf(key, value);
+    return this;
+  }
+
+  @Override
   public boolean handleExisting(WriteMode strategy, long lastModifiedAt, Configuration conf) {
     return target.handleExisting(strategy, lastModifiedAt, conf);  
   }
@@ -104,5 +116,12 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   @Override
   public Converter<?, ?, ?, ?> getConverter(PType<?> ptype) {
     return target.getConverter(ptype);
+  }
+
+  @Override
+  public SourceTarget<T> conf(String key, String value) {
+    source.inputConf(key, value);
+    target.outputConf(key, value);
+    return this;
   }
 }

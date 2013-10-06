@@ -61,6 +61,13 @@ public interface Target {
   }
 
   /**
+   * Adds the given key-value pair to the {@code Configuration} instance that is used to write
+   * this {@code Target}. Allows for multiple target outputs to re-use the same config keys with
+   * different values when necessary.
+   */
+  Target outputConf(String key, String value);
+
+  /**
    * Apply the given {@code WriteMode} to this {@code Target} instance.
    * 
    * @param writeMode The strategy for handling existing outputs
