@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
