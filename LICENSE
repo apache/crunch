@@ -557,6 +557,7 @@ The Apache License, Version 2 (see above), for:
   javassist
   snappy-java
   cglib (included in mockito-all)
+  parquet
 
 --------------------------------------------------------------------------------
 The Scala License (see above), for:

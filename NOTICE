@@ -16,3 +16,6 @@ See http://code.google.com/p/snappy-java/
 
 This product includes Javassist under the Apache License, Version 2.0
 See http://www.javassist.org/
+
+This product includes Parquet under the Apache License, Version 2.0
+See http://parquet.io/
