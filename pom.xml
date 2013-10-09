@@ -73,6 +73,7 @@ under the License.
     <commons-logging.version>1.1.1</commons-logging.version>
     <commons-cli.version>1.2</commons-cli.version>
     <avro.version>1.7.4</avro.version>
+    <parquet.version>1.2.0</parquet.version>
     <javassist.version>3.16.1-GA</javassist.version>
     <jackson.version>1.8.8</jackson.version>
     <protobuf-java.version>2.4.0a</protobuf-java.version>
@@ -200,6 +201,18 @@ under the License.
         <groupId>org.apache.avro</groupId>
         <artifactId>trevni-avro</artifactId>
         <version>${avro.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>parquet-avro</artifactId>
+        <version>${parquet.version}</version>
         <exclusions>
           <exclusion>
             <groupId>org.apache.hadoop</groupId>
