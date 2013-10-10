@@ -34,6 +34,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.impl.mem.MemPipeline;
@@ -163,6 +164,11 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public PObject<Collection<S>> asCollection() {
     return new CollectionPObject<S>(this);
+  }
+
+  @Override
+  public ReadableData<S> asReadable(boolean materialize) {
+    return new MemReadableData<S>(collect);
   }
 
   public Collection<S> getCollection() {

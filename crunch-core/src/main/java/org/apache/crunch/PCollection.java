@@ -166,6 +166,14 @@ public interface PCollection<S> {
   PObject<Collection<S>> asCollection();
 
   /**
+   * @return A reference to the data in this instance that can be read from a job running
+   * on a cluster.
+   *
+   * @param materialize If true, materialize this data before returning a reference to it
+   */
+  ReadableData<S> asReadable(boolean materialize);
+
+  /**
    * Returns the {@code PType} of this {@code PCollection}.
    */
   PType<S> getPType();

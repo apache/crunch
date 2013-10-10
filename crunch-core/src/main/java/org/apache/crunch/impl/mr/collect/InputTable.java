@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.List;
 
 import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
@@ -54,6 +55,7 @@ public class InputTable<K, V> extends PTableBase<K, V> {
     return source.getTableType();
   }
 
+
   @Override
   public PType<Pair<K, V>> getPType() {
     return source.getType();
@@ -67,6 +69,11 @@ public class InputTable<K, V> extends PTableBase<K, V> {
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitInputCollection(asCollection);
+  }
+
+  @Override
+  protected ReadableData<Pair<K, V>> getReadableDataInternal() {
+    return asCollection.getReadableDataInternal();
   }
 
   @Override

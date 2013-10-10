@@ -33,12 +33,14 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
 import org.apache.crunch.types.PTableType;
@@ -54,6 +56,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   private final String name;
   protected MRPipeline pipeline;
+  private boolean materialized;
   protected SourceTarget<S> materializedAt;
   protected final ParallelDoOptions doOptions;
   
@@ -151,6 +154,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
       LOG.warn("Materializing an empty PCollection: " + this.getName());
       return Collections.emptyList();
     }
+    materialized = true;
     return getPipeline().materialize(this);
   }
 
@@ -274,6 +278,24 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   protected abstract void acceptInternal(Visitor visitor);
+
+  @Override
+  public ReadableData<S> asReadable(boolean materialize) {
+    if (materializedAt != null && (materializedAt instanceof ReadableSource)) {
+      return ((ReadableSource) materializedAt).asReadable();
+    } else if (materialized || materialize) {
+      return ((MRPipeline) getPipeline()).getMaterializeSourceTarget(this).asReadable();
+    } else {
+      return getReadableDataInternal();
+    }
+  }
+
+  protected ReadableData<S> materializedData() {
+    materialized = true;
+    return pipeline.getMaterializeSourceTarget(this).asReadable();
+  }
+
+  protected abstract ReadableData<S> getReadableDataInternal();
 
   @Override
   public long getSize() {

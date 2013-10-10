@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
@@ -56,4 +57,10 @@ public class TrevniKeySource<T> extends FileSourceImpl<T> implements ReadableSou
   public Iterable<T> read(Configuration conf) throws IOException {
     return read(conf, new TrevniFileReaderFactory<T>((AvroType<T>) ptype));
   }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new TrevniReadableData<T>(paths, (AvroType<T>) ptype);
+  }
+
 }

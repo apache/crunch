@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.avro.AvroType;
@@ -51,6 +52,11 @@ public class AvroParquetFileSource<T> extends FileSourceImpl<T> implements Reada
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     return read(conf, getFileReaderFactory((AvroType<T>) ptype));
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new AvroParquetReadableData<T>(paths, (AvroType<T>) ptype);
   }
 
   protected AvroParquetFileReaderFactory<T> getFileReaderFactory(AvroType<T> ptype){

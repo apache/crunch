@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
 
@@ -47,6 +48,14 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   @Override
   protected long getSizeInternal() {
     return (long) (fn.scaleFactor() * parent.getSize());
+  }
+
+  @Override
+  protected ReadableData<S> getReadableDataInternal() {
+    if (getOnlyParent() instanceof PGroupedTableImpl) {
+      return materializedData();
+    }
+    return new DelegatingReadableData(getOnlyParent().asReadable(false), fn);
   }
 
   @Override

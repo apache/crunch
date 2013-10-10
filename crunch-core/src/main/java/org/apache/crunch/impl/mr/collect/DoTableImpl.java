@@ -24,6 +24,7 @@ import org.apache.crunch.DoFn;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -56,6 +57,14 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
   @Override
   public PTableType<K, V> getPTableType() {
     return type;
+  }
+
+  @Override
+  protected ReadableData<Pair<K, V>> getReadableDataInternal() {
+    if (getOnlyParent() instanceof PGroupedTableImpl) {
+      return materializedData();
+    }
+    return new DelegatingReadableData(getOnlyParent().asReadable(false), fn);
   }
 
   @Override

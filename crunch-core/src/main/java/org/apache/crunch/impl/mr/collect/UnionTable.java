@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.List;
 
 import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
@@ -91,6 +92,19 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(new UnionCollection<Pair<K, V>>(parents));
+  }
+
+  @Override
+  protected ReadableData<Pair<K, V>> getReadableDataInternal() {
+    List<ReadableData<Pair<K, V>>> prds = Lists.newArrayList();
+    for (PCollectionImpl<Pair<K, V>> parent : parents) {
+      if (parent instanceof PGroupedTableImpl) {
+        return materializedData();
+      } else {
+        prds.add(parent.asReadable(false));
+      }
+    }
+    return new UnionReadableData<Pair<K, V>>(prds);
   }
 
   @Override

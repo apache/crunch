@@ -17,15 +17,17 @@
  */
 package org.apache.crunch.io.hbase;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
@@ -42,7 +44,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
@@ -123,11 +124,20 @@ public class HBaseSourceTarget extends HBaseTarget implements
     }
   }
 
-  static String convertScanToString(Scan scan) throws IOException {
+  public static String convertScanToString(Scan scan) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(out);
     scan.write(dos);
     return Base64.encodeBytes(out.toByteArray());
+  }
+
+  public static Scan convertStringToScan(String string) throws IOException {
+    ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(string));
+    DataInputStream dais = new DataInputStream(bais);
+    Scan scan = new Scan();
+    scan.readFields(dais);
+    dais.close();
+    return scan;
   }
 
   @Override
@@ -155,66 +165,19 @@ public class HBaseSourceTarget extends HBaseTarget implements
   }
 
   @Override
+  public ReadableData<Pair<ImmutableBytesWritable, Result>> asReadable() {
+    try {
+      return new HBaseData(table, convertScanToString(scan), this);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public SourceTarget<Pair<ImmutableBytesWritable, Result>> conf(String key, String value) {
     inputConf(key, value);
     outputConf(key, value);
     return this;
   }
 
-  private static class HTableIterable implements Iterable<Pair<ImmutableBytesWritable, Result>> {
-    private final HTable table;
-    private final Scan scan;
-
-    public HTableIterable(HTable table, Scan scan) {
-      this.table = table;
-      this.scan = scan;
-    }
-
-    @Override
-    public Iterator<Pair<ImmutableBytesWritable, Result>> iterator() {
-      try {
-        return new HTableIterator(table, table.getScanner(scan));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  private static class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
-
-    private final HTable table;
-    private final ResultScanner scanner;
-    private final Iterator<Result> iter;
-
-    public HTableIterator(HTable table, ResultScanner scanner) {
-      this.table = table;
-      this.scanner = scanner;
-      this.iter = scanner.iterator();
-    }
-
-    @Override
-    public boolean hasNext() {
-      boolean hasNext = iter.hasNext();
-      if (!hasNext) {
-        scanner.close();
-        try {
-          table.close();
-        } catch (IOException e) {
-          LOG.error("Exception closing HTable: " + table.getTableName(), e);
-        }
-      }
-      return hasNext;
-    }
-
-    @Override
-    public Pair<ImmutableBytesWritable, Result> next() {
-      Result next = iter.next();
-      return Pair.of(new ImmutableBytesWritable(next.getRow()), next);
-    }
-
-    @Override
-    public void remove() {
-      throw new UnsupportedOperationException();
-    }
-  }
 }

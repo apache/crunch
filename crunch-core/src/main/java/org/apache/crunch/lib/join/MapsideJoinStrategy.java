@@ -26,17 +26,11 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
-import org.apache.crunch.SourceTarget;
-import org.apache.crunch.io.ReadableSourceTarget;
-import org.apache.crunch.materialize.MaterializableIterable;
-import org.apache.crunch.types.PType;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.types.PTypeFamily;
-import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 /**
@@ -49,6 +43,29 @@ import com.google.common.collect.Multimap;
  * join.
  */
 public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
+
+  private boolean materialize;
+
+  /**
+   * Constructs a new instance of the {@code MapsideJoinStratey}, materializing the right-side
+   * join table to disk before the join is performed.
+   */
+  public MapsideJoinStrategy() {
+    this(true);
+  }
+
+  /**
+   * Constructs a new instance of the {@code MapsideJoinStrategy}. If the {@code }materialize}
+   * argument is true, then the right-side join {@code PTable} will be materialized to disk
+   * before the in-memory join is performed. If it is false, then Crunch can optionally read
+   * and process the data from the right-side table without having to run a job to materialize
+   * the data to disk first.
+   *
+   * @param materialize Whether or not to materialize the right-side table before the join
+   */
+  public MapsideJoinStrategy(boolean materialize) {
+    this.materialize = materialize;
+  }
 
   @Override
   public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
@@ -66,96 +83,43 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
   private PTable<K, Pair<U,V>> joinInternal(PTable<K, U> left, PTable<K, V> right, boolean includeUnmatchedLeftValues) {
     PTypeFamily tf = left.getTypeFamily();
-    Iterable<Pair<K, V>> iterable = right.materialize();
-
-    if (iterable instanceof MaterializableIterable) {
-      MaterializableIterable<Pair<K, V>> mi = (MaterializableIterable<Pair<K, V>>) iterable;
-      MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(mi.getPath().toString(),
-          includeUnmatchedLeftValues, right.getPType());
-      ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
-      if (mi.isSourceTarget()) {
-        optionsBuilder.sourceTargets((SourceTarget) mi.getSource());
-      }
-      return left.parallelDo("mapjoin", mapJoinDoFn,
-          tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())),
-          optionsBuilder.build());
-    } else { // in-memory pipeline
-      return left.parallelDo(new InMemoryJoinFn<K, U, V>(iterable, includeUnmatchedLeftValues),
-          tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())));
-    }
+    ReadableData<Pair<K, V>> rightReadable = right.asReadable(materialize);
+    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(rightReadable, includeUnmatchedLeftValues);
+    ParallelDoOptions options = ParallelDoOptions.builder()
+        .sourceTargets(rightReadable.getSourceTargets())
+        .build();
+    return left.parallelDo("mapjoin", mapJoinDoFn,
+        tf.tableOf(left.getKeyType(), tf.pairs(left.getValueType(), right.getValueType())),
+        options);
   }
 
-  static class InMemoryJoinFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
-
-    private Multimap<K, V> joinMap;
-    private boolean includeUnmatched;
-    
-    public InMemoryJoinFn(Iterable<Pair<K, V>> iterable, boolean includeUnmatched) {
-      joinMap = HashMultimap.create();
-      for (Pair<K, V> joinPair : iterable) {
-        joinMap.put(joinPair.first(), joinPair.second());
-      }
-      this.includeUnmatched = includeUnmatched;
-    }
-    
-    @Override
-    public void process(Pair<K, U> input, Emitter<Pair<K, Pair<U, V>>> emitter) {
-      K key = input.first();
-      U value = input.second();
-      Collection<V> joinValues = joinMap.get(key);
-      if (includeUnmatched && joinValues.isEmpty()) {
-        emitter.emit(Pair.of(key, Pair.of(value, (V)null)));
-      } else {
-        for (V joinValue : joinValues) {
-          Pair<U, V> valuePair = Pair.of(value, joinValue);
-          emitter.emit(Pair.of(key, valuePair));
-        }
-      }
-    }
-  }
-  
   static class MapsideJoinDoFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
-    private String inputPath;
+    private final ReadableData<Pair<K, V>> readable;
     private final boolean includeUnmatched;
-    private PType<Pair<K, V>> ptype;
     private Multimap<K, V> joinMap;
 
-    public MapsideJoinDoFn(String inputPath, boolean includeUnmatched, PType<Pair<K, V>> ptype) {
-      this.inputPath = inputPath;
+    public MapsideJoinDoFn(ReadableData<Pair<K, V>> rs, boolean includeUnmatched) {
+      this.readable = rs;
       this.includeUnmatched = includeUnmatched;
-      this.ptype = ptype;
-    }
-
-    private Path getCacheFilePath() {
-      Path local = DistCache.getPathToCacheFile(new Path(inputPath), getConfiguration());
-      if (local == null) {
-        throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
-      }
-      return local;
     }
 
     @Override
     public void configure(Configuration conf) {
-      DistCache.addCacheFile(new Path(inputPath), conf);
+      readable.configure(conf);
     }
     
     @Override
     public void initialize() {
       super.initialize();
 
-      ReadableSourceTarget<Pair<K, V>> sourceTarget = ptype.getDefaultFileSource(
-          getCacheFilePath());
-      Iterable<Pair<K, V>> iterable = null;
-      try {
-        iterable = sourceTarget.read(getConfiguration());
-      } catch (IOException e) {
-        throw new CrunchRuntimeException("Error reading right-side of map side join: ", e);
-      }
-
       joinMap = ArrayListMultimap.create();
-      for (Pair<K, V> joinPair : iterable) {
-        joinMap.put(joinPair.first(), joinPair.second());
+      try {
+        for (Pair<K, V> joinPair : readable.read(getContext())) {
+          joinMap.put(joinPair.first(), joinPair.second());
+        }
+      } catch (IOException e) {
+        throw new CrunchRuntimeException("Error reading map-side join data", e);
       }
     }
 

@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.crunch.Pair;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.conf.Configuration;
@@ -87,5 +88,10 @@ public class TextFileTableSource<K, V> extends FileTableSourceImpl<K, V>
     return read(conf,
         new TextFileReaderFactory<Pair<K, V>>(LineParser.forTableType(getTableType(),
             separator)));
+  }
+
+  @Override
+  public ReadableData<Pair<K, V>> asReadable() {
+    return new TextReadableData<Pair<K, V>>(paths, getTableType(), separator);
   }
 }

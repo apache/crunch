@@ -20,9 +20,12 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.List;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.types.PType;
 
 import com.google.common.collect.ImmutableList;
@@ -35,6 +38,15 @@ public class InputCollection<S> extends PCollectionImpl<S> {
     super(source.toString());
     this.source = source;
     this.pipeline = pipeline;
+  }
+
+  @Override
+  protected ReadableData<S> getReadableDataInternal() {
+    if (source instanceof ReadableSource) {
+      return ((ReadableSource<S>) source).asReadable();
+    } else {
+      return materializedData();
+    }
   }
 
   @Override

@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
@@ -100,6 +101,11 @@ public class DoCollectionImplTest {
 
     @Override
     protected void acceptInternal(Visitor visitor) {
+    }
+
+    @Override
+    protected ReadableData<String> getReadableDataInternal() {
+      return null;
     }
 
     @Override

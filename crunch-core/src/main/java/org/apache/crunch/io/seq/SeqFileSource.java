@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import java.util.List;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -40,6 +41,11 @@ public class SeqFileSource<T> extends FileSourceImpl<T> implements ReadableSourc
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     return read(conf, new SeqFileReaderFactory<T>(ptype));
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new SeqFileReadableData<T>(paths, ptype);
   }
 
   @Override

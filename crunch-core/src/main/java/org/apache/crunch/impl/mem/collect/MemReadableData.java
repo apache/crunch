@@ -15,33 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.io.impl;
+package org.apache.crunch.impl.mem.collect;
+
+import com.google.common.collect.ImmutableSet;
+import org.apache.crunch.ReadableData;
+import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 
-import org.apache.crunch.ReadableData;
-import org.apache.crunch.Target;
-import org.apache.crunch.io.ReadableSource;
-import org.apache.crunch.io.ReadableSourceTarget;
-import org.apache.hadoop.conf.Configuration;
+class MemReadableData<T> implements ReadableData<T> {
 
-public class ReadableSourceTargetImpl<T> extends SourceTargetImpl<T> implements ReadableSourceTarget<T> {
+  private Collection<T> collection;
 
-  public ReadableSourceTargetImpl(ReadableSource<T> source, Target target) {
-    super(source, target);
+  public MemReadableData(Collection<T> collection) {
+    this.collection = collection;
   }
 
   @Override
-  public Iterable<T> read(Configuration conf) throws IOException {
-    return ((ReadableSource<T>) source).read(conf);
+  public Set<SourceTarget<?>> getSourceTargets() {
+    return ImmutableSet.of();
   }
 
   @Override
-  public ReadableData<T> asReadable() {
-    ReadableData<T> rd = ((ReadableSource<T>) source).asReadable();
-    if (rd instanceof ReadableDataImpl) {
-      ((ReadableDataImpl<T>) rd).setParent(this);
-    }
-    return rd;
+  public void configure(Configuration conf) {
+    // No-op
+  }
+
+  @Override
+  public Iterable<T> read(TaskInputOutputContext<?, ?, ?, ?> ctxt) throws IOException {
+    return collection;
   }
 }

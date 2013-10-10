@@ -19,6 +19,7 @@ package org.apache.crunch.io;
 
 import java.io.IOException;
 
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.hadoop.conf.Configuration;
 
@@ -38,4 +39,10 @@ public interface ReadableSource<T> extends Source<T> {
    * @throws IOException
    */
   Iterable<T> read(Configuration conf) throws IOException;
+
+  /**
+   * @return a {@code ReadableData} instance containing the data referenced by this
+   * {@code ReadableSource}.
+   */
+  ReadableData<T> asReadable();
 }

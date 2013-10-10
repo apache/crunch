@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import java.util.List;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.types.PTableType;
@@ -49,6 +50,11 @@ public class SeqFileTableSource<K, V> extends FileTableSourceImpl<K, V> implemen
   @Override
   public Iterable<Pair<K, V>> read(Configuration conf) throws IOException {
     return read(conf, new SeqFileReaderFactory<Pair<K, V>>(getTableType()));
+  }
+
+  @Override
+  public ReadableData<Pair<K, V>> asReadable() {
+    return new SeqFileReadableData<Pair<K, V>>(paths, getTableType());
   }
 
   @Override

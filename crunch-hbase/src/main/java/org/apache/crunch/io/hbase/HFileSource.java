@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
@@ -79,6 +80,11 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
       throw new IllegalStateException("Cannot filter row ranges in HFileSource.read");
     }
     return read(conf, new HFileReaderFactory());
+  }
+
+  @Override
+  public ReadableData<KeyValue> asReadable() {
+    return new HFileReadableData(paths);
   }
 
   @Override

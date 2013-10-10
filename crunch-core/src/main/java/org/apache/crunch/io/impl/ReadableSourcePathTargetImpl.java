@@ -19,6 +19,7 @@ package org.apache.crunch.io.impl;
 
 import java.io.IOException;
 
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
@@ -34,6 +35,15 @@ public class ReadableSourcePathTargetImpl<T> extends SourcePathTargetImpl<T> imp
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     return ((ReadableSource<T>) source).read(conf);
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    ReadableData<T> rd = ((ReadableSource<T>) source).asReadable();
+    if (rd instanceof ReadableDataImpl) {
+      ((ReadableDataImpl<T>) rd).setParent(this);
+    }
+    return rd;
   }
 
 }

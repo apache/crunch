@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import java.util.List;
 import org.apache.crunch.io.ReadableSource;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
@@ -56,5 +57,10 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     return read(conf, new TextFileReaderFactory<T>(LineParser.forType(ptype)));
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new TextReadableData<T>(paths, ptype);
   }
 }

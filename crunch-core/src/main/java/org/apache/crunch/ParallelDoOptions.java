@@ -17,6 +17,7 @@
  */
 package org.apache.crunch;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -68,7 +69,21 @@ public class ParallelDoOptions {
       this.sourceTargets = Sets.newHashSet();
       this.extraConf = Maps.newHashMap();
     }
-    
+
+    public Builder sources(Source<?>... sources) {
+      return sources(Arrays.asList(sources));
+    }
+
+    public Builder sources(Collection<Source<?>> sources) {
+      for (Source<?> src : sources) {
+        // Only SourceTargets need to be checked for materialization
+        if (src instanceof SourceTarget) {
+          sourceTargets.add((SourceTarget) src);
+        }
+      }
+      return this;
+    }
+
     public Builder sourceTargets(SourceTarget<?>... sourceTargets) {
       Collections.addAll(this.sourceTargets, sourceTargets);
       return this;

@@ -19,6 +19,8 @@ package org.apache.crunch.impl.mr.collect;
 
 import java.util.List;
 
+import com.google.common.collect.Lists;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
@@ -70,6 +72,19 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
   @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(this);
+  }
+
+  @Override
+  protected ReadableData<S> getReadableDataInternal() {
+    List<ReadableData<S>> prds = Lists.newArrayList();
+    for (PCollectionImpl<S> parent : parents) {
+      if (parent instanceof PGroupedTableImpl) {
+        return materializedData();
+      } else {
+        prds.add(parent.asReadable(false));
+      }
+    }
+    return new UnionReadableData<S>(prds);
   }
 
   @Override

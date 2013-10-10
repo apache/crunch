@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.AvroJob;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -69,6 +70,11 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   @Override
   public Iterable<T> read(Configuration conf) throws IOException {
     return read(conf, getFileReaderFactory((AvroType<T>) ptype));
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new AvroReadableData<T>(this.paths, (AvroType<T>) ptype);
   }
 
   protected AvroFileReaderFactory<T> getFileReaderFactory(AvroType<T> ptype){

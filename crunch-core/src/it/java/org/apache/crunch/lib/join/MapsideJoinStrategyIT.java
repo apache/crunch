@@ -91,12 +91,22 @@ public class MapsideJoinStrategyIT {
 
   @Test
   public void testMapSideJoin_MemPipeline() {
-    runMapsideJoin(MemPipeline.getInstance(), true);
+    runMapsideJoin(MemPipeline.getInstance(), true, false);
+  }
+
+  @Test
+  public void testMapSideJoin_MemPipeline_Materialized() {
+    runMapsideJoin(MemPipeline.getInstance(), true, true);
   }
   
   @Test
   public void testMapSideJoinLeftOuterJoin_MemPipeline() {
-    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true);
+    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true, false);
+  }
+
+  @Test
+  public void testMapSideJoinLeftOuterJoin_MemPipeline_Materialized() {
+    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true, true);
   }
 
   @Test
@@ -119,24 +129,33 @@ public class MapsideJoinStrategyIT {
 
   @Test
   public void testMapsideJoin() throws IOException {
-    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false);
-  }
-  
-  @Test
-  public void testMapsideJoin_LeftOuterJoin() throws IOException {
-    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false);
+    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, false);
   }
 
-  private void runMapsideJoin(Pipeline pipeline, boolean inMemory) {
+  @Test
+  public void testMapsideJoin_Materialized() throws IOException {
+    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, true);
+  }
+
+  @Test
+  public void testMapsideJoin_LeftOuterJoin() throws IOException {
+    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, false);
+  }
+
+  @Test
+  public void testMapsideJoin_LeftOuterJoin_Materialized() throws IOException {
+    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, true);
+  }
+
+  private void runMapsideJoin(Pipeline pipeline, boolean inMemory, boolean materialize) {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
     
-    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>(materialize);
     PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.INNER_JOIN)
         .mapValues("concat", new ConcatValuesFn(), Writables.strings());
 
     PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
-    
     PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.INNER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
@@ -150,7 +169,7 @@ public class MapsideJoinStrategyIT {
     
     PipelineResult res = pipeline.run();
     if (!inMemory) {
-      assertEquals(2, res.getStageResults().size());
+      assertEquals(materialize ? 2 : 1, res.getStageResults().size());
     }
      
     List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);
@@ -159,16 +178,15 @@ public class MapsideJoinStrategyIT {
     assertEquals(expectedJoinResult, joinedResultList);
   }
   
-  private void runMapsideLeftOuterJoin(Pipeline pipeline, boolean inMemory) {
+  private void runMapsideLeftOuterJoin(Pipeline pipeline, boolean inMemory, boolean materialize) {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
     
-    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>(materialize);
     PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.LEFT_OUTER_JOIN)
         .mapValues("concat", new ConcatValuesFn(), Writables.strings());
 
     PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
-    
     PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.LEFT_OUTER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
@@ -183,7 +201,7 @@ public class MapsideJoinStrategyIT {
     
     PipelineResult res = pipeline.run();
     if (!inMemory) {
-      assertEquals(2, res.getStageResults().size());
+      assertEquals(materialize ? 2 : 1, res.getStageResults().size());
     }
      
     List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);

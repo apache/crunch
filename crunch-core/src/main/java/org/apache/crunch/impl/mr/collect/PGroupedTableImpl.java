@@ -31,6 +31,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.plan.DoNode;
@@ -74,6 +75,11 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
         LOG.warn("Attempted to set a negative number of reduce tasks");
       }
     }
+  }
+
+  @Override
+  protected ReadableData<Pair<K, Iterable<V>>> getReadableDataInternal() {
+    throw new UnsupportedOperationException("PGroupedTable does not currently support readability");
   }
 
   @Override
