@@ -78,7 +78,7 @@ public class MSCRPlanner {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
     
-    Multimap<Vertex, JobPrototype> assignments = HashMultimap.create();
+    Multimap<Target, JobPrototype> assignments = HashMultimap.create();
     while (!targetDeps.isEmpty()) {
       Set<Target> allTargets = Sets.newHashSet();
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
@@ -89,13 +89,11 @@ public class MSCRPlanner {
       // Walk the current plan tree and build a graph in which the vertices are
       // sources, targets, and GBK operations.
       Set<PCollectionImpl<?>> currentStage = Sets.newHashSet();
-      Set<PCollectionImpl<?>> laterStage = Sets.newHashSet();
       for (PCollectionImpl<?> output : targetDeps.keySet()) {
-        if (Sets.intersection(allTargets, targetDeps.get(output)).isEmpty()) {
+        Set<Target> deps = Sets.intersection(allTargets, targetDeps.get(output));
+        if (deps.isEmpty()) {
           graphBuilder.visitOutput(output);
           currentStage.add(output);
-        } else {
-          laterStage.add(output);
         }
       }
       
@@ -127,15 +125,25 @@ public class MSCRPlanner {
         }
       }
 
-      // Make all of the jobs in this stage dependent on existing job
-      // prototypes.
-      for (JobPrototype newPrototype : newAssignments.values()) {
-        for (JobPrototype oldPrototype : assignments.values()) {
-          newPrototype.addDependency(oldPrototype);
+      for (Map.Entry<Vertex, JobPrototype> e : newAssignments.entries()) {
+        if (e.getKey().isOutput()) {
+          PCollectionImpl<?> pcollect = e.getKey().getPCollection();
+          JobPrototype current = e.getValue();
+
+          // Add in implicit dependencies via SourceTargets that are read into memory
+          for (Target pt : pcollect.getTargetDependencies()) {
+            for (JobPrototype parentJobProto : assignments.get(pt)) {
+              current.addDependency(parentJobProto);
+            }
+          }
+
+          // Add this to the set of output assignments
+          for (Target t : outputs.get(pcollect)) {
+            assignments.put(t, e.getValue());
+          }
         }
       }
-      assignments.putAll(newAssignments);
-      
+
       // Remove completed outputs and mark materialized output locations
       // for subsequent job processing.
       for (PCollectionImpl<?> output : currentStage) {
