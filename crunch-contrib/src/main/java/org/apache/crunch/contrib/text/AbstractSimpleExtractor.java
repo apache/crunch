@@ -35,11 +35,11 @@ public abstract class AbstractSimpleExtractor<T> implements Extractor<T> {
   private final T defaultValue;
   private final TokenizerFactory scannerFactory;
   
-  public AbstractSimpleExtractor(T defaultValue) {
+  protected AbstractSimpleExtractor(T defaultValue) {
     this(defaultValue, TokenizerFactory.getDefaultInstance());
   }
   
-  public AbstractSimpleExtractor(T defaultValue, TokenizerFactory scannerFactory) {
+  protected AbstractSimpleExtractor(T defaultValue, TokenizerFactory scannerFactory) {
     this.defaultValue = defaultValue;
     this.scannerFactory = scannerFactory;
   }

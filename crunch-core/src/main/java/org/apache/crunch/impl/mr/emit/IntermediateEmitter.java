@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 public class IntermediateEmitter implements Emitter<Object> {
 
   private final List<RTNode> children;
-  private final Configuration conf;
   private final PType<Object> outputPType;
   private final boolean needDetachedValues;
 
@@ -43,12 +42,11 @@ public class IntermediateEmitter implements Emitter<Object> {
                              boolean disableDeepCopy) {
     this.outputPType = outputPType;
     this.children = ImmutableList.copyOf(children);
-    this.conf = conf;
-
     outputPType.initialize(conf);
     needDetachedValues = !disableDeepCopy && this.children.size() > 1;
   }
 
+  @Override
   public void emit(Object emitted) {
     for (RTNode child : children) {
       Object value = emitted;
@@ -59,6 +57,7 @@ public class IntermediateEmitter implements Emitter<Object> {
     }
   }
 
+  @Override
   public void flush() {
     // No-op
   }

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PTable;
@@ -74,7 +75,7 @@ public class MapsideJoinStrategyIT {
   private static class CapOrdersFn extends MapFn<String, String> {
     @Override
     public String map(String v) {
-      return v.toUpperCase();
+      return v.toUpperCase(Locale.ENGLISH);
     }
   }
   

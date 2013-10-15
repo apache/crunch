@@ -86,7 +86,7 @@ public final class Distinct {
     private final int flushEvery;
     private final PType<S> ptype;
     
-    public PreDistinctFn(int flushEvery, PType<S> ptype) {
+    PreDistinctFn(int flushEvery, PType<S> ptype) {
       this.flushEvery = flushEvery;
       this.ptype = ptype;
     }

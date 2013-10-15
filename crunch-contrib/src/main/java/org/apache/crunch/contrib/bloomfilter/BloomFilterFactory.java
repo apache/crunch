@@ -77,31 +77,32 @@ public class BloomFilterFactory {
     return table.groupByKey(1).combineValues(new BloomFilterAggregator());
   }
 
-}
 
-@SuppressWarnings("serial")
-class BloomFilterAggregator implements Aggregator<BloomFilter> {
-  private transient BloomFilter bloomFilter = null;
-  private transient int filterSize;
+  @SuppressWarnings("serial")
+  private static class BloomFilterAggregator implements Aggregator<BloomFilter> {
+    private transient BloomFilter bloomFilter = null;
+    private transient int filterSize;
 
-  @Override
-  public void update(BloomFilter value) {
-    bloomFilter.or(value);
-  }
+    @Override
+    public void update(BloomFilter value) {
+      bloomFilter.or(value);
+    }
 
-  @Override
-  public Iterable<BloomFilter> results() {
-    return ImmutableList.of(bloomFilter);
-  }
+    @Override
+    public Iterable<BloomFilter> results() {
+      return ImmutableList.of(bloomFilter);
+    }
 
-  @Override
-  public void initialize(Configuration configuration) {
-    filterSize = BloomFilterFn.getBloomFilterSize(configuration);
-  }
+    @Override
+    public void initialize(Configuration configuration) {
+      filterSize = BloomFilterFn.getBloomFilterSize(configuration);
+    }
 
-  @Override
-  public void reset() {
-    bloomFilter = BloomFilterFn.initializeFilter(filterSize);
+    @Override
+    public void reset() {
+      bloomFilter = BloomFilterFn.initializeFilter(filterSize);
+
+    }
 
   }
 

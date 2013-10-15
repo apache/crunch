@@ -27,13 +27,10 @@ import org.apache.crunch.types.avro.Avros;
 import org.junit.Rule;
 import org.junit.Test;
 
-/**
- *
- */
 public class SingleUseIterableExceptionIT {
 
   @Rule
-  public transient TemporaryPath tmpDir = TemporaryPaths.create();
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   static class ReduceFn extends MapFn<Iterable<String>, String> {
     @Override

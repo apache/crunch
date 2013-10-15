@@ -19,7 +19,6 @@ package org.apache.crunch.contrib.text;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
-import java.util.Scanner;
 
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -37,7 +36,7 @@ import com.google.common.collect.Lists;
 /**
  * Factory methods for constructing common {@code Extractor} types.
  */
-public class Extractors {
+public final class Extractors {
   
   /**
    * Returns an Extractor for integers.
@@ -71,7 +70,7 @@ public class Extractors {
    * Returns an Extractor for floats.
    */
   public static Extractor<Float> xfloat() {
-    return xfloat(0f);
+    return xfloat(0.0f);
   }
   
   public static Extractor<Float> xfloat(Float defaultValue) {
@@ -161,7 +160,7 @@ public class Extractors {
   
   private static class IntExtractor extends AbstractSimpleExtractor<Integer> {
     
-    public IntExtractor(Integer defaultValue) {
+    IntExtractor(Integer defaultValue) {
       super(defaultValue);
     }
     
@@ -182,7 +181,7 @@ public class Extractors {
   }
   
   private static class LongExtractor extends AbstractSimpleExtractor<Long> {
-    public LongExtractor(Long defaultValue) {
+    LongExtractor(Long defaultValue) {
       super(defaultValue);
     }
     
@@ -200,10 +199,10 @@ public class Extractors {
     public String toString() {
       return "xlong";
     }
-  };
-  
+  }
+
   private static class FloatExtractor extends AbstractSimpleExtractor<Float> {
-    public FloatExtractor(Float defaultValue) {
+    FloatExtractor(Float defaultValue) {
       super(defaultValue);
     }
     
@@ -221,10 +220,10 @@ public class Extractors {
     public String toString() {
       return "xfloat";
     }
-  };
-  
+  }
+
   private static class DoubleExtractor extends AbstractSimpleExtractor<Double> {
-    public DoubleExtractor(Double defaultValue) {
+    DoubleExtractor(Double defaultValue) {
       super(defaultValue);
     }
     
@@ -242,11 +241,11 @@ public class Extractors {
     public String toString() {
       return "xdouble";
     }
-  };
-  
+  }
+
   private static class BooleanExtractor extends AbstractSimpleExtractor<Boolean> {
     
-    public BooleanExtractor(Boolean defaultValue) {
+    BooleanExtractor(Boolean defaultValue) {
       super(defaultValue);
     }
     
@@ -264,11 +263,11 @@ public class Extractors {
     public String toString() {
       return "xboolean";
     }
-  };
-  
+  }
+
   private static class StringExtractor extends AbstractSimpleExtractor<String> {
     
-    public StringExtractor(String defaultValue) {
+    StringExtractor(String defaultValue) {
       super(defaultValue);
     }
     
@@ -286,8 +285,8 @@ public class Extractors {
     public String toString() {
       return "xstring";
     }
-  };
-  
+  }
+
   private static class CollectionExtractor<T> implements Extractor<Collection<T>> {
 
     private final TokenizerFactory tokenizerFactory;
@@ -295,7 +294,7 @@ public class Extractors {
     private int errors = 0;
     private boolean errorOnLast;
 
-    public CollectionExtractor(TokenizerFactory tokenizerFactory, Extractor<T> extractor) {
+    CollectionExtractor(TokenizerFactory tokenizerFactory, Extractor<T> extractor) {
       this.tokenizerFactory = tokenizerFactory;
       this.extractor = extractor;
     }
@@ -322,7 +321,7 @@ public class Extractors {
 
     @Override
     public Collection<T> getDefaultValue() {
-      return ImmutableList.<T>of();
+      return ImmutableList.of();
     }
 
     @Override
@@ -349,7 +348,7 @@ public class Extractors {
     private final Extractor<K> one;
     private final Extractor<V> two;
     
-    public PairExtractor(TokenizerFactory scannerFactory, Extractor<K> one, Extractor<V> two) {
+    PairExtractor(TokenizerFactory scannerFactory, Extractor<K> one, Extractor<V> two) {
       super(scannerFactory, ImmutableList.<Extractor<?>>of(one, two));
       this.one = one;
       this.two = two;
@@ -374,14 +373,14 @@ public class Extractors {
     public Pair<K, V> getDefaultValue() {
       return Pair.of(one.getDefaultValue(), two.getDefaultValue());
     }
-  };
-  
+  }
+
   private static class TripExtractor<A, B, C> extends AbstractCompositeExtractor<Tuple3<A, B, C>> {
     private final Extractor<A> one;
     private final Extractor<B> two;
     private final Extractor<C> three;
     
-    public TripExtractor(TokenizerFactory sf, Extractor<A> one, Extractor<B> two, Extractor<C> three) {
+    TripExtractor(TokenizerFactory sf, Extractor<A> one, Extractor<B> two, Extractor<C> three) {
       super(sf, ImmutableList.<Extractor<?>>of(one, two, three));
       this.one = one;
       this.two = two;
@@ -407,15 +406,15 @@ public class Extractors {
     public String toString() {
       return "xtriple(" + one + "," + two + "," + three + ")";
     }
-  };
-  
+  }
+
   private static class QuadExtractor<A, B, C, D> extends AbstractCompositeExtractor<Tuple4<A, B, C, D>> {
     private final Extractor<A> one;
     private final Extractor<B> two;
     private final Extractor<C> three;
     private final Extractor<D> four;
     
-    public QuadExtractor(TokenizerFactory sf, Extractor<A> one, Extractor<B> two, Extractor<C> three,
+    QuadExtractor(TokenizerFactory sf, Extractor<A> one, Extractor<B> two, Extractor<C> three,
         Extractor<D> four) {
       super(sf, ImmutableList.<Extractor<?>>of(one, two, three, four));
       this.one = one;
@@ -445,12 +444,12 @@ public class Extractors {
     public String toString() {
       return "xquad(" + one + "," + two + "," + three + "," + four + ")";
     }
-  };
-  
+  }
+
   private static class TupleNExtractor extends AbstractCompositeExtractor<TupleN> {
     private final Extractor[] extractors;
     
-    public TupleNExtractor(TokenizerFactory scannerFactory, Extractor...extractors) {
+    TupleNExtractor(TokenizerFactory scannerFactory, Extractor...extractors) {
       super(scannerFactory, ImmutableList.<Extractor<?>>copyOf(extractors));
       this.extractors = extractors;
     }
@@ -482,8 +481,8 @@ public class Extractors {
     public String toString() {
       return "xtupleN(" + Joiner.on(',').join(extractors) + ")";
     }
-  };
-  
+  }
+
   private static class CustomTupleExtractor<T extends Tuple> extends AbstractCompositeExtractor<T> {
 
     private final Class<T> clazz;
@@ -491,7 +490,7 @@ public class Extractors {
     
     private transient Constructor<T> constructor;
     
-    public CustomTupleExtractor(TokenizerFactory sf, Class<T> clazz, Extractor... extractors) {
+    CustomTupleExtractor(TokenizerFactory sf, Class<T> clazz, Extractor... extractors) {
       super(sf, ImmutableList.<Extractor<?>>copyOf(extractors));
       this.clazz = clazz;
       this.extractors = extractors;

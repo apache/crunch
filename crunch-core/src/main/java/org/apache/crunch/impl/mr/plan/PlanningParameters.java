@@ -21,7 +21,7 @@ package org.apache.crunch.impl.mr.plan;
  * Collection of Configuration keys and various constants used when planning MapReduce jobs for a
  * pipeline.
  */
-public class PlanningParameters {
+public final class PlanningParameters {
 
   public static final String MULTI_OUTPUT_PREFIX = "out";
 

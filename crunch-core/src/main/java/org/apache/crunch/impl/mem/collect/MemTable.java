@@ -189,7 +189,6 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
     return new MaterializableMap<K, V>(this.materialize());
   }
 
-  /** {@inheritDoc} */
   @Override
   public PObject<Map<K, V>> asMap() {
     return new MapPObject<K, V>(this);

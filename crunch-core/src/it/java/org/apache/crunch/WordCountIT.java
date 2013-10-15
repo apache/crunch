@@ -48,7 +48,7 @@ public class WordCountIT {
 
   enum WordCountStats {
     ANDS
-  };
+  }
 
   public static PTable<String, Long> wordCount(PCollection<String> words, PTypeFamily typeFamily) {
     return Aggregate.count(words.parallelDo(new DoFn<String, String>() {
@@ -68,8 +68,9 @@ public class WordCountIT {
   public static PTable<String, Long> substr(PTable<String, Long> ptable) {
     return ptable.parallelDo(new DoFn<Pair<String, Long>, Pair<String, Long>>() {
 
+      @Override
       public void process(Pair<String, Long> input, Emitter<Pair<String, Long>> emitter) {
-        if (input.first().length() > 0) {
+        if (!input.first().isEmpty()) {
           emitter.emit(Pair.of(input.first().substring(0, 1), input.second()));
         }
       }

@@ -20,18 +20,13 @@ package org.apache.crunch.io.avro.trevni;
 import java.io.IOException;
 
 import org.apache.avro.mapred.AvroKey;
-import org.apache.avro.mapred.AvroValue;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-/**
- *
- */
 public class TrevniOutputFormat<T> extends FileOutputFormat<AvroKey<T>, NullWritable> { 
 
-  /** {@inheritDoc} */
   @Override
   public RecordWriter<AvroKey<T>, NullWritable> getRecordWriter(TaskAttemptContext context)
       throws IOException, InterruptedException {

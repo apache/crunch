@@ -34,7 +34,7 @@ public class EnumPairIT implements Serializable {
   @Rule
   public transient TemporaryPath tmpDir = TemporaryPaths.create();
 
-  static enum etypes {
+  enum etypes {
     type1,
   }
 

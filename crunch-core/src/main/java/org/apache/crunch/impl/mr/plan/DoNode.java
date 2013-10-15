@@ -146,7 +146,7 @@ public class DoNode {
 
   @Override
   public boolean equals(Object other) {
-    if (other == null || !(other instanceof DoNode)) {
+    if (!(other instanceof DoNode)) {
       return false;
     }
     if (this == other) {

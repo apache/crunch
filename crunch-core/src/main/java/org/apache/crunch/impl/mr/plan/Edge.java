@@ -32,15 +32,12 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-/**
- *
- */
 class Edge {
   private final Vertex head;
   private final Vertex tail;
   private final Set<NodePath> paths;
   
-  public Edge(Vertex head, Vertex tail) {
+  Edge(Vertex head, Vertex tail) {
     this.head = head;
     this.tail = tail;
     this.paths = Sets.newHashSet();
@@ -106,7 +103,7 @@ class Edge {
   
   @Override
   public boolean equals(Object other) {
-    if (other == null || !(other instanceof Edge)) {
+    if (!(other instanceof Edge)) {
       return false;
     }
     Edge e = (Edge) other;

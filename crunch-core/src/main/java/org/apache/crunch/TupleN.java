@@ -26,7 +26,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public class TupleN implements Tuple {
 
-  private final Object values[];
+  private final Object[] values;
 
   public static TupleN of(Object... values) {
     return new TupleN(values);
@@ -37,10 +37,12 @@ public class TupleN implements Tuple {
     System.arraycopy(values, 0, this.values, 0, values.length);
   }
 
+  @Override
   public Object get(int index) {
     return values[index];
   }
 
+  @Override
   public int size() {
     return values.length;
   }
@@ -56,12 +58,15 @@ public class TupleN implements Tuple {
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj)
+    if (this == obj) {
       return true;
-    if (obj == null)
+    }
+    if (obj == null) {
       return false;
-    if (getClass() != obj.getClass())
+    }
+    if (getClass() != obj.getClass()) {
       return false;
+    }
     TupleN other = (TupleN) obj;
     return Arrays.equals(this.values, other.values);
   }

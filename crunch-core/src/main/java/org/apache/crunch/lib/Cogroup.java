@@ -224,7 +224,7 @@ public class Cogroup {
     }
     
     PTable<K, TupleN> union = firstInter.union(inter);
-    PGroupedTable<K, TupleN> grouped = null;
+    PGroupedTable<K, TupleN> grouped;
     if (numReducers > 0) {
       grouped = union.groupByKey(numReducers);
     } else {
@@ -240,7 +240,7 @@ public class Cogroup {
     private final int index;
     private final int size;
     
-    public CogroupFn(int index, int size) {
+    CogroupFn(int index, int size) {
       this.index = index;
       this.size = size;
     }
@@ -259,7 +259,7 @@ public class Cogroup {
     private final TupleFactory factory;
     private final PType[] ptypes;
     
-    public PostGroupFn(TupleFactory tf, PType... ptypes) {
+    PostGroupFn(TupleFactory tf, PType... ptypes) {
       this.factory = tf;
       this.ptypes = ptypes;
     }

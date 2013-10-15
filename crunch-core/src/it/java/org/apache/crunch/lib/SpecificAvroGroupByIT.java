@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.lib;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -97,14 +97,14 @@ public class SpecificAvroGroupByIT implements Serializable {
     pipeline.done();
   }
 
-  private void createPersonAvroFile(File avroFile) throws IOException {
+  private static void createPersonAvroFile(File avroFile) throws IOException {
 
     Person person = new Person();
     person.age = 40;
     person.name = "Bob";
     List<CharSequence> siblingNames = Lists.newArrayList();
-    siblingNames.add("Bob" + "1");
-    siblingNames.add("Bob" + "2");
+    siblingNames.add("Bob1");
+    siblingNames.add("Bob2");
     person.siblingnames = siblingNames;
 
     FileOutputStream outputStream = new FileOutputStream(avroFile);

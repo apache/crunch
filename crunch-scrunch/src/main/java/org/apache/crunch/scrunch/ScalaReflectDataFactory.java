@@ -29,8 +29,10 @@ import org.apache.crunch.types.avro.ReflectDataFactory;
  */
 public class ScalaReflectDataFactory extends ReflectDataFactory {
 
+  @Override
   public ReflectData getReflectData() { return ScalaSafeReflectData.get(); }
   
+  @Override
   public <T> ReflectDatumReader<T> getReader(Schema schema) {
     return new ScalaSafeReflectDatumReader<T>(schema);
   }

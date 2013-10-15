@@ -23,11 +23,12 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Locale;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
-import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
@@ -85,8 +86,8 @@ public class TermFrequencyIT implements Serializable {
             String title = kv[0];
             String text = kv[1];
             for (String word : text.split("\\W+")) {
-              if (word.length() > 0) {
-                Pair<String, String> pair = Pair.of(word.toLowerCase(), title);
+              if (!word.isEmpty()) {
+                Pair<String, String> pair = Pair.of(word.toLowerCase(Locale.ENGLISH), title);
                 emitter.emit(pair);
               }
             }
@@ -119,7 +120,7 @@ public class TermFrequencyIT implements Serializable {
     pipeline.run();
 
     // test the case we should see
-    Iterable<String> lines = ((ReadableSourceTarget<String>) st).read(pipeline.getConfiguration());
+    Iterable<String> lines = ((ReadableSource<String>) st).read(pipeline.getConfiguration());
     boolean passed = false;
     for (String line : lines) {
       if ("[well,A]\t0".equals(line)) {

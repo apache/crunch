@@ -32,7 +32,7 @@ class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   private final MapFn outputFn;
   private final Converter converter;
 
-  public WritableGroupedTableType(WritableTableType<K, V> tableType) {
+  WritableGroupedTableType(WritableTableType<K, V> tableType) {
     super(tableType);
     WritableType keyType = (WritableType) tableType.getKeyType();
     WritableType valueType = (WritableType) tableType.getValueType();

@@ -33,11 +33,10 @@ import java.io.IOException;
 public class TrevniKeySource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
   private static <S> FormatBundle getBundle(AvroType<S> ptype) {
-    FormatBundle bundle = FormatBundle.forInput(AvroTrevniKeyInputFormat.class)
+    return FormatBundle.forInput(AvroTrevniKeyInputFormat.class)
         .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName());
-    return bundle;
   }
 
   public TrevniKeySource(Path path, AvroType<T> ptype) {

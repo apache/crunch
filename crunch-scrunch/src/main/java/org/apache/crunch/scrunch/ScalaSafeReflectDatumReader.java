@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import org.apache.avro.Schema;
 import org.apache.avro.io.ResolvingDecoder;
 import org.apache.avro.reflect.ReflectDatumReader;
@@ -30,9 +31,6 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 import scala.collection.JavaConversions;
 
-/**
- *
- */
 public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   
   public ScalaSafeReflectDatumReader(Schema schema) {
@@ -44,9 +42,9 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
       ResolvingDecoder in) throws IOException {
     Schema expectedType = expected.getElementType();
     long l = in.readArrayStart();
-    long base = 0;
     if (l > 0) {
       Object array = newArray(old, (int) l, expected);
+      long base = 0;
       do {
         for (long i = 0; i < l; i++) {
           addToArray(array, base + i, read(peekArray(array), expectedType, in));
@@ -82,9 +80,11 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
         scala.collection.Iterable it = toIter(array);
         if (scala.collection.immutable.List.class.isAssignableFrom(collectionClass)) {
           return it.toList();
-        } else if (scala.collection.mutable.Buffer.class.isAssignableFrom(collectionClass)) {
+        }
+        if (scala.collection.mutable.Buffer.class.isAssignableFrom(collectionClass)) {
           return it.toBuffer();
-        } else if (scala.collection.immutable.Set.class.isAssignableFrom(collectionClass)) {
+        }
+        if (scala.collection.immutable.Set.class.isAssignableFrom(collectionClass)) {
           return it.toSet();
         }
         return it;
@@ -98,7 +98,7 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   }
   
   @Override
-  @SuppressWarnings(value="unchecked")
+  @SuppressWarnings("unchecked")
   protected Object newArray(Object old, int size, Schema schema) {
     ScalaSafeReflectData data = ScalaSafeReflectData.get();
     Class collectionClass = ScalaSafeReflectData.getClassProp(schema,
@@ -110,14 +110,15 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
       }
       if (scala.collection.Iterable.class.isAssignableFrom(collectionClass) ||
           collectionClass.isAssignableFrom(ArrayList.class)) {
-        return new ArrayList();
+        return Lists.newArrayList();
       }
       return ReflectionUtils.newInstance(collectionClass, null);
     }
     Class elementClass = ScalaSafeReflectData.getClassProp(schema,
         ScalaSafeReflectData.ELEMENT_PROP);
-    if (elementClass == null)
+    if (elementClass == null) {
       elementClass = data.getClass(schema.getElementType());
+    }
     return Array.newInstance(elementClass, size);
   }
 }

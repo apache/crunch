@@ -120,6 +120,7 @@ public class Sample {
     PType<Pair<T, Integer>> ptype = ptf.pairs(input.getPType(), ptf.ints());
     return weightedReservoirSample(
         input.parallelDo(new MapFn<T, Pair<T, Integer>>() {
+          @Override
           public Pair<T, Integer> map(T t) { return Pair.of(t, 1); }
         }, ptype),
         sampleSize,
@@ -160,7 +161,7 @@ public class Sample {
             return Pair.of(0, p);
           }
         }, ptf.tableOf(ptf.ints(), input.getPType()));
-    int[] ss = new int[] { sampleSize };
+    int[] ss = { sampleSize };
     return groupedWeightedReservoirSample(groupedIn, ss, seed)
         .parallelDo(new MapFn<Pair<Integer, T>, T>() {
           @Override

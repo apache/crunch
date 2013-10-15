@@ -29,16 +29,12 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
-import org.apache.crunch.contrib.text.Parse;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.types.avro.Avros;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
-/**
- *
- */
 public class ParseTest {
 
   @Test
@@ -105,7 +101,7 @@ public class ParseTest {
     TokenizerFactory inner = TokenizerFactory.builder().delimiter(",").build();
     Extractor<Pair<Pair<Long, Integer>, Tuple3<String, Integer, Float>>> extractor =
         xpair(outer, xpair(inner, xlong(), xint()), xtriple(inner, xstring(), xint(), xfloat()));
-    assertEquals(Pair.of(Pair.of(1L, 2), Tuple3.of("a", 17, 29f)),
+    assertEquals(Pair.of(Pair.of(1L, 2), Tuple3.of("a", 17, 29.0f)),
         extractor.extract("1,2;a,17,29"));
   }
   

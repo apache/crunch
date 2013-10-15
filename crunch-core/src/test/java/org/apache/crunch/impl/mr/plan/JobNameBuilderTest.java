@@ -32,8 +32,8 @@ public class JobNameBuilderTest {
 
   @Test
   public void testBuild() {
-    final String pipelineName = "PipelineName";
-    final String nodeName = "outputNode";
+    String pipelineName = "PipelineName";
+    String nodeName = "outputNode";
     DoNode doNode = createDoNode(nodeName);
     JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
@@ -44,8 +44,8 @@ public class JobNameBuilderTest {
 
   @Test
   public void testNodeNameTooLong() {
-    final String pipelineName = "PipelineName";
-    final String nodeName = Strings.repeat("very_long_node_name", 100);
+    String pipelineName = "PipelineName";
+    String nodeName = Strings.repeat("very_long_node_name", 100);
     DoNode doNode = createDoNode(nodeName);
     JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
@@ -54,7 +54,7 @@ public class JobNameBuilderTest {
     assertFalse(jobName.contains(nodeName)); // Tests that the very long node name was shorten
   }
 
-  private DoNode createDoNode(String nodeName) {
+  private static DoNode createDoNode(String nodeName) {
     return DoNode.createOutputNode(nodeName, Writables.strings().getConverter(), Writables.strings());
   }
 }

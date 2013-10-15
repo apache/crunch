@@ -63,6 +63,7 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
   private final byte [] now = Bytes.toBytes(System.currentTimeMillis());
   private final TimeRangeTracker trt = new TimeRangeTracker();
 
+  @Override
   public RecordWriter<Object, KeyValue> getRecordWriter(final TaskAttemptContext context)
       throws IOException, InterruptedException {
     Path outputPath = getDefaultWorkFile(context, "");
@@ -97,6 +98,7 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         .create();
 
     return new RecordWriter<Object, KeyValue>() {
+      @Override
       public void write(Object row, KeyValue kv)
           throws IOException {
         if (kv.getTimestamp() == HConstants.LATEST_TIMESTAMP) {
@@ -106,6 +108,7 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         trt.includeTimestamp(kv);
       }
 
+      @Override
       public void close(TaskAttemptContext c)
           throws IOException, InterruptedException {
         writer.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,

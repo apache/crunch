@@ -20,7 +20,6 @@ package org.apache.crunch;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.lang.Long;
 
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;

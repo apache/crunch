@@ -165,7 +165,7 @@ public class SortFns {
         byFn = new SingleKeyFn(cols[0]);
         keyPType = pt.get(cols[0]);
       } else {
-        TupleFactory tf = null;
+        TupleFactory tf;
         switch (cols.length) {
         case 2:
           tf = TupleFactory.PAIR;

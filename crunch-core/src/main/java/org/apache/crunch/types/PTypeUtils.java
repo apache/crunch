@@ -48,7 +48,7 @@ public class PTypeUtils {
       } else if (Tuple4.class.equals(typeClass)) {
         return tf.quads(tf.as(subTypes.get(0)), tf.as(subTypes.get(1)), tf.as(subTypes.get(2)), tf.as(subTypes.get(3)));
       } else if (TupleN.class.equals(typeClass)) {
-        PType[] newPTypes = subTypes.toArray(new PType[0]);
+        PType[] newPTypes = subTypes.toArray(new PType[subTypes.size()]);
         for (int i = 0; i < newPTypes.length; i++) {
           newPTypes[i] = tf.as(subTypes.get(i));
         }

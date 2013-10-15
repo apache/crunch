@@ -35,7 +35,7 @@ public class AvroSpecificDeepCopierClassloaderTest {
     Person person = new Person();
     person.name = "John Doe";
     person.age = 42;
-    person.siblingnames = Lists.<CharSequence> newArrayList();
+    person.siblingnames = Lists.newArrayList();
 
     Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
         .deepCopy(person);

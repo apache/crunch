@@ -48,6 +48,7 @@ public class TupleFactoryTest {
     assertEquals(TupleFactory.TUPLEN, TupleFactory.getTupleFactory(TupleN.class));
   }
 
+  @Test
   public void testGetTupleFactory_CustomTupleClass() {
 	TupleFactory<CustomTupleImplementation> customTupleFactory = TupleFactory.create(CustomTupleImplementation.class);
     assertEquals(customTupleFactory, TupleFactory.getTupleFactory(CustomTupleImplementation.class));

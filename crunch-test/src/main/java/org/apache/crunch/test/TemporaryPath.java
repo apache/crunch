@@ -48,7 +48,7 @@ public final class TemporaryPath extends ExternalResource {
   private final Set<String> confKeys;
 
   /**
-   * Construct {@link TemporaryPath}.
+   * Construct {@code TemporaryPath}.
    * @param confKeys {@link Configuration} keys containing directories to override
    */
   public TemporaryPath(String... confKeys) {
@@ -130,7 +130,7 @@ public final class TemporaryPath extends ExternalResource {
     return copyResourceFile(resourceName).getAbsolutePath();
   }
 
-  private void copy(String resourceName, File dest) throws IOException {
+  private static void copy(String resourceName, File dest) throws IOException {
     Files.copy(Resources.newInputStreamSupplier(Resources.getResource(resourceName)), dest);
   }
 

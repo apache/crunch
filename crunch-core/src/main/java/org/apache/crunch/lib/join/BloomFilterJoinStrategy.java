@@ -132,7 +132,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
       throw new IllegalStateException("JoinType " + joinType + " is not supported for BloomFilter joins");
     }
     
-    PTable<K,V> filteredRightSide = null;
+    PTable<K,V> filteredRightSide;
     if (left.getPipeline() instanceof MRPipeline) {
       PType<BloomFilter> bloomFilterType = getBloomFilterType(left.getTypeFamily());
       PCollection<BloomFilter> bloomFilters = left.keys().parallelDo(
@@ -175,7 +175,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     private transient MapFn<K,byte[]> keyToBytesFn;
     private PType<K> ptype;
     
-    public CreateBloomFilterFn(int vectorSize, int nbHash, PType<K> ptype) {
+    CreateBloomFilterFn(int vectorSize, int nbHash, PType<K> ptype) {
       this.vectorSize = vectorSize;
       this.nbHash = nbHash;
       this.ptype = ptype;
@@ -214,7 +214,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     private BloomFilter bloomFilter;
     private transient MapFn<K,byte[]> keyToBytesFn;
     
-    public FilterKeysWithBloomFilterFn(String inputPath, int vectorSize, int nbHash, PType<K> keyType, PType<BloomFilter> bloomFilterPtype) {
+    FilterKeysWithBloomFilterFn(String inputPath, int vectorSize, int nbHash, PType<K> keyType, PType<BloomFilter> bloomFilterPtype) {
       this.inputPath = inputPath;
       this.vectorSize = vectorSize;
       this.nbHash = nbHash;
@@ -247,7 +247,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
       ReadableSourceTarget<BloomFilter> sourceTarget = bloomFilterPType.getDefaultFileSource(
           getCacheFilePath());
-      Iterable<BloomFilter> iterable = null;
+      Iterable<BloomFilter> iterable;
       try {
         iterable = sourceTarget.read(getConfiguration());
       } catch (IOException e) {
@@ -273,11 +273,11 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   private static <K> MapFn<K,byte[]> getKeyToBytesMapFn(PType<K> ptype, Configuration conf) {
     if (ptype instanceof AvroType) {
       return new AvroToBytesFn<K>((AvroType)ptype, conf);
-    } else if (ptype instanceof WritableType) {
-      return new WritableToBytesFn<K>((WritableType)ptype, conf);
-    } else {
-      throw new IllegalStateException("Unrecognized PType: " + ptype);
     }
+    if (ptype instanceof WritableType) {
+      return new WritableToBytesFn<K>((WritableType)ptype, conf);
+    }
+    throw new IllegalStateException("Unrecognized PType: " + ptype);
   }
   
   /**
@@ -302,7 +302,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     private WritableType<T,?> ptype;
     private DataOutputBuffer dataOutputBuffer;
     
-    public WritableToBytesFn(WritableType<T,?> ptype, Configuration conf) {
+    WritableToBytesFn(WritableType<T,?> ptype, Configuration conf) {
       this.ptype = ptype;
       dataOutputBuffer = new DataOutputBuffer();
     }
@@ -332,7 +332,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     private BinaryEncoder encoder;
     private ReflectDatumWriter datumWriter;
     
-    public AvroToBytesFn(AvroType<T> ptype, Configuration conf) {
+    AvroToBytesFn(AvroType<T> ptype, Configuration conf) {
       this.ptype = ptype;
       datumWriter = Avros.getReflectDataFactory(conf).getWriter(ptype.getSchema());
     }
@@ -350,8 +350,6 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
       }
       return byteArrayOutputStream.toByteArray();
     }
-    
-    
     
   }
 

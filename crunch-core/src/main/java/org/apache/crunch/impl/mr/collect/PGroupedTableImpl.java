@@ -126,7 +126,7 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   }
   
   @Override
-  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
+  protected void acceptInternal(Visitor visitor) {
     visitor.visitGroupedTable(this);
   }
 

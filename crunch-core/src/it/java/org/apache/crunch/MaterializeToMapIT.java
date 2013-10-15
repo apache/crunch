@@ -17,7 +17,7 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Map;
@@ -37,9 +37,9 @@ public class MaterializeToMapIT {
   static final ImmutableList<Pair<Integer, String>> kvPairs = ImmutableList.of(Pair.of(0, "a"), Pair.of(1, "b"),
       Pair.of(2, "c"), Pair.of(3, "e"));
 
-  public void assertMatches(Map<Integer, String> m) {
-    for (Integer k : m.keySet()) {
-      assertEquals(kvPairs.get(k).second(), m.get(k));
+  public static void assertMatches(Map<Integer, String> m) {
+    for (Map.Entry<Integer,String> entry : m.entrySet()) {
+      assertEquals(kvPairs.get(entry.getKey()).second(), entry.getValue());
     }
   }
 
@@ -53,14 +53,15 @@ public class MaterializeToMapIT {
     public Pair<Integer, String> map(String input) {
 
       int k = -1;
-      if (input.equals("a"))
+      if (input.equals("a")) {
         k = 0;
-      else if (input.equals("b"))
+      } else if (input.equals("b")) {
         k = 1;
-      else if (input.equals("c"))
+      } else if (input.equals("c")) {
         k = 2;
-      else if (input.equals("e"))
+      } else if (input.equals("e")) {
         k = 3;
+      }
       return Pair.of(k, input);
     }
   }

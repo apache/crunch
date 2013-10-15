@@ -33,7 +33,6 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Partitioner;
 
 /**
@@ -73,7 +72,7 @@ public class JoinUtils {
 
     @Override
     public int compare(TupleWritable o1, TupleWritable o2) {
-      return ((WritableComparable) o1.get(0)).compareTo((WritableComparable) o2.get(0));
+      return ((Comparable) o1.get(0)).compareTo(o2.get(0));
     }
 
     @Override

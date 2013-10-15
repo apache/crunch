@@ -84,7 +84,7 @@ public class TrevniKeyTarget extends FileTargetImpl {
 
       Avros.configureReflectDataFactory(conf);
       configureForMapReduce(job, AvroKey.class, NullWritable.class, FormatBundle.forOutput(TrevniOutputFormat.class),
-          outputPath, name);
+          outputPath, null);
     } else {
       FormatBundle<TrevniOutputFormat> bundle = FormatBundle.forOutput(
           TrevniOutputFormat.class);

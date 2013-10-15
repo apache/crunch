@@ -39,11 +39,11 @@ public class ReverseAvroComparator<T> extends Configured implements RawComparato
 
   @Override
   public int compare(AvroKey<T> o1, AvroKey<T> o2) {
-    return -ReflectData.get().compare(o1.datum(), o2.datum(), schema);
+    return ReflectData.get().compare(o2.datum(), o1.datum(), schema);
   }
 
   @Override
   public int compare(byte[] arg0, int arg1, int arg2, byte[] arg3, int arg4, int arg5) {
-    return -BinaryData.compare(arg0, arg1, arg2, arg3, arg4, arg5, schema);
+    return BinaryData.compare(arg3, arg4, arg5, arg0, arg1, arg2, schema);
   }
 }

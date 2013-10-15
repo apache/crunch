@@ -18,6 +18,7 @@
 package org.apache.crunch.io.hbase;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -40,8 +41,6 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.io.hbase.HBaseSourceTarget;
-import org.apache.crunch.io.hbase.HBaseTarget;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
@@ -149,7 +148,7 @@ public class WordCountHBaseIT {
         String umask = br.readLine();
 
         int umaskBits = Integer.parseInt(umask, 8);
-        int permBits = 0777 & ~umaskBits;
+        int permBits = 0x1ff & ~umaskBits;
         String perms = Integer.toString(permBits, 8);
 
         conf.set("dfs.datanode.data.dir.perm", perms);
@@ -196,7 +195,7 @@ public class WordCountHBaseIT {
     }
   }
 
-  private void jarUp(JarOutputStream jos, File baseDir, String classDir) throws IOException {
+  private static void jarUp(JarOutputStream jos, File baseDir, String classDir) throws IOException {
     File file = new File(baseDir, classDir);
     JarEntry e = new JarEntry(classDir);
     e.setTime(file.lastModified());
@@ -229,67 +228,60 @@ public class WordCountHBaseIT {
     String outputTableName = "crunch_counts_" + postFix;
     String otherTableName = "crunch_other_" + postFix;
     String joinTableName = "crunch_join_words_" + postFix;
-    
-    try {
 
-      HTable inputTable = hbaseTestUtil.createTable(Bytes.toBytes(inputTableName), WORD_COLFAM);
-      HTable outputTable = hbaseTestUtil.createTable(Bytes.toBytes(outputTableName), COUNTS_COLFAM);
-      HTable otherTable = hbaseTestUtil.createTable(Bytes.toBytes(otherTableName), COUNTS_COLFAM);
-      
-      int key = 0;
-      key = put(inputTable, key, "cat");
-      key = put(inputTable, key, "cat");
-      key = put(inputTable, key, "dog");
-      Scan scan = new Scan();
-      scan.addFamily(WORD_COLFAM);
-      HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
-      PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
+    HTable inputTable = hbaseTestUtil.createTable(Bytes.toBytes(inputTableName), WORD_COLFAM);
+    HTable outputTable = hbaseTestUtil.createTable(Bytes.toBytes(outputTableName), COUNTS_COLFAM);
+    HTable otherTable = hbaseTestUtil.createTable(Bytes.toBytes(otherTableName), COUNTS_COLFAM);
 
-      Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();
-      assertEquals(3, materialized.size());
+    int key = 0;
+    key = put(inputTable, key, "cat");
+    key = put(inputTable, key, "cat");
+    key = put(inputTable, key, "dog");
+    Scan scan = new Scan();
+    scan.addFamily(WORD_COLFAM);
+    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
+    PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
 
-      PCollection<Put> puts = wordCount(words);
-      pipeline.write(puts, new HBaseTarget(outputTableName));
-      pipeline.write(puts, new HBaseTarget(otherTableName));
-      pipeline.done();
+    Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();
+    assertEquals(3, materialized.size());
 
-      assertIsLong(outputTable, "cat", 2);
-      assertIsLong(outputTable, "dog", 1);
-      assertIsLong(otherTable, "cat", 2);
-      assertIsLong(otherTable, "dog", 1);
-      
-      // verify we can do joins.
-      HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);
-      key = 0;
-      key = put(joinTable, key, "zebra");
-      key = put(joinTable, key, "donkey");
-      key = put(joinTable, key, "bird");
-      key = put(joinTable, key, "horse");
-      
-      Scan joinScan = new Scan();
-      joinScan.addFamily(WORD_COLFAM);
-      PTable<ImmutableBytesWritable, Result> other = pipeline.read(FromHBase.table(joinTableName, joinScan));
-      PCollection<String> joined = words.join(other).parallelDo(new StringifyFn(), Writables.strings());
-      assertEquals(ImmutableSet.of("cat,zebra", "cat,donkey", "dog,bird"),
-          ImmutableSet.copyOf(joined.materialize()));
-      pipeline.done();
+    PCollection<Put> puts = wordCount(words);
+    pipeline.write(puts, new HBaseTarget(outputTableName));
+    pipeline.write(puts, new HBaseTarget(otherTableName));
+    pipeline.done();
 
-      //verify HBaseTarget supports deletes.
-      Scan clearScan = new Scan();
-      clearScan.addFamily(COUNTS_COLFAM);
-      pipeline = new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration());
-      HBaseSourceTarget clearSource = new HBaseSourceTarget(outputTableName, clearScan);
-      PTable<ImmutableBytesWritable, Result> counts = pipeline.read(clearSource);
-      pipeline.write(clearCounts(counts), new HBaseTarget(outputTableName));
-      pipeline.done();
-      
-      assertDeleted(outputTable, "cat");
-      assertDeleted(outputTable, "dog");
-      
-      
-    } finally {
-      // not quite sure...
-    }
+    assertIsLong(outputTable, "cat", 2);
+    assertIsLong(outputTable, "dog", 1);
+    assertIsLong(otherTable, "cat", 2);
+    assertIsLong(otherTable, "dog", 1);
+
+    // verify we can do joins.
+    HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);
+    key = 0;
+    key = put(joinTable, key, "zebra");
+    key = put(joinTable, key, "donkey");
+    key = put(joinTable, key, "bird");
+    key = put(joinTable, key, "horse");
+
+    Scan joinScan = new Scan();
+    joinScan.addFamily(WORD_COLFAM);
+    PTable<ImmutableBytesWritable, Result> other = pipeline.read(FromHBase.table(joinTableName, joinScan));
+    PCollection<String> joined = words.join(other).parallelDo(new StringifyFn(), Writables.strings());
+    assertEquals(ImmutableSet.of("cat,zebra", "cat,donkey", "dog,bird"),
+        ImmutableSet.copyOf(joined.materialize()));
+    pipeline.done();
+
+    //verify HBaseTarget supports deletes.
+    Scan clearScan = new Scan();
+    clearScan.addFamily(COUNTS_COLFAM);
+    pipeline = new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration());
+    HBaseSourceTarget clearSource = new HBaseSourceTarget(outputTableName, clearScan);
+    PTable<ImmutableBytesWritable, Result> counts = pipeline.read(clearSource);
+    pipeline.write(clearCounts(counts), new HBaseTarget(outputTableName));
+    pipeline.done();
+
+    assertDeleted(outputTable, "cat");
+    assertDeleted(outputTable, "dog");
   }
 
   protected int put(HTable table, int key, String value) throws IOException {
@@ -299,20 +291,21 @@ public class WordCountHBaseIT {
     return key + 1;
   }
 
-  protected void assertIsLong(HTable table, String key, long i) throws IOException {
+  protected static void assertIsLong(HTable table, String key, long i) throws IOException {
     Get get = new Get(Bytes.toBytes(key));
     get.addFamily(COUNTS_COLFAM);
     Result result = table.get(get);
 
     byte[] rawCount = result.getValue(COUNTS_COLFAM, null);
-    assertTrue(rawCount != null);
-    assertEquals(new Long(i), new Long(Bytes.toLong(rawCount)));
+    assertNotNull(rawCount);
+    assertEquals(i, Bytes.toLong(rawCount));
   }
   
-  protected void assertDeleted(HTable table, String key) throws IOException {
-      Get get = new Get(Bytes.toBytes(key));
-      get.addFamily(COUNTS_COLFAM);
-      Result result = table.get(get);
-      assertTrue(result.isEmpty());
-    }
+  protected static void assertDeleted(HTable table, String key) throws IOException {
+    Get get = new Get(Bytes.toBytes(key));
+    get.addFamily(COUNTS_COLFAM);
+    Result result = table.get(get);
+    assertTrue(result.isEmpty());
+  }
+
 }

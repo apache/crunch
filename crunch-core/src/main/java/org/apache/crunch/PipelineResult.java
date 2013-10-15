@@ -143,7 +143,7 @@ public class PipelineResult {
 
   public boolean succeeded() {
     // return !stageResults.isEmpty();
-    return this.status.equals(PipelineExecution.Status.SUCCEEDED);
+    return this.status == PipelineExecution.Status.SUCCEEDED;
   }
 
   public List<StageResult> getStageResults() {

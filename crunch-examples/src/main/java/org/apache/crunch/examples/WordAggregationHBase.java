@@ -19,10 +19,10 @@ package org.apache.crunch.examples;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.DoFn;
@@ -62,18 +62,18 @@ import org.apache.hadoop.util.ToolRunner;
  */
 @SuppressWarnings("serial")
 public class WordAggregationHBase extends Configured implements Tool, Serializable {
-  private final static Log LOG = LogFactory.getLog(WordAggregationHBase.class);
+  private static final Log LOG = LogFactory.getLog(WordAggregationHBase.class);
 
   // Configuration parameters. Here configured for a hbase instance running
   // locally
-  private static String HBASE_CONFIGURATION_ZOOKEEPER_QUORUM = "hbase.zookeeper.quorum";
-  private static String HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT = "hbase.zookeeper.property.clientPort";
-  private static String hbaseZookeeperQuorum = "localhost";
-  private static String hbaseZookeeperClientPort = "2181";
+  private static final String HBASE_CONFIGURATION_ZOOKEEPER_QUORUM = "hbase.zookeeper.quorum";
+  private static final String HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT = "hbase.zookeeper.property.clientPort";
+  private static final String hbaseZookeeperQuorum = "localhost";
+  private static final String hbaseZookeeperClientPort = "2181";
 
   // HBase parameters
-  private final String TABLE_SOURCE = "list";
-  private final String TABLE_TARGET = "aggregation";
+  private static final String TABLE_SOURCE = "list";
+  private static final String TABLE_TARGET = "aggregation";
 
   private final byte[] COLUMN_FAMILY_SOURCE = Bytes.toBytes("content");
   private final byte[] COLUMN_QUALIFIER_SOURCE_PLAY = Bytes.toBytes("play");
@@ -83,7 +83,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
   private final byte[] COLUMN_QUALIFIER_TARGET_TEXT = Bytes.toBytes("text");
 
   @Override
-  public int run(final String[] args) throws Exception {
+  public int run(String[] args) throws Exception {
     // We create the test rows first
     String type1 = "romeo and juliet";
     String type2 = "macbeth";
@@ -145,7 +145,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    * @param conf the hbase configuration
    * @throws IOException
    */
-  private void putInHbase(final List<Put> putList, final Configuration conf) throws IOException {
+  private static void putInHbase(List<Put> putList, Configuration conf) throws IOException {
     HTable htable = new HTable(conf, TABLE_SOURCE);
     try {
       htable.put(putList);
@@ -164,7 +164,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    * @throws ZooKeeperConnectionException
    * @throws IOException
    */
-  private void createTable(final Configuration conf, final String htableName, final String... families) throws MasterNotRunningException, ZooKeeperConnectionException,
+  private static void createTable(Configuration conf, String htableName, String... families) throws MasterNotRunningException, ZooKeeperConnectionException,
       IOException {
     HBaseAdmin hbase = new HBaseAdmin(conf);
     if (!hbase.tableExists(htableName)) {
@@ -183,10 +183,9 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    * @param character the rowkey
    * @param play the play (in column COLUMN_QUALIFIER_SOURCE_PLAY)
    * @param quote the quote (in column COLUMN_QUALIFIER_SOURCE_QUOTE)
-   * @return
    */
-  private List<Put> createPuts(final List<String> character, final List<String> play, final List<String> quote) throws IllegalArgumentException {
-    List<Put> list = new ArrayList<Put>();
+  private List<Put> createPuts(List<String> character, List<String> play, List<String> quote) {
+    List<Put> list = Lists.newArrayList();
     if (character.size() != play.size() || quote.size() != play.size()) {
       LOG.error("Every list should have the same number of elements");
       throw new IllegalArgumentException("Every list should have the same number of elements");
@@ -202,15 +201,15 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
 
   /**
    * Extract information from hbase
-   * 
+   *
    * @param words the source from hbase
-   * @return a <code>PTable</code> composed of the type of the input as key
+   * @return a {@code PTable} composed of the type of the input as key
    *         and its def as value
    */
-  public PTable<String, String> extractText(final PTable<ImmutableBytesWritable, Result> words) {
+  public PTable<String, String> extractText(PTable<ImmutableBytesWritable, Result> words) {
     return words.parallelDo("Extract text", new DoFn<Pair<ImmutableBytesWritable, Result>, Pair<String, String>>() {
       @Override
-      public void process(final Pair<ImmutableBytesWritable, Result> row, final Emitter<Pair<String, String>> emitter) {
+      public void process(Pair<ImmutableBytesWritable, Result> row, Emitter<Pair<String, String>> emitter) {
         byte[] type = row.second().getValue(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_PLAY);
         byte[] def = row.second().getValue(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_QUOTE);
         if (type != null && def != null) {
@@ -229,19 +228,18 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    *            values for hbase.
    * @return a PCollection formed by the puts.
    */
-  public PCollection<Put> createPut(final PTable<String, String> extractedText) {
+  public PCollection<Put> createPut(PTable<String, String> extractedText) {
     return extractedText.parallelDo("Convert to puts", new DoFn<Pair<String, String>, Put>() {
       @Override
-      public void process(final Pair<String, String> input, final Emitter<Put> emitter) {
-        Put put;
-        put = new Put(Bytes.toBytes(input.first()));
+      public void process(Pair<String, String> input, Emitter<Put> emitter) {
+        Put put = new Put(Bytes.toBytes(input.first()));
         put.add(COLUMN_FAMILY_TARGET, COLUMN_QUALIFIER_TARGET_TEXT, Bytes.toBytes(input.second()));
         emitter.emit(put);
       }
     }, Writables.writables(Put.class));
   }
 
-  public static void main(final String[] args) throws Exception {
+  public static void main(String[] args) throws Exception {
     Configuration conf = HBaseConfiguration.create();
     // Configuration hbase
     conf.set(HBASE_CONFIGURATION_ZOOKEEPER_QUORUM, hbaseZookeeperQuorum);

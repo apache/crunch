@@ -46,8 +46,9 @@ public abstract class BloomFilterFn<S> extends DoFn<S, Pair<String, BloomFilter>
   @Override
   public void process(S input, Emitter<Pair<String, BloomFilter>> emitter) {
     Collection<Key> keys = generateKeys(input);
-    if (CollectionUtils.isNotEmpty(keys))
+    if (CollectionUtils.isNotEmpty(keys)) {
       bloomFilter.add(keys);
+    }
   }
 
   public abstract Collection<Key> generateKeys(S input);

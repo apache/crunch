@@ -62,17 +62,19 @@ public class PTypes {
     return typeFamily.derived(clazz, new ThriftInputMapFn<T>(clazz), new ThriftOutputMapFn<T>(), typeFamily.bytes());
   }
 
-  public static final <T extends Enum> PType<T> enums(final Class<T> type, PTypeFamily typeFamily) {
+  public static <T extends Enum> PType<T> enums(Class<T> type, PTypeFamily typeFamily) {
     return typeFamily.derived(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
   }
 
-  public static MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
+  public static final MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
+    @Override
     public BigInteger map(ByteBuffer input) {
       return input == null ? null : new BigInteger(input.array());
     }
   };
 
-  public static MapFn<BigInteger, ByteBuffer> BIGINT_TO_BYTE = new MapFn<BigInteger, ByteBuffer>() {
+  public static final MapFn<BigInteger, ByteBuffer> BIGINT_TO_BYTE = new MapFn<BigInteger, ByteBuffer>() {
+    @Override
     public ByteBuffer map(BigInteger input) {
       return input == null ? null : ByteBuffer.wrap(input.toByteArray());
     }
@@ -83,7 +85,7 @@ public class PTypes {
     private final Class<T> clazz;
     private transient ObjectMapper mapper;
 
-    public JacksonInputMapFn(Class<T> clazz) {
+    JacksonInputMapFn(Class<T> clazz) {
       this.clazz = clazz;
     }
 
@@ -126,7 +128,7 @@ public class PTypes {
     private final Class<T> clazz;
     private transient T instance;
 
-    public ProtoInputMapFn(Class<T> clazz) {
+    ProtoInputMapFn(Class<T> clazz) {
       this.clazz = clazz;
     }
 
@@ -147,7 +149,7 @@ public class PTypes {
 
   private static class ProtoOutputMapFn<T extends Message> extends MapFn<T, ByteBuffer> {
 
-    public ProtoOutputMapFn() {
+    ProtoOutputMapFn() {
     }
 
     @Override
@@ -163,7 +165,7 @@ public class PTypes {
     private transient TDeserializer deserializer;
     private transient byte[] bytes;
 
-    public ThriftInputMapFn(Class<T> clazz) {
+    ThriftInputMapFn(Class<T> clazz) {
       this.clazz = clazz;
     }
 
@@ -195,7 +197,7 @@ public class PTypes {
 
     private transient TSerializer serializer;
 
-    public ThriftOutputMapFn() {
+    ThriftOutputMapFn() {
     }
 
     @Override
@@ -216,7 +218,7 @@ public class PTypes {
   private static class EnumInputMapper<T extends Enum> extends MapFn<String, T> {
     private final Class<T> type;
 
-    public EnumInputMapper(Class<T> type) {
+    EnumInputMapper(Class<T> type) {
       this.type = type;
     }
 
@@ -224,7 +226,7 @@ public class PTypes {
     public T map(String input) {
       return (T) Enum.valueOf(type, input);
     }
-  };
+  }
 
   private static class EnumOutputMapper<T extends Enum> extends MapFn<T, String> {
 
@@ -232,16 +234,16 @@ public class PTypes {
     public String map(T input) {
       return input.name();
     }
-  };
-  
-  private static MapFn<ByteBuffer, UUID> BYTE_TO_UUID = new MapFn<ByteBuffer, UUID>() {
+  }
+
+  private static final MapFn<ByteBuffer, UUID> BYTE_TO_UUID = new MapFn<ByteBuffer, UUID>() {
     @Override
     public UUID map(ByteBuffer input) {
       return new UUID(input.getLong(), input.getLong());
     }
   };
   
-  private static MapFn<UUID, ByteBuffer> UUID_TO_BYTE = new MapFn<UUID, ByteBuffer>() {
+  private static final MapFn<UUID, ByteBuffer> UUID_TO_BYTE = new MapFn<UUID, ByteBuffer>() {
     @Override
     public ByteBuffer map(UUID input) {
       ByteBuffer bb = ByteBuffer.wrap(new byte[16]);

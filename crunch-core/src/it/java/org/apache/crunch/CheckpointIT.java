@@ -78,8 +78,7 @@ public class CheckpointIT {
   
   public static PipelineResult run(Pipeline pipeline, TemporaryPath tmpDir, 
       String shakesInputPath, String intermediatePath,
-      final boolean fail)
-      throws Exception {
+      final boolean fail) {
     PCollection<String> shakes = pipeline.readTextFile(shakesInputPath);
     PTable<String, Long> cnts = shakes.parallelDo("split words", new DoFn<String, String>() {
       @Override

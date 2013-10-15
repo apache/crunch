@@ -55,7 +55,8 @@ public class MaterializableIterable<E> implements Iterable<E> {
   public Path getPath() {
     if (source instanceof FileSourceImpl) {
       return ((FileSourceImpl) source).getPath();
-    } else if (source instanceof PathTarget) {
+    }
+    if (source instanceof PathTarget) {
       return ((PathTarget) source).getPath();
     }
     return null;

@@ -33,7 +33,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-class SampleUtils {
+final class SampleUtils {
   
   static class SampleFn<S> extends FilterFn<S> {
 
@@ -41,9 +41,13 @@ class SampleUtils {
     private final double acceptanceProbability;
     private transient Random r;
 
-    public SampleFn(double acceptanceProbability, Long seed) {
+    SampleFn(double acceptanceProbability, Long seed) {
       Preconditions.checkArgument(0.0 < acceptanceProbability && acceptanceProbability < 1.0);
-      this.seed = seed == null ? System.currentTimeMillis() : seed;
+      if (seed == null) {
+        this.seed = System.currentTimeMillis();
+      } else {
+        this.seed = seed;
+      }
       this.acceptanceProbability = acceptanceProbability;
     }
 
@@ -64,13 +68,13 @@ class SampleUtils {
   static class ReservoirSampleFn<T, N extends Number>
       extends DoFn<Pair<Integer, Pair<T, N>>, Pair<Integer, Pair<Double, T>>> {
   
-    private int[] sampleSizes;
-    private Long seed;
-    private PType<T> valueType;
+    private final int[] sampleSizes;
+    private final Long seed;
+    private final PType<T> valueType;
     private transient List<SortedMap<Double, T>> reservoirs;
     private transient Random random;
     
-    public ReservoirSampleFn(int[] sampleSizes, Long seed, PType<T> valueType) {
+    ReservoirSampleFn(int[] sampleSizes, Long seed, PType<T> valueType) {
       this.sampleSizes = sampleSizes;
       this.seed = seed;
       this.valueType = valueType;
@@ -80,7 +84,7 @@ class SampleUtils {
     public void initialize() {
       this.reservoirs = Lists.newArrayList();
       this.valueType.initialize(getConfiguration());
-      for (int i = 0; i < sampleSizes.length; i++) {
+      for (int sampleSize : sampleSizes) {
         reservoirs.add(Maps.<Double, T>newTreeMap());
       }
       if (random == null) {
@@ -113,7 +117,7 @@ class SampleUtils {
     @Override
     public void cleanup(Emitter<Pair<Integer, Pair<Double, T>>> emitter) {
       for (int id = 0; id < reservoirs.size(); id++) {
-        SortedMap<Double, T> reservoir = reservoirs.get(id);
+        Map<Double, T> reservoir = reservoirs.get(id);
         for (Map.Entry<Double, T> e : reservoir.entrySet()) {
           emitter.emit(Pair.of(id, Pair.of(e.getKey(), e.getValue())));
         }
@@ -123,11 +127,11 @@ class SampleUtils {
   
   static class WRSCombineFn<T> extends CombineFn<Integer, Pair<Double, T>> {
 
-    private int[] sampleSizes;
-    private PType<T> valueType;
+    private final int[] sampleSizes;
+    private final PType<T> valueType;
     private List<SortedMap<Double, T>> reservoirs;
     
-    public WRSCombineFn(int[] sampleSizes, PType<T> valueType) {
+    WRSCombineFn(int[] sampleSizes, PType<T> valueType) {
       this.sampleSizes = sampleSizes;
       this.valueType = valueType;
     }
@@ -135,7 +139,7 @@ class SampleUtils {
     @Override
     public void initialize() {
       this.reservoirs = Lists.newArrayList();
-      for (int i = 0; i < sampleSizes.length; i++) {
+      for (int sampleSize : sampleSizes) {
         reservoirs.add(Maps.<Double, T>newTreeMap());
       }
       this.valueType.initialize(getConfiguration());
@@ -158,7 +162,7 @@ class SampleUtils {
     @Override
     public void cleanup(Emitter<Pair<Integer, Pair<Double, T>>> emitter) {
       for (int i = 0; i < reservoirs.size(); i++) {
-        SortedMap<Double, T> reservoir = reservoirs.get(i);
+        Map<Double, T> reservoir = reservoirs.get(i);
         for (Map.Entry<Double, T> e : reservoir.entrySet()) {
           emitter.emit(Pair.of(i, Pair.of(e.getKey(), e.getValue())));
         }

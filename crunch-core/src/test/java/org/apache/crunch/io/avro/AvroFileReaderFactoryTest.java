@@ -29,7 +29,6 @@ import java.util.List;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -82,7 +81,7 @@ public class AvroFileReaderFactoryTest {
 
   }
 
-  private <T> AvroFileReaderFactory<T> createFileReaderFactory(AvroType<T> avroType) {
+  private static <T> AvroFileReaderFactory<T> createFileReaderFactory(AvroType<T> avroType) {
     return new AvroFileReaderFactory<T>(avroType);
   }
 
@@ -148,7 +147,7 @@ public class AvroFileReaderFactoryTest {
 
   @Test
   public void testCreateDatumReader_Generic() {
-    DatumReader<Record> datumReader = AvroFileReaderFactory.createDatumReader(Avros.generics(Person.SCHEMA$));
+    DatumReader<GenericData.Record> datumReader = AvroFileReaderFactory.createDatumReader(Avros.generics(Person.SCHEMA$));
     assertEquals(GenericDatumReader.class, datumReader.getClass());
   }
 

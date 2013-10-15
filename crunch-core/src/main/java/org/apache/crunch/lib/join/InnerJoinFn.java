@@ -41,7 +41,6 @@ public class InnerJoinFn<K, U, V> extends JoinFn<K, U, V> {
     super(keyType, leftValueType);
   }
 
-  /** {@inheritDoc} */
   @Override
   public void initialize() {
     super.initialize();
@@ -49,7 +48,6 @@ public class InnerJoinFn<K, U, V> extends JoinFn<K, U, V> {
     this.leftValues = Lists.newArrayList();
   }
 
-  /** {@inheritDoc} */
   @Override
   public void join(K key, int id, Iterable<Pair<U, V>> pairs, Emitter<Pair<K, Pair<U, V>>> emitter) {
     if (!key.equals(lastKey)) {
@@ -58,8 +56,9 @@ public class InnerJoinFn<K, U, V> extends JoinFn<K, U, V> {
     }
     if (id == 0) { // from left
       for (Pair<U, V> pair : pairs) {
-        if (pair.first() != null)
+        if (pair.first() != null) {
           leftValues.add(leftValueType.getDetachedValue(pair.first()));
+        }
       }
     } else { // from right
       for (Pair<U, V> pair : pairs) {
@@ -70,7 +69,6 @@ public class InnerJoinFn<K, U, V> extends JoinFn<K, U, V> {
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getJoinType() {
     return "innerJoin";

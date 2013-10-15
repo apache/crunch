@@ -26,6 +26,8 @@ import org.apache.crunch.test.TemporaryPaths;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.Locale;
+
 /**
  * Verifies that complex plans execute dependent jobs in the correct sequence.
  */
@@ -41,12 +43,12 @@ public class LongPipelinePlannerIT {
         tmpDir.getFileName("output"));
   }
   
-  public static void run(Pipeline p, String input, String output) throws Exception {
+  public static void run(Pipeline p, String input, String output) {
     PCollection<String> in = p.readTextFile(input);
     PCollection<String> toLower = in.parallelDo("tolower", new DoFn<String, String>() {
       @Override
       public void process(String input, Emitter<String> emitter) {
-        emitter.emit(input.toLowerCase());
+        emitter.emit(input.toLowerCase(Locale.ENGLISH));
       }
     }, strings());
 
@@ -68,7 +70,6 @@ public class LongPipelinePlannerIT {
 
     MaterializableIterable matIt = (MaterializableIterable)iso.materialize();
     ParallelDoOptions.Builder builder = ParallelDoOptions.builder().sourceTargets((SourceTarget)matIt.getSource());
-    final String collectionPath = matIt.getPath().toString();
 
     PTable<Integer, String> splitMap = keyedLower.parallelDo("split-map",
         new MapFn<Pair<Integer, String>, Pair<Integer, String>>() {
@@ -100,7 +101,7 @@ public class LongPipelinePlannerIT {
     PCollection<String> upper = merged.parallelDo("toupper", new MapFn<String, String>() {
       @Override
       public String map(String input) {
-        return input.toUpperCase();
+        return input.toUpperCase(Locale.ENGLISH);
       }
     }, strings());
 

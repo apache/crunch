@@ -39,11 +39,11 @@ public class AutoClosingIterator<T> extends UnmodifiableIterator<T> implements C
 
   @Override
   public boolean hasNext() {
-    if (!iter.hasNext()) {
+    if (iter.hasNext()) {
+      return true;
+    } else {
       Closeables.closeQuietly(this);
       return false;
-    } else {
-      return true;
     }
   }
 

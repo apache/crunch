@@ -28,10 +28,6 @@ import org.apache.hadoop.util.ToolRunner;
  * Simple Crunch tool for running sorting examples from the command line.
  */
 public class SortExample extends CrunchTool {
-
-  public SortExample() {
-    super();
-  }
   
   @Override
   public int run(String[] args) throws Exception {

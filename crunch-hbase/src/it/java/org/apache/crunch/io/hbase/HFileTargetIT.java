@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -85,7 +86,7 @@ public class HFileTargetIT implements Serializable {
   private static final Path TEMP_DIR = new Path("/tmp");
   private static int tableCounter = 0;
 
-  private static FilterFn<String> SHORT_WORD_FILTER = new FilterFn<String>() {
+  private static final FilterFn<String> SHORT_WORD_FILTER = new FilterFn<String>() {
     @Override
     public boolean accept(String input) {
       return input.length() <= 2;
@@ -219,7 +220,7 @@ public class HFileTargetIT implements Serializable {
     }
   }
 
-  /** @seealso CRUNCH-251 */
+  /** See CRUNCH-251 */
   @Test
   public void testMultipleHFileTargets() throws Exception {
     Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
@@ -258,7 +259,7 @@ public class HFileTargetIT implements Serializable {
   @Test
   public void testHFileUsesFamilyConfig() throws IOException {
     DataBlockEncoding newBlockEncoding = DataBlockEncoding.PREFIX;
-    assertTrue(newBlockEncoding != DataBlockEncoding.valueOf(HColumnDescriptor.DEFAULT_DATA_BLOCK_ENCODING));
+    assertNotSame(newBlockEncoding, DataBlockEncoding.valueOf(HColumnDescriptor.DEFAULT_DATA_BLOCK_ENCODING));
 
     Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
     Pipeline pipeline = new MRPipeline(HFileTargetIT.class, conf);
@@ -299,7 +300,7 @@ public class HFileTargetIT implements Serializable {
     assertTrue(hfilesCount > 0);
   }
 
-  private PCollection<Put> convertToPuts(PTable<String, Long> in) {
+  private static PCollection<Put> convertToPuts(PTable<String, Long> in) {
     return in.parallelDo(new MapFn<Pair<String, Long>, Put>() {
       @Override
       public Put map(Pair<String, Long> input) {
@@ -312,23 +313,22 @@ public class HFileTargetIT implements Serializable {
     }, Writables.writables(Put.class));
   }
 
-  private PCollection<KeyValue> convertToKeyValues(PTable<String, Long> in) {
+  private static PCollection<KeyValue> convertToKeyValues(PTable<String, Long> in) {
     return in.parallelDo(new MapFn<Pair<String, Long>, KeyValue>() {
       @Override
       public KeyValue map(Pair<String, Long> input) {
         String w = input.first();
         long c = input.second();
-        KeyValue kv = new KeyValue(
+        return new KeyValue(
             Bytes.toBytes(w),
             TEST_FAMILY,
             TEST_QUALIFIER,
             Bytes.toBytes(c));
-        return kv;
       }
     }, Writables.writables(KeyValue.class));
   }
 
-  private PCollection<String> split(PCollection<String> in, final String regex) {
+  private static PCollection<String> split(PCollection<String> in, final String regex) {
     return in.parallelDo(new DoFn<String, String>() {
       @Override
       public void process(String input, Emitter<String> emitter) {
@@ -340,7 +340,7 @@ public class HFileTargetIT implements Serializable {
   }
 
   /** Reads the first value on a given row from a bunch of hfiles. */
-  private KeyValue readFromHFiles(FileSystem fs, Path mrOutputPath, String row) throws IOException {
+  private static KeyValue readFromHFiles(FileSystem fs, Path mrOutputPath, String row) throws IOException {
     List<KeyValueScanner> scanners = Lists.newArrayList();
     KeyValue fakeKV = KeyValue.createFirstOnRow(Bytes.toBytes(row));
     for (FileStatus e : fs.listStatus(mrOutputPath)) {
@@ -366,7 +366,7 @@ public class HFileTargetIT implements Serializable {
     return kv;
   }
 
-  private Path copyResourceFileToHDFS(String resourceName) throws IOException {
+  private static Path copyResourceFileToHDFS(String resourceName) throws IOException {
     Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
     FileSystem fs = FileSystem.get(conf);
     Path resultPath = getTempPathOnHDFS(resourceName);
@@ -383,14 +383,14 @@ public class HFileTargetIT implements Serializable {
     return resultPath;
   }
 
-  private Path getTempPathOnHDFS(String fileName) throws IOException {
+  private static Path getTempPathOnHDFS(String fileName) throws IOException {
     Configuration conf = HBASE_TEST_UTILITY.getConfiguration();
     FileSystem fs = FileSystem.get(conf);
     Path result = new Path(TEMP_DIR, fileName);
     return result.makeQualified(fs);
   }
 
-  private long getWordCountFromTable(HTable table, String word) throws IOException {
+  private static long getWordCountFromTable(HTable table, String word) throws IOException {
     Get get = new Get(Bytes.toBytes(word));
     KeyValue keyValue = table.get(get).getColumnLatest(TEST_FAMILY, TEST_QUALIFIER);
     if (keyValue == null) {

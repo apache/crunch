@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.lib;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.apache.crunch.types.avro.Avros.ints;
 import static org.apache.crunch.types.avro.Avros.records;
 import static org.apache.crunch.types.avro.Avros.strings;
@@ -118,7 +118,7 @@ public class AvroTypeSortIT implements Serializable {
     pipeline.done();
   }
 
-  private void writeAvroFile(List<Person> people, File avroFile) throws IOException {
+  private static void writeAvroFile(List<Person> people, File avroFile) throws IOException {
 
     FileOutputStream outputStream = new FileOutputStream(avroFile);
     SpecificDatumWriter<Person> writer = new SpecificDatumWriter<Person>(Person.class);
@@ -132,13 +132,12 @@ public class AvroTypeSortIT implements Serializable {
     outputStream.close();
   }
 
-  private Person createPerson(String name, int age) throws IOException {
+  private static Person createPerson(String name, int age) {
 
     Person person = new Person();
     person.age = age;
     person.name = name;
-    List<CharSequence> siblingNames = Lists.newArrayList();
-    person.siblingnames = siblingNames;
+    person.siblingnames = Lists.newArrayList();
 
     return person;
   }

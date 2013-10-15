@@ -20,7 +20,7 @@ package org.apache.crunch.impl.mr.run;
 /**
  * Parameters used during the runtime execution.
  */
-public class RuntimeParameters {
+public final class RuntimeParameters {
 
   public static final String DEBUG = "crunch.debug";
 

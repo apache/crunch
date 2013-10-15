@@ -17,13 +17,10 @@
  */
 package org.apache.crunch.lib;
 
-import static org.apache.crunch.lib.sort.SortFns.*;
-
 import org.apache.avro.Schema;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.GroupingOptions;
-import org.apache.crunch.GroupingOptions.Builder;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -32,6 +29,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.lib.sort.SortFns;
 import org.apache.crunch.lib.sort.TotalOrderPartitioner;
 import org.apache.crunch.lib.sort.ReverseAvroComparator;
 import org.apache.crunch.lib.sort.ReverseWritableComparator;
@@ -62,9 +60,9 @@ public class Sort {
 
   /**
    * To sort by column 2 ascending then column 1 descending, you would use:
-   * <code>
+   * {@code
    * sortPairs(coll, by(2, ASCENDING), by(1, DESCENDING))
-   * </code> Column numbering is 1-based.
+   * } Column numbering is 1-based.
    */
   public static class ColumnOrder {
     private int column;
@@ -214,7 +212,7 @@ public class Sort {
   public static <T extends Tuple> PCollection<T> sortTuples(PCollection<T> collection, int numReducers,
       ColumnOrder... columnOrders) {
     PType<T> pType = collection.getPType();
-    KeyExtraction<T> ke = new KeyExtraction<T>(pType, columnOrders);
+    SortFns.KeyExtraction<T> ke = new SortFns.KeyExtraction<T>(pType, columnOrders);
     PTable<Object, T> pt = collection.by(ke.getByFn(), ke.getKeyType());
     Configuration conf = collection.getPipeline().getConfiguration();
     GroupingOptions options = buildGroupingOptions(pt, conf, numReducers, columnOrders);
@@ -226,7 +224,7 @@ public class Sort {
       int numReducers, Order order) {
     PType<K> ptype = ptable.getKeyType();
     PTypeFamily tf = ptable.getTypeFamily();
-    Builder builder = GroupingOptions.builder();
+    GroupingOptions.Builder builder = GroupingOptions.builder();
     if (order == Order.DESCENDING) {
       if (tf == WritableTypeFamily.getInstance()) {
         builder.sortComparatorClass(ReverseWritableComparator.class);
@@ -249,7 +247,7 @@ public class Sort {
       int numReducers, ColumnOrder[] columnOrders) {
     PTypeFamily tf = ptable.getTypeFamily();
     PType<K> keyType = ptable.getKeyType();
-    Builder builder = GroupingOptions.builder();
+    GroupingOptions.Builder builder = GroupingOptions.builder();
     if (tf == WritableTypeFamily.getInstance()) {
       if (columnOrders.length == 1 && columnOrders[0].order == Order.DESCENDING) {
         builder.sortComparatorClass(ReverseWritableComparator.class);

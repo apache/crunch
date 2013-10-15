@@ -28,7 +28,7 @@ public class AvroTextOutputFormat<K, V> extends TextOutputFormat<K, V> {
   class DatumRecordTextWriter extends RecordWriter<K, V> {
     private RecordWriter lineRecordWriter;
 
-    public DatumRecordTextWriter(RecordWriter recordWriter) {
+    DatumRecordTextWriter(RecordWriter recordWriter) {
       this.lineRecordWriter = recordWriter;
     }
 
