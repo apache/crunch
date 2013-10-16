@@ -28,6 +28,7 @@ import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.io.impl.FileSourceImpl;
+import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -36,16 +37,19 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
+import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
+import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
+import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.mapreduce.Job;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.apache.crunch.types.writable.Writables.writables;
-
 public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSource<KeyValue> {
 
   private static final Log LOG = LogFactory.getLog(HFileSource.class);
-  private static final PType<KeyValue> KEY_VALUE_PTYPE = writables(KeyValue.class);
+  private static final PType<KeyValue> KEY_VALUE_PTYPE = HBaseTypes.keyValues();
 
   public HFileSource(Path path) {
     this(ImmutableList.of(path));
@@ -75,6 +79,16 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
   }
 
   @Override
+  public void configureSource(Job job, int inputId) throws IOException {
+    TableMapReduceUtil.addDependencyJars(job);
+    Configuration conf = job.getConfiguration();
+    conf.setStrings("io.serializations", conf.get("io.serializations"),
+        MutationSerialization.class.getName(), ResultSerialization.class.getName(),
+        KeyValueSerialization.class.getName());
+    super.configureSource(job, inputId);
+  }
+
+  @Override
   public Iterable<KeyValue> read(Configuration conf) throws IOException {
     conf = new Configuration(conf);
     inputBundle.configure(conf);
@@ -88,6 +102,10 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
   @Override
   public ReadableData<KeyValue> asReadable() {
     return new HFileReadableData(paths);
+  }
+
+  public Converter<?, ?, ?, ?> getConverter() {
+    return new HBaseValueConverter<KeyValue>(KeyValue.class);
   }
 
   @Override

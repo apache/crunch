@@ -45,6 +45,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.TimeRange;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.SequenceFile;
@@ -60,10 +61,7 @@ import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Set;
 
-import static org.apache.crunch.types.writable.Writables.bytes;
-import static org.apache.crunch.types.writable.Writables.nulls;
-import static org.apache.crunch.types.writable.Writables.tableOf;
-import static org.apache.crunch.types.writable.Writables.writables;
+import static org.apache.crunch.types.writable.Writables.*;
 
 public final class HFileUtils {
 
@@ -242,7 +240,7 @@ public final class HFileUtils {
     }
   }
 
-  private static class KeyValueComparator implements RawComparator<KeyValue> {
+  public static class KeyValueComparator implements RawComparator<BytesWritable> {
 
     @Override
     public int compare(byte[] left, int loffset, int llength, byte[] right, int roffset, int rlength) {
@@ -254,18 +252,28 @@ public final class HFileUtils {
       if (rlength < 4) {
         throw new AssertionError("Too small rlength: " + rlength);
       }
-      KeyValue leftKey = new KeyValue(left, loffset + 4, llength - 4);
-      KeyValue rightKey = new KeyValue(right, roffset + 4, rlength - 4);
-      return compare(leftKey, rightKey);
+      KeyValue leftKey = HBaseTypes.bytesToKeyValue(left, loffset + 4, llength - 4);
+      KeyValue rightKey = HBaseTypes.bytesToKeyValue(right, roffset + 4, rlength - 4);
+
+      byte[] lRow = leftKey.getRow();
+      byte[] rRow = rightKey.getRow();
+      int rowCmp = Bytes.compareTo(lRow, rRow);
+      if (rowCmp != 0) {
+        return rowCmp;
+      } else {
+        return KeyValue.COMPARATOR.compare(leftKey, rightKey);
+      }
     }
 
     @Override
-    public int compare(KeyValue left, KeyValue right) {
-      return KeyValue.COMPARATOR.compare(left, right);
+    public int compare(BytesWritable left, BytesWritable right) {
+      return KeyValue.COMPARATOR.compare(
+          HBaseTypes.bytesToKeyValue(left),
+          HBaseTypes.bytesToKeyValue(right));
     }
   }
 
-  private static final MapFn<KeyValue,ByteBuffer> EXTRACT_ROW_FN = new MapFn<KeyValue, ByteBuffer>() {
+  private static final MapFn<KeyValue, ByteBuffer> EXTRACT_ROW_FN = new MapFn<KeyValue, ByteBuffer>() {
     @Override
     public ByteBuffer map(KeyValue input) {
       // we have to make a copy of row, because the buffer may be changed after this call
@@ -335,7 +343,11 @@ public final class HFileUtils {
           public void process(Pair<ByteBuffer, Iterable<KeyValue>> input, Emitter<Result> emitter) {
             List<KeyValue> kvs = Lists.newArrayList();
             for (KeyValue kv : input.second()) {
-              kvs.add(kv.clone()); // assuming the input fits into memory
+              try {
+                kvs.add(kv.clone()); // assuming the input fits into memory
+              } catch (Exception e) {
+                throw new RuntimeException(e);
+              }
             }
             Result result = doCombineIntoRow(kvs, versions);
             if (result == null) {
@@ -343,7 +355,7 @@ public final class HFileUtils {
             }
             emitter.emit(result);
           }
-        }, writables(Result.class));
+        }, HBaseTypes.results());
   }
 
   public static void writeToHFilesForIncrementalLoad(
@@ -357,8 +369,7 @@ public final class HFileUtils {
     }
     for (HColumnDescriptor f : families) {
       byte[] family = f.getName();
-      PCollection<KeyValue> sorted = sortAndPartition(
-          kvs.filter(new FilterByFamilyFn(family)), table);
+      PCollection<KeyValue> sorted = sortAndPartition(kvs.filter(new FilterByFamilyFn(family)), table);
       sorted.write(new HFileTarget(new Path(outputPath, Bytes.toString(family)), f));
     }
   }
@@ -376,7 +387,7 @@ public final class HFileUtils {
           }
         }
       }
-    }, writables(KeyValue.class));
+    }, HBaseTypes.keyValues());
     writeToHFilesForIncrementalLoad(kvs, table, outputPath);
   }
 
@@ -387,15 +398,15 @@ public final class HFileUtils {
       public Pair<KeyValue, Void> map(KeyValue input) {
         return Pair.of(input, (Void) null);
       }
-    }, tableOf(writables(KeyValue.class), nulls()));
-    List <KeyValue> splitPoints = getSplitPoints(table);
+    }, tableOf(HBaseTypes.keyValues(), nulls()));
+    List<KeyValue> splitPoints = getSplitPoints(table);
     Path partitionFile = new Path(((DistributedPipeline) kvs.getPipeline()).createTempPath(), "partition");
     writePartitionInfo(conf, partitionFile, splitPoints);
     GroupingOptions options = GroupingOptions.builder()
         .partitionerClass(TotalOrderPartitioner.class)
+        .sortComparatorClass(KeyValueComparator.class)
         .conf(TotalOrderPartitioner.PARTITIONER_PATH, partitionFile.toString())
         .numReducers(splitPoints.size() + 1)
-        .sortComparatorClass(KeyValueComparator.class)
         .build();
     return t.groupByKey(options).ungroup().keys();
   }
@@ -424,9 +435,9 @@ public final class HFileUtils {
         conf,
         path,
         NullWritable.class,
-        KeyValue.class);
+        BytesWritable.class);
     for (KeyValue key : splitPoints) {
-      writer.append(NullWritable.get(), writables(KeyValue.class).getOutputMapFn().map(key));
+      writer.append(NullWritable.get(), HBaseTypes.keyValueToBytes(key));
     }
     writer.close();
   }

@@ -54,6 +54,11 @@ class WritableValueConverter<W> implements Converter<Object, W, W, Iterable<W>> 
   }
 
   @Override
+  public boolean applyPTypeTransforms() {
+    return true;
+  }
+
+  @Override
   public Iterable<W> convertIterableInput(Object key, Iterable<W> value) {
     return value;
   }

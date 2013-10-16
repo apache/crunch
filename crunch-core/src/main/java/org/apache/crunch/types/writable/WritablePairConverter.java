@@ -56,6 +56,11 @@ class WritablePairConverter<K, V> implements Converter<K, V, Pair<K, V>, Pair<K,
   }
 
   @Override
+  public boolean applyPTypeTransforms() {
+    return true;
+  }
+
+  @Override
   public Pair<K, Iterable<V>> convertIterableInput(K key, Iterable<V> value) {
     return Pair.of(key, value);
   }

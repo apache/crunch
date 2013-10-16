@@ -40,6 +40,12 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
   }
 
   @Override
+  public void setConfiguration(Configuration conf) {
+    keys.setConfiguration(conf);
+    values.setConfiguration(conf);
+  }
+
+  @Override
   public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
     keys.setContext(context);
     values.setContext(context);

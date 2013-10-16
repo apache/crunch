@@ -107,8 +107,8 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   @Override
   public void initialize(Configuration conf) {
     this.inputFn.setConfiguration(conf);
+    this.outputFn.setConfiguration(conf);
     this.inputFn.initialize();
-    this.inputFn.setConfiguration(conf);
     this.outputFn.initialize();
     for (PType subType : subTypes) {
       subType.initialize(conf);

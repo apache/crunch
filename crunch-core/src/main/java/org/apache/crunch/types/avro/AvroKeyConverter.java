@@ -52,6 +52,11 @@ class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, 
     return NullWritable.class;
   }
 
+  @Override
+  public boolean applyPTypeTransforms() {
+    return true;
+  }
+
   private AvroWrapper<K> getWrapper() {
     if (wrapper == null) {
       wrapper = new AvroKey<K>();

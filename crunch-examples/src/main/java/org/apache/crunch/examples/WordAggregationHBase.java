@@ -35,6 +35,7 @@ import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.hbase.HBaseSourceTarget;
 import org.apache.crunch.io.hbase.HBaseTarget;
+import org.apache.crunch.io.hbase.HBaseTypes;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -236,7 +237,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
         put.add(COLUMN_FAMILY_TARGET, COLUMN_QUALIFIER_TARGET_TEXT, Bytes.toBytes(input.second()));
         emitter.emit(put);
       }
-    }, Writables.writables(Put.class));
+    }, HBaseTypes.puts());
   }
 
   public static void main(String[] args) throws Exception {

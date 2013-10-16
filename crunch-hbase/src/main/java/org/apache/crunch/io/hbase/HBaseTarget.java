@@ -39,7 +39,9 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
@@ -90,6 +92,8 @@ public class HBaseTarget implements MapReduceTarget {
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     final Configuration conf = job.getConfiguration();
     HBaseConfiguration.addHbaseResources(conf);
+    conf.setStrings("io.serializations", conf.get("io.serializations"),
+        MutationSerialization.class.getName());
     Class<?> typeClass = ptype.getTypeClass(); // Either Put or Delete
     
     try {
@@ -108,8 +112,7 @@ public class HBaseTarget implements MapReduceTarget {
         conf.set(e.getKey(), e.getValue());
       }
     } else {
-      FormatBundle<TableOutputFormat> bundle = FormatBundle.forOutput(
-          TableOutputFormat.class);
+      FormatBundle<TableOutputFormat> bundle = FormatBundle.forOutput(TableOutputFormat.class);
       bundle.set(TableOutputFormat.OUTPUT_TABLE, table);
       for (Map.Entry<String, String> e : extraConf.entrySet()) {
         bundle.set(e.getKey(), e.getValue());
@@ -140,6 +143,13 @@ public class HBaseTarget implements MapReduceTarget {
 
   @Override
   public Converter<?, ?, ?, ?> getConverter(final PType<?> ptype) {
-    return ptype.getConverter();
+    if (Put.class.equals(ptype.getTypeClass())) {
+      return new HBaseValueConverter<Put>(Put.class);
+    } else if (Delete.class.equals(ptype.getTypeClass())) {
+      return new HBaseValueConverter<Delete>(Delete.class);
+    } else {
+      throw new IllegalArgumentException("HBaseTarget only supports Put and Delete, not: " +
+          ptype.getTypeClass());
+    }
   }
 }

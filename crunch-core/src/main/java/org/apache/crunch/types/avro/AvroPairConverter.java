@@ -61,6 +61,11 @@ class AvroPairConverter<K, V> implements Converter<AvroKey<K>, AvroValue<V>, Pai
     return (Class<AvroValue<V>>) getValueWrapper().getClass();
   }
 
+  @Override
+  public boolean applyPTypeTransforms() {
+    return true;
+  }
+
   private AvroKey<K> getKeyWrapper() {
     if (keyWrapper == null) {
       keyWrapper = new AvroKey<K>();

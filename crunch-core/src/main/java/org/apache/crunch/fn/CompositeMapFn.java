@@ -33,6 +33,12 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
   }
 
   @Override
+  public void setConfiguration(Configuration conf) {
+    this.first.setConfiguration(conf);
+    this.second.setConfiguration(conf);
+  }
+
+  @Override
   public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
     first.setContext(context);
     second.setContext(context);

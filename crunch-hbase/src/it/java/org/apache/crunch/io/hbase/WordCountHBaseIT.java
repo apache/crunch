@@ -21,18 +21,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Random;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
@@ -40,17 +32,15 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
-import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -59,7 +49,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -67,7 +56,6 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.ByteStreams;
 
 public class WordCountHBaseIT {
 
@@ -89,7 +77,7 @@ public class WordCountHBaseIT {
   private static final byte[] COUNTS_COLFAM = Bytes.toBytes("cf");
   private static final byte[] WORD_COLFAM = Bytes.toBytes("cf");
 
-  private HBaseTestingUtility hbaseTestUtil = new HBaseTestingUtility();
+  private HBaseTestingUtility hbaseTestUtil;
 
   @SuppressWarnings("serial")
   public static PCollection<Put> wordCount(PTable<ImmutableBytesWritable, Result> words) {
@@ -112,7 +100,7 @@ public class WordCountHBaseIT {
         emitter.emit(put);
       }
 
-    }, Writables.writables(Put.class));
+    }, HBaseTypes.puts());
   }
   
   @SuppressWarnings("serial")
@@ -124,103 +112,29 @@ public class WordCountHBaseIT {
         emitter.emit(delete);
       }
 
-    }, Writables.writables(Delete.class));
+    }, HBaseTypes.deletes());
   }
 
   @Before
   public void setUp() throws Exception {
-    Configuration conf = hbaseTestUtil.getConfiguration();
-    conf.set("hadoop.log.dir", tmpDir.getFileName("logs"));
-    conf.set("hadoop.tmp.dir", tmpDir.getFileName("hadoop-tmp"));
-    conf.set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/1");
-    conf.setInt("hbase.master.info.port", -1);
-    conf.setInt("hbase.regionserver.info.port", -1);
-    
-    // Workaround for HBASE-5711, we need to set config value dfs.datanode.data.dir.perm
-    // equal to the permissions of the temp dirs on the filesystem. These temp dirs were
-    // probably created using this process' umask. So we guess the temp dir permissions as
-    // 0777 & ~umask, and use that to set the config value.
-    try {
-      Process process = Runtime.getRuntime().exec("/bin/sh -c umask");
-      BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
-      int rc = process.waitFor();
-      if(rc == 0) {
-        String umask = br.readLine();
-
-        int umaskBits = Integer.parseInt(umask, 8);
-        int permBits = 0x1ff & ~umaskBits;
-        String perms = Integer.toString(permBits, 8);
-
-        conf.set("dfs.datanode.data.dir.perm", perms);
-      }
-    } catch (Exception e) {
-      // ignore errors, we might not be running on POSIX, or "sh" might not be on the path
-    }
-
+    Configuration conf = HBaseConfiguration.create(tmpDir.getDefaultConfiguration());
+    hbaseTestUtil = new HBaseTestingUtility(conf);
     hbaseTestUtil.startMiniZKCluster();
-    hbaseTestUtil.startMiniCluster();
-    hbaseTestUtil.startMiniMapReduceCluster(1);
-
-    // For Hadoop-2.0.0, we have to do a bit more work.
-    if (TaskAttemptContext.class.isInterface()) {
-      conf = hbaseTestUtil.getConfiguration();
-      FileSystem fs = FileSystem.get(conf);
-      Path tmpPath = new Path("target", "WordCountHBaseTest-tmpDir");
-      FileSystem localFS = FileSystem.getLocal(conf);
-      for (FileStatus jarFile : localFS.listStatus(new Path("target/lib/"))) {
-        Path target = new Path(tmpPath, jarFile.getPath().getName());
-        fs.copyFromLocalFile(jarFile.getPath(), target);
-        DistributedCache.addFileToClassPath(target, conf, fs);
-      }
-
-      // Create a programmatic container for this jar.
-      JarOutputStream jos = new JarOutputStream(new FileOutputStream("WordCountHBaseIT.jar"));
-      File baseDir = new File("target/test-classes");
-      String prefix = "org/apache/crunch/io/hbase/";
-      jarUp(jos, baseDir, prefix + "WordCountHBaseIT.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$1.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$2.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$3.class");
-      jarUp(jos, baseDir, prefix + "WordCountHBaseIT$StringifyFn.class");
-      
-      // Now for the OutputFormat (doesn't get copied by default, apparently)
-      baseDir = new File("target/classes");
-      jarUp(jos, baseDir, prefix + "TableOutputFormat.class");
-      jarUp(jos, baseDir, prefix + "TableOutputFormat$TableRecordWriter.class");
-      jos.close();
-
-      Path target = new Path(tmpPath, "WordCountHBaseIT.jar");
-      fs.copyFromLocalFile(true, new Path("WordCountHBaseIT.jar"), target);
-      DistributedCache.addFileToClassPath(target, conf, fs);
-    }
-  }
-
-  private static void jarUp(JarOutputStream jos, File baseDir, String classDir) throws IOException {
-    File file = new File(baseDir, classDir);
-    JarEntry e = new JarEntry(classDir);
-    e.setTime(file.lastModified());
-    jos.putNextEntry(e);
-    ByteStreams.copy(new FileInputStream(file), jos);
-    jos.closeEntry();
+    hbaseTestUtil.startMiniHBaseCluster(1, 1);
   }
 
   @Test
-  public void testWordCount() throws IOException {
+  public void testWordCount() throws Exception {
     run(new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration()));
   }
 
   @After
   public void tearDown() throws Exception {
-    hbaseTestUtil.shutdownMiniMapReduceCluster();
-    hbaseTestUtil.shutdownMiniCluster();
+    hbaseTestUtil.shutdownMiniHBaseCluster();
     hbaseTestUtil.shutdownMiniZKCluster();
-
-    //Delete the build directory that gets created in the root of the project when starting
-    //the MiniMapReduceCluster
-    FileUtils.deleteDirectory(new File("build"));
   }
 
-  public void run(Pipeline pipeline) throws IOException {
+  public void run(Pipeline pipeline) throws Exception {
 
     Random rand = new Random();
     int postFix = Math.abs(rand.nextInt());
@@ -237,6 +151,8 @@ public class WordCountHBaseIT {
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "dog");
+    inputTable.flushCommits();
+
     Scan scan = new Scan();
     scan.addFamily(WORD_COLFAM);
     HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
@@ -244,24 +160,26 @@ public class WordCountHBaseIT {
 
     Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();
     assertEquals(3, materialized.size());
-
     PCollection<Put> puts = wordCount(words);
     pipeline.write(puts, new HBaseTarget(outputTableName));
     pipeline.write(puts, new HBaseTarget(otherTableName));
-    pipeline.done();
+    PipelineResult res = pipeline.done();
+    assertTrue(res.succeeded());
 
-    assertIsLong(outputTable, "cat", 2);
-    assertIsLong(outputTable, "dog", 1);
     assertIsLong(otherTable, "cat", 2);
     assertIsLong(otherTable, "dog", 1);
+    assertIsLong(outputTable, "cat", 2);
+    assertIsLong(outputTable, "dog", 1);
 
     // verify we can do joins.
     HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);
+
     key = 0;
     key = put(joinTable, key, "zebra");
     key = put(joinTable, key, "donkey");
     key = put(joinTable, key, "bird");
     key = put(joinTable, key, "horse");
+    joinTable.flushCommits();
 
     Scan joinScan = new Scan();
     joinScan.addFamily(WORD_COLFAM);

@@ -19,6 +19,7 @@ package org.apache.crunch.fn;
 
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 /**
@@ -34,10 +35,20 @@ public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
   }
 
   @Override
+  public void setConfiguration(Configuration conf) {
+    mapFn.setConfiguration(conf);
+  }
+
+  @Override
   public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
     mapFn.setContext(context);
   }
-  
+
+  @Override
+  public void configure(Configuration conf) {
+    mapFn.configure(conf);
+  }
+
   @Override
   public void initialize() {
     mapFn.initialize();

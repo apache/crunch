@@ -19,16 +19,20 @@ package org.apache.crunch.io.hbase;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.crunch.io.CrunchOutputs;
-import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
+import org.apache.crunch.types.Converter;
+import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class HFileTarget extends FileTargetImpl {
 
@@ -45,7 +49,32 @@ public class HFileTarget extends FileTargetImpl {
   public HFileTarget(Path path, HColumnDescriptor hcol) {
     super(path, HFileOutputFormatForCrunch.class, SequentialFileNamingScheme.getInstance());
     Preconditions.checkNotNull(hcol);
-    outputConf(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY, Hex.encodeHexString(WritableUtils.toByteArray(hcol)));
+    outputConf(HFileOutputFormatForCrunch.HCOLUMN_DESCRIPTOR_KEY,
+        Hex.encodeHexString(WritableUtils.toByteArray(hcol)));
+  }
+
+  @Override
+  public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
+    Configuration conf = job.getConfiguration();
+    HBaseConfiguration.addHbaseResources(conf);
+    conf.setStrings("io.serializations", conf.get("io.serializations"),
+        KeyValueSerialization.class.getName());
+    super.configureForMapReduce(job, ptype, outputPath, name);
+  }
+
+  @Override
+  public Converter<?, ?, ?, ?> getConverter(PType<?> ptype) {
+    PType<?> valueType = ptype;
+    if (ptype instanceof PTableType) {
+      valueType = ((PTableType) ptype).getValueType();
+    }
+    if (!KeyValue.class.equals(valueType.getTypeClass())) {
+      throw new IllegalArgumentException("HFileTarget only supports KeyValue outputs");
+    }
+    if (ptype instanceof PTableType) {
+      return new HBasePairConverter<ImmutableBytesWritable, KeyValue>(ImmutableBytesWritable.class, KeyValue.class);
+    }
+    return new HBaseValueConverter<KeyValue>(KeyValue.class);
   }
 
   @Override

@@ -56,4 +56,9 @@ class AvroParquetConverter<T> implements Converter<Void, T, T, Iterable<T>> {
   public Class<T> getValueClass() {
     return ptype.getTypeClass();
   }
+
+  @Override
+  public boolean applyPTypeTransforms() {
+    return true;
+  }
 }

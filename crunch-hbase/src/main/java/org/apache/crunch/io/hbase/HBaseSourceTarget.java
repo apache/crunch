@@ -17,10 +17,6 @@
  */
 package org.apache.crunch.io.hbase;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -46,8 +42,13 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
+import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
+import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
+import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
 import org.apache.hadoop.hbase.util.Base64;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -58,7 +59,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
   private static final Log LOG = LogFactory.getLog(HBaseSourceTarget.class);
   
   private static final PTableType<ImmutableBytesWritable, Result> PTYPE = Writables.tableOf(
-      Writables.writables(ImmutableBytesWritable.class), Writables.writables(Result.class));
+      Writables.writables(ImmutableBytesWritable.class), HBaseTypes.results());
 
   protected Scan scan;
   private FormatBundle<TableInputFormat> inputBundle;
@@ -114,30 +115,27 @@ public class HBaseSourceTarget extends HBaseTarget implements
   @Override
   public void configureSource(Job job, int inputId) throws IOException {
     TableMapReduceUtil.addDependencyJars(job);
+    Configuration conf = job.getConfiguration();
+    conf.setStrings("io.serializations", conf.get("io.serializations"),
+        ResultSerialization.class.getName());
     if (inputId == -1) {
       job.setMapperClass(CrunchMapper.class);
       job.setInputFormatClass(inputBundle.getFormatClass());
-      inputBundle.configure(job.getConfiguration());
+      inputBundle.configure(conf);
     } else {
       Path dummy = new Path("/hbase/" + table);
       CrunchInputs.addInputPath(job, dummy, inputBundle, inputId);
     }
   }
 
-  public static String convertScanToString(Scan scan) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    DataOutputStream dos = new DataOutputStream(out);
-    scan.write(dos);
-    return Base64.encodeBytes(out.toByteArray());
+  static String convertScanToString(Scan scan) throws IOException {
+    ClientProtos.Scan proto = ProtobufUtil.toScan(scan);
+    return Base64.encodeBytes(proto.toByteArray());
   }
 
   public static Scan convertStringToScan(String string) throws IOException {
-    ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decode(string));
-    DataInputStream dais = new DataInputStream(bais);
-    Scan scan = new Scan();
-    scan.readFields(dais);
-    dais.close();
-    return scan;
+    ClientProtos.Scan proto = ClientProtos.Scan.parseFrom(Base64.decode(string));
+    return ProtobufUtil.toScan(proto);
   }
 
   @Override
@@ -154,7 +152,9 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   @Override
   public Converter<?, ?, ?, ?> getConverter() {
-    return PTYPE.getConverter();
+    return new HBasePairConverter<ImmutableBytesWritable, Result>(
+        ImmutableBytesWritable.class,
+        Result.class);
   }
 
   @Override

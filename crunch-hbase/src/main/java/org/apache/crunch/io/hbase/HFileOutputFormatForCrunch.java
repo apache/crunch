@@ -31,7 +31,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
-import org.apache.hadoop.hbase.regionserver.Store;
+import org.apache.hadoop.hbase.regionserver.HStore;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.TimeRangeTracker;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -91,10 +91,10 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         .withPath(fs, outputPath)
         .withBlockSize(hcol.getBlocksize())
         .withCompression(hcol.getCompression())
-        .withComparator(KeyValue.KEY_COMPARATOR)
+        .withComparator(KeyValue.COMPARATOR)
         .withDataBlockEncoder(new HFileDataBlockEncoderImpl(hcol.getDataBlockEncoding()))
-        .withChecksumType(Store.getChecksumType(conf))
-        .withBytesPerChecksum(Store.getBytesPerChecksum(conf))
+        .withChecksumType(HStore.getChecksumType(conf))
+        .withBytesPerChecksum(HStore.getBytesPerChecksum(conf))
         .create();
 
     return new RecordWriter<Object, KeyValue>() {
@@ -109,8 +109,7 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
       }
 
       @Override
-      public void close(TaskAttemptContext c)
-          throws IOException, InterruptedException {
+      public void close(TaskAttemptContext c) throws IOException {
         writer.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,
             Bytes.toBytes(System.currentTimeMillis()));
         writer.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY,

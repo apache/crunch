@@ -77,7 +77,7 @@ under the License.
     <parquet.version>1.2.0</parquet.version>
     <javassist.version>3.16.1-GA</javassist.version>
     <jackson.version>1.8.8</jackson.version>
-    <protobuf-java.version>2.4.0a</protobuf-java.version>
+    <protobuf-java.version>2.5.0</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
     <slf4j.version>1.6.1</slf4j.version>
     <log4j.version>1.2.15</log4j.version>
@@ -150,6 +150,18 @@ under the License.
         <groupId>org.apache.crunch</groupId>
         <artifactId>crunch-contrib</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-client</artifactId>
+        <version>${hadoop.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-minicluster</artifactId>
+        <version>${hadoop.version}</version>
       </dependency>
 
       <dependency>
@@ -284,6 +296,56 @@ under the License.
       </dependency>
 
       <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-common</artifactId>
+        <version>${hbase.version}</version>
+        <type>jar</type>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-protocol</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-client</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-shell</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-server</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-${hbase.midfix}-compat</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-testing-util</artifactId>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hbase</groupId>
+        <artifactId>hbase-it</artifactId>
+        <type>test-jar</type>
+        <version>${hbase.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
@@ -380,69 +442,9 @@ under the License.
       </activation>
       <properties>
         <hadoop.version>1.1.2</hadoop.version>
-        <hbase.version>0.94.3</hbase.version>
+        <hbase.version>0.96.0-hadoop1</hbase.version>
+        <hbase.midfix>hadoop1</hbase.midfix>
       </properties>
-      <dependencyManagement>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>${hbase.version}</version>
-            <exclusions>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>avro</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-core</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>${hbase.version}</version>
-            <type>test-jar</type>
-            <exclusions>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>avro</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>
-            </exclusions>
-          </dependency>
-        </dependencies>
-      </dependencyManagement>
     </profile>
     <profile>
       <id>hadoop-2</id>
@@ -453,72 +455,44 @@ under the License.
         </property>
       </activation>
       <properties>
-        <hadoop.version>2.0.4-alpha</hadoop.version>
-        <!-- NOTE: You must build HBase 0.94.3 from source using:
-             mvn clean install -Dhadoop.profile=2.0
-             for this to work. -->
-        <hbase.version>0.94.3</hbase.version>
+        <hadoop.version>2.2.0</hadoop.version>
+        <hbase.version>0.96.0-hadoop2</hbase.version>
         <commons-lang.version>2.5</commons-lang.version>
         <slf4j.version>1.6.1</slf4j.version>
+        <hbase.midfix>hadoop2</hbase.midfix>
       </properties>
       <dependencyManagement>
         <dependencies>
           <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
+            <artifactId>hadoop-common</artifactId>
             <version>${hadoop.version}</version>
           </dependency>
           <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
+            <artifactId>hadoop-auth</artifactId>
             <version>${hadoop.version}</version>
           </dependency>
           <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>${hbase.version}</version>
-            <exclusions>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>avro</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-core</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>
-            </exclusions>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>${hadoop.version}</version>
           </dependency>
           <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase</artifactId>
-            <version>${hbase.version}</version>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${hadoop.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+            <version>${hadoop.version}</version>
             <type>test-jar</type>
-            <exclusions>
-              <exclusion>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>avro</artifactId>
-              </exclusion>
-              <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-              </exclusion>
-            </exclusions>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-annotations</artifactId>
+            <version>${hadoop.version}</version>
           </dependency>
         </dependencies>
       </dependencyManagement>
@@ -668,7 +642,7 @@ under the License.
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.12</version>
           <configuration>
-            <argLine>-Xmx512m</argLine>
+            <argLine>-Xmx2G -XX:PermSize=512m -XX:MaxPermSize=1G</argLine>
           </configuration>
         </plugin>
         <plugin>
@@ -852,7 +826,7 @@ under the License.
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.12</version>
         <configuration>
-          <argLine>-Xmx768m</argLine>
+          <argLine>-Xmx1G</argLine>
           <testSourceDirectory>${basedir}/src/it/java</testSourceDirectory>
         </configuration>
         <executions>

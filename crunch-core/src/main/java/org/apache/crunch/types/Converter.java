@@ -38,4 +38,11 @@ public interface Converter<K, V, S, T> extends Serializable {
   Class<K> getKeyClass();
 
   Class<V> getValueClass();
+
+  /**
+   * If true, convert the inputs or outputs from this {@code Converter} instance
+   * before (for outputs) or after (for inputs) using the associated PType#getInputMapFn
+   * and PType#getOutputMapFn calls.
+   */
+  boolean applyPTypeTransforms();
 }

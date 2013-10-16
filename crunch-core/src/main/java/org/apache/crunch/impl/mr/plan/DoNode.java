@@ -23,6 +23,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
 import org.apache.crunch.types.Converter;
@@ -62,12 +63,13 @@ public class DoNode {
   }
 
   public static <K, V> DoNode createGroupingNode(String name, PGroupedTableType<K, V> ptype) {
-    DoFn<?, ?> fn = ptype.getOutputMapFn();
+    Converter groupingConverter = ptype.getGroupingConverter();
+    DoFn<?, ?> fn = groupingConverter.applyPTypeTransforms() ? ptype.getOutputMapFn() : IdentityFn.getInstance();
     return new DoNode(fn, name, ptype, NO_CHILDREN, ptype.getGroupingConverter(), null, null);
   }
 
   public static DoNode createOutputNode(String name, Converter outputConverter, PType<?> ptype) {
-    DoFn<?, ?> fn = ptype.getOutputMapFn();
+    DoFn<?, ?> fn = outputConverter.applyPTypeTransforms() ? ptype.getOutputMapFn() : IdentityFn.getInstance();
     return new DoNode(fn, name, ptype, NO_CHILDREN, outputConverter, null, null);
   }
 
@@ -76,8 +78,9 @@ public class DoNode {
   }
 
   public static <S> DoNode createInputNode(Source<S> source) {
+    Converter srcConverter = source.getConverter();
     PType<?> ptype = source.getType();
-    DoFn<?, ?> fn = ptype.getInputMapFn();
+    DoFn<?, ?> fn = srcConverter.applyPTypeTransforms() ? ptype.getInputMapFn() : IdentityFn.getInstance();
     return new DoNode(fn, source.toString(), ptype, allowsChildren(), null, source, null);
   }
 
