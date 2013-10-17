@@ -23,7 +23,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
+import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.collect.InputCollection;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
@@ -32,6 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 public class DotfileWriterTest {
@@ -102,13 +106,24 @@ public class DotfileWriterTest {
   }
 
   @Test
+  public void testFormatNodeCollection_WithStyles() {
+    List<String> nodeCollection = Lists.newArrayList("one", "two");
+    assertEquals(
+      "one -> two [style=dotted];",
+      dotfileWriter.formatNodeCollection(nodeCollection, ImmutableMap.of("style", "dotted")));
+  }
+
+  @Test
   public void testFormatNodePath() {
     PCollectionImpl<?> tail = mock(PCollectionImpl.class);
     PCollectionImpl<?> head = mock(PCollectionImpl.class);
     JobPrototype jobPrototype = mock(JobPrototype.class);
+    ParallelDoOptions doOptions = ParallelDoOptions.builder().build();
 
     when(tail.getName()).thenReturn("tail");
     when(head.getName()).thenReturn("head");
+    when(tail.getParallelDoOptions()).thenReturn(doOptions);
+    when(head.getParallelDoOptions()).thenReturn(doOptions);
 
     NodePath nodePath = new NodePath(tail);
     nodePath.close(head);
@@ -118,6 +133,32 @@ public class DotfileWriterTest {
             + tail.hashCode() + "@" + jobPrototype.hashCode() + "\";"),
         dotfileWriter.formatNodePath(nodePath, jobPrototype));
   }
+
+  @Test
+  public void testFormatNodePathWithTargetDependencies() {
+    PCollectionImpl<?> tail = mock(PCollectionImpl.class);
+    PCollectionImpl<?> head = mock(PCollectionImpl.class);
+    SourceTarget<?> srcTarget = mock(SourceTarget.class);
+    JobPrototype jobPrototype = mock(JobPrototype.class);
+
+    ParallelDoOptions tailOptions = ParallelDoOptions.builder().sourceTargets(srcTarget).build();
+    ParallelDoOptions headOptions = ParallelDoOptions.builder().build();
+    when(srcTarget.toString()).thenReturn("target");
+    when(tail.getName()).thenReturn("tail");
+    when(head.getName()).thenReturn("head");
+    when(tail.getParallelDoOptions()).thenReturn(tailOptions);
+    when(head.getParallelDoOptions()).thenReturn(headOptions);
+
+    NodePath nodePath = new NodePath(tail);
+    nodePath.close(head);
+
+    assertEquals(
+        ImmutableList.of("\"head@" + head.hashCode() + "@" + jobPrototype.hashCode() + "\" -> \"tail@"
+            + tail.hashCode() + "@" + jobPrototype.hashCode() + "\";",
+            "\"target\" -> \"tail@" + tail.hashCode() + "@" + jobPrototype.hashCode() + "\" [style=dashed];"),
+        dotfileWriter.formatNodePath(nodePath, jobPrototype));
+  }
+
 
   @Test
   public void testGetTaskGraphAttributes_Map() {

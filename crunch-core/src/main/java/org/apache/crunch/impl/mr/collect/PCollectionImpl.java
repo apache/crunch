@@ -232,7 +232,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     }
     return pipeline;
   }
-  
+
+  public ParallelDoOptions getParallelDoOptions() {
+    return doOptions;
+  }
+
   public Set<SourceTarget<?>> getTargetDependencies() {
     Set<SourceTarget<?>> targetDeps = doOptions.getSourceTargets();
     for (PCollectionImpl<?> parent : getParents()) {
