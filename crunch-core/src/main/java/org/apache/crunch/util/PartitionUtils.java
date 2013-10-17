@@ -21,14 +21,29 @@ import org.apache.crunch.PCollection;
 import org.apache.hadoop.conf.Configuration;
 
 /**
- *
+ *  Helper functions and settings for determining the number of reducers to use in a pipeline
+ *  job created by the Crunch planner.
  */
 public class PartitionUtils {
   public static final String BYTES_PER_REDUCE_TASK = "crunch.bytes.per.reduce.task";
   public static final long DEFAULT_BYTES_PER_REDUCE_TASK = 1000L * 1000L * 1000L;
-  
+
+  /**
+   * Set an upper limit on the number of reducers the Crunch planner will set for an MR
+   * job when it tries to determine how many reducers to use based on the input size.
+   */
+  public static final String MAX_REDUCERS = "crunch.max.reducers";
+  public static final int DEFAULT_MAX_REDUCERS = 500;
+
   public static <T> int getRecommendedPartitions(PCollection<T> pcollection) {
-    return getRecommendedPartitions(pcollection, pcollection.getPipeline().getConfiguration());
+    Configuration conf = pcollection.getPipeline().getConfiguration();
+    int recommended = getRecommendedPartitions(pcollection, conf);
+    int maxRecommended = conf.getInt(MAX_REDUCERS, DEFAULT_MAX_REDUCERS);
+    if (maxRecommended > 0 && recommended > maxRecommended) {
+      return maxRecommended;
+    } else {
+      return recommended;
+    }
   }
   
   public static <T> int getRecommendedPartitions(PCollection<T> pcollection, Configuration conf) {
