@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -23,53 +23,53 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.crunch.FilterFn.OrFn;
+import org.apache.crunch.Emitter;
+import org.apache.crunch.FilterFn;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.junit.Before;
 import org.junit.Test;
 
-public class OrFnTest {
+public class AndFnTest {
 
   private FilterFn<Integer> fnA;
   private FilterFn<Integer> fnB;
-  private OrFn<Integer> orFn;
+  private FilterFn<Integer> andFn;
 
   @Before
   public void setUp() {
     fnA = mock(FilterFn.class);
     fnB = mock(FilterFn.class);
-    orFn = new OrFn(fnA, fnB);
+    andFn = FilterFns.and(fnA, fnB);
   }
 
   @Test
   public void testSetContext() {
     TaskInputOutputContext<?, ?, ?, ?> context = mock(TaskInputOutputContext.class);
-
-    orFn.setContext(context);
+    andFn.setContext(context);
 
     verify(fnA).setContext(context);
     verify(fnB).setContext(context);
   }
 
   @Test
-  public void testAccept_True() {
-    when(fnA.accept(1)).thenReturn(false);
-    when(fnB.accept(1)).thenReturn(true);
-
-    assertTrue(orFn.accept(1));
-  }
-
-  @Test
   public void testAccept_False() {
-    when(fnA.accept(1)).thenReturn(false);
+    when(fnA.accept(1)).thenReturn(true);
     when(fnB.accept(1)).thenReturn(false);
 
-    assertFalse(orFn.accept(1));
+    assertFalse(andFn.accept(1));
   }
 
   @Test
-  public void testCleanupEmitterOfT() {
-    orFn.cleanup(mock(Emitter.class));
+  public void testAccept_True() {
+    when(fnA.accept(1)).thenReturn(true);
+    when(fnB.accept(1)).thenReturn(true);
+
+    assertTrue(andFn.accept(1));
+  }
+
+  @Test
+  public void testCleanup() {
+    andFn.cleanup(mock(Emitter.class));
 
     verify(fnA).cleanup();
     verify(fnB).cleanup();

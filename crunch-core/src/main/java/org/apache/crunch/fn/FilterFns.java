@@ -17,10 +17,12 @@
  */
 package org.apache.crunch.fn;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.FilterFn;
-import org.apache.crunch.FilterFn.AndFn;
-import org.apache.crunch.FilterFn.NotFn;
-import org.apache.crunch.FilterFn.OrFn;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
+import java.util.List;
 
 
 /**
@@ -95,6 +97,157 @@ public final class FilterFns {
    */
   public static <S> FilterFn<S> REJECT_ALL() {
     return not(new AcceptAllFn<S>());
+  }
+
+  private static class AndFn<S> extends FilterFn<S> {
+
+    private final List<FilterFn<S>> fns;
+
+    public AndFn(FilterFn<S>... fns) {
+      this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (FilterFn<S> fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (FilterFn<S> fn : fns) {
+        fn.setContext(context);
+      }
+    }
+
+    @Override
+    public void initialize() {
+      for (FilterFn<S> fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    @Override
+    public void cleanup() {
+      for (FilterFn<S> fn : fns) {
+        fn.cleanup();
+      }
+    }
+
+    @Override
+    public boolean accept(S input) {
+      for (FilterFn<S> fn : fns) {
+        if (!fn.accept(input)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    @Override
+    public float scaleFactor() {
+      float scaleFactor = 1.0f;
+      for (FilterFn<S> fn : fns) {
+        scaleFactor *= fn.scaleFactor();
+      }
+      return scaleFactor;
+    }
+  }
+
+  private static class OrFn<S> extends FilterFn<S> {
+
+    private final List<FilterFn<S>> fns;
+
+    public OrFn(FilterFn<S>... fns) {
+      this.fns = ImmutableList.<FilterFn<S>> copyOf(fns);
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (FilterFn<S> fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (FilterFn<S> fn : fns) {
+        fn.setContext(context);
+      }
+    }
+
+    @Override
+    public void initialize() {
+      for (FilterFn<S> fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    @Override
+    public void cleanup() {
+      for (FilterFn<S> fn : fns) {
+        fn.cleanup();
+      }
+    }
+
+    @Override
+    public boolean accept(S input) {
+      for (FilterFn<S> fn : fns) {
+        if (fn.accept(input)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    @Override
+    public float scaleFactor() {
+      float scaleFactor = 0.0f;
+      for (FilterFn<S> fn : fns) {
+        scaleFactor += fn.scaleFactor();
+      }
+      return Math.min(1.0f, scaleFactor);
+    }
+  }
+
+  private static class NotFn<S> extends FilterFn<S> {
+
+    private final FilterFn<S> base;
+
+    public NotFn(FilterFn<S> base) {
+      this.base = base;
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      base.configure(conf);
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      base.setContext(context);
+    }
+
+    @Override
+    public void initialize() {
+      base.initialize();
+    }
+
+    @Override
+    public void cleanup() {
+      base.cleanup();
+    }
+
+    @Override
+    public boolean accept(S input) {
+      return !base.accept(input);
+    }
+
+    @Override
+    public float scaleFactor() {
+      return 1.0f - base.scaleFactor();
+    }
   }
 
   private static class AcceptAllFn<S> extends FilterFn<S> {

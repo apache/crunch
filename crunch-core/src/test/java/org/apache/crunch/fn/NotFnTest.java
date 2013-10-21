@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.fn;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.crunch.FilterFn.NotFn;
+import org.apache.crunch.Emitter;
+import org.apache.crunch.FilterFn;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,12 +31,12 @@ import org.junit.Test;
 public class NotFnTest {
   
   private FilterFn<Integer> base;
-  private NotFn<Integer> notFn;
+  private FilterFn<Integer> notFn;
   
   @Before
   public void setUp() {
     base = mock(FilterFn.class);
-    notFn = new NotFn(base);
+    notFn = FilterFns.not(base);
   }
 
   @Test
