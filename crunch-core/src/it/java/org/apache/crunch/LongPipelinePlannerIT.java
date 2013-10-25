@@ -68,8 +68,8 @@ public class LongPipelinePlannerIT {
       } 
     }, strings());
 
-    MaterializableIterable matIt = (MaterializableIterable)iso.materialize();
-    ParallelDoOptions.Builder builder = ParallelDoOptions.builder().sourceTargets((SourceTarget)matIt.getSource());
+    ReadableData<String> isoRD = iso.asReadable(true);
+    ParallelDoOptions.Builder builder = ParallelDoOptions.builder().sourceTargets(isoRD.getSourceTargets());
 
     PTable<Integer, String> splitMap = keyedLower.parallelDo("split-map",
         new MapFn<Pair<Integer, String>, Pair<Integer, String>>() {

@@ -23,6 +23,7 @@ import static org.apache.crunch.types.avro.Avros.tableOf;
 import java.util.List;
 
 import org.apache.crunch.fn.IdentityFn;
+import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.MRPipelineExecution;
@@ -47,7 +48,7 @@ public class DependentSourcesIT {
         tmpDir.copyResourcePath("shakes.txt"),
         tmpDir.getFileName("out"));
   }
-  
+
   public static void run(MRPipeline p, Path inputPath, String out) throws Exception {
      PCollection<String> in = p.read(From.textFile(inputPath));
      PTable<String, String> op = in.parallelDo("op1", new DoFn<String, Pair<String, String>>() {
@@ -59,10 +60,10 @@ public class DependentSourcesIT {
       } 
      }, tableOf(strings(), strings()));
      
-     SourceTarget src = (SourceTarget)((MaterializableIterable<Pair<String, String>>) op.materialize()).getSource();
+     ReadableData<Pair<String, String>> rd = op.asReadable(true);
      
      op = op.parallelDo("op2", IdentityFn.<Pair<String,String>>getInstance(), tableOf(strings(), strings()),
-         ParallelDoOptions.builder().sourceTargets(src).build());
+         ParallelDoOptions.builder().sourceTargets(rd.getSourceTargets()).build());
      
      PCollection<String> output = op.values();
      output.write(To.textFile(out));

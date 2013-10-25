@@ -34,10 +34,8 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
-import org.apache.crunch.SourceTarget;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.io.ReadableSourceTarget;
-import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
@@ -46,9 +44,7 @@ import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableType;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.types.writable.Writables;
-import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.bloom.BloomFilter;
@@ -127,40 +123,30 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   
   @Override
   public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
-    
+
     if (joinType != JoinType.INNER_JOIN && joinType != JoinType.LEFT_OUTER_JOIN) {
       throw new IllegalStateException("JoinType " + joinType + " is not supported for BloomFilter joins");
     }
-    
+
     PTable<K,V> filteredRightSide;
-    if (left.getPipeline() instanceof MRPipeline) {
-      PType<BloomFilter> bloomFilterType = getBloomFilterType(left.getTypeFamily());
-      PCollection<BloomFilter> bloomFilters = left.keys().parallelDo(
-                                                    "Create bloom filters", 
-                                                    new CreateBloomFilterFn(vectorSize, nbHash, left.getKeyType()), 
-                                                    bloomFilterType);
-      
-      MaterializableIterable<BloomFilter> materializableIterable = (MaterializableIterable<BloomFilter>) bloomFilters.materialize();
-      FilterKeysWithBloomFilterFn<K, V> filterKeysFn = new FilterKeysWithBloomFilterFn<K, V>(
-                                                              materializableIterable.getPath().toString(), 
-                                                              vectorSize, nbHash, 
-                                                              left.getKeyType(), bloomFilterType);
-      
-      ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
-      if (materializableIterable.isSourceTarget()) {
-        optionsBuilder.sourceTargets((SourceTarget) materializableIterable.getSource());
-      }
-      
-      filteredRightSide = right.parallelDo("Filter right side with BloomFilters",
-                                                filterKeysFn, right.getPTableType(), optionsBuilder.build());
-  
-      // TODO This shouldn't be necessary due to the ParallelDoOptions, but it seems to be needed somehow
-      left.getPipeline().run();
-    } else {
-      LOG.warn("Not using Bloom filters outside of MapReduce context");
-      filteredRightSide = right;
-    }
-    
+    PType<BloomFilter> bloomFilterType = getBloomFilterType(left.getTypeFamily());
+    PCollection<BloomFilter> bloomFilters = left.keys().parallelDo(
+        "Create bloom filters",
+        new CreateBloomFilterFn(vectorSize, nbHash, left.getKeyType()),
+        bloomFilterType);
+
+    ReadableData<BloomFilter> bloomData = bloomFilters.asReadable(true);
+    FilterKeysWithBloomFilterFn<K, V> filterKeysFn = new FilterKeysWithBloomFilterFn<K, V>(
+        bloomData,
+        vectorSize, nbHash,
+        left.getKeyType());
+
+    ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
+    optionsBuilder.sourceTargets(bloomData.getSourceTargets());
+
+    filteredRightSide = right.parallelDo("Filter right side with BloomFilters",
+        filterKeysFn, right.getPTableType(), optionsBuilder.build());
+
     return delegateJoinStrategy.join(left, filteredRightSide, joinType);
   }
   
@@ -206,50 +192,38 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
    */
   private static class FilterKeysWithBloomFilterFn<K,V> extends FilterFn<Pair<K, V>> {
     
-    private String inputPath;
     private int vectorSize;
     private int nbHash;
     private PType<K> keyType;
     private PType<BloomFilter> bloomFilterPType;
     private BloomFilter bloomFilter;
     private transient MapFn<K,byte[]> keyToBytesFn;
-    
-    FilterKeysWithBloomFilterFn(String inputPath, int vectorSize, int nbHash, PType<K> keyType, PType<BloomFilter> bloomFilterPtype) {
-      this.inputPath = inputPath;
+    private ReadableData<BloomFilter> bloomData;
+
+    FilterKeysWithBloomFilterFn(ReadableData<BloomFilter> bloomData, int vectorSize, int nbHash, PType<K> keyType) {
+      this.bloomData = bloomData;
       this.vectorSize = vectorSize;
       this.nbHash = nbHash;
       this.keyType = keyType;
-      this.bloomFilterPType = bloomFilterPtype;
     }
     
     
-    private Path getCacheFilePath() {
-      Path local = DistCache.getPathToCacheFile(new Path(inputPath), getConfiguration());
-      if (local == null) {
-        throw new CrunchRuntimeException("Can't find local cache file for '" + inputPath + "'");
-      }
-      return local;
-    }
-
     @Override
     public void configure(Configuration conf) {
-      DistCache.addCacheFile(new Path(inputPath), conf);
+      bloomData.configure(conf);
     }
     
     @Override
     public void initialize() {
       super.initialize();
       
-      bloomFilterPType.initialize(getConfiguration());
       keyType.initialize(getConfiguration());
       
       keyToBytesFn = getKeyToBytesMapFn(keyType, getConfiguration());
 
-      ReadableSourceTarget<BloomFilter> sourceTarget = bloomFilterPType.getDefaultFileSource(
-          getCacheFilePath());
       Iterable<BloomFilter> iterable;
       try {
-        iterable = sourceTarget.read(getConfiguration());
+        iterable = bloomData.read(getContext());
       } catch (IOException e) {
         throw new CrunchRuntimeException("Error reading right-side of map side join: ", e);
       }
