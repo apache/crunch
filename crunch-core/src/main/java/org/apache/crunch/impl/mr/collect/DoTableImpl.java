@@ -34,17 +34,36 @@ import com.google.common.collect.ImmutableList;
 public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> {
 
   private final PCollectionImpl<?> parent;
+  private final DoFn<?, Pair<K, V>> combineFn;
   private final DoFn<?, Pair<K, V>> fn;
   private final PTableType<K, V> type;
+
+  private static <S, K, V> DoFn<S, Pair<K, V>> asCombineFn(final DoFn<S, Pair<K, V>> fn) {
+    if (fn instanceof CombineFn) {
+      return fn;
+    }
+    return null;
+  }
 
   <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype) {
     this(name, parent, fn, ntype, ParallelDoOptions.builder().build());
   }
-  
+
   <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype,
-      ParallelDoOptions options) {
+                  ParallelDoOptions options) {
+    this(name, parent, asCombineFn(fn), fn, ntype, options);
+  }
+
+  <S> DoTableImpl(final String name, final PCollectionImpl<S> parent, final DoFn<S, Pair<K, V>> combineFn,
+                  final DoFn<S, Pair<K, V>> fn, final PTableType<K, V> ntype) {
+    this(name, parent, combineFn, fn, ntype, ParallelDoOptions.builder().build());
+  }
+
+  <S> DoTableImpl(final String name, final PCollectionImpl<S> parent, final DoFn<S, Pair<K, V>> combineFn,
+                  final DoFn<S, Pair<K, V>> fn, final PTableType<K, V> ntype, final ParallelDoOptions options) {
     super(name, options);
     this.parent = parent;
+    this.combineFn = combineFn;
     this.fn = fn;
     this.type = ntype;
   }
@@ -87,8 +106,12 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
     return DoNode.createFnNode(getName(), fn, type, doOptions);
   }
 
+  public DoNode createCombineNode() {
+    return DoNode.createFnNode(getName(), combineFn, type, doOptions);
+  }
+  
   public boolean hasCombineFn() {
-    return fn instanceof CombineFn;
+    return combineFn != null;
   }
   
   @Override

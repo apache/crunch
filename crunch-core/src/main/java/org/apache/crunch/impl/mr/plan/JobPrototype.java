@@ -188,7 +188,7 @@ class JobPrototype {
       if (combineFnTable != null) {
         job.setCombinerClass(CrunchCombiner.class);
         DoNode combinerInputNode = group.createDoNode();
-        DoNode combineNode = combineFnTable.createDoNode();
+        DoNode combineNode = combineFnTable.createCombineNode();
         combineNode.addChild(group.getGroupingNode());
         combinerInputNode.addChild(combineNode);
         serialize(ImmutableList.of(combinerInputNode), conf, workingPath, NodeContext.COMBINE);

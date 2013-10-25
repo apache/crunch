@@ -35,6 +35,17 @@ public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
    * @return A {@code PTable} where each key has a single value
    */
   PTable<K, V> combineValues(CombineFn<K, V> combineFn);
+  
+  /**
+   * Combines and reduces the values of this grouping using the given {@code CombineFn} instances.
+   * 
+   * @param combineFn
+   *          The combiner function during the combine phase
+   * @param reduceFn
+   *          The combiner function during the reduce phase
+   * @return A {@code PTable} where each key has a single value
+   */
+  PTable<K, V> combineValues(CombineFn<K, V> combineFn, CombineFn<K, V> reduceFn);
 
   /**
    * Combine the values in each group using the given {@link Aggregator}.
@@ -45,6 +56,17 @@ public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
    *         more than one value.
    */
   PTable<K, V> combineValues(Aggregator<V> aggregator);
+
+  /**
+   * Combine and reduces the values in each group using the given {@link Aggregator} instances.
+   *
+   * @param combineAggregator The aggregator to use during the combine phase
+   * @param reduceAggregator The aggregator to use during the reduce phase
+   * @return A {@link PTable} where each group key maps to an aggregated
+   *         value. Group keys may be repeated if an aggregator returns
+   *         more than one value.
+   */
+  PTable<K, V> combineValues(Aggregator<V> combineAggregator, Aggregator<V> reduceAggregator);
 
   /**
    * Maps the {@code Iterable<V>} elements of each record to a new type. Just like

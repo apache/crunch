@@ -91,15 +91,25 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   public PType<Pair<K, Iterable<V>>> getPType() {
     return ptype;
   }
-
+  
+  @Override
+  public PTable<K, V> combineValues(CombineFn<K, V> combineFn, CombineFn<K, V> reduceFn) {
+      return new DoTableImpl<K, V>("combine", getChainingCollection(), combineFn, reduceFn, parent.getPTableType());
+  }
+  
   @Override
   public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
-    return new DoTableImpl<K, V>("combine", getChainingCollection(), combineFn, parent.getPTableType());
+    return combineValues(combineFn, combineFn);
   }
 
   @Override
   public PTable<K, V> combineValues(Aggregator<V> agg) {
     return combineValues(Aggregators.<K, V>toCombineFn(agg));
+  }
+
+  @Override
+  public PTable<K, V> combineValues(Aggregator<V> combineAgg, Aggregator<V> reduceAgg) {
+    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg), Aggregators.<K, V>toCombineFn(reduceAgg));
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
