@@ -285,8 +285,7 @@ public class CrunchControlledJob implements MRJob {
       }
       if (s == State.FAILED || s == State.DEPENDENT_FAILED) {
         this.state = State.DEPENDENT_FAILED;
-        this.message = "depending job " + i + " with jobID " + pred.getJobID()
-            + " failed. " + pred.getMessage();
+        this.message = "Depending job with jobID " + pred.getJobID() + " failed.";
         break;
       }
       // pred must be in success state
