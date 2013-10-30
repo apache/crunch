@@ -26,6 +26,7 @@ import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.FsInput;
 import org.apache.avro.reflect.ReflectDatumReader;
+import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,7 +62,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
     this.recordReader = new GenericDatumReader<T>(schema);
     this.mapFn = IdentityFn.<T>getInstance();
   }
-  
+
   static <T> DatumReader<T> createDatumReader(AvroType<T> avroType) {
     if (avroType.hasReflect()) {
       if (avroType.hasSpecific()) {
@@ -69,7 +70,16 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
       }
       return new ReflectDatumReader<T>(avroType.getSchema());
     } else if (avroType.hasSpecific()) {
-      return new SpecificDatumReader<T>(avroType.getSchema());
+      // Use the classloader of the avro type as the classloader
+      // for loading SpecificData classes. This is a best-effort
+      // approach to avoid running into AVRO-1240. We can't just
+      // use the SpecificDatumReader(Class) constructor because the
+      // type class here isn't necessarily a SpecificData class, it
+      // might just contain one as a subtype.
+      return new SpecificDatumReader<T>(
+                        avroType.getSchema(),
+                        avroType.getSchema(),
+                        new SpecificData(avroType.getClass().getClassLoader()));
     } else {
       return new GenericDatumReader<T>(avroType.getSchema());
     }
