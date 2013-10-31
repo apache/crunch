@@ -64,12 +64,12 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
       this.bundle.configure(conf);
     }
   }
-  
+
   @Override
   public Configuration getConf() {
     return conf;
   }
-  
+
   public int getNodeIndex() {
     return nodeIndex;
   }
@@ -92,14 +92,19 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
     return inputSplit.getLocations();
   }
 
+  @Override
+  public String toString() {
+    return String.format("CrunchInputSplit(%s)", inputSplit);
+  }
+
   public void readFields(DataInput in) throws IOException {
     nodeIndex = in.readInt();
     bundle = new FormatBundle();
     bundle.setConf(conf);
     bundle.readFields(in);
     bundle.configure(conf); // yay bootstrap!
-    Class<? extends InputSplit> inputSplitClass = (Class<? extends InputSplit>) readClass(in);
-    inputSplit = (InputSplit) ReflectionUtils.newInstance(inputSplitClass, conf);
+    Class<? extends InputSplit> inputSplitClass = readClass(in);
+    inputSplit = ReflectionUtils.newInstance(inputSplitClass, conf);
     SerializationFactory factory = new SerializationFactory(conf);
     Deserializer deserializer = factory.getDeserializer(inputSplitClass);
     deserializer.open((DataInputStream) in);
