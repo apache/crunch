@@ -67,7 +67,7 @@ import com.google.common.collect.Sets;
 public class MemPipeline implements Pipeline {
 
   private static final Log LOG = LogFactory.getLog(MemPipeline.class);
-  private static Counters COUNTERS = new Counters();
+  private static Counters COUNTERS = new CountersWrapper();
   private static final MemPipeline INSTANCE = new MemPipeline();
 
   private int outputIndex = 0;
@@ -77,7 +77,7 @@ public class MemPipeline implements Pipeline {
   }
   
   public static void clearCounters() {
-    COUNTERS = new Counters();
+    COUNTERS = new CountersWrapper();
   }
 
   public static Pipeline getInstance() {
