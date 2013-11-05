@@ -22,7 +22,11 @@ under the License.
   <parent>
     <groupId>org.apache.crunch</groupId>
     <artifactId>crunch-parent</artifactId>
+<<<<<<< HEAD
     <version>0.9.0-SNAPSHOT</version>
+=======
+    <version>0.8.0</version>
+>>>>>>> fa0851b... [maven-release-plugin] prepare release apache-crunch-0.8.0
   </parent>
 
   <artifactId>crunch-examples</artifactId>
