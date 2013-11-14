@@ -352,12 +352,6 @@ under the License.
         <artifactId>jline</artifactId>
         <version>${scala.version}</version>
       </dependency>
-
-      <dependency>
-        <groupId>org.scalatest</groupId>
-        <artifactId>scalatest_${scala.version}</artifactId>
-        <version>${scalatest.version}</version>
-      </dependency>
     </dependencies>
     
   </dependencyManagement>

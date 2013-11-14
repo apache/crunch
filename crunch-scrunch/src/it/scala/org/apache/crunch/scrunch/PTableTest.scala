@@ -27,7 +27,7 @@ import org.scalatest.junit.JUnitSuite
 /**
  * Tests functionality of Scala PTable.
  */
-class PTableTest extends CrunchTestSupport with JUnitSuite {
+class PTableTest extends CrunchSuite {
 
   /**
    * Gets a PCollection containing the lines from the tens data set.

@@ -23,7 +23,7 @@ import org.apache.crunch.test.CrunchTestSupport
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class JoinTest extends CrunchTestSupport with JUnitSuite {
+class JoinTest extends CrunchSuite {
   lazy val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
 
   def wordCount(fileName: String) = {

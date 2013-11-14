@@ -39,7 +39,7 @@ object WordCount extends PipelineApp {
   }
 }
 
-class PipelineAppTest extends CrunchTestSupport with JUnitSuite {
+class PipelineAppTest extends CrunchSuite {
   @Test def run {
     val args = new Array[String](3)
     args(0) = tempDir.copyResourceFileName("shakes.txt")

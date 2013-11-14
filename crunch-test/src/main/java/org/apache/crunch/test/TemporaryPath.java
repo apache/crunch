@@ -59,6 +59,14 @@ public final class TemporaryPath extends ExternalResource {
     }
   }
 
+  public void create() throws Throwable {
+    tmp.create();
+  }
+
+  public void delete() {
+    tmp.delete();
+  }
+
   @Override
   public Statement apply(Statement base, Description description) {
     return tmp.apply(base, description);

@@ -27,7 +27,7 @@ import org.scalatest.junit.JUnitSuite
 /**
  * Tests functionality of Scala PCollection.
  */
-class PCollectionTest extends CrunchTestSupport with JUnitSuite {
+class PCollectionTest extends CrunchSuite {
 
   // Number of lines in the Shakespeare data set.
   val linesInShakespeare: Int = 3667

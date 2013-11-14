@@ -61,7 +61,7 @@ class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Flo
   }
 }
 
-class PageRankClassTest extends CrunchTestSupport with JUnitSuite {
+class PageRankClassTest extends CrunchSuite {
 
   lazy val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
 

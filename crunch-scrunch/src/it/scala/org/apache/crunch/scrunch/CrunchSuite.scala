@@ -17,26 +17,23 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.io.{From => from, To => to}
-import org.apache.crunch.test.CrunchTestSupport
-
 import org.scalatest.junit.JUnitSuite
-import _root_.org.junit.Test
+import org.junit.{After, Before, Rule}
+import org.apache.crunch.test.TemporaryPath
 
-class WordCountTest extends CrunchSuite {
-  @Test def wordCount {
-    val pipeline = Pipeline.mapReduce[WordCountTest](tempDir.getDefaultConfiguration)
-    val input = tempDir.copyResourceFileName("shakes.txt")
-    val wordCountOut = tempDir.getFileName("output")
+class CrunchSuite extends JUnitSuite{
 
-    val fcc = pipeline.read(from.textFile(input))
-        .flatMap(_.toLowerCase.split("\\s+"))
-        .filter(!_.isEmpty()).count
-        .write(to.textFile(wordCountOut)) // Word counts
-        .map((w, c) => (w.slice(0, 1), c))
-        .groupByKey.combine(v => v.sum).materialize
-    assert(fcc.exists(_ == ("w", 1404)))
+  val tempDir = new TemporaryPath("crunch.tmp.dir", "hadoop.tmp.dir");
 
-    pipeline.done
+  def getFolder() = {
+    tempDir
+  }
+
+  @Before def initialize() {
+    tempDir.create()
+  }
+
+  @After def cleanup() {
+    tempDir.delete()
   }
 }

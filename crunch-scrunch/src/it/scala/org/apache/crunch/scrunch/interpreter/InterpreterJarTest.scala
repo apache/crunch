@@ -29,11 +29,12 @@ import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.apache.crunch.test.CrunchTestSupport
 import org.scalatest.junit.JUnitSuite
+import org.apache.crunch.scrunch.CrunchSuite
 
 /**
  * Tests creating jars from a {@link scala.tools.nsc.io.VirtualDirectory}.
  */
-class InterpreterJarTest extends CrunchTestSupport with JUnitSuite {
+class InterpreterJarTest extends CrunchSuite {
 
   /**
    * Tests transforming a virtual directory into a temporary jar file.

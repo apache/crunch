@@ -23,7 +23,7 @@ import org.apache.crunch.test.CrunchTestSupport
 import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
-class TopTest extends CrunchTestSupport with JUnitSuite {
+class TopTest extends CrunchSuite {
 
   @Test def topInMem {
     val ptable = Mem.tableOf(("foo", 17), ("bar", 29), ("baz", 1729))

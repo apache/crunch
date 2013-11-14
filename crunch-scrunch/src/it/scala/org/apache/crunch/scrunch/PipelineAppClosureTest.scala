@@ -27,7 +27,7 @@ import _root_.org.junit.Test
  * Test that verifies that a Scala PipelineApp can properly send some side data as part of a
  * function closure.
  */
-class PipelineClosureAppTest extends CrunchTestSupport with JUnitSuite {
+class PipelineClosureAppTest extends CrunchSuite {
 
   /**
    * A simple pipeline application that divides each element of a PCollection of numbers by

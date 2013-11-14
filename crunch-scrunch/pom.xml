@@ -60,11 +60,6 @@ under the License.
       <artifactId>slf4j-log4j12</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala.version}</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-test</artifactId>
       <scope>test</scope>
@@ -209,6 +204,45 @@ under the License.
         </plugins>
       </build>
     </profile>
+      <profile>
+          <id>scala-2.9.2</id>
+          <activation>
+              <activeByDefault>true</activeByDefault>
+          </activation>
+          <properties>
+              <scala.version>2.9.2</scala.version>
+              <scalatest.version>1.7.2</scalatest.version>
+          </properties>
+          <dependencies>
+              <dependency>
+                  <groupId>org.scalatest</groupId>
+                  <artifactId>scalatest_${scala.version}</artifactId>
+              </dependency>
+          </dependencies>
+          <dependencyManagement>
+              <dependencies>
+                  <dependency>
+                      <groupId>org.scalatest</groupId>
+                      <artifactId>scalatest_${scala.version}</artifactId>
+                      <version>${scalatest.version}</version>
+                  </dependency>
+              </dependencies>
+          </dependencyManagement>
+      </profile>
+    <profile>
+        <id>scala-2.10</id>
+        <properties>
+            <scala.version>2.10.2</scala.version>
+            <scalatest.version>1.9.2</scalatest.version>
+        </properties>
+        <dependencies>
+            <dependency>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest_2.10</artifactId>
+                <version>${scalatest.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </profile>
   </profiles>
-
 </project>
