@@ -24,10 +24,8 @@ import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.FileReader;
 import org.apache.avro.file.SeekableInput;
 import org.apache.avro.io.DatumReader;
-import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.mapred.FsInput;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -54,13 +52,9 @@ class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritable> {
     FileSplit split = (FileSplit) genericSplit;
     Configuration conf = context.getConfiguration();
     SeekableInput in = new FsInput(split.getPath(), conf);
-    DatumReader<T> datumReader = null;
-    if (context.getConfiguration().getBoolean(AvroJob.INPUT_IS_REFLECT, true)) {
-      ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
-      datumReader = factory.getReader(schema);
-    } else {
-      datumReader = new SpecificDatumReader<T>(schema);
-    }
+    DatumReader<T> datumReader = AvroMode
+        .fromConfiguration(context.getConfiguration())
+        .getReader(schema);
     this.reader = DataFileReader.openReader(in, datumReader);
     reader.sync(split.getStart()); // sync to start
     this.start = reader.tell();

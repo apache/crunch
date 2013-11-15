@@ -25,10 +25,9 @@ import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroOutputFormat;
 import org.apache.crunch.types.avro.AvroType;
-import org.apache.crunch.types.avro.Avros;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
@@ -72,7 +71,7 @@ public class AvroFileTarget extends FileTargetImpl {
       schemaParam = "avro.output.schema." + name;
     }
     bundle.set(schemaParam, atype.getSchema().toString());
-    Avros.configureReflectDataFactory(job.getConfiguration());
+    AvroMode.fromType(atype).configure(bundle);
     configureForMapReduce(job, AvroWrapper.class, NullWritable.class, bundle,
         outputPath, name);
   }

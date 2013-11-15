@@ -33,14 +33,11 @@ import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.mapred.Pair;
-import org.apache.avro.reflect.ReflectDatumWriter;
-import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.serializer.Deserializer;
 import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.Serializer;
-import org.apache.hadoop.util.ReflectionUtils;
 
 /** The {@link Serialization} used by jobs configured with {@link AvroJob}. */
 class SafeAvroSerialization<T> extends Configured implements Serialization<AvroWrapper<T>> {
@@ -61,11 +58,9 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
 
     DatumReader<T> datumReader = null;
     if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {
-      ReflectDataFactory factory = (ReflectDataFactory) ReflectionUtils.newInstance(
-          conf.getClass("crunch.reflectdatafactory", ReflectDataFactory.class), conf);
-      datumReader = factory.getReader(schema);
+      datumReader = AvroMode.REFLECT.getReader(schema);
     } else {
-      datumReader = new SpecificDatumReader<T>(schema);
+      datumReader = AvroMode.fromConfiguration(conf).getReader(schema);
     }
     return new AvroWrapperDeserializer(datumReader, isKey);
   }
@@ -110,8 +105,8 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
     Schema schema = isFinalOutput ? AvroJob.getOutputSchema(conf) : (AvroKey.class.isAssignableFrom(c) ? Pair
         .getKeySchema(AvroJob.getMapOutputSchema(conf)) : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
 
-    ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
-    ReflectDatumWriter<T> writer = factory.getWriter(schema);
+    ReaderWriterFactory factory = AvroMode.fromConfiguration(conf);
+    DatumWriter<T> writer = factory.getWriter(schema);
     return new AvroWrapperSerializer(writer);
   }
 

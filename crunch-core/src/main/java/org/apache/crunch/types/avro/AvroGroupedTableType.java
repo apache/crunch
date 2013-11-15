@@ -101,7 +101,7 @@ class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
       options.configure(job);
     }
 
-    Avros.configureReflectDataFactory(conf);
+    AvroMode.fromType(att).configure(conf);
 
     Collection<String> serializations = job.getConfiguration().getStringCollection(
         "io.serializations");

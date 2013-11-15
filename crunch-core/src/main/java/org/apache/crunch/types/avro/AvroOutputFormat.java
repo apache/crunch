@@ -48,8 +48,8 @@ public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWr
       schema = AvroJob.getOutputSchema(context.getConfiguration());
     }
 
-    ReflectDataFactory factory = Avros.getReflectDataFactory(conf);
-    final DataFileWriter<T> WRITER = new DataFileWriter<T>(factory.<T> getWriter(schema));
+    final DataFileWriter<T> WRITER = new DataFileWriter<T>(
+        AvroMode.fromConfiguration(conf).<T>getWriter(schema));
 
     JobConf jc = new JobConf(conf);
     /* copied from org.apache.avro.mapred.AvroOutputFormat */
