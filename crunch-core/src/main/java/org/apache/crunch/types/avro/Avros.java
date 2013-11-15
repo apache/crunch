@@ -28,14 +28,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
@@ -90,24 +90,41 @@ public class Avros {
   }
 
   /**
-   * The instance we use for generating reflected schemas. May be modified by
-   * clients (e.g., Scrunch.)
+   * The instance we use for generating reflected schemas. In releases up to
+   * 0.8.0, this may be modified by clients (e.g., Scrunch.) to override the
+   * reader, writer, and data instances used.
+   *
+   * Configuring the ReaderWriterFactory by setting this field is deprecated.
+   * Instead, use {@link AvroMode#override(ReaderWriterFactory)}.
+   *
+   * @deprecated as of 0.9.0; use AvroMode.REFLECT.override(ReaderWriterFactory)
    */
-  public static ReflectDataFactory REFLECT_DATA_FACTORY = new ReflectDataFactory();
+  public static ReflectDataFactory REFLECT_DATA_FACTORY =
+      (ReflectDataFactory) AvroMode.REFLECT.factory;
 
   /**
    * The name of the configuration parameter that tracks which reflection
    * factory to use.
+   *
+   * @deprecated as of 0.9.0; use AvroMode.REFLECT.override(ReaderWriterFactory)
    */
   public static final String REFLECT_DATA_FACTORY_CLASS = "crunch.reflectdatafactory";
 
+  /**
+   * @deprecated as of 0.9.0; use AvroMode.REFLECT.configure(Configuration)
+   */
+  @Deprecated
   public static void configureReflectDataFactory(Configuration conf) {
-    conf.setClass(REFLECT_DATA_FACTORY_CLASS, REFLECT_DATA_FACTORY.getClass(), ReflectDataFactory.class);
+    AvroMode.REFLECT.override(REFLECT_DATA_FACTORY);
+    AvroMode.REFLECT.configure(conf);
   }
 
+  /**
+   * @deprecated as of 0.9.0; use AvroMode.fromConfiguration(conf)
+   */
   public static ReflectDataFactory getReflectDataFactory(Configuration conf) {
-    return (ReflectDataFactory) ReflectionUtils.newInstance(
-        conf.getClass(REFLECT_DATA_FACTORY_CLASS, ReflectDataFactory.class), conf);
+    AvroMode.REFLECT.setFromConfiguration(conf);
+    return (ReflectDataFactory) AvroMode.REFLECT.factory;
   }
 
   public static void checkCombiningSpecificAndReflectionSchemas() {
@@ -117,8 +134,25 @@ public class Avros {
           + " Please consider turning your reflection-based type into an avro-generated"
           + " type and using that generated type instead."
           + " If the version of Avro you are using is 1.7.0 or greater, you can enable"
-          + " combined schemas by setting the Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS" + " field to 'true'.");
+          + " combined schemas by setting the Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS"
+          + " field to 'true'.");
     }
+  }
+
+  public static <T> DatumReader<T> newReader(Schema schema) {
+    return AvroMode.GENERIC.getReader(schema);
+  }
+
+  public static <T> DatumReader<T> newReader(AvroType<T> type) {
+    return AvroMode.fromType(type).getReader(type.getSchema());
+  }
+
+  public static <T> DatumWriter<T> newWriter(Schema schema) {
+    return AvroMode.GENERIC.getWriter(schema);
+  }
+
+  public static <T> DatumWriter<T> newWriter(AvroType<T> type) {
+    return AvroMode.fromType(type).getWriter(type.getSchema());
   }
 
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
@@ -236,7 +270,7 @@ public class Avros {
   }
 
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
-    Schema schema = REFLECT_DATA_FACTORY.getReflectData().getSchema(clazz);
+    Schema schema = REFLECT_DATA_FACTORY.getData().getSchema(clazz);
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
   }
 

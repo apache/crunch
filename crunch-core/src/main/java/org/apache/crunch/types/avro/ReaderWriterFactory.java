@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,35 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.crunch.types.avro;
 
 import org.apache.avro.Schema;
-import org.apache.avro.reflect.ReflectData;
-import org.apache.avro.reflect.ReflectDatumReader;
-import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.io.DatumReader;
+import org.apache.avro.io.DatumWriter;
 
 /**
- * A Factory class for constructing Avro reflection-related objects.
+ * Interface for accessing DatumReader, DatumWriter, and Data classes.
  */
-public class ReflectDataFactory implements ReaderWriterFactory {
+public interface ReaderWriterFactory {
 
-  @Override
-  public ReflectData getData() {
-    return ReflectData.AllowNull.get();
-  }
+  GenericData getData();
 
-  // for backwards-compatibility
-  public ReflectData getReflectData() {
-    return getData();
-  }
+  <D> DatumReader<D> getReader(Schema schema);
 
-  @Override
-  public <T> ReflectDatumReader<T> getReader(Schema schema) {
-    return new ReflectDatumReader<T>(schema);
-  }
+  <D> DatumWriter<D> getWriter(Schema schema);
 
-  @Override
-  public <T> ReflectDatumWriter<T> getWriter(Schema schema) {
-    return new ReflectDatumWriter<T>(schema);
-  }
 }
