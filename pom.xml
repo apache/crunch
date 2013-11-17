@@ -51,6 +51,7 @@ under the License.
     <module>crunch-examples</module>
     <module>crunch-archetype</module>
     <module>crunch-scrunch</module>
+    <module>crunch-spark</module>
     <module>crunch-dist</module>
   </modules>
 
@@ -78,13 +79,14 @@ under the License.
     <jackson.version>1.8.8</jackson.version>
     <protobuf-java.version>2.4.0a</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
-    <slf4j.version>1.4.3</slf4j.version>
+    <slf4j.version>1.6.1</slf4j.version>
     <log4j.version>1.2.15</log4j.version>
     <junit.version>4.10</junit.version>
     <hamcrest.version>1.1</hamcrest.version>
     <mockito.version>1.9.0</mockito.version>
-    <scala.version>2.9.2</scala.version>
-    <scalatest.version>1.7.2</scalatest.version>
+    <scala.version>2.9.3</scala.version>
+    <scalatest.version>1.9.1</scalatest.version>
+    <spark.version>0.8.0-incubating</spark.version>
     <pkg>org.apache.crunch</pkg>
   </properties>
 
@@ -135,6 +137,12 @@ under the License.
       <dependency>
         <groupId>org.apache.crunch</groupId>
         <artifactId>crunch-scrunch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch-spark</artifactId>
         <version>${project.version}</version>
       </dependency>
       
@@ -333,6 +341,12 @@ under the License.
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>${slf4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_${scala.version}</artifactId>
+        <version>${spark.version}</version>
       </dependency>
 
       <dependency>
@@ -647,7 +661,7 @@ under the License.
         <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <version>3.1.5</version>
+          <version>3.1.6</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
