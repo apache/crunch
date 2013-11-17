@@ -20,8 +20,8 @@ package org.apache.crunch.impl.mr.run;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.crunch.io.FormatBundle;
 import org.apache.hadoop.conf.Configurable;
@@ -98,27 +98,40 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
   }
 
   public void readFields(DataInput in) throws IOException {
+    if (conf == null) {
+      conf = new Configuration();
+    }
     nodeIndex = in.readInt();
     bundle = new FormatBundle();
     bundle.setConf(conf);
     bundle.readFields(in);
     bundle.configure(conf); // yay bootstrap!
     Class<? extends InputSplit> inputSplitClass = readClass(in);
-    inputSplit = ReflectionUtils.newInstance(inputSplitClass, conf);
-    SerializationFactory factory = new SerializationFactory(conf);
-    Deserializer deserializer = factory.getDeserializer(inputSplitClass);
-    deserializer.open((DataInputStream) in);
-    inputSplit = (InputSplit) deserializer.deserialize(inputSplit);
+    inputSplit = (InputSplit) ReflectionUtils.newInstance(inputSplitClass, conf);
+    if (inputSplit instanceof Writable) {
+      ((Writable) inputSplit).readFields(in);
+    } else {
+      SerializationFactory factory = new SerializationFactory(conf);
+      Deserializer deserializer = factory.getDeserializer(inputSplitClass);
+      deserializer.open((DataInputStream) in);
+      inputSplit = (InputSplit) deserializer.deserialize(inputSplit);
+      deserializer.close();
+    }
   }
 
   public void write(DataOutput out) throws IOException {
     out.writeInt(nodeIndex);
     bundle.write(out);
     Text.writeString(out, inputSplit.getClass().getName());
-    SerializationFactory factory = new SerializationFactory(conf);
-    Serializer serializer = factory.getSerializer(inputSplit.getClass());
-    serializer.open((DataOutputStream) out);
-    serializer.serialize(inputSplit);
+    if (inputSplit instanceof Writable) {
+      ((Writable) inputSplit).write(out);
+    } else {
+      SerializationFactory factory = new SerializationFactory(conf);
+      Serializer serializer = factory.getSerializer(inputSplit.getClass());
+      serializer.open((OutputStream) out);
+      serializer.serialize(inputSplit);
+      serializer.close();
+    }
   }
 
   private Class readClass(DataInput in) throws IOException {

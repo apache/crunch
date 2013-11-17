@@ -26,10 +26,9 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
-import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
+import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -65,17 +64,6 @@ class Edge {
     return paths;
   }
 
-  private static boolean readWriteOutput(PCollectionImpl<?> pc, Map<PCollectionImpl<?>, Set<Target>> outputs) {
-    if (outputs.containsKey(pc)) {
-      for (Target t : outputs.get(pc)) {
-        if (t instanceof SourceTarget || t.asSourceTarget(pc.getPType()) != null) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   public Map<NodePath,  PCollectionImpl> getSplitPoints(Map<PCollectionImpl<?>, Set<Target>> outputs) {
     List<NodePath> np = Lists.newArrayList(paths);
     List<PCollectionImpl<?>> smallestOverallPerPath = Lists.newArrayListWithExpectedSize(np.size());
@@ -86,7 +74,7 @@ class Edge {
       boolean breakpoint = false;
       PCollectionImpl<?> best = null;
       for (PCollectionImpl<?> pc : np.get(i)) {
-        if (!(pc instanceof PGroupedTableImpl)) {
+        if (!(pc instanceof BaseGroupedTable)) {
           if (pc.isBreakpoint()) {
             if (!breakpoint || pc.getSize() < bestSize) {
               best = pc;

@@ -17,12 +17,12 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
-import org.apache.crunch.impl.mr.collect.DoCollectionImpl;
-import org.apache.crunch.impl.mr.collect.DoTableImpl;
-import org.apache.crunch.impl.mr.collect.InputCollection;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
-import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
-import org.apache.crunch.impl.mr.collect.UnionCollection;
+import org.apache.crunch.impl.dist.collect.BaseDoCollection;
+import org.apache.crunch.impl.dist.collect.BaseDoTable;
+import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
+import org.apache.crunch.impl.dist.collect.BaseInputCollection;
+import org.apache.crunch.impl.dist.collect.BaseUnionCollection;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 
 /**
  *
@@ -44,13 +44,13 @@ class GraphBuilder implements PCollectionImpl.Visitor {
   }
   
   @Override
-  public void visitInputCollection(InputCollection<?> collection) {
+  public void visitInputCollection(BaseInputCollection<?> collection) {
     Vertex v = graph.addVertex(collection, false);
     graph.getEdge(v, workingVertex).addNodePath(workingPath.close(collection));
   }
 
   @Override
-  public void visitUnionCollection(UnionCollection<?> collection) {
+  public void visitUnionCollection(BaseUnionCollection<?> collection) {
     Vertex baseVertex = workingVertex;
     NodePath basePath = workingPath;
     for (PCollectionImpl<?> parent : collection.getParents()) {
@@ -61,19 +61,19 @@ class GraphBuilder implements PCollectionImpl.Visitor {
   }
 
   @Override
-  public void visitDoFnCollection(DoCollectionImpl<?> collection) {
+  public void visitDoCollection(BaseDoCollection<?> collection) {
     workingPath.push(collection);
     processParent(collection.getOnlyParent());
   }
 
   @Override
-  public void visitDoTable(DoTableImpl<?, ?> collection) {
+  public void visitDoTable(BaseDoTable<?, ?> collection) {
     workingPath.push(collection);
     processParent(collection.getOnlyParent());
   }
 
   @Override
-  public void visitGroupedTable(PGroupedTableImpl<?, ?> collection) {
+  public void visitGroupedTable(BaseGroupedTable<?, ?> collection) {
     Vertex v = graph.addVertex(collection, false);
     graph.getEdge(v, workingVertex).addNodePath(workingPath.close(collection));
     workingVertex = v;

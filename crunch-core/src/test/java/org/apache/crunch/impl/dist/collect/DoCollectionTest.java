@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,13 +23,13 @@ import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
-import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.junit.Test;
 
-public class DoCollectionImplTest {
+public class DoCollectionTest {
 
   @Test
   public void testGetSizeInternal_NoScaleFactor() {
@@ -49,10 +49,10 @@ public class DoCollectionImplTest {
   private void runScaleTest(long inputSize, float scaleFactor, long expectedScaledSize) {
     PCollectionImpl<String> parentCollection = new SizedPCollectionImpl("Sized collection", inputSize);
 
-    DoCollectionImpl<String> doCollectionImpl = new DoCollectionImpl<String>("Scaled collection", parentCollection,
-        new ScaledFunction(scaleFactor), Writables.strings());
+    BaseDoCollection<String> doCollection = new BaseDoCollection<String>("Scaled collection", parentCollection,
+        new ScaledFunction(scaleFactor), Writables.strings(), ParallelDoOptions.builder().build());
 
-    assertEquals(expectedScaledSize, doCollectionImpl.getSizeInternal());
+    assertEquals(expectedScaledSize, doCollection.getSizeInternal());
   }
 
   static class ScaledFunction extends DoFn<String, String> {
@@ -80,17 +80,12 @@ public class DoCollectionImplTest {
     private long internalSize;
 
     public SizedPCollectionImpl(String name, long internalSize) {
-      super(name);
+      super(name, null);
       this.internalSize = internalSize;
     }
 
     @Override
     public PType getPType() {
-      return null;
-    }
-
-    @Override
-    public DoNode createDoNode() {
       return null;
     }
 

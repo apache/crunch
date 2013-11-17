@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.util;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-class UnionReadableData<T> implements ReadableData<T> {
+public class UnionReadableData<T> implements ReadableData<T> {
 
   private final List<ReadableData<T>> data;
 

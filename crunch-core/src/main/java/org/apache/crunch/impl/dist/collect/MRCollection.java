@@ -15,15 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
-import org.apache.crunch.impl.dist.collect.BaseUnionTable;
-import org.apache.crunch.impl.dist.collect.PTableBase;
+import org.apache.crunch.impl.mr.plan.DoNode;
 
-import java.util.List;
-
-public class UnionTable<K, V> extends BaseUnionTable<K, V> {
-  UnionTable(List<PTableBase<K, V>> internal) {
-    super(internal);
-  }
+public interface MRCollection {
+  DoNode createDoNode();
 }

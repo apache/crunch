@@ -15,34 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
-import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.util.DelegatingReadableData;
 
-import com.google.common.collect.ImmutableList;
+import java.util.List;
 
-public class DoCollectionImpl<S> extends PCollectionImpl<S> {
+public class BaseDoCollection<S> extends PCollectionImpl<S> {
 
   private final PCollectionImpl<Object> parent;
-  private final DoFn<Object, S> fn;
-  private final PType<S> ntype;
+  protected final DoFn<Object, S> fn;
+  protected final PType<S> ptype;
 
-  <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn, PType<S> ntype) {
-    this(name, parent, fn, ntype, ParallelDoOptions.builder().build());
-  }
-  
-  <T> DoCollectionImpl(String name, PCollectionImpl<T> parent, DoFn<T, S> fn, PType<S> ntype,
+  protected <T> BaseDoCollection(
+      String name,
+      PCollectionImpl<T> parent,
+      DoFn<T, S> fn,
+      PType<S> ptype,
       ParallelDoOptions options) {
-    super(name, options);
+    super(name, parent.getPipeline(), options);
     this.parent = (PCollectionImpl<Object>) parent;
     this.fn = (DoFn<Object, S>) fn;
-    this.ntype = ntype;
+    this.ptype = ptype;
   }
 
   @Override
@@ -52,7 +51,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 
   @Override
   protected ReadableData<S> getReadableDataInternal() {
-    if (getOnlyParent() instanceof PGroupedTableImpl) {
+    if (getOnlyParent() instanceof BaseGroupedTable) {
       return materializedData();
     }
     return new DelegatingReadableData(getOnlyParent().asReadable(false), fn);
@@ -60,12 +59,7 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
 
   @Override
   public PType<S> getPType() {
-    return ntype;
-  }
-
-  @Override
-  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
-    visitor.visitDoFnCollection(this);
+    return ptype;
   }
 
   @Override
@@ -74,12 +68,12 @@ public class DoCollectionImpl<S> extends PCollectionImpl<S> {
   }
 
   @Override
-  public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(), fn, ntype, doOptions);
+  public long getLastModifiedAt() {
+    return parent.getLastModifiedAt();
   }
 
   @Override
-  public long getLastModifiedAt() {
-    return parent.getLastModifiedAt();
+  protected void acceptInternal(Visitor visitor) {
+    visitor.visitDoCollection(this);
   }
 }

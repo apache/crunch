@@ -101,6 +101,15 @@ public interface Pipeline {
   <T> Iterable<T> materialize(PCollection<T> pcollection);
 
   /**
+   * Caches the given PCollection so that it will be processed at most once
+   * during pipeline execution.
+   *
+   * @param pcollection The PCollection to cache
+   * @param options The options for how the cached data is stored
+   */
+  <T> void cache(PCollection<T> pcollection, CachingOptions options);
+
+  /**
    * Constructs and executes a series of MapReduce jobs in order to write data
    * to the output targets.
    */

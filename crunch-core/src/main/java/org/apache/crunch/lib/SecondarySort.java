@@ -103,6 +103,7 @@ public class SecondarySort {
     PTableType<K, Collection<Pair<V1, V2>>> out = ptf.tableOf(input.getKeyType(),
         ptf.collections(input.getValueType()));
     GroupingOptions.Builder gob = GroupingOptions.builder()
+        .requireSortedKeys()
         .groupingComparatorClass(JoinUtils.getGroupingComparator(ptf))
         .partitionerClass(JoinUtils.getPartitionerClass(ptf));
     if (numReducers > 0) {

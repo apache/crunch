@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
 import static org.apache.crunch.types.writable.Writables.strings;
 import static org.apache.crunch.types.writable.Writables.tableOf;
@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.junit.Test;
 
 public class DoTableImplTest {
@@ -51,14 +52,15 @@ public class DoTableImplTest {
 
     @SuppressWarnings("unchecked")
     PCollectionImpl<String> parentCollection = (PCollectionImpl<String>) mock(PCollectionImpl.class);
-
+    when(parentCollection.getPipeline()).thenReturn(null);
     when(parentCollection.getSize()).thenReturn(inputSize);
 
-    DoTableImpl<String, String> doTableImpl = new DoTableImpl<String, String>("Scalled table collection",
-        parentCollection, new TableScaledFunction(scaleFactor), tableOf(strings(), strings()));
+    BaseDoTable<String, String> doTable = new BaseDoTable<String, String>("Scalled table collection",
+        parentCollection, new TableScaledFunction(scaleFactor), tableOf(strings(), strings()),
+        ParallelDoOptions.builder().build());
 
-    assertEquals(expectedScaledSize, doTableImpl.getSizeInternal());
-
+    assertEquals(expectedScaledSize, doTable.getSizeInternal());
+    verify(parentCollection).getPipeline();
     verify(parentCollection).getSize();
 
     verifyNoMoreInteractions(parentCollection);

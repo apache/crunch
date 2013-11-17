@@ -28,6 +28,7 @@ import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.CachingOptions;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -303,6 +304,11 @@ public class MemPipeline implements Pipeline {
   @Override
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
     return pcollection.materialize();
+  }
+
+  @Override
+  public <T> void cache(PCollection<T> pcollection, CachingOptions options) {
+    // No-op
   }
 
   @Override

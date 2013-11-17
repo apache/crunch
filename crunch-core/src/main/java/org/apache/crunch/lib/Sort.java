@@ -240,6 +240,7 @@ public class Sort {
     } else if (tf == AvroTypeFamily.getInstance()) {
       builder.conf("crunch.schema", ((AvroType<K>) ptype).getSchema().toString());
     }
+    builder.requireSortedKeys();
     configureReducers(builder, ptable, conf, numReducers);
     return builder.build();
   }
@@ -270,6 +271,7 @@ public class Sort {
     } else {
       throw new RuntimeException("Unrecognized type family: " + tf);
     }
+    builder.requireSortedKeys();
     configureReducers(builder, ptable, conf, numReducers);
     return builder.build();
   }

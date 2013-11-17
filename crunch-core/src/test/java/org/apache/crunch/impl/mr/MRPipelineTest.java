@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 
 import org.apache.crunch.SourceTarget;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.types.avro.Avros;

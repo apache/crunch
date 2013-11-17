@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.util;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.ReadableData;
@@ -31,7 +31,7 @@ import java.util.Set;
  * Implements the {@code ReadableData<T>} interface by delegating to an {@code ReadableData<S>} instance
  * and passing its contents through a {@code DoFn<S, T>}.
  */
-class DelegatingReadableData<S, T> implements ReadableData<T> {
+public class DelegatingReadableData<S, T> implements ReadableData<T> {
 
   private final ReadableData<S> delegate;
   private final DoFn<S, T> fn;

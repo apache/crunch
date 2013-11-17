@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.crunch.Pair;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

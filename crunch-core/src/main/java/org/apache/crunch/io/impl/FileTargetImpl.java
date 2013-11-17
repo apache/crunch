@@ -144,7 +144,11 @@ public class FileTargetImpl implements PathTarget {
   }
   
   protected Path getSourcePattern(Path workingPath, int index) {
-    return new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index + "-*");
+    if (index < 0) {
+      return new Path(workingPath, "part-*");
+    } else {
+      return new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index + "-*");
+    }
   }
   
   @Override

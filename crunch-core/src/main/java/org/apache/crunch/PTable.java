@@ -80,6 +80,10 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    */
   PTable<K, V> write(Target target, Target.WriteMode writeMode);
 
+  PTable<K, V> cache();
+
+  PTable<K, V> cache(CachingOptions options);
+
   /**
    * Returns the {@code PTableType} of this {@code PTable}.
    */

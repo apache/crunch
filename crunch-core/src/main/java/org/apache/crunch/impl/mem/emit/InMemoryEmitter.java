@@ -48,7 +48,7 @@ public class InMemoryEmitter<T> implements Emitter<T> {
 
   @Override
   public void flush() {
-
+    output.clear();
   }
 
   public List<T> getOutput() {

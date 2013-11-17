@@ -17,51 +17,22 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
-import java.util.List;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.crunch.Aggregator;
-import org.apache.crunch.CombineFn;
-import org.apache.crunch.DoFn;
-import org.apache.crunch.Emitter;
 import org.apache.crunch.GroupingOptions;
-import org.apache.crunch.MapFn;
-import org.apache.crunch.PGroupedTable;
-import org.apache.crunch.PTable;
-import org.apache.crunch.Pair;
-import org.apache.crunch.ReadableData;
-import org.apache.crunch.SourceTarget;
-import org.apache.crunch.fn.Aggregators;
+import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
+import org.apache.crunch.impl.dist.collect.MRCollection;
+import org.apache.crunch.impl.dist.collect.PTableBase;
 import org.apache.crunch.impl.mr.plan.DoNode;
-import org.apache.crunch.lib.PTables;
-import org.apache.crunch.types.PGroupedTableType;
-import org.apache.crunch.types.PType;
 import org.apache.crunch.util.PartitionUtils;
 import org.apache.hadoop.mapreduce.Job;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
-public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>>> implements PGroupedTable<K, V> {
+public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements MRCollection {
 
   private static final Log LOG = LogFactory.getLog(PGroupedTableImpl.class);
 
-  private final PTableBase<K, V> parent;
-  private final GroupingOptions groupingOptions;
-  private final PGroupedTableType<K, V> ptype;
-  
-  PGroupedTableImpl(PTableBase<K, V> parent) {
-    this(parent, null);
-  }
-
   PGroupedTableImpl(PTableBase<K, V> parent, GroupingOptions groupingOptions) {
-    super("GBK");
-    this.parent = parent;
-    this.groupingOptions = groupingOptions;
-    this.ptype = parent.getPTableType().getGroupedTableType();
+    super(parent, groupingOptions);
   }
 
   public void configureShuffle(Job job) {
@@ -78,86 +49,8 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
   }
 
   @Override
-  protected ReadableData<Pair<K, Iterable<V>>> getReadableDataInternal() {
-    throw new UnsupportedOperationException("PGroupedTable does not currently support readability");
-  }
-
-  @Override
-  protected long getSizeInternal() {
-    return parent.getSizeInternal();
-  }
-
-  @Override
-  public PType<Pair<K, Iterable<V>>> getPType() {
-    return ptype;
-  }
-  
-  @Override
-  public PTable<K, V> combineValues(CombineFn<K, V> combineFn, CombineFn<K, V> reduceFn) {
-      return new DoTableImpl<K, V>("combine", getChainingCollection(), combineFn, reduceFn, parent.getPTableType());
-  }
-  
-  @Override
-  public PTable<K, V> combineValues(CombineFn<K, V> combineFn) {
-    return combineValues(combineFn, combineFn);
-  }
-
-  @Override
-  public PTable<K, V> combineValues(Aggregator<V> agg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(agg));
-  }
-
-  @Override
-  public PTable<K, V> combineValues(Aggregator<V> combineAgg, Aggregator<V> reduceAgg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg), Aggregators.<K, V>toCombineFn(reduceAgg));
-  }
-
-  private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
-    @Override
-    public void process(Pair<K, Iterable<V>> input, Emitter<Pair<K, V>> emitter) {
-      for (V v : input.second()) {
-        emitter.emit(Pair.of(input.first(), v));
-      }
-    }
-  }
-
-  @Override
-  public PTable<K, V> ungroup() {
-    return parallelDo("ungroup", new Ungroup<K, V>(), parent.getPTableType());
-  }
-
-  @Override
-  public <U> PTable<K, U> mapValues(MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
-    return PTables.mapValues(this, mapFn, ptype);
-  }
-  
-  @Override
-  public <U> PTable<K, U> mapValues(String name, MapFn<Iterable<V>, U> mapFn, PType<U> ptype) {
-    return PTables.mapValues(name, this, mapFn, ptype);
-  }
-  
-  @Override
-  public PGroupedTableType<K, V> getGroupedTableType() {
-    return ptype;
-  }
-  
-  @Override
-  protected void acceptInternal(Visitor visitor) {
+  public void accept(Visitor visitor) {
     visitor.visitGroupedTable(this);
-  }
-
-  @Override
-  public Set<SourceTarget<?>> getTargetDependencies() {
-    Set<SourceTarget<?>> td = Sets.newHashSet(super.getTargetDependencies());
-    if (groupingOptions != null) {
-      td.addAll(groupingOptions.getSourceTargets());
-    }
-    return ImmutableSet.copyOf(td);
-  }
-  
-  @Override
-  public List<PCollectionImpl<?>> getParents() {
-    return ImmutableList.<PCollectionImpl<?>> of(parent);
   }
 
   @Override
@@ -167,17 +60,5 @@ public class PGroupedTableImpl<K, V> extends PCollectionImpl<Pair<K, Iterable<V>
 
   public DoNode getGroupingNode() {
     return DoNode.createGroupingNode("", ptype);
-  }
-  
-  @Override
-  public long getLastModifiedAt() {
-    return parent.getLastModifiedAt();
-  }
-  
-  @Override
-  protected PCollectionImpl<Pair<K, Iterable<V>>> getChainingCollection() {
-    // Use a copy for chaining to allow sending the output of a single grouped table to multiple outputs
-    // TODO This should be implemented in a cleaner way in the planner
-    return new PGroupedTableImpl<K, V>(parent, groupingOptions);
   }
 }

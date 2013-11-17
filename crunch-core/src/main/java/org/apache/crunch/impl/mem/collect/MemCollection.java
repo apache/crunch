@@ -25,6 +25,7 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 
+import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
@@ -158,6 +159,18 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public Iterable<S> materialize() {
     return collect;
+  }
+
+  @Override
+  public PCollection<S> cache() {
+    // No-op
+    return this;
+  }
+
+  @Override
+  public PCollection<S> cache(CachingOptions options) {
+    // No-op
+    return this;
   }
 
   /** {@inheritDoc} */

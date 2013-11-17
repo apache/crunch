@@ -15,15 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
@@ -32,14 +28,12 @@ import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
-import org.apache.crunch.Pipeline;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.fn.IdentityFn;
-import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.impl.mr.plan.DoNode;
+import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
@@ -47,27 +41,28 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public abstract class PCollectionImpl<S> implements PCollection<S> {
 
-  private static final Log LOG = LogFactory.getLog(PCollectionImpl.class);
-
   private final String name;
-  protected MRPipeline pipeline;
+  protected DistributedPipeline pipeline;
   private boolean materialized;
   protected SourceTarget<S> materializedAt;
   protected final ParallelDoOptions doOptions;
   private long size = -1L;
   private boolean breakpoint;
 
-  public PCollectionImpl(String name) {
-    this(name, ParallelDoOptions.builder().build());
+  public PCollectionImpl(String name, DistributedPipeline pipeline) {
+    this(name, pipeline, ParallelDoOptions.builder().build());
   }
   
-  public PCollectionImpl(String name, ParallelDoOptions doOptions) {
+  public PCollectionImpl(String name, DistributedPipeline pipeline, ParallelDoOptions doOptions) {
     this.name = name;
+    this.pipeline = pipeline;
     this.doOptions = doOptions;
   }
 
@@ -77,8 +72,38 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   @Override
+  public DistributedPipeline getPipeline() {
+    return pipeline;
+  }
+
+  public ParallelDoOptions getParallelDoOptions() {
+    return doOptions;
+  }
+
+  @Override
   public String toString() {
     return getName();
+  }
+
+  @Override
+  public Iterable<S> materialize() {
+    if (getSize() == 0) {
+      System.err.println("Materializing an empty PCollection: " + this.getName());
+      return Collections.emptyList();
+    }
+    materialized = true;
+    return pipeline.materialize(this);
+  }
+
+  @Override
+  public PCollection<S> cache() {
+    return cache(CachingOptions.DEFAULT);
+  }
+
+  @Override
+  public PCollection<S> cache(CachingOptions options) {
+    pipeline.cache(this, options);
+    return this;
   }
 
   @Override
@@ -93,46 +118,44 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     for (PCollection<S> collection : collections) {
       internal.add((PCollectionImpl<S>) collection.parallelDo(IdentityFn.<S>getInstance(), collection.getPType()));
     }
-    return new UnionCollection<S>(internal);
+    return pipeline.getFactory().createUnionCollection(internal);
   }
 
   @Override
   public <T> PCollection<T> parallelDo(DoFn<S, T> fn, PType<T> type) {
-    MRPipeline pipeline = (MRPipeline) getPipeline();
     return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
   }
 
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type) {
-    return new DoCollectionImpl<T>(name, getChainingCollection(), fn, type);
+    return parallelDo(name, fn, type, ParallelDoOptions.builder().build());
   }
-  
+
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> fn, PType<T> type,
       ParallelDoOptions options) {
-    return new DoCollectionImpl<T>(name, getChainingCollection(), fn, type, options);
+    return pipeline.getFactory().createDoCollection(name, getChainingCollection(), fn, type, options);
   }
-  
+
   @Override
   public <K, V> PTable<K, V> parallelDo(DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
-    MRPipeline pipeline = (MRPipeline) getPipeline();
     return parallelDo("S" + pipeline.getNextAnonymousStageId(), fn, type);
   }
 
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
-    return new DoTableImpl<K, V>(name, getChainingCollection(), fn, type);
+    return parallelDo(name, fn, type, ParallelDoOptions.builder().build());
   }
 
   @Override
   public <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> fn, PTableType<K, V> type,
       ParallelDoOptions options) {
-    return new DoTableImpl<K, V>(name, getChainingCollection(), fn, type, options);
+    return pipeline.getFactory().createDoTable(name, getChainingCollection(), fn, type, options);
   }
 
   public PCollection<S> write(Target target) {
     if (materializedAt != null) {
-      getPipeline().write(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()), target);
+      getPipeline().write(pipeline.getFactory().createInputCollection(materializedAt, pipeline), target);
     } else {
       getPipeline().write(this, target);
     }
@@ -142,23 +165,37 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public PCollection<S> write(Target target, Target.WriteMode writeMode) {
     if (materializedAt != null) {
-      getPipeline().write(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()), target,
+      getPipeline().write(
+          pipeline.getFactory().createInputCollection(materializedAt, pipeline),
+          target,
           writeMode);
     } else {
       getPipeline().write(this, target, writeMode);
     }
     return this;
   }
-  
-  @Override
-  public Iterable<S> materialize() {
-    if (getSize() == 0) {
-      LOG.warn("Materializing an empty PCollection: " + this.getName());
-      return Collections.emptyList();
-    }
-    materialized = true;
-    return getPipeline().materialize(this);
+
+  public interface Visitor {
+    void visitInputCollection(BaseInputCollection<?> collection);
+
+    void visitUnionCollection(BaseUnionCollection<?> collection);
+
+    void visitDoCollection(BaseDoCollection<?> collection);
+
+    void visitDoTable(BaseDoTable<?, ?> collection);
+
+    void visitGroupedTable(BaseGroupedTable<?, ?> collection);
   }
+
+  public void accept(Visitor visitor) {
+    if (materializedAt != null) {
+      visitor.visitInputCollection(pipeline.getFactory().createInputCollection(materializedAt, pipeline));
+    } else {
+      acceptInternal(visitor);
+    }
+  }
+
+  protected abstract void acceptInternal(Visitor visitor);
 
   public void setBreakpoint() {
     this.breakpoint = true;
@@ -228,8 +265,6 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return getPType().getFamily();
   }
 
-  public abstract DoNode createDoNode();
-
   public abstract List<PCollectionImpl<?>> getParents();
 
   public PCollectionImpl<?> getOnlyParent() {
@@ -240,18 +275,6 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return parents.get(0);
   }
 
-  @Override
-  public Pipeline getPipeline() {
-    if (pipeline == null) {
-      pipeline = (MRPipeline) getParents().get(0).getPipeline();
-    }
-    return pipeline;
-  }
-
-  public ParallelDoOptions getParallelDoOptions() {
-    return doOptions;
-  }
-
   public Set<SourceTarget<?>> getTargetDependencies() {
     Set<SourceTarget<?>> targetDeps = doOptions.getSourceTargets();
     for (PCollectionImpl<?> parent : getParents()) {
@@ -259,7 +282,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     }
     return targetDeps;
   }
-  
+
   public int getDepth() {
     int parentMax = 0;
     for (PCollectionImpl parent : getParents()) {
@@ -268,34 +291,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return 1 + parentMax;
   }
 
-  public interface Visitor {
-    void visitInputCollection(InputCollection<?> collection);
-
-    void visitUnionCollection(UnionCollection<?> collection);
-
-    void visitDoFnCollection(DoCollectionImpl<?> collection);
-
-    void visitDoTable(DoTableImpl<?, ?> collection);
-
-    void visitGroupedTable(PGroupedTableImpl<?, ?> collection);
-  }
-
-  public void accept(Visitor visitor) {
-    if (materializedAt != null) {
-      visitor.visitInputCollection(new InputCollection<S>(materializedAt, (MRPipeline) getPipeline()));
-    } else {
-      acceptInternal(visitor);
-    }
-  }
-
-  protected abstract void acceptInternal(Visitor visitor);
-
   @Override
   public ReadableData<S> asReadable(boolean materialize) {
     if (materializedAt != null && (materializedAt instanceof ReadableSource)) {
       return ((ReadableSource) materializedAt).asReadable();
     } else if (materialized || materialize) {
-      return ((MRPipeline) getPipeline()).getMaterializeSourceTarget(this).asReadable();
+      return pipeline.getMaterializeSourceTarget(this).asReadable();
     } else {
       return getReadableDataInternal();
     }
@@ -324,7 +325,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
    * Retrieve the PCollectionImpl to be used for chaining within PCollectionImpls further down the pipeline.
    * @return The PCollectionImpl instance to be chained
    */
-  protected PCollectionImpl<S> getChainingCollection(){
+  protected PCollectionImpl<S> getChainingCollection() {
     return this;
   }
   

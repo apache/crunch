@@ -160,6 +160,23 @@ public interface PCollection<S> {
   Iterable<S> materialize();
 
   /**
+   * Marks this data as cached using the default {@link CachingOptions}. Cached {@code PCollection}s will only
+   * be processed once, and then their contents will be saved so that downstream code can process them many times.
+   *
+   * @return this {@code PCollection} instance
+   */
+  PCollection<S> cache();
+
+  /**
+   * Marks this data as cached using the given {@code CachingOptions}. Cached {@code PCollection}s will only
+   * be processed once and then their contents will be saved so that downstream code can process them many times.
+   *
+   * @param options the options that control the cache settings for the data
+   * @return this {@code PCollection} instance
+   */
+  PCollection<S> cache(CachingOptions options);
+
+  /**
    * @return A {@code PObject} encapsulating an in-memory {@link Collection} containing the values
    * of this {@code PCollection}.
    */

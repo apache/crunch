@@ -23,9 +23,9 @@ import java.util.Set;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.crunch.Source;
-import org.apache.crunch.impl.mr.collect.InputCollection;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
-import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
+import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
+import org.apache.crunch.impl.dist.collect.BaseInputCollection;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -51,11 +51,11 @@ class Vertex {
   }
   
   public boolean isInput() {
-    return impl instanceof InputCollection;
+    return impl instanceof BaseInputCollection;
   }
   
   public boolean isGBK() {
-    return impl instanceof PGroupedTableImpl;
+    return impl instanceof BaseGroupedTable;
   }
   
   public void setOutput() {
@@ -68,7 +68,7 @@ class Vertex {
   
   public Source getSource() {
     if (isInput()) {
-      return ((InputCollection) impl).getSource();
+      return ((BaseInputCollection) impl).getSource();
     }
     return null;
   }
@@ -90,10 +90,6 @@ class Vertex {
       n.add(e.getTail());
     }
     return n;
-  }
-  
-  public Set<Edge> getAllEdges() {
-    return Sets.union(incoming, outgoing);
   }
   
   public Set<Edge> getIncomingEdges() {

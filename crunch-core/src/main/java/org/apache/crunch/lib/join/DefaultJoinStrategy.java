@@ -99,6 +99,7 @@ public class DefaultJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
         }, ptt);
 
     GroupingOptions.Builder optionsBuilder = GroupingOptions.builder();
+    optionsBuilder.requireSortedKeys();
     optionsBuilder.partitionerClass(JoinUtils.getPartitionerClass(ptf));
     if (numReducers > 0) {
       optionsBuilder.numReducers(numReducers);

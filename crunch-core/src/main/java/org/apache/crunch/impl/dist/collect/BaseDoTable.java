@@ -15,53 +15,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
-import java.util.List;
-
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
-import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.util.DelegatingReadableData;
 
-import com.google.common.collect.ImmutableList;
+import java.util.List;
 
-public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> {
+public class BaseDoTable<K, V> extends PTableBase<K, V> implements PTable<K, V> {
 
   private final PCollectionImpl<?> parent;
-  private final DoFn<?, Pair<K, V>> combineFn;
-  private final DoFn<?, Pair<K, V>> fn;
-  private final PTableType<K, V> type;
+  protected final DoFn<?, Pair<K, V>> combineFn;
+  protected final DoFn<?, Pair<K, V>> fn;
+  protected final PTableType<K, V> type;
 
-  private static <S, K, V> DoFn<S, Pair<K, V>> asCombineFn(final DoFn<S, Pair<K, V>> fn) {
+  private static <S, K, V> CombineFn<K, V> asCombineFn(final DoFn<S, Pair<K, V>> fn) {
     if (fn instanceof CombineFn) {
-      return fn;
+      return (CombineFn) fn;
     }
     return null;
   }
 
-  <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype) {
-    this(name, parent, fn, ntype, ParallelDoOptions.builder().build());
-  }
-
-  <S> DoTableImpl(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype,
-                  ParallelDoOptions options) {
+  protected <S> BaseDoTable(String name, PCollectionImpl<S> parent, DoFn<S, Pair<K, V>> fn, PTableType<K, V> ntype,
+                            ParallelDoOptions options) {
     this(name, parent, asCombineFn(fn), fn, ntype, options);
   }
 
-  <S> DoTableImpl(final String name, final PCollectionImpl<S> parent, final DoFn<S, Pair<K, V>> combineFn,
-                  final DoFn<S, Pair<K, V>> fn, final PTableType<K, V> ntype) {
+  protected <S> BaseDoTable(
+      String name,
+      PCollectionImpl<S> parent,
+      CombineFn<K, V> combineFn,
+      DoFn<S, Pair<K, V>> fn,
+      PTableType<K, V> ntype) {
     this(name, parent, combineFn, fn, ntype, ParallelDoOptions.builder().build());
   }
 
-  <S> DoTableImpl(final String name, final PCollectionImpl<S> parent, final DoFn<S, Pair<K, V>> combineFn,
-                  final DoFn<S, Pair<K, V>> fn, final PTableType<K, V> ntype, final ParallelDoOptions options) {
-    super(name, options);
+  protected <S> BaseDoTable(
+      String name,
+      PCollectionImpl<S> parent,
+      CombineFn<K, V> combineFn,
+      DoFn<S, Pair<K, V>> fn,
+      PTableType<K, V> ntype,
+      ParallelDoOptions options) {
+    super(name, parent.getPipeline(), options);
     this.parent = parent;
     this.combineFn = combineFn;
     this.fn = fn;
@@ -80,15 +84,10 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
 
   @Override
   protected ReadableData<Pair<K, V>> getReadableDataInternal() {
-    if (getOnlyParent() instanceof PGroupedTableImpl) {
+    if (getOnlyParent() instanceof BaseGroupedTable) {
       return materializedData();
     }
     return new DelegatingReadableData(getOnlyParent().asReadable(false), fn);
-  }
-
-  @Override
-  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
-    visitor.visitDoTable(this);
   }
 
   @Override
@@ -102,20 +101,12 @@ public class DoTableImpl<K, V> extends PTableBase<K, V> implements PTable<K, V> 
   }
 
   @Override
-  public DoNode createDoNode() {
-    return DoNode.createFnNode(getName(), fn, type, doOptions);
-  }
-
-  public DoNode createCombineNode() {
-    return DoNode.createFnNode(getName(), combineFn, type, doOptions);
-  }
-  
-  public boolean hasCombineFn() {
-    return combineFn != null;
-  }
-  
-  @Override
   public long getLastModifiedAt() {
     return parent.getLastModifiedAt();
+  }
+
+  @Override
+  protected void acceptInternal(Visitor visitor) {
+    visitor.visitDoTable(this);
   }
 }

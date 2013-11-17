@@ -26,8 +26,9 @@ import java.util.Set;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
-import org.apache.crunch.impl.mr.collect.DoTableImpl;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
+import org.apache.crunch.impl.mr.collect.DoTable;
+import org.apache.crunch.impl.dist.collect.MRCollection;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.exec.CrunchJobHooks;
 import org.apache.crunch.impl.mr.run.CrunchCombiner;
@@ -69,7 +70,7 @@ class JobPrototype {
 
   private HashMultimap<Target, NodePath> mapSideNodePaths;
   private HashMultimap<Target, NodePath> targetsToNodePaths;
-  private DoTableImpl<?, ?> combineFnTable;
+  private DoTable<?, ?> combineFnTable;
 
   private CrunchControlledJob job;
 
@@ -200,7 +201,7 @@ class JobPrototype {
       Set<DoNode> mapNodes = Sets.newHashSet(mapSideNodes);
       for (NodePath nodePath : mapNodePaths) {
         // Advance these one step, since we've already configured
-        // the grouping node, and the PGroupedTableImpl is the tail
+        // the grouping node, and the BaseGroupedTable is the tail
         // of the NodePath.
         Iterator<PCollectionImpl<?>> iter = nodePath.descendingIterator();
         iter.next();
@@ -256,11 +257,11 @@ class JobPrototype {
       PCollectionImpl<?> collect = iter.next();
       if (combineFnTable != null && !(collect instanceof PGroupedTableImpl)) {
         combineFnTable = null;
-      } else if (collect instanceof DoTableImpl && ((DoTableImpl<?, ?>) collect).hasCombineFn()) {
-        combineFnTable = (DoTableImpl<?, ?>) collect;
+      } else if (collect instanceof DoTable && ((DoTable<?, ?>) collect).hasCombineFn()) {
+        combineFnTable = (DoTable<?, ?>) collect;
       }
       if (!nodes.containsKey(collect)) {
-        nodes.put(collect, collect.createDoNode());
+        nodes.put(collect, ((MRCollection) collect).createDoNode());
       }
       DoNode parent = nodes.get(collect);
       parent.addChild(working);

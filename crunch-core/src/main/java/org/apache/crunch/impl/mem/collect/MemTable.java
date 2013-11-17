@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.crunch.CachingOptions;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
@@ -97,7 +98,19 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
     getPipeline().write(this, target, writeMode);
     return this;
   }
-  
+
+  @Override
+  public PTable<K, V> cache() {
+    // No-op
+    return this;
+  }
+
+  @Override
+  public PTable<K, V> cache(CachingOptions options) {
+    // No-op
+    return this;
+  }
+
   @Override
   public PTableType<K, V> getPTableType() {
     return ptype;

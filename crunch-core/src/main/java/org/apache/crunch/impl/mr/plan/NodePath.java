@@ -20,7 +20,7 @@ package org.apache.crunch.impl.mr.plan;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 
 import com.google.common.collect.Lists;
 
@@ -41,7 +41,7 @@ class NodePath implements Iterable<PCollectionImpl<?>> {
   }
 
   public void push(PCollectionImpl<?> stage) {
-    this.path.push((PCollectionImpl<?>) stage);
+    this.path.push(stage);
   }
 
   public NodePath close(PCollectionImpl<?> head) {

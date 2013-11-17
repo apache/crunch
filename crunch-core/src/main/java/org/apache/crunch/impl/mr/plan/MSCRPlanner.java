@@ -26,9 +26,9 @@ import java.util.TreeMap;
 
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
+import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.collect.InputCollection;
-import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.materialize.MaterializableIterable;
@@ -57,7 +57,7 @@ public class MSCRPlanner {
 
   // Used to ensure that we always build pipelines starting from the deepest
   // outputs, which helps ensure that we handle intermediate outputs correctly.
-  private static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
+  static final Comparator<PCollectionImpl<?>> DEPTH_COMPARATOR = new Comparator<PCollectionImpl<?>>() {
     @Override
     public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
       int cmp = right.getDepth() - left.getDepth();

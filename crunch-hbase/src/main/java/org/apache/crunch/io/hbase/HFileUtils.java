@@ -32,7 +32,7 @@ import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
-import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.lib.sort.TotalOrderPartitioner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -389,7 +389,7 @@ public final class HFileUtils {
       }
     }, tableOf(writables(KeyValue.class), nulls()));
     List <KeyValue> splitPoints = getSplitPoints(table);
-    Path partitionFile = new Path(((MRPipeline) kvs.getPipeline()).createTempPath(), "partition");
+    Path partitionFile = new Path(((DistributedPipeline) kvs.getPipeline()).createTempPath(), "partition");
     writePartitionInfo(conf, partitionFile, splitPoints);
     GroupingOptions options = GroupingOptions.builder()
         .partitionerClass(TotalOrderPartitioner.class)

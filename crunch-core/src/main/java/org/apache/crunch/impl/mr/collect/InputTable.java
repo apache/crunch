@@ -17,82 +17,20 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
-import java.util.List;
-
-import org.apache.crunch.Pair;
-import org.apache.crunch.ReadableData;
 import org.apache.crunch.TableSource;
+import org.apache.crunch.impl.dist.collect.BaseInputTable;
+import org.apache.crunch.impl.dist.collect.MRCollection;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
-import org.apache.crunch.types.PTableType;
-import org.apache.crunch.types.PType;
 
-import com.google.common.collect.ImmutableList;
-
-public class InputTable<K, V> extends PTableBase<K, V> {
-
-  private final TableSource<K, V> source;
-  private final InputCollection<Pair<K, V>> asCollection;
+public class InputTable<K, V> extends BaseInputTable<K, V> implements MRCollection {
 
   public InputTable(TableSource<K, V> source, MRPipeline pipeline) {
-    super(source.toString());
-    this.source = source;
-    this.pipeline = pipeline;
-    this.asCollection = new InputCollection<Pair<K, V>>(source, pipeline);
-  }
-
-  public TableSource<K, V> getSource() {
-    return source;
-  }
-  
-  @Override
-  protected long getSizeInternal() {
-    return asCollection.getSizeInternal();
-  }
-
-  @Override
-  public PTableType<K, V> getPTableType() {
-    return source.getTableType();
-  }
-
-
-  @Override
-  public PType<Pair<K, V>> getPType() {
-    return source.getType();
-  }
-
-  @Override
-  public List<PCollectionImpl<?>> getParents() {
-    return ImmutableList.of();
-  }
-
-  @Override
-  protected void acceptInternal(PCollectionImpl.Visitor visitor) {
-    visitor.visitInputCollection(asCollection);
-  }
-
-  @Override
-  protected ReadableData<Pair<K, V>> getReadableDataInternal() {
-    return asCollection.getReadableDataInternal();
+    super(source, pipeline);
   }
 
   @Override
   public DoNode createDoNode() {
     return DoNode.createInputNode(source);
-  }
-
-  @Override
-  public long getLastModifiedAt() {
-    return source.getLastModifiedAt(pipeline.getConfiguration());
-  }
-  
-  @Override
-  public int hashCode() {
-    return asCollection.hashCode();
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    return asCollection.equals(other);
   }
 }

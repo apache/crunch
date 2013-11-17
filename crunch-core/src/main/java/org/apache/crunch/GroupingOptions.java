@@ -17,6 +17,7 @@
  */
 package org.apache.crunch;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -35,21 +36,25 @@ import com.google.common.collect.Sets;
  * keys is performed.
  * 
  */
-public class GroupingOptions {
+public class GroupingOptions implements Serializable {
 
   private final Class<? extends Partitioner> partitionerClass;
   private final Class<? extends RawComparator> groupingComparatorClass;
   private final Class<? extends RawComparator> sortComparatorClass;
+  private final boolean requireSortedKeys;
   private final int numReducers;
   private final Map<String, String> extraConf;
-  private final Set<SourceTarget<?>> sourceTargets;
+  private transient Set<SourceTarget<?>> sourceTargets;
   
   private GroupingOptions(Class<? extends Partitioner> partitionerClass,
       Class<? extends RawComparator> groupingComparatorClass, Class<? extends RawComparator> sortComparatorClass,
-      int numReducers, Map<String, String> extraConf, Set<SourceTarget<?>> sourceTargets) {
+      boolean requireSortedKeys, int numReducers,
+      Map<String, String> extraConf,
+      Set<SourceTarget<?>> sourceTargets) {
     this.partitionerClass = partitionerClass;
     this.groupingComparatorClass = groupingComparatorClass;
     this.sortComparatorClass = sortComparatorClass;
+    this.requireSortedKeys = requireSortedKeys;
     this.numReducers = numReducers;
     this.extraConf = extraConf;
     this.sourceTargets = sourceTargets;
@@ -57,6 +62,10 @@ public class GroupingOptions {
 
   public int getNumReducers() {
     return numReducers;
+  }
+
+  public boolean requireSortedKeys() {
+    return requireSortedKeys;
   }
 
   public Class<? extends RawComparator> getSortComparatorClass() {
@@ -121,6 +130,7 @@ public class GroupingOptions {
     private Class<? extends Partitioner> partitionerClass;
     private Class<? extends RawComparator> groupingComparatorClass;
     private Class<? extends RawComparator> sortComparatorClass;
+    private boolean requireSortedKeys;
     private int numReducers;
     private Map<String, String> extraConf = Maps.newHashMap();
     private Set<SourceTarget<?>> sourceTargets = Sets.newHashSet();
@@ -140,6 +150,11 @@ public class GroupingOptions {
 
     public Builder sortComparatorClass(Class<? extends RawComparator> sortComparatorClass) {
       this.sortComparatorClass = sortComparatorClass;
+      return this;
+    }
+
+    public Builder requireSortedKeys() {
+      requireSortedKeys = true;
       return this;
     }
 
@@ -174,7 +189,7 @@ public class GroupingOptions {
 
     public GroupingOptions build() {
       return new GroupingOptions(partitionerClass, groupingComparatorClass, sortComparatorClass,
-          numReducers, extraConf, sourceTargets);
+          requireSortedKeys, numReducers, extraConf, sourceTargets);
     }
   }
 }

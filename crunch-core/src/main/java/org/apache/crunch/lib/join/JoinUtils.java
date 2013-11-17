@@ -91,10 +91,17 @@ public class JoinUtils {
     }
   }
 
-  public static class AvroIndexedRecordPartitioner<K, V> extends Partitioner<AvroKey<K>, AvroValue<V>> {
+  public static class AvroIndexedRecordPartitioner extends Partitioner<Object, Object> {
     @Override
-    public int getPartition(AvroKey<K> key, AvroValue<V> value, int numPartitions) {
-      IndexedRecord record = (IndexedRecord) key.datum();
+    public int getPartition(Object key, Object value, int numPartitions) {
+      IndexedRecord record;
+      if (key instanceof AvroWrapper) {
+        record = (IndexedRecord) ((AvroWrapper) key).datum();
+      } else if (key instanceof IndexedRecord) {
+        record = (IndexedRecord) key;
+      } else {
+        throw new UnsupportedOperationException("Unknown avro key type: " + key);
+      }
       return (Math.abs(record.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }
   }

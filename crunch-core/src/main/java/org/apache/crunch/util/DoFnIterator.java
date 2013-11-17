@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.util;
 
 import com.google.common.collect.Lists;
 import org.apache.crunch.DoFn;
@@ -33,7 +33,7 @@ import java.util.LinkedList;
  * @param <S> The type of the delegate iterator
  * @param <T> The returned type
  */
-class DoFnIterator<S, T> implements Iterator<T> {
+public class DoFnIterator<S, T> implements Iterator<T> {
 
   private final Iterator<S> iter;
   private final DoFn<S, T> fn;

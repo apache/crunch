@@ -19,10 +19,12 @@ package org.apache.crunch;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
+import java.io.Serializable;
+
 /**
  * A convenience class for two-element {@link Tuple}s.
  */
-public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>> {
+public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>>, Serializable {
 
   private final K first;
   private final V second;

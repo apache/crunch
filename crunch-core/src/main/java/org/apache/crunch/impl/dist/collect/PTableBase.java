@@ -15,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.dist.collect;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
+import org.apache.crunch.CachingOptions;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
@@ -31,7 +29,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
-import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Cogroup;
 import org.apache.crunch.lib.Join;
@@ -40,16 +38,18 @@ import org.apache.crunch.materialize.MaterializableMap;
 import org.apache.crunch.materialize.pobject.MapPObject;
 import org.apache.crunch.types.PType;
 
-import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
-abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements PTable<K, V> {
+public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements PTable<K, V> {
 
-  public PTableBase(String name) {
-    super(name);
+  public PTableBase(String name, DistributedPipeline pipeline) {
+    super(name, pipeline);
   }
 
-  public PTableBase(String name, ParallelDoOptions options) {
-    super(name, options);
+  public PTableBase(String name, DistributedPipeline pipeline, ParallelDoOptions options) {
+    super(name, pipeline, options);
   }
   
   public PType<K> getKeyType() {
@@ -60,16 +60,17 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
     return getPTableType().getValueType();
   }
 
-  public PGroupedTableImpl<K, V> groupByKey() {
-    return new PGroupedTableImpl<K, V>(this);
+  public BaseGroupedTable<K, V> groupByKey() {
+    return pipeline.getFactory().createGroupedTable(this, GroupingOptions.builder().build());
   }
 
-  public PGroupedTableImpl<K, V> groupByKey(int numReduceTasks) {
-    return new PGroupedTableImpl<K, V>(this, GroupingOptions.builder().numReducers(numReduceTasks).build());
+  public BaseGroupedTable<K, V> groupByKey(int numReduceTasks) {
+    return pipeline.getFactory().createGroupedTable(
+        this, GroupingOptions.builder().numReducers(numReduceTasks).build());
   }
 
-  public PGroupedTableImpl<K, V> groupByKey(GroupingOptions groupingOptions) {
-    return new PGroupedTableImpl<K, V>(this, groupingOptions);
+  public BaseGroupedTable<K, V> groupByKey(GroupingOptions groupingOptions) {
+    return pipeline.getFactory().createGroupedTable(this, groupingOptions);
   }
 
   @Override
@@ -84,14 +85,14 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
     for (PTable<K, V> table : others) {
       internal.add((PTableBase<K, V>) table);
     }
-    return new UnionTable<K, V>(internal);
+    return pipeline.getFactory().createUnionTable(internal);
   }
 
   @Override
   public PTable<K, V> write(Target target) {
     if (getMaterializedAt() != null) {
-      getPipeline().write(new InputTable<K, V>(
-          (TableSource<K, V>) getMaterializedAt(), (MRPipeline) getPipeline()), target);
+      getPipeline().write(pipeline.getFactory().createInputTable(
+          (TableSource<K, V>) getMaterializedAt(), pipeline), target);
     } else {
       getPipeline().write(this, target);
     }
@@ -101,14 +102,25 @@ abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> implements P
   @Override
   public PTable<K, V> write(Target target, Target.WriteMode writeMode) {
     if (getMaterializedAt() != null) {
-      getPipeline().write(new InputTable<K, V>(
-          (TableSource<K, V>) getMaterializedAt(), (MRPipeline) getPipeline()), target, writeMode);
+      getPipeline().write(pipeline.getFactory().createInputTable(
+          (TableSource<K, V>) getMaterializedAt(), pipeline), target, writeMode);
     } else {
       getPipeline().write(this, target, writeMode);
     }
     return this;
   }
-  
+
+  @Override
+  public PTable<K, V> cache() {
+    return cache(CachingOptions.DEFAULT);
+  }
+
+  @Override
+  public PTable<K, V> cache(CachingOptions options) {
+    pipeline.cache(this, options);
+    return this;
+  }
+
   @Override
   public PTable<K, V> filter(FilterFn<Pair<K, V>> filterFn) {
     return parallelDo(filterFn, getPTableType());
