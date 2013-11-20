@@ -224,21 +224,19 @@ public class MSCRPlanner {
           } else {
             // Execute an Edge split
             Vertex newGraphTail = graph.getVertexAt(e.getTail().getPCollection());
-            PCollectionImpl split = e.getSplit();
-            InputCollection<?> inputNode = handleSplitTarget(split);
-            Vertex splitTail = graph.addVertex(split, true);
-            Vertex splitHead = graph.addVertex(inputNode, false);
-            
-            // Divide up the node paths in the edge between the two GBK nodes so
-            // that each node is either owned by GBK1 -> newTail or newHead -> GBK2.
-            for (NodePath path : e.getNodePaths()) {
+            Map<NodePath, PCollectionImpl> splitPoints = e.getSplitPoints(outputs);
+            for (Map.Entry<NodePath, PCollectionImpl> s : splitPoints.entrySet()) {
+              NodePath path = s.getKey();
+              PCollectionImpl split = s.getValue();
+              InputCollection<?> inputNode = handleSplitTarget(split);
+              Vertex splitTail = graph.addVertex(split, true);
+              Vertex splitHead = graph.addVertex(inputNode, false);
               NodePath headPath = path.splitAt(split, splitHead.getPCollection());
               graph.getEdge(vertex, splitTail).addNodePath(headPath);
               graph.getEdge(splitHead, newGraphTail).addNodePath(path);
+              // Note the dependency between the vertices in the graph.
+              graph.markDependency(splitHead, splitTail);
             }
-            
-            // Note the dependency between the vertices in the graph.
-            graph.markDependency(splitHead, splitTail);
           }
         }
       }

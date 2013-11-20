@@ -90,6 +90,14 @@ public class UnionTable<K, V> extends PTableBase<K, V> {
   }
 
   @Override
+  public void setBreakpoint() {
+    super.setBreakpoint();
+    for (PCollectionImpl<Pair<K, V>> parent : parents) {
+      parent.setBreakpoint();
+    }
+  }
+
+  @Override
   protected void acceptInternal(PCollectionImpl.Visitor visitor) {
     visitor.visitUnionCollection(new UnionCollection<Pair<K, V>>(parents));
   }

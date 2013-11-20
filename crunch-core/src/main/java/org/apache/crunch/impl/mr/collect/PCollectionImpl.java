@@ -59,7 +59,9 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   private boolean materialized;
   protected SourceTarget<S> materializedAt;
   protected final ParallelDoOptions doOptions;
-  
+  private long size = -1L;
+  private boolean breakpoint;
+
   public PCollectionImpl(String name) {
     this(name, ParallelDoOptions.builder().build());
   }
@@ -158,6 +160,14 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return getPipeline().materialize(this);
   }
 
+  public void setBreakpoint() {
+    this.breakpoint = true;
+  }
+
+  public boolean isBreakpoint() {
+    return breakpoint;
+  }
+
   /** {@inheritDoc} */
   @Override
   public PObject<Collection<S>> asCollection() {
@@ -170,6 +180,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   public void materializeAt(SourceTarget<S> sourceTarget) {
     this.materializedAt = sourceTarget;
+    this.size = materializedAt.getSize(getPipeline().getConfiguration());
   }
 
   @Override
@@ -299,13 +310,10 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public long getSize() {
-    if (materializedAt != null) {
-      long sz = materializedAt.getSize(getPipeline().getConfiguration());
-      if (sz > 0) {
-        return sz;
-      }
+    if (size < 0) {
+      this.size = getSizeInternal();
     }
-    return getSizeInternal();
+    return size;
   }
 
   protected abstract long getSizeInternal();

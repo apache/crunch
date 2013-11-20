@@ -244,7 +244,7 @@ public class MRPipeline implements Pipeline {
 
   @Override
   public <T> Iterable<T> materialize(PCollection<T> pcollection) {
-
+    ((PCollectionImpl) pcollection).setBreakpoint();
     PCollectionImpl<T> pcollectionImpl = toPcollectionImpl(pcollection);
     ReadableSource<T> readableSrc = getMaterializeSourceTarget(pcollectionImpl);
 

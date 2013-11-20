@@ -20,6 +20,7 @@ package org.apache.crunch.impl.mr.collect;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import org.apache.crunch.PCollection;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.plan.DoNode;
@@ -56,6 +57,14 @@ public class UnionCollection<S> extends PCollectionImpl<S> {
       if (parent.getLastModifiedAt() > lastModifiedAt) {
         this.lastModifiedAt = parent.getLastModifiedAt();
       }
+    }
+  }
+
+  @Override
+  public void setBreakpoint() {
+    super.setBreakpoint();
+    for (PCollectionImpl<S> parent : parents) {
+      parent.setBreakpoint();
     }
   }
 

@@ -18,17 +18,19 @@
 package org.apache.crunch.impl.mr.plan;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -62,43 +64,94 @@ class Edge {
   public Set<NodePath> getNodePaths() {
     return paths;
   }
-  
-  public PCollectionImpl getSplit() {
-    List<Iterator<PCollectionImpl<?>>> iters = Lists.newArrayList();
-    for (NodePath nodePath : paths) {
-      Iterator<PCollectionImpl<?>> iter = nodePath.iterator();
-      iter.next(); // prime this past the initial NGroupedTableImpl
-      iters.add(iter);
-    }
 
-    // Find the lowest point w/the lowest cost to be the split point for
-    // all of the dependent paths.
-    boolean end = false;
-    int splitIndex = -1;
-    while (!end) {
-      splitIndex++;
-      PCollectionImpl<?> current = null;
-      for (Iterator<PCollectionImpl<?>> iter : iters) {
-        if (iter.hasNext()) {
-          PCollectionImpl<?> next = iter.next();
-          if (next instanceof PGroupedTableImpl) {
-            end = true;
-            break;
-          } else if (current == null) {
-            current = next;
-          } else if (current != next) {
-            end = true;
-            break;
-          }
-        } else {
-          end = true;
-          break;
+  private static boolean readWriteOutput(PCollectionImpl<?> pc, Map<PCollectionImpl<?>, Set<Target>> outputs) {
+    if (outputs.containsKey(pc)) {
+      for (Target t : outputs.get(pc)) {
+        if (t instanceof SourceTarget || t.asSourceTarget(pc.getPType()) != null) {
+          return true;
         }
       }
     }
-    // TODO: Add costing calcs here.
-    
-    return Iterables.getFirst(paths, null).get(splitIndex);
+    return false;
+  }
+
+  public Map<NodePath,  PCollectionImpl> getSplitPoints(Map<PCollectionImpl<?>, Set<Target>> outputs) {
+    List<NodePath> np = Lists.newArrayList(paths);
+    List<PCollectionImpl<?>> smallestOverallPerPath = Lists.newArrayListWithExpectedSize(np.size());
+    Map<PCollectionImpl<?>, Set<Integer>> pathCounts = Maps.newHashMap();
+    Map<NodePath, PCollectionImpl> splitPoints = Maps.newHashMap();
+    for (int i = 0; i < np.size(); i++) {
+      long bestSize = Long.MAX_VALUE;
+      boolean breakpoint = false;
+      PCollectionImpl<?> best = null;
+      for (PCollectionImpl<?> pc : np.get(i)) {
+        if (!(pc instanceof PGroupedTableImpl)) {
+          if (pc.isBreakpoint()) {
+            if (!breakpoint || pc.getSize() < bestSize) {
+              best = pc;
+              bestSize = pc.getSize();
+              breakpoint = true;
+            }
+          } else if (!breakpoint && pc.getSize() < bestSize) {
+            best = pc;
+            bestSize = pc.getSize();
+          }
+          Set<Integer> cnts = pathCounts.get(pc);
+          if (cnts == null) {
+            cnts = Sets.newHashSet();
+            pathCounts.put(pc, cnts);
+          }
+          cnts.add(i);
+        }
+      }
+      smallestOverallPerPath.add(best);
+      if (breakpoint) {
+        splitPoints.put(np.get(i), best);
+      }
+    }
+
+    Set<Integer> missing = Sets.newHashSet();
+    for (int i = 0; i < np.size(); i++) {
+      if (!splitPoints.containsKey(np.get(i))) {
+        missing.add(i);
+      }
+    }
+    if (missing.isEmpty()) {
+      return splitPoints;
+    } else {
+      // Need to either choose the smallest collection from each missing path,
+      // or the smallest single collection that is on all paths as the split target.
+      Set<PCollectionImpl<?>> smallest = Sets.newHashSet();
+      long smallestSize = 0;
+      for (Integer id : missing) {
+        PCollectionImpl<?> s = smallestOverallPerPath.get(id);
+        if (!smallest.contains(s)) {
+          smallest.add(s);
+          smallestSize += s.getSize();
+        }
+      }
+
+      PCollectionImpl<?> singleBest = null;
+      long singleSmallestSize = Long.MAX_VALUE;
+      for (Map.Entry<PCollectionImpl<?>, Set<Integer>> e : pathCounts.entrySet()) {
+        if (Sets.difference(missing, e.getValue()).isEmpty() && e.getKey().getSize() < singleSmallestSize) {
+          singleBest = e.getKey();
+          singleSmallestSize = singleBest.getSize();
+        }
+      }
+
+      if (smallestSize < singleSmallestSize) {
+        for (Integer id : missing) {
+          splitPoints.put(np.get(id), smallestOverallPerPath.get(id));
+        }
+      } else {
+        for (Integer id : missing) {
+          splitPoints.put(np.get(id), singleBest);
+        }
+      }
+    }
+    return splitPoints;
   }
   
   @Override

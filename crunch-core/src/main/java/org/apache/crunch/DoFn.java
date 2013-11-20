@@ -116,7 +116,7 @@ public abstract class DoFn<S, T> implements Serializable {
    * resulting {@code PCollection} should override this method.
    */
   public float scaleFactor() {
-    return 1.2f;
+    return 0.99f;
   }
 
   /**
