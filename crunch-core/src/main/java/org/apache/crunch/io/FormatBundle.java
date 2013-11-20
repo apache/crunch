@@ -20,7 +20,9 @@ package org.apache.crunch.io;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -52,16 +54,14 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
   private Map<String, String> extraConf;
   private Configuration conf;
   
-  public static <T> FormatBundle<T> fromSerialized(String serialized, Class<T> clazz) {
+  public static <T> FormatBundle<T> fromSerialized(String serialized, Configuration conf) {
     ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(serialized));
     try {
-      ObjectInputStream ois = new ObjectInputStream(bais);
-      FormatBundle<T> bundle = (FormatBundle<T>) ois.readObject();
-      ois.close();
+      FormatBundle<T> bundle = new FormatBundle<T>();
+      bundle.setConf(conf);
+      bundle.readFields(new DataInputStream(bais));
       return bundle;
     } catch (IOException e) {
-      throw new RuntimeException(e);
-    } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
   }
@@ -102,9 +102,8 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
   public String serialize() {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try {
-      ObjectOutputStream oos = new ObjectOutputStream(baos);
-      oos.writeObject(this);
-      oos.close();
+      DataOutputStream dos = new DataOutputStream(baos);
+      write(dos);
       return Base64.encodeBase64String(baos.toByteArray());
     } catch (IOException e) {
       throw new RuntimeException(e);

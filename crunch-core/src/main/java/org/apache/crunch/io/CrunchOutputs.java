@@ -83,8 +83,7 @@ public class CrunchOutputs<K, V> {
     for (String input : Splitter.on(RECORD_SEP).split(conf.get(CRUNCH_OUTPUTS))) {
       List<String> fields = Lists.newArrayList(SPLITTER.split(input));
       String name = fields.get(0);
-      FormatBundle<OutputFormat> bundle = FormatBundle.fromSerialized(fields.get(1),
-          OutputFormat.class);
+      FormatBundle<OutputFormat> bundle = FormatBundle.fromSerialized(fields.get(1), conf);
       try {
         Class<?> keyClass = Class.forName(fields.get(2));
         Class<?> valueClass = Class.forName(fields.get(3));

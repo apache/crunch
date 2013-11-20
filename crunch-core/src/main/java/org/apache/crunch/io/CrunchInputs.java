@@ -55,7 +55,7 @@ public class CrunchInputs {
     Configuration conf = job.getConfiguration();
     for (String input : Splitter.on(RECORD_SEP).split(conf.get(CRUNCH_INPUTS))) {
       List<String> fields = Lists.newArrayList(SPLITTER.split(input));
-      FormatBundle<InputFormat> inputBundle = FormatBundle.fromSerialized(fields.get(0), InputFormat.class);
+      FormatBundle<InputFormat> inputBundle = FormatBundle.fromSerialized(fields.get(0), job.getConfiguration());
       if (!formatNodeMap.containsKey(inputBundle)) {
         formatNodeMap.put(inputBundle, Maps.<Integer, List<Path>> newHashMap());
       }
