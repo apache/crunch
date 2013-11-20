@@ -18,23 +18,32 @@
 package org.apache.crunch.impl.mem;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecordBuilder;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
-import org.apache.crunch.impl.mem.collect.MemCollection;
 import org.apache.crunch.impl.mem.collect.MemTable;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
+import org.apache.crunch.io.avro.AvroFileReaderFactory;
+import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.types.avro.AvroType;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -50,53 +59,57 @@ import org.junit.Test;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class MemPipelineFileReadingWritingIT {
   @Rule
   public TemporaryPath baseTmpDir = TemporaryPaths.create();
-  
+
   private File inputFile;
-  private File outputFile;
-  
-  
+  private File outputDir;
+
+
   private static final Collection<String> EXPECTED_COLLECTION = Lists.newArrayList("hello", "world");
   @SuppressWarnings("unchecked")
   private static final Collection<Pair<Integer, String>> EXPECTED_TABLE = Lists.newArrayList(
-                                                        Pair.of(1, "hello"), 
+                                                        Pair.of(1, "hello"),
                                                         Pair.of(2, "world"));
-  
+
 
   @Before
   public void setUp() throws IOException {
-    inputFile = baseTmpDir.getFile("test-read.seq");
-    outputFile = baseTmpDir.getFile("test-write.seq");
+    inputFile = baseTmpDir.getFile("test-read");
+    outputDir = baseTmpDir.getFile("test-write");
+  }
+
+  private File getOutputFile(File outputDir, String wildcardFilter) {
+
+    File[] files = outputDir.listFiles((FilenameFilter)new WildcardFileFilter(wildcardFilter));
+    System.out.println(Arrays.asList(files));
+    assertEquals(1, files.length);
+    return files[0];
   }
 
   @Test
   public void testMemPipelineFileWriter() throws Exception {
-    File tmpDir = baseTmpDir.getFile("mempipe");
+    File outputDir = baseTmpDir.getFile("mempipe");
     Pipeline p = MemPipeline.getInstance();
     PCollection<String> lines = MemPipeline.collectionOf("hello", "world");
-    p.writeTextFile(lines, tmpDir.toString());
+    p.writeTextFile(lines, outputDir.toString());
     p.done();
-    assertTrue(tmpDir.exists());
-    File[] files = tmpDir.listFiles();
-    assertTrue(files != null && files.length > 0);
-    for (File f : files) {
-      if (!f.getName().startsWith(".")) {
-        List<String> txt = Files.readLines(f, Charsets.UTF_8);
-        assertEquals(ImmutableList.of("hello", "world"), txt);
-      }
-    }
+    File outputFile = getOutputFile(outputDir, "*.txt");
+
+    List<String> txt = Files.readLines(outputFile, Charsets.UTF_8);
+    assertEquals(ImmutableList.of("hello", "world"), txt);
   }
 
   private void createTestSequenceFile(final File seqFile) throws IOException {
     SequenceFile.Writer writer = null;
     writer = new Writer(FileSystem.getLocal(baseTmpDir.getDefaultConfiguration()),
-              baseTmpDir.getDefaultConfiguration(), 
-              new Path(seqFile.toString()), 
+              baseTmpDir.getDefaultConfiguration(),
+              new Path(seqFile.toString()),
               IntWritable.class, Text.class);
     writer.append(new IntWritable(1), new Text("hello"));
     writer.append(new IntWritable(2), new Text("world"));
@@ -110,9 +123,9 @@ public class MemPipelineFileReadingWritingIT {
 
     // read from sequence file
     final PCollection<Pair<Integer, String>> readCollection = MemPipeline.getInstance().read(
-      From.sequenceFile(inputFile.toString(), 
+      From.sequenceFile(inputFile.toString(),
         Writables.tableOf(
-          Writables.ints(), 
+          Writables.ints(),
           Writables.strings())));
 
     // assert read same as written.
@@ -123,12 +136,13 @@ public class MemPipelineFileReadingWritingIT {
   public void testMemPipelineWriteSequenceFile_PCollection() throws IOException {
     // write
     PCollection<String> collection = MemPipeline.typedCollectionOf(Writables.strings(), EXPECTED_COLLECTION);
-    final Target target = To.sequenceFile(outputFile.toString());
+    final Target target = To.sequenceFile(outputDir.toString());
     MemPipeline.getInstance().write(collection, target);
 
     // read
     final SequenceFile.Reader reader = new Reader(FileSystem.getLocal(
-      baseTmpDir.getDefaultConfiguration()), new Path(outputFile.toString()),
+      baseTmpDir.getDefaultConfiguration()),
+        new Path(getOutputFile(outputDir, "*.seq").toString()),
         baseTmpDir.getDefaultConfiguration());
     final List<String> actual = Lists.newArrayList();
     final NullWritable key = NullWritable.get();
@@ -147,14 +161,14 @@ public class MemPipelineFileReadingWritingIT {
     // write
     final MemTable<Integer, String> collection = new MemTable<Integer, String>(EXPECTED_TABLE, //
         Writables.tableOf(
-          Writables.ints(), 
+          Writables.ints(),
           Writables.strings()), "test input");
-    final Target target = To.sequenceFile(outputFile.toString());
+    final Target target = To.sequenceFile(outputDir.toString());
     MemPipeline.getInstance().write(collection, target);
 
     // read
     final SequenceFile.Reader reader = new Reader(FileSystem.getLocal(baseTmpDir
-        .getDefaultConfiguration()), new Path(outputFile.toString()),
+        .getDefaultConfiguration()), new Path(getOutputFile(outputDir, "*.seq").toString()),
         baseTmpDir.getDefaultConfiguration());
     final List<Pair<Integer, String>> actual = Lists.newArrayList();
     final IntWritable key = new IntWritable();
@@ -166,5 +180,83 @@ public class MemPipelineFileReadingWritingIT {
 
     // assert read same as written
     assertEquals(EXPECTED_TABLE, actual);
+  }
+
+  @Test
+  public void testMemPipelineWriteAvroFile_SpecificRecords() throws IOException {
+    AvroType<Person> ptype = Avros.specifics(Person.class);
+    PCollection<Person> collection = MemPipeline.typedCollectionOf(
+                                            ptype,
+                                            Person.newBuilder()
+                                              .setName("A")
+                                              .setAge(1)
+                                              .setSiblingnames(ImmutableList.<CharSequence>of())
+                                              .build(),
+                                            Person.newBuilder()
+                                              .setName("B")
+                                              .setAge(2)
+                                              .setSiblingnames(ImmutableList.<CharSequence>of())
+                                              .build());
+
+    MemPipeline.getInstance().write(collection, To.avroFile(outputDir.getPath()));
+
+    Iterator<Person> itr = new AvroFileReaderFactory<Person>(ptype).read(
+              FileSystem.getLocal(baseTmpDir.getDefaultConfiguration()),
+              new Path(getOutputFile(outputDir, "*.avro").getPath()));
+
+    assertEquals(2, Iterators.size(itr));
+
+  }
+
+  @Test
+  public void testMemPipelineWriteAvroFile_ReflectRecords() throws IOException {
+    AvroType<SimpleBean> ptype = Avros.reflects(SimpleBean.class);
+    PCollection<SimpleBean> collection = MemPipeline.typedCollectionOf(
+                                            ptype,
+                                            new SimpleBean(1),
+                                            new SimpleBean(2));
+
+    MemPipeline.getInstance().write(collection, To.avroFile(outputDir.getPath()));
+
+    Iterator<SimpleBean> itr = new AvroFileReaderFactory<SimpleBean>(ptype).read(
+              FileSystem.getLocal(baseTmpDir.getDefaultConfiguration()),
+              new Path(getOutputFile(outputDir, "*.avro").getPath()));
+
+    assertEquals(2, Iterators.size(itr));
+
+  }
+
+  @Test
+  public void testMemPipelineWriteAvroFile_GenericRecords() throws IOException {
+    AvroType<GenericData.Record> ptype = Avros.generics(Person.SCHEMA$);
+    GenericData.Record record = new GenericRecordBuilder(ptype.getSchema())
+                                  .set("name", "A")
+                                  .set("age", 1)
+                                  .set("siblingnames", ImmutableList.of())
+                                  .build();
+    PCollection<GenericData.Record> collection = MemPipeline.typedCollectionOf(
+                                            ptype, record);
+
+    MemPipeline.getInstance().write(collection, To.avroFile(outputDir.getPath()));
+
+    Iterator<GenericData.Record> itr = new AvroFileReaderFactory<GenericData.Record>(ptype).read(
+              FileSystem.getLocal(baseTmpDir.getDefaultConfiguration()),
+              new Path(getOutputFile(outputDir, "*.avro").getPath()));
+
+    assertEquals(record, itr.next());
+    assertFalse(itr.hasNext());
+
+  }
+
+  static class SimpleBean {
+    public int value;
+
+    public SimpleBean() {
+      this(0);
+    }
+
+    public SimpleBean(int value) {
+      this.value = value;
+    }
   }
 }

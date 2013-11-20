@@ -74,7 +74,7 @@ public class TermFrequencyIT implements Serializable {
 
     /*
      * Input: String Input title text
-     * 
+     *
      * Output: PTable<Pair<String, String>, Long> Pair<Pair<word, title>, count
      * in title>
      */
@@ -98,7 +98,7 @@ public class TermFrequencyIT implements Serializable {
       /*
        * Input: Pair<Pair<String, String>, Long> Pair<Pair<word, title>, count
        * in title>
-       * 
+       *
        * Output: PTable<String, Pair<String, Long>> PTable<word, Pair<title,
        * count in title>>
        */

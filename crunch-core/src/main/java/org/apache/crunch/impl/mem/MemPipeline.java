@@ -24,8 +24,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.google.common.util.concurrent.AbstractFuture;
-import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.io.DatumWriter;
@@ -51,6 +49,7 @@ import org.apache.crunch.io.seq.SeqFileTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.avro.ReflectDataFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -64,6 +63,7 @@ import org.apache.hadoop.mapreduce.Counters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.AbstractFuture;
 
 public class MemPipeline implements Pipeline {
 
@@ -72,11 +72,11 @@ public class MemPipeline implements Pipeline {
   private static final MemPipeline INSTANCE = new MemPipeline();
 
   private int outputIndex = 0;
-  
+
   public static Counters getCounters() {
     return COUNTERS;
   }
-  
+
   public static void clearCounters() {
     COUNTERS = new CountersWrapper();
   }
@@ -129,7 +129,7 @@ public class MemPipeline implements Pipeline {
 
   private Configuration conf = new Configuration();
   private Set<Target> activeTargets = Sets.newHashSet();
-  
+
   private MemPipeline() {
   }
 
@@ -177,7 +177,7 @@ public class MemPipeline implements Pipeline {
   public void write(PCollection<?> collection, Target target) {
     write(collection, target, Target.WriteMode.DEFAULT);
   }
-  
+
   @Override
   public void write(PCollection<?> collection, Target target, Target.WriteMode writeMode) {
     target.handleExisting(writeMode, -1, getConfiguration());
@@ -193,18 +193,22 @@ public class MemPipeline implements Pipeline {
         FileSystem fs = path.getFileSystem(conf);
         outputIndex++;
         if (target instanceof SeqFileTarget) {
+          Path outputPath = new Path(path, "out" + outputIndex + ".seq");
           if (collection instanceof PTable) {
-            writeSequenceFileFromPTable(fs, path, (PTable<?, ?>) collection);
+            writeSequenceFileFromPTable(fs, outputPath, (PTable<?, ?>) collection);
           } else {
-            writeSequenceFileFromPCollection(fs, path, collection);
+            writeSequenceFileFromPCollection(fs, outputPath, collection);
           }
         } else {
-          FSDataOutputStream os = fs.create(new Path(path, "out" + outputIndex));
           if (target instanceof AvroFileTarget && !(collection instanceof PTable)) {
-
-            writeAvroFile(os, collection.materialize());
+            Path outputPath = new Path(path, "out" + outputIndex + ".avro");
+            FSDataOutputStream os = fs.create(outputPath);
+            writeAvroFile(os, collection);
+            os.close();
           } else {
             LOG.warn("Defaulting to write to a text file from MemPipeline");
+            Path outputPath = new Path(path, "out" + outputIndex + ".txt");
+            FSDataOutputStream os = fs.create(outputPath);
             if (collection instanceof PTable) {
               for (Object o : collection.materialize()) {
                 Pair p = (Pair) o;
@@ -218,8 +222,8 @@ public class MemPipeline implements Pipeline {
                 os.writeBytes(o.toString() + "\r\n");
               }
             }
+            os.close();
           }
-          os.close();
         }
       } catch (IOException e) {
         LOG.error("Exception writing target: " + target, e);
@@ -230,31 +234,24 @@ public class MemPipeline implements Pipeline {
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
-  private void writeAvroFile(FSDataOutputStream outputStream, Iterable genericRecords) throws IOException {
-    
-    Object r = genericRecords.iterator().next();
-    
-    Schema schema = null;
-    
-    if (r instanceof GenericContainer) {
-      schema = ((GenericContainer) r).getSchema();
-    } else {
-      schema = new ReflectDataFactory().getReflectData().getSchema(r.getClass());
+  private void writeAvroFile(FSDataOutputStream outputStream, PCollection recordCollection) throws IOException {
+
+    AvroType avroType = (AvroType)recordCollection.getPType();
+    if (avroType == null) {
+      throw new IllegalStateException("Can't write a non-typed Avro collection");
     }
-
-    DatumWriter datumWriter = Avros.newWriter(schema);
-
+    DatumWriter datumWriter = Avros.newWriter((AvroType)recordCollection.getPType());
     DataFileWriter dataFileWriter = new DataFileWriter(datumWriter);
-    dataFileWriter.create(schema, outputStream);
+    dataFileWriter.create(avroType.getSchema(), outputStream);
 
-    for (Object record : genericRecords) {
+    for (Object record : recordCollection.materialize()) {
       dataFileWriter.append(record);
     }
 
     dataFileWriter.close();
     outputStream.close();
   }
-  
+
   @SuppressWarnings({ "rawtypes", "unchecked" })
   private void writeSequenceFileFromPTable(final FileSystem fs, final Path path, final PTable table)
       throws IOException {
@@ -274,7 +271,7 @@ public class MemPipeline implements Pipeline {
 
     writer.close();
   }
-  
+
   private void writeSequenceFileFromPCollection(final FileSystem fs, final Path path,
       final PCollection collection) throws IOException {
     final PType pType = collection.getPType();
@@ -291,7 +288,7 @@ public class MemPipeline implements Pipeline {
 
     writer.close();
   }
-   
+
   @Override
   public PCollection<String> readTextFile(String pathName) {
     return read(At.textFile(pathName));
@@ -312,7 +309,7 @@ public class MemPipeline implements Pipeline {
     activeTargets.clear();
     return new MemExecution();
   }
-  
+
   @Override
   public PipelineResult run() {
     try {

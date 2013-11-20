@@ -5,9 +5,9 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -18,14 +18,13 @@ package org.apache.crunch.io.avro;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
-
 import java.util.Set;
+
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
@@ -36,6 +35,7 @@ import org.apache.crunch.io.To;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
@@ -43,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class AvroMemPipelineIT implements Serializable {
 
@@ -56,11 +57,13 @@ public class AvroMemPipelineIT implements Serializable {
   }
 
   @Test
-  public void testMemPipelienWithSpecificRecord() {
+  public void testMemPipelineWithSpecificRecord() {
 
     Person writeRecord = createSpecificRecord();
 
-    final PCollection<Person> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
+    final PCollection<Person> writeCollection = MemPipeline.typedCollectionOf(
+                                                  Avros.specifics(Person.class),
+                                                  writeRecord);
 
     writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 
@@ -78,11 +81,15 @@ public class AvroMemPipelineIT implements Serializable {
   }
 
   @Test
-  public void testMemPipelienWithGenericRecord() {
+  public void testMemPipelineWithGenericRecord() {
 
-    GenericRecord writeRecord = createGenericRecord();
+    PType<GenericData.Record> ptype = Avros.generics(Person.SCHEMA$);
 
-    final PCollection<GenericRecord> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
+    GenericData.Record writeRecord = createGenericRecord("John Doe");
+
+    final PCollection<GenericData.Record> writeCollection = MemPipeline.typedCollectionOf(
+                                                            ptype,
+                                                            writeRecord);
 
     writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 
@@ -94,22 +101,14 @@ public class AvroMemPipelineIT implements Serializable {
     assertEquals(writeRecord, readRecord);
   }
 
-  private GenericRecord createGenericRecord() {
-
-    GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
-    savedRecord.put("name", "John Doe");
-    savedRecord.put("age", 42);
-    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-
-    return savedRecord;
-  }
-
   @Test
-  public void testMemPipelienWithReflectionRecord() {
+  public void testMemPipelineWithReflectionRecord() {
 
     String writeRecord = "John Doe";
 
-    final PCollection<String> writeCollection = MemPipeline.collectionOf(Collections.singleton(writeRecord));
+    final PCollection<String> writeCollection = MemPipeline.typedCollectionOf(
+                                                          Avros.strings(),
+                                                          writeRecord);
 
     writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 
@@ -124,13 +123,18 @@ public class AvroMemPipelineIT implements Serializable {
   @Test
   public void testMemPipelineWithMultiplePaths() {
 
-    GenericRecord writeRecord1 = createGenericRecord("John Doe");
-    final PCollection<GenericRecord> writeCollection1 = MemPipeline.collectionOf(Collections.singleton(writeRecord1));
+    PType<GenericData.Record> ptype = Avros.generics(Person.SCHEMA$);
+    GenericData.Record writeRecord1 = createGenericRecord("John Doe");
+    final PCollection<GenericData.Record> writeCollection1 = MemPipeline.typedCollectionOf(
+      ptype,
+                                                                      writeRecord1);
     writeCollection1.write(To.avroFile(avroFile.getAbsolutePath()));
 
     File avroFile2 = tmpDir.getFile("test2.avro");
-    GenericRecord writeRecord2 = createGenericRecord("Jane Doe");
-    final PCollection<GenericRecord> writeCollection2 = MemPipeline.collectionOf(Collections.singleton(writeRecord2));
+    GenericData.Record writeRecord2 = createGenericRecord("Jane Doe");
+    final PCollection<GenericData.Record> writeCollection2 = MemPipeline.typedCollectionOf(
+                                                                    ptype,
+                                                                    writeRecord2);
     writeCollection2.write(To.avroFile(avroFile2.getAbsolutePath()));
 
     List<Path> paths = Lists.newArrayList(new Path(avroFile.getAbsolutePath()),
@@ -143,9 +147,9 @@ public class AvroMemPipelineIT implements Serializable {
     assertEquals(Sets.newHashSet(writeRecord1, writeRecord2), readSet);
   }
 
-  private GenericRecord createGenericRecord(String name) {
+  private GenericData.Record createGenericRecord(String name) {
 
-    GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
+    GenericData.Record savedRecord = new GenericData.Record(Person.SCHEMA$);
     savedRecord.put("name", name);
     savedRecord.put("age", 42);
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy"));
