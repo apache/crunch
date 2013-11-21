@@ -167,7 +167,14 @@ public class AvroType<T> implements PType<T> {
 
   @Override
   public void initialize(Configuration conf) {
+    baseInputMapFn.setConfiguration(conf);
+    baseInputMapFn.initialize();
+    baseOutputMapFn.setConfiguration(conf);
+    baseOutputMapFn.initialize();
     deepCopier.initialize(conf);
+    for (PType ptype : subTypes) {
+      ptype.initialize(conf);
+    }
     initialized = true;
   }
 

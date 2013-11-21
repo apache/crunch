@@ -37,6 +37,7 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
  */
 public abstract class DoFn<S, T> implements Serializable {
   private transient TaskInputOutputContext<?, ?, ?, ?> context;
+  private transient Configuration conf;
 
   /**
    * Configure this DoFn. Subclasses may override this method to modify the
@@ -106,6 +107,16 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   /**
+   * Called during the setup of an initialized {@link org.apache.crunch.types.PType} that
+   * relies on this instance.
+   *
+   * @param conf The configuration for the {@code PType} being initialized
+   */
+  public void setConfiguration(Configuration conf) {
+    this.conf = conf;
+  }
+
+  /**
    * Returns an estimate of how applying this function to a {@link PCollection}
    * will cause it to change in side. The optimizer uses these estimates to
    * decide where to break up dependent MR jobs into separate Map and Reduce
@@ -137,7 +148,13 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected Configuration getConfiguration() {
-    return context.getConfiguration();
+    if (conf != null) {
+      return conf;
+    } else if (context != null) {
+      return context.getConfiguration();
+    } else {
+      return null;
+    }
   }
 
   /**

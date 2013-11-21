@@ -25,8 +25,15 @@ import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JF
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
 
-class TMapFn[S, T](f: S => T) extends MapFn[S, T] {
-  override def map(input: S) = f(input)
+class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boolean = false) extends MapFn[S, T] {
+  override def initialize() {
+    if (!pt.isEmpty && getConfiguration() != null) {
+      pt.get.initialize(getConfiguration())
+      init = true
+    }
+  }
+
+  override def map(input: S) = if (init) f(pt.get.getDetachedValue(input)) else f(input)
 }
 
 trait PTypeFamily {
@@ -40,7 +47,7 @@ trait PTypeFamily {
   def records[T: ClassManifest] = ptf.records(classManifest[T].erasure)
 
   def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
-    ptf.derived(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
+    ptf.derived(cls, new TMapFn[S, T](in, Some(pt)), new TMapFn[T, S](out), pt)
   }
 
   val longs = {
