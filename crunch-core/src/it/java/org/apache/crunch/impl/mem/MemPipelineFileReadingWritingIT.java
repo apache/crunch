@@ -27,7 +27,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -246,6 +249,18 @@ public class MemPipelineFileReadingWritingIT {
     assertEquals(record, itr.next());
     assertFalse(itr.hasNext());
 
+  }
+
+  @Test
+  public void testMemPipelineWriteAvroFile_Tuples() throws IOException {
+    AvroType<Pair<String, Long>> at = Avros.pairs(Avros.strings(), Avros.longs());
+    Set<Pair<String, Long>> data = ImmutableSet.of(Pair.of("a", 1L), Pair.of("b", 2L), Pair.of("c", 3L));
+        PCollection < Pair < String, Long >> pc = MemPipeline.typedCollectionOf(at, data);
+    pc.write(To.avroFile(outputDir.getPath()));
+
+    Iterable<Pair<String, Long>> it = MemPipeline.getInstance().read(
+        at.getDefaultFileSource(new Path(outputDir.getPath()))).materialize();
+    assertEquals(data, Sets.newHashSet(it));
   }
 
   static class SimpleBean {

@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.io.DatumWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,7 +50,6 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
-import org.apache.crunch.types.avro.ReflectDataFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -188,6 +186,9 @@ public class MemPipeline implements Pipeline {
     }
     activeTargets.add(target);
     if (target instanceof PathTarget) {
+      if (collection.getPType() != null) {
+        collection.getPType().initialize(getConfiguration());
+      }
       Path path = ((PathTarget) target).getPath();
       try {
         FileSystem fs = path.getFileSystem(conf);
@@ -245,7 +246,7 @@ public class MemPipeline implements Pipeline {
     dataFileWriter.create(avroType.getSchema(), outputStream);
 
     for (Object record : recordCollection.materialize()) {
-      dataFileWriter.append(record);
+      dataFileWriter.append(avroType.getOutputMapFn().map(record));
     }
 
     dataFileWriter.close();
