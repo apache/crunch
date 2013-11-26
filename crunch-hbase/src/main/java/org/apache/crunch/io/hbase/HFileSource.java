@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.ReadableData;
@@ -57,7 +58,9 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
   // Package-local. Don't want it to be too open, because we only support limited filters yet
   // (namely start/stop row). Users who need advanced filters should use HFileUtils#scanHFiles.
   HFileSource(List<Path> paths, Scan scan) {
-    super(paths, KEY_VALUE_PTYPE, createInputFormatBundle(scan));
+    super(paths, KEY_VALUE_PTYPE, createInputFormatBundle(scan)
+        // "combine file" is not supported by HFileInputFormat, as it overrides listStatus().
+        .set(RuntimeParameters.DISABLE_COMBINE_FILE, "true"));
   }
 
   private static FormatBundle<HFileInputFormat> createInputFormatBundle(Scan scan) {
