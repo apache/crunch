@@ -321,6 +321,11 @@ public class MemPipeline implements Pipeline {
   }
 
   @Override
+  public void cleanup(boolean force) {
+    //no-op
+  }
+
+    @Override
   public PipelineResult done() {
     return run();
   }

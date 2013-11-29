@@ -372,20 +372,25 @@ public class MRPipeline implements Pipeline {
       return input.toString();
     }
   }
-  
-  private void cleanup() {
-    if (!outputTargets.isEmpty()) {
-      LOG.warn("Not running cleanup while output targets remain");
-      return;
-    }
-    try {
-      FileSystem fs = tempDirectory.getFileSystem(conf);
-      if (fs.exists(tempDirectory)) {
-        fs.delete(tempDirectory, true);
+
+  @Override
+  public void cleanup(boolean force) {
+    if (force || outputTargets.isEmpty()) {
+      try {
+        FileSystem fs = tempDirectory.getFileSystem(conf);
+        if (fs.exists(tempDirectory)) {
+          fs.delete(tempDirectory, true);
+        }
+      } catch (IOException e) {
+        LOG.info("Exception during cleanup", e);
       }
-    } catch (IOException e) {
-      LOG.info("Exception during cleanup", e);
+    } else {
+      LOG.warn("Not running cleanup while output targets remain.");
     }
+  }
+
+  private void cleanup() {
+    cleanup(false);
   }
 
   public int getNextAnonymousStageId() {

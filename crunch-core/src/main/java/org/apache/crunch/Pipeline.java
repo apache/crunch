@@ -122,6 +122,12 @@ public interface Pipeline {
   PipelineResult done();
 
   /**
+  * Cleans up any artifacts created as a result of {@link #run() running} the pipeline.
+  * @param force forces the cleanup even if all targets of the pipeline have not been completed.
+  */
+  void cleanup(boolean force);
+
+  /**
    * A convenience method for reading a text file.
    */
   PCollection<String> readTextFile(String pathName);
