@@ -36,6 +36,8 @@ public final class RuntimeParameters {
 
   public static final String DISABLE_DEEP_COPY = "crunch.disable.deep.copy";
 
+  public static final String MAX_RUNNING_JOBS = "crunch.max.running.jobs";
+
   // Not instantiated
   private RuntimeParameters() {
   }

@@ -69,9 +69,12 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
 
   private String planDotFile;
   
-  public MRExecutor(Class<?> jarClass, Map<PCollectionImpl<?>, Set<Target>> outputTargets,
+  public MRExecutor(
+      Configuration conf,
+      Class<?> jarClass,
+      Map<PCollectionImpl<?>, Set<Target>> outputTargets,
       Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize) {
-    this.control = new CrunchJobControl(jarClass.toString());
+    this.control = new CrunchJobControl(conf, jarClass.toString());
     this.outputTargets = outputTargets;
     this.toMaterialize = toMaterialize;
     this.monitorThread = new Thread(new Runnable() {
