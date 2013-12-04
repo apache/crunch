@@ -159,7 +159,7 @@ public class Cogroup {
           }
         },
         numReducers,
-        first, second, third);
+        first, second, third, fourth);
   }
   
   /**

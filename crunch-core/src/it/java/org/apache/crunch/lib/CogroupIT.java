@@ -94,12 +94,12 @@ public class CogroupIT {
   
   @Test
   public void testCogroup4Writables() {
-    runCogroup3(WritableTypeFamily.getInstance());
+    runCogroup4(WritableTypeFamily.getInstance());
   }
 
   @Test
   public void testCogroup4Avro() {
-    runCogroup3(AvroTypeFamily.getInstance());
+    runCogroup4(AvroTypeFamily.getInstance());
   }
   
   public void runCogroup(PTypeFamily ptf) {
