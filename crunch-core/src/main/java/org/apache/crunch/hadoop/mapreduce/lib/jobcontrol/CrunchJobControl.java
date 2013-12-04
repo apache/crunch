@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.MRJob.State;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -49,6 +51,7 @@ public class CrunchJobControl {
   private Log log = LogFactory.getLog(CrunchJobControl.class);
 
   private final String groupName;
+  private final int maxRunningJobs;
 
   /**
    * Construct a job control for a group of jobs.
@@ -56,13 +59,14 @@ public class CrunchJobControl {
    * @param groupName
    *          a name identifying this group
    */
-  public CrunchJobControl(String groupName) {
+  public CrunchJobControl(Configuration conf, String groupName) {
     this.waitingJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.readyJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.runningJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.successfulJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.failedJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.groupName = groupName;
+    this.maxRunningJobs = conf.getInt(RuntimeParameters.MAX_RUNNING_JOBS, 5);
   }
 
   private static List<CrunchControlledJob> toList(Map<Integer, CrunchControlledJob> jobs) {
@@ -190,8 +194,12 @@ public class CrunchJobControl {
     this.readyJobs = new Hashtable<Integer, CrunchControlledJob>();
 
     for (CrunchControlledJob nextJob : oldJobs.values()) {
-      // Submitting Job to Hadoop
-      nextJob.submit();
+      // Limit the number of concurrent running jobs. If we have reached such limit,
+      // stop submitting new jobs and wait until some running job completes.
+      if (runningJobs.size() < maxRunningJobs) {
+        // Submitting Job to Hadoop
+        nextJob.submit();
+      }
       this.addToQueue(nextJob);
     }
   }
