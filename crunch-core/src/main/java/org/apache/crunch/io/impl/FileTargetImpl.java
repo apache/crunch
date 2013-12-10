@@ -78,7 +78,7 @@ public class FileTargetImpl implements PathTarget {
 
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
-    Converter converter = ptype.getConverter();
+    Converter converter = getConverter(ptype);
     Class keyClass = converter.getKeyClass();
     Class valueClass = converter.getValueClass();
     configureForMapReduce(job, keyClass, valueClass, formatBundle, outputPath, name);
@@ -139,7 +139,7 @@ public class FileTargetImpl implements PathTarget {
     dstFs.create(getSuccessIndicator(), true).close();
   }
   
-  private Path getSuccessIndicator() {
+  protected Path getSuccessIndicator() {
     return new Path(path, "_SUCCESS");
   }
   

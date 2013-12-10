@@ -25,6 +25,7 @@ import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -35,51 +36,60 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 /** An {@link org.apache.hadoop.mapreduce.OutputFormat} for Avro data files. */
 public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWritable> {
 
-  @Override
-  public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(TaskAttemptContext context) throws IOException,
-      InterruptedException {
-
-    Configuration conf = context.getConfiguration();
+  public static <S>  DataFileWriter<S> getDataFileWriter(Path path, Configuration conf) throws IOException {
     Schema schema = null;
     String outputName = conf.get("crunch.namedoutput");
     if (outputName != null && !outputName.isEmpty()) {
       schema = (new Schema.Parser()).parse(conf.get("avro.output.schema." + outputName));
     } else {
-      schema = AvroJob.getOutputSchema(context.getConfiguration());
+      schema = AvroJob.getOutputSchema(conf);
     }
 
-    final DataFileWriter<T> WRITER = new DataFileWriter<T>(
-        AvroMode.fromConfiguration(conf).<T>getWriter(schema));
+    DataFileWriter<S> writer = new DataFileWriter<S>(AvroMode.fromConfiguration(conf).<S>getWriter(schema));
 
     JobConf jc = new JobConf(conf);
     /* copied from org.apache.avro.mapred.AvroOutputFormat */
-    
+
     if (org.apache.hadoop.mapred.FileOutputFormat.getCompressOutput(jc)) {
       int level = conf.getInt(org.apache.avro.mapred.AvroOutputFormat.DEFLATE_LEVEL_KEY,
           org.apache.avro.mapred.AvroOutputFormat.DEFAULT_DEFLATE_LEVEL);
-      String codecName = conf.get(AvroJob.OUTPUT_CODEC, 
+      String codecName = conf.get(AvroJob.OUTPUT_CODEC,
           org.apache.avro.file.DataFileConstants.DEFLATE_CODEC);
       CodecFactory codec = codecName.equals(org.apache.avro.file.DataFileConstants.DEFLATE_CODEC)
           ? CodecFactory.deflateCodec(level)
           : CodecFactory.fromString(codecName);
-      WRITER.setCodec(codec);
+      writer.setCodec(codec);
     }
 
-    WRITER.setSyncInterval(jc.getInt(org.apache.avro.mapred.AvroOutputFormat.SYNC_INTERVAL_KEY, 
+    writer.setSyncInterval(jc.getInt(org.apache.avro.mapred.AvroOutputFormat.SYNC_INTERVAL_KEY,
         org.apache.avro.file.DataFileConstants.DEFAULT_SYNC_INTERVAL));
 
+    FileSystem fs = path.getFileSystem(conf);
+    if (fs.exists(path)) {
+      writer.create(schema, fs.append(path));
+    } else {
+      writer.create(schema, fs.create(path));
+    }
+    return writer;
+  }
+
+  @Override
+  public RecordWriter<AvroWrapper<T>, NullWritable> getRecordWriter(TaskAttemptContext context) throws IOException,
+      InterruptedException {
+
+    Configuration conf = context.getConfiguration();
     Path path = getDefaultWorkFile(context, org.apache.avro.mapred.AvroOutputFormat.EXT);
-    WRITER.create(schema, path.getFileSystem(context.getConfiguration()).create(path));
-    
+    final DataFileWriter<T> writer = getDataFileWriter(path, conf);
+
     return new RecordWriter<AvroWrapper<T>, NullWritable>() {
       @Override
       public void write(AvroWrapper<T> wrapper, NullWritable ignore) throws IOException {
-        WRITER.append(wrapper.datum());
+        writer.append(wrapper.datum());
       }
 
       @Override
       public void close(TaskAttemptContext context) throws IOException, InterruptedException {
-        WRITER.close();
+        writer.close();
       }
     };
   }
