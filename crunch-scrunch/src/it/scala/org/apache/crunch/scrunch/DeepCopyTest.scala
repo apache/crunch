@@ -59,11 +59,11 @@ class DeepCopyTest extends CrunchSuite {
       .toList
 
     // Expected results vs. actual
-    val e12 = Seq((Rec2(1, "a", 0.4), Rec3("a", 4)), (Rec2(1, "a", 0.5), Rec3("a", 4)), (Rec2(1, "b", 0.6), Rec3("b", 5)),
+    val e12 = Set((Rec2(1, "a", 0.4), Rec3("a", 4)), (Rec2(1, "a", 0.5), Rec3("a", 4)), (Rec2(1, "b", 0.6), Rec3("b", 5)),
         (Rec2(1, "b", 0.7), Rec3("b", 5)))
-    val e22 = Seq((Rec2(2, "c", 9.9),Rec3("c", 6)))
+    val e22 = Set((Rec2(2, "c", 9.9),Rec3("c", 6)))
     assertEquals(2, res.size)
-    assertEquals(res.map(_._2.toList), Seq(e12, e22))
+    assertEquals(res.map(_._2.toSet), Seq(e12, e22))
     pipe.done()
   }
 
