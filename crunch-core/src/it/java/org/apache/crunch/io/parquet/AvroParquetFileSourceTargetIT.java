@@ -17,30 +17,40 @@
  */
 package org.apache.crunch.io.parquet;
 
-import com.google.common.collect.Lists;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.crunch.FilterFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.io.To;
+import org.apache.crunch.io.avro.AvroFileSource;
 import org.apache.crunch.test.Person;
-import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
-import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
 import parquet.avro.AvroParquetWriter;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.Lists;
+import parquet.column.ColumnReader;
+import parquet.filter.RecordFilter;
+import parquet.filter.UnboundRecordFilter;
 
 @SuppressWarnings("serial")
 public class AvroParquetFileSourceTargetIT implements Serializable {
@@ -110,5 +120,109 @@ public class AvroParquetFileSourceTargetIT implements Serializable {
 
     assertEquals(Lists.newArrayList(savedRecord), Lists.newArrayList(recordList));
   }
+  
+  @Test
+  public void testProjectionSpecific() throws IOException {
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Person> genericCollection = pipeline.read(
+        AvroParquetFileSource.builder(Person.class)
+            .includeField("age")
+            .build(new Path(avroFile.getAbsolutePath())));
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.write(avroFile);
+    pipeline.done();
+    
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<Person> ageOnly = pipeline2.read(
+        new AvroFileSource<Person>(new Path(outputFile.getAbsolutePath()), Avros.specifics(Person.class)));
+
+    for (Person person : ageOnly.materialize()) {
+      assertNull(person.getName());
+      assertEquals(person.getAge(), new Integer(42));
+      assertNull(person.getSiblingnames());
+    }
+  }
+
+  @Test(expected = IndexOutOfBoundsException.class)
+  public void testProjectionGeneric() throws IOException {
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    AvroParquetFileSource<GenericRecord> src = AvroParquetFileSource.builder(Person.SCHEMA$)
+        .includeField("age")
+        .build(new Path(avroFile.getAbsolutePath()));
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<GenericRecord> genericCollection = pipeline.read(src);
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.write(avroFile);
+    pipeline.done();
+
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<Record> ageOnly = pipeline2.read(
+        new AvroFileSource<Record>(new Path(outputFile.getAbsolutePath()), Avros.generics(src.getProjectedSchema())));
+
+    for (Record person : ageOnly.materialize()) {
+      assertEquals(person.get(0), 42);
+      Object notAge = person.get(1);
+    }
+  }
+
+  @Test
+  public void testProjectionFiltered() throws IOException {
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Person> genericCollection = pipeline.read(
+        AvroParquetFileSource.builder(Person.class)
+            .includeField("age")
+            .filterClass(RejectAllFilter.class)
+            .build(new Path(avroFile.getAbsolutePath())));
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.filter(new FilterFn<Person>() {
+      @Override
+      public boolean accept(Person input) {
+        return input != null;
+      }
+    }).write(avroFile);
+    pipeline.done();
+
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<Person> ageOnly = pipeline2.read(
+        new AvroFileSource<Person>(new Path(outputFile.getAbsolutePath()), Avros.specifics(Person.class)));
+    assertTrue(Lists.newArrayList(ageOnly.materialize()).isEmpty());
+  }
+
+  public static class RejectAllFilter implements UnboundRecordFilter {
+    @Override
+    public RecordFilter bind(Iterable<ColumnReader> readers) {
+      return new RecordFilter() {
+        @Override
+        public boolean isMatch() {
+          return false;
+        }
+      };
+    }
+  }
 }

@@ -17,13 +17,14 @@
  */
 package org.apache.crunch.io.parquet;
 
+import org.apache.avro.generic.IndexedRecord;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.ReadableSourcePathTargetImpl;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.fs.Path;
 
-public class AvroParquetFileSourceTarget<T> extends ReadableSourcePathTargetImpl<T> {
+public class AvroParquetFileSourceTarget<T extends IndexedRecord> extends ReadableSourcePathTargetImpl<T> {
 
   public AvroParquetFileSourceTarget(Path path, AvroType<T> atype) {
     this(path, atype, SequentialFileNamingScheme.getInstance());
