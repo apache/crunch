@@ -27,7 +27,7 @@ under the License.
 
   <groupId>org.apache.crunch</groupId>
   <artifactId>crunch-parent</artifactId>
-  <version>0.8.2-hadoop2</version>
+  <version>0.8.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Crunch</name>
@@ -94,7 +94,7 @@ under the License.
     <url>https://git-wip-us.apache.org/repos/asf?p=crunch.git</url>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/crunch.git</developerConnection>
-    <tag>apache-crunch-0.8.2</tag>
+    <tag>apache-crunch-0.8.0</tag>
   </scm>
 
   <issueManagement>
