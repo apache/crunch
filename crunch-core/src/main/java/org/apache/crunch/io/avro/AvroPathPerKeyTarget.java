@@ -19,6 +19,7 @@ package org.apache.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
+import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.SequentialFileNamingScheme;
@@ -51,7 +52,11 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
   }
 
   public AvroPathPerKeyTarget(Path path) {
-    super(path, AvroPathPerKeyOutputFormat.class, SequentialFileNamingScheme.getInstance());
+    this(path, SequentialFileNamingScheme.getInstance());
+  }
+
+  public AvroPathPerKeyTarget(Path path, FileNamingScheme fileNamingScheme) {
+    super(path, AvroPathPerKeyOutputFormat.class, fileNamingScheme);
   }
 
   @Override
@@ -83,20 +88,19 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
   @Override
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
-    Path src = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index);
+    Path base = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index);
+    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base), base);
     FileSystem dstFs = path.getFileSystem(conf);
-    boolean sameFs = isCompatible(srcFs, path);
     if (!dstFs.exists(path)) {
-      if (sameFs) {
-        srcFs.rename(src, path);
-      } else {
-        dstFs.mkdirs(path);
-        FileUtil.copy(srcFs, src, dstFs, path, true, true, conf);
-      }
-    } else {
-      Path[] srcs = FileUtil.stat2Paths(srcFs.listStatus(src));
+      dstFs.mkdirs(path);
+    }
+    boolean sameFs = isCompatible(srcFs, path);
+    for (Path key : keys) {
+      Path[] srcs = FileUtil.stat2Paths(srcFs.listStatus(key), key);
+      Path targetPath = new Path(path, key.getName());
+      dstFs.mkdirs(targetPath);
       for (Path s : srcs) {
-        Path d = new Path(path, s.getName());
+        Path d = getDestFile(conf, s, targetPath, s.getName().contains("-m-"));
         if (sameFs) {
           srcFs.rename(s, d);
         } else {
