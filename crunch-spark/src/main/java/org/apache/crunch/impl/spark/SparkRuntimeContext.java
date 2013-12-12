@@ -76,9 +76,13 @@ public class SparkRuntimeContext implements Serializable {
         List<String> allFiles = Lists.newArrayList();
         for (URI uri : uris) {
           File f = new File(uri.getPath());
+          String sparkFile = SparkFiles.get(f.getName());
           allFiles.add(SparkFiles.get(f.getName()));
         }
-        DistributedCache.setLocalFiles(getConfiguration(), Joiner.on(',').join(allFiles));
+        String sparkFiles = Joiner.on(',').join(allFiles);
+        // Hacking this for Hadoop1 and Hadoop2
+        getConfiguration().set("mapreduce.job.cache.local.files", sparkFiles);
+        getConfiguration().set("mapred.cache.localFiles", sparkFiles);
       }
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
