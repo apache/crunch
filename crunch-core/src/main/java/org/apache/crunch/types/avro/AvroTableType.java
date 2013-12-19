@@ -123,8 +123,8 @@ class AvroTableType<K, V> extends AvroType<Pair<K, V>> implements PTableType<K, 
   public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
     super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(),
         valueType.getSchema()), new IndexedRecordToPair(keyType.getInputMapFn(),
-        valueType.getInputMapFn()), new PairToAvroPair(keyType, valueType), new TupleDeepCopier(
-        Pair.class, keyType, valueType), keyType, valueType);
+        valueType.getInputMapFn()), new PairToAvroPair(keyType, valueType),
+        new TupleDeepCopier(Pair.class, keyType, valueType), null, keyType, valueType);
     this.keyType = keyType;
     this.valueType = valueType;
   }

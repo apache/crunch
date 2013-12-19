@@ -180,7 +180,7 @@ public class Avros {
   };
 
   private static final AvroType<String> strings = new AvroType<String>(String.class, Schema.create(Schema.Type.STRING),
-      UTF8_TO_STRING, STRING_TO_UTF8, new DeepCopier.NoOpDeepCopier<String>());
+      UTF8_TO_STRING, STRING_TO_UTF8, new DeepCopier.NoOpDeepCopier<String>(), AvroType.AvroRecordType.GENERIC);
   private static final AvroType<Void> nulls = create(Void.class, Schema.Type.NULL);
   private static final AvroType<Long> longs = create(Long.class, Schema.Type.LONG);
   private static final AvroType<Integer> ints = create(Integer.class, Schema.Type.INT);
@@ -188,12 +188,12 @@ public class Avros {
   private static final AvroType<Double> doubles = create(Double.class, Schema.Type.DOUBLE);
   private static final AvroType<Boolean> booleans = create(Boolean.class, Schema.Type.BOOLEAN);
   private static final AvroType<ByteBuffer> bytes = new AvroType<ByteBuffer>(ByteBuffer.class,
-      Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance(), new DeepCopier.NoOpDeepCopier<ByteBuffer>());
+      Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance(),
+      new DeepCopier.NoOpDeepCopier<ByteBuffer>(), AvroType.AvroRecordType.GENERIC);
 
   private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>> builder()
       .put(String.class, strings).put(Long.class, longs).put(Integer.class, ints).put(Float.class, floats)
       .put(Double.class, doubles).put(Boolean.class, booleans).put(ByteBuffer.class, bytes).build();
-
   private static final Map<Class<?>, AvroType<?>> EXTENSIONS = Maps.newHashMap();
 
   public static <T> void register(Class<T> clazz, AvroType<T> ptype) {
@@ -206,6 +206,10 @@ public class Avros {
 
   static <T> boolean isPrimitive(AvroType<T> avroType) {
     return avroType.getTypeClass().isPrimitive() || PRIMITIVES.containsKey(avroType.getTypeClass());
+  }
+
+  static <T> boolean isPrimitive(Class<T> typeClass) {
+    return typeClass.isPrimitive() || PRIMITIVES.containsKey(typeClass);
   }
 
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
@@ -315,7 +319,7 @@ public class Avros {
 
   public static final <T extends Writable> AvroType<T> writables(Class<T> clazz) {
     return new AvroType<T>(clazz, Schema.create(Schema.Type.BYTES), new BytesToWritableMapFn<T>(clazz),
-        new WritableToBytesMapFn<T>(), new WritableDeepCopier<T>(clazz));
+        new WritableToBytesMapFn<T>(), new WritableDeepCopier<T>(clazz), AvroType.AvroRecordType.GENERIC);
   }
 
   private static class GenericDataArrayToCollection<T> extends MapFn<Object, Collection<T>> {
@@ -403,7 +407,8 @@ public class Avros {
     Schema collectionSchema = Schema.createArray(allowNulls(avroType.getSchema()));
     GenericDataArrayToCollection<T> input = new GenericDataArrayToCollection<T>(avroType.getInputMapFn());
     CollectionToGenericDataArray output = new CollectionToGenericDataArray(collectionSchema, avroType.getOutputMapFn());
-    return new AvroType(Collection.class, collectionSchema, input, output, new CollectionDeepCopier<T>(ptype), ptype);
+    return new AvroType(Collection.class, collectionSchema, input, output, new CollectionDeepCopier<T>(ptype),
+        avroType.getRecordType(), ptype);
   }
 
   private static class AvroMapToMap<T> extends MapFn<Map<CharSequence, Object>, Map<String, T>> {
@@ -475,7 +480,8 @@ public class Avros {
     Schema mapSchema = Schema.createMap(allowNulls(avroType.getSchema()));
     AvroMapToMap<T> inputFn = new AvroMapToMap<T>(avroType.getInputMapFn());
     MapToAvroMap<T> outputFn = new MapToAvroMap<T>(avroType.getOutputMapFn());
-    return new AvroType(Map.class, mapSchema, inputFn, outputFn, new MapDeepCopier<T>(ptype), ptype);
+    return new AvroType(Map.class, mapSchema, inputFn, outputFn, new MapDeepCopier<T>(ptype),
+        avroType.getRecordType(), ptype);
   }
 
   private static class GenericRecordToTuple extends MapFn<GenericRecord, Tuple> {
@@ -609,27 +615,27 @@ public class Avros {
     Schema schema = createTupleSchema(p1, p2);
     GenericRecordToTuple input = new GenericRecordToTuple(TupleFactory.PAIR, p1, p2);
     TupleToGenericRecord output = new TupleToGenericRecord(schema, p1, p2);
-    return new AvroType(Pair.class, schema, input, output, new TupleDeepCopier(Pair.class, p1, p2), p1, p2);
+    return new AvroType(Pair.class, schema, input, output, new TupleDeepCopier(Pair.class, p1, p2), null, p1, p2);
   }
 
   public static final <V1, V2, V3> AvroType<Tuple3<V1, V2, V3>> triples(PType<V1> p1, PType<V2> p2, PType<V3> p3) {
     Schema schema = createTupleSchema(p1, p2, p3);
     return new AvroType(Tuple3.class, schema, new GenericRecordToTuple(TupleFactory.TUPLE3, p1, p2, p3),
-        new TupleToGenericRecord(schema, p1, p2, p3), new TupleDeepCopier(Tuple3.class, p1, p2, p3), p1, p2, p3);
+        new TupleToGenericRecord(schema, p1, p2, p3), new TupleDeepCopier(Tuple3.class, p1, p2, p3), null, p1, p2, p3);
   }
 
   public static final <V1, V2, V3, V4> AvroType<Tuple4<V1, V2, V3, V4>> quads(PType<V1> p1, PType<V2> p2, PType<V3> p3,
       PType<V4> p4) {
     Schema schema = createTupleSchema(p1, p2, p3, p4);
     return new AvroType(Tuple4.class, schema, new GenericRecordToTuple(TupleFactory.TUPLE4, p1, p2, p3, p4),
-        new TupleToGenericRecord(schema, p1, p2, p3, p4), new TupleDeepCopier(Tuple4.class, p1, p2, p3, p4), p1, p2,
-        p3, p4);
+        new TupleToGenericRecord(schema, p1, p2, p3, p4), new TupleDeepCopier(Tuple4.class, p1, p2, p3, p4), null,
+        p1, p2, p3, p4);
   }
 
   public static final AvroType<TupleN> tuples(PType... ptypes) {
     Schema schema = createTupleSchema(ptypes);
     return new AvroType(TupleN.class, schema, new GenericRecordToTuple(TupleFactory.TUPLEN, ptypes),
-        new TupleToGenericRecord(schema, ptypes), new TupleDeepCopier(TupleN.class, ptypes), ptypes);
+        new TupleToGenericRecord(schema, ptypes), new TupleDeepCopier(TupleN.class, ptypes), null, ptypes);
   }
 
   public static <T extends Tuple> AvroType<T> tuples(Class<T> clazz, PType... ptypes) {
@@ -640,7 +646,7 @@ public class Avros {
     }
     TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
     return new AvroType<T>(clazz, schema, new GenericRecordToTuple(factory, ptypes), new TupleToGenericRecord(schema,
-        ptypes), new TupleDeepCopier(clazz, ptypes), ptypes);
+        ptypes), new TupleDeepCopier(clazz, ptypes), null, ptypes);
   }
 
   private static Schema createTupleSchema(PType<?>... ptypes) throws RuntimeException {
@@ -668,8 +674,8 @@ public class Avros {
       PType<S> base) {
     AvroType<S> abase = (AvroType<S>) base;
     return new AvroType<T>(clazz, abase.getSchema(), new CompositeMapFn(abase.getInputMapFn(), inputFn),
-        new CompositeMapFn(outputFn, abase.getOutputMapFn()), new DeepCopier.NoOpDeepCopier<T>(), base.getSubTypes()
-            .toArray(new PType[0]));
+        new CompositeMapFn(outputFn, abase.getOutputMapFn()), new DeepCopier.NoOpDeepCopier<T>(), abase.getRecordType(),
+        base.getSubTypes().toArray(new PType[0]));
   }
 
   public static <T> PType<T> jsons(Class<T> clazz) {

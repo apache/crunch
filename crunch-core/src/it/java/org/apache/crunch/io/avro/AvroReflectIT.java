@@ -28,12 +28,14 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.Avros;
 import org.junit.Assume;
 import org.junit.Rule;
@@ -105,5 +107,36 @@ public class AvroReflectIT implements Serializable {
 
     assertEquals(expected, materialized);
     pipeline.done();
+  }
+
+  private static PType<String> STRING_PTYPE = Avros.derived(String.class,
+      new MapFn<StringWrapper, String>() { public String map(StringWrapper in) { return in.getValue(); }},
+      new MapFn<String, StringWrapper>() { public StringWrapper map(String out) { return new StringWrapper(out); }},
+      Avros.reflects(StringWrapper.class));
+
+  @Test
+  public void testDerivedReflection() throws Exception {
+    Pipeline pipeline = new MRPipeline(AvroReflectIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<String> stringWrapperCollection = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"))
+        .parallelDo(IdentityFn.<String>getInstance(), STRING_PTYPE);
+    List<String> strings = Lists.newArrayList(stringWrapperCollection.materialize());
+    pipeline.done();
+    assertEquals(Lists.newArrayList("b", "c", "a", "e"), strings);
+  }
+
+  @Test
+  public void testWrappedDerivedReflection() throws Exception {
+    Pipeline pipeline = new MRPipeline(AvroReflectIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Pair<Long, String>> stringWrapperCollection = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"))
+        .parallelDo(new MapFn<String, Pair<Long, String>>() {
+          @Override
+          public Pair<Long, String> map(String input) {
+            return Pair.of(1L, input);
+          }
+        }, Avros.pairs(Avros.longs(), STRING_PTYPE));
+    List<Pair<Long, String>> pairs = Lists.newArrayList(stringWrapperCollection.materialize());
+    pipeline.done();
+    assertEquals(pairs.size(), 4);
+    assertEquals(Pair.of(1L, "a"), pairs.get(2));
   }
 }

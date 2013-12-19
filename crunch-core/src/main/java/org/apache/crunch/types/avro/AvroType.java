@@ -44,6 +44,12 @@ import com.google.common.collect.Lists;
  */
 public class AvroType<T> implements PType<T> {
 
+  public enum AvroRecordType {
+    REFLECT,
+    SPECIFIC,
+    GENERIC
+  }
+
   private static final Converter AVRO_CONVERTER = new AvroKeyConverter();
 
   private final Class<T> typeClass;
@@ -52,15 +58,16 @@ public class AvroType<T> implements PType<T> {
   private final MapFn baseInputMapFn;
   private final MapFn baseOutputMapFn;
   private final List<PType> subTypes;
+  private AvroRecordType recordType;
   private DeepCopier<T> deepCopier;
   private boolean initialized = false;
 
   public AvroType(Class<T> typeClass, Schema schema, DeepCopier<T> deepCopier, PType... ptypes) {
-    this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), deepCopier, ptypes);
+    this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), deepCopier, null, ptypes);
   }
 
   public AvroType(Class<T> typeClass, Schema schema, MapFn inputMapFn, MapFn outputMapFn,
-      DeepCopier<T> deepCopier, PType... ptypes) {
+      DeepCopier<T> deepCopier, AvroRecordType recordType, PType... ptypes) {
     this.typeClass = typeClass;
     this.schema = Preconditions.checkNotNull(schema);
     this.schemaString = schema.toString();
@@ -68,6 +75,23 @@ public class AvroType<T> implements PType<T> {
     this.baseOutputMapFn = outputMapFn;
     this.deepCopier = deepCopier;
     this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
+    this.recordType = recordType;
+  }
+
+  private AvroRecordType determineRecordType() {
+    if (checkReflect()) {
+      return AvroRecordType.REFLECT;
+    } else if (checkSpecific()) {
+      return AvroRecordType.SPECIFIC;
+    }
+    return AvroRecordType.GENERIC;
+  }
+
+  public AvroRecordType getRecordType() {
+    if (recordType == null) {
+      recordType = determineRecordType();
+    }
+    return recordType;
   }
 
   @Override
@@ -98,14 +122,17 @@ public class AvroType<T> implements PType<T> {
    * @return true if the wrapped type is a specific data type or wraps one
    */
   public boolean hasSpecific() {
-    if (Avros.isPrimitive(this)) {
+    return getRecordType() == AvroRecordType.SPECIFIC;
+  }
+
+  private boolean checkSpecific() {
+    if (Avros.isPrimitive(typeClass)) {
       return false;
     }
 
-    if (!this.subTypes.isEmpty()) {
-      for (PType<?> subType : this.subTypes) {
-        AvroType<?> atype = (AvroType<?>) subType;
-        if (atype.hasSpecific()) {
+    if (!subTypes.isEmpty()) {
+      for (PType<?> subType : subTypes) {
+        if (((AvroType<?>) subType).hasSpecific()) {
           return true;
         }
       }
@@ -130,12 +157,16 @@ public class AvroType<T> implements PType<T> {
    * @return true if the wrapped type is a reflection-based type or wraps one.
    */
   public boolean hasReflect() {
-    if (Avros.isPrimitive(this)) {
+    return getRecordType() == AvroRecordType.REFLECT;
+  }
+
+  private boolean checkReflect() {
+    if (Avros.isPrimitive(typeClass)) {
       return false;
     }
 
-    if (!this.subTypes.isEmpty()) {
-      for (PType<?> subType : this.subTypes) {
+    if (!subTypes.isEmpty()) {
+      for (PType<?> subType : subTypes) {
         if (((AvroType<?>) subType).hasReflect()) {
           return true;
         }
