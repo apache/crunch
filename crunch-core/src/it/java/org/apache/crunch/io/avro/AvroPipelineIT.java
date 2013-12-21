@@ -16,6 +16,7 @@
  */
 package org.apache.crunch.io.avro;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -30,13 +31,17 @@ import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.avro.Avros;
@@ -91,5 +96,29 @@ public class AvroPipelineIT implements Serializable {
     Person person = genericCollection.materialize().iterator().next();
     String outputString = FileUtils.readFileToString(new File(outputFile, "part-m-00000"));
     assertTrue(outputString.contains(person.toString()));
+  }
+
+  @Test
+  public void genericWithReflection() throws Exception {
+    GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Person> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
+        Avros.records(Person.class)));
+    PTable<Long, StringWrapper> pt = genericCollection.parallelDo(new MapFn<Person, Pair<Long, StringWrapper>>() {
+      @Override
+      public Pair<Long, StringWrapper> map(Person input) {
+        return Pair.of(1L, new StringWrapper(input.getName().toString()));
+      }
+    }, Avros.tableOf(Avros.longs(), Avros.reflects(StringWrapper.class)))
+        .groupByKey()
+        .ungroup();
+    List<Pair<Long, StringWrapper>> ret = Lists.newArrayList(pt.materialize());
+    pipeline.done();
+    assertEquals(1, ret.size());
   }
 }

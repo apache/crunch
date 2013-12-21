@@ -54,12 +54,12 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
     this.inputSplit = inputSplit;
     this.bundle = bundle;
     this.nodeIndex = nodeIndex;
-    this.conf = conf;
+    this.conf = new Configuration(conf);
   }
 
   @Override
   public void setConf(Configuration conf) {
-    this.conf = conf;
+    this.conf = new Configuration(conf);
     if (bundle != null && conf != null) {
       this.bundle.configure(conf);
     }
