@@ -40,9 +40,16 @@ public enum AvroMode implements ReaderWriterFactory {
   GENERIC ("crunch.genericfactory");
 
   public static final String AVRO_MODE_PROPERTY = "crunch.avro.mode";
+  public static final String AVRO_SHUFFLE_MODE_PROPERTY = "crunch.avro.shuffle.mode";
 
   public static AvroMode fromConfiguration(Configuration conf) {
-    AvroMode mode = conf.getEnum(AVRO_MODE_PROPERTY, GENERIC);
+    AvroMode mode = conf.getEnum(AVRO_MODE_PROPERTY, REFLECT);
+    mode.setFromConfiguration(conf);
+    return mode;
+  }
+
+  public static AvroMode fromShuffleConfiguration(Configuration conf) {
+    AvroMode mode = conf.getEnum(AVRO_SHUFFLE_MODE_PROPERTY, REFLECT);
     mode.setFromConfiguration(conf);
     return mode;
   }
@@ -137,11 +144,9 @@ public enum AvroMode implements ReaderWriterFactory {
     }
   }
 
-  public void configure(Configuration conf) {
-    conf.setEnum(AVRO_MODE_PROPERTY, this);
-    if (factory != null) {
-      conf.setClass(propName, factory.getClass(), ReaderWriterFactory.class);
-    }
+  public void configureShuffle(Configuration conf) {
+    conf.setEnum(AVRO_SHUFFLE_MODE_PROPERTY, this);
+    configureFactory(conf);
   }
 
   public void configure(FormatBundle bundle) {
@@ -151,8 +156,16 @@ public enum AvroMode implements ReaderWriterFactory {
     }
   }
 
+  public void configureFactory(Configuration conf) {
+    if (factory != null) {
+      conf.setClass(propName, factory.getClass(), ReaderWriterFactory.class);
+    }
+  }
+
   @SuppressWarnings("unchecked")
   void setFromConfiguration(Configuration conf) {
+    // although the shuffle and input/output use different properties for mode,
+    // this is shared - only one ReaderWriterFactory can be used.
     Class<?> factoryClass = conf.getClass(propName, this.getClass());
     if (factoryClass != this.getClass()) {
       this.factory = (ReaderWriterFactory)

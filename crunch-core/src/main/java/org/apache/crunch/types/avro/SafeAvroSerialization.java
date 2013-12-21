@@ -60,7 +60,7 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
     if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {
       datumReader = AvroMode.REFLECT.getReader(schema);
     } else {
-      datumReader = AvroMode.fromConfiguration(conf).getReader(schema);
+      datumReader = AvroMode.fromShuffleConfiguration(conf).getReader(schema);
     }
     return new AvroWrapperDeserializer(datumReader, isKey);
   }
@@ -105,7 +105,7 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
     Schema schema = isFinalOutput ? AvroJob.getOutputSchema(conf) : (AvroKey.class.isAssignableFrom(c) ? Pair
         .getKeySchema(AvroJob.getMapOutputSchema(conf)) : Pair.getValueSchema(AvroJob.getMapOutputSchema(conf)));
 
-    ReaderWriterFactory factory = AvroMode.fromConfiguration(conf);
+    ReaderWriterFactory factory = AvroMode.fromShuffleConfiguration(conf);
     DatumWriter<T> writer = factory.getWriter(schema);
     return new AvroWrapperSerializer(writer);
   }

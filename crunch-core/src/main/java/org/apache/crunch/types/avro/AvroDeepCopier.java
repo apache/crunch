@@ -152,13 +152,14 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
     @Override
     protected DatumReader<T> createDatumReader(Configuration conf) {
-      AvroMode.REFLECT.configure(conf);
+      AvroMode.REFLECT.configureFactory(conf);
       return AvroMode.REFLECT.getReader(getSchema());
     }
 
     @Override
     protected DatumWriter<T> createDatumWriter(Configuration conf) {
-      return AvroMode.fromConfiguration(conf).getWriter(getSchema());
+      AvroMode.REFLECT.setFromConfiguration(conf);
+      return AvroMode.REFLECT.getWriter(getSchema());
     }
   }
 
