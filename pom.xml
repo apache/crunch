@@ -629,6 +629,7 @@ under the License.
             <exclude>.idea/**</exclude>
             <exclude>**/resources/*.txt</exclude>
             <exclude>**/resources/**/*.txt</exclude>
+            <exclude>**/resources/*.avro</exclude>
             <exclude>**/goal.txt</exclude>
             <exclude>**/target/generated-test-sources/**</exclude>
             <exclude>**/scripts/scrunch</exclude>

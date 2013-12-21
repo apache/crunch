@@ -116,7 +116,7 @@ public class Avros {
   @Deprecated
   public static void configureReflectDataFactory(Configuration conf) {
     AvroMode.REFLECT.override(REFLECT_DATA_FACTORY);
-    AvroMode.REFLECT.configure(conf);
+    AvroMode.REFLECT.configureFactory(conf);
   }
 
   /**
