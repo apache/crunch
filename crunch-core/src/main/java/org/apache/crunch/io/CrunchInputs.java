@@ -20,6 +20,7 @@ package org.apache.crunch.io;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -53,7 +54,11 @@ public class CrunchInputs {
   public static Map<FormatBundle, Map<Integer, List<Path>>> getFormatNodeMap(JobContext job) {
     Map<FormatBundle, Map<Integer, List<Path>>> formatNodeMap = Maps.newHashMap();
     Configuration conf = job.getConfiguration();
-    for (String input : Splitter.on(RECORD_SEP).split(conf.get(CRUNCH_INPUTS))) {
+    String crunchInputs = conf.get(CRUNCH_INPUTS);
+    if (crunchInputs == null || crunchInputs.isEmpty()) {
+      return ImmutableMap.of();
+    }
+    for (String input : Splitter.on(RECORD_SEP).split(crunchInputs)) {
       List<String> fields = Lists.newArrayList(SPLITTER.split(input));
       FormatBundle<InputFormat> inputBundle = FormatBundle.fromSerialized(fields.get(0), job.getConfiguration());
       if (!formatNodeMap.containsKey(inputBundle)) {

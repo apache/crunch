@@ -15,12 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr;
+package org.apache.crunch.impl.dist.collect;
 
-import org.apache.crunch.PipelineExecution;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import org.apache.crunch.ReadableData;
+import org.apache.crunch.SourceTarget;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import java.util.List;
+import java.io.IOException;
+import java.util.Set;
 
-public interface MRPipelineExecution extends PipelineExecution {
-    List<MRJob> getJobs();
+class EmptyReadableData<T> implements ReadableData<T> {
+
+  @Override
+  public Set<SourceTarget<?>> getSourceTargets() {
+    return ImmutableSet.of();
+  }
+
+  @Override
+  public void configure(Configuration conf) {
+  }
+
+  @Override
+  public Iterable<T> read(TaskInputOutputContext<?, ?, ?, ?> context) throws IOException {
+    return ImmutableList.of();
+  }
 }

@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
@@ -41,6 +43,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class MSCRPlanner {
+
+  private static final Log LOG = LogFactory.getLog(MSCRPlanner.class);
 
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
@@ -98,7 +102,18 @@ public class MSCRPlanner {
       }
       
       Graph baseGraph = graphBuilder.getGraph();
-      
+      boolean hasInputs = false;
+      for (Vertex v : baseGraph) {
+        if (v.isInput()) {
+          hasInputs = true;
+          break;
+        }
+      }
+      if (!hasInputs) {
+        LOG.warn("No input sources for pipeline, nothing to do...");
+        return new MRExecutor(conf, jarClass, outputs, toMaterialize);
+      }
+
       // Create a new graph that splits up up dependent GBK nodes.
       Graph graph = prepareFinalGraph(baseGraph);
       

@@ -312,6 +312,16 @@ public class MemPipeline implements Pipeline {
   }
 
   @Override
+  public <T> PCollection<T> emptyPCollection(PType<T> ptype) {
+    return typedCollectionOf(ptype, ImmutableList.<T>of());
+  }
+
+  @Override
+  public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
+    return typedTableOf(ptype, ImmutableList.<Pair<K, V>>of());
+  }
+
+  @Override
   public PipelineExecution runAsync() {
     activeTargets.clear();
     return new MemExecution();
