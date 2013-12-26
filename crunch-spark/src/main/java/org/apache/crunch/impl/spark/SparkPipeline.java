@@ -21,13 +21,18 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
+import org.apache.crunch.impl.spark.collect.EmptyPCollection;
+import org.apache.crunch.impl.spark.collect.EmptyPTable;
 import org.apache.crunch.impl.spark.collect.SparkCollectFactory;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.materialize.MaterializableIterable;
+import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
@@ -59,6 +64,16 @@ public class SparkPipeline extends DistributedPipeline {
       outputTargetsToMaterialize.put((PCollectionImpl) pcollection, c);
     }
     return c;
+  }
+
+  @Override
+  public <S> PCollection<S> emptyPCollection(PType<S> ptype) {
+    return new EmptyPCollection<S>(this, ptype);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
+    return new EmptyPTable<K, V>(this, ptype);
   }
 
   @Override

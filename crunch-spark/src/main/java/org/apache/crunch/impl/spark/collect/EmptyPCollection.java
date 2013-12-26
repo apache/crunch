@@ -15,12 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr;
+package org.apache.crunch.impl.spark.collect;
 
-import org.apache.crunch.PipelineExecution;
+import com.google.common.collect.ImmutableList;
+import org.apache.crunch.impl.dist.DistributedPipeline;
+import org.apache.crunch.impl.spark.SparkCollection;
+import org.apache.crunch.impl.spark.SparkRuntime;
+import org.apache.crunch.types.PType;
+import org.apache.spark.api.java.JavaRDDLike;
 
-import java.util.List;
+public class EmptyPCollection<T> extends org.apache.crunch.impl.dist.collect.EmptyPCollection<T>
+    implements SparkCollection {
 
-public interface MRPipelineExecution extends PipelineExecution {
-    List<MRJob> getJobs();
+  public EmptyPCollection(DistributedPipeline pipeline, PType<T> ptype) {
+    super(pipeline, ptype);
+  }
+
+  @Override
+  public JavaRDDLike<?, ?> getJavaRDDLike(SparkRuntime runtime) {
+    return runtime.getSparkContext().parallelize(ImmutableList.of());
+  }
 }

@@ -17,6 +17,8 @@
  */
 package org.apache.crunch;
 
+import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -108,6 +110,10 @@ public interface Pipeline {
    * @param options The options for how the cached data is stored
    */
   <T> void cache(PCollection<T> pcollection, CachingOptions options);
+
+  <T> PCollection<T> emptyPCollection(PType<T> ptype);
+
+  <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype);
 
   /**
    * Constructs and executes a series of MapReduce jobs in order to write data

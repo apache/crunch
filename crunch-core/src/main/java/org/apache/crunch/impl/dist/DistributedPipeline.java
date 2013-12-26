@@ -37,6 +37,8 @@ import org.apache.crunch.impl.dist.collect.BaseInputTable;
 import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
 import org.apache.crunch.impl.dist.collect.BaseUnionCollection;
 import org.apache.crunch.impl.dist.collect.BaseUnionTable;
+import org.apache.crunch.impl.dist.collect.EmptyPCollection;
+import org.apache.crunch.impl.dist.collect.EmptyPTable;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.dist.collect.PCollectionFactory;
 import org.apache.crunch.io.From;
@@ -44,6 +46,7 @@ import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.To;
 import org.apache.crunch.materialize.MaterializableIterable;
+import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
@@ -170,20 +173,15 @@ public abstract class DistributedPipeline implements Pipeline {
     outputTargets.get(impl).add(target);
   }
 
-  // TODO: sort this out
-  /*
   @Override
-  public <T> Iterable<T> materialize(PCollection<T> pcollection) {
-    C pcollectionImpl = toPCollectionImpl(pcollection);
-    ReadableSource<?> readableSrc = getMaterializeSourceTarget(pcollectionImpl);
-
-    MaterializableIterable<?> c = new MaterializableIterable(this, readableSrc);
-    if (!outputTargetsToMaterialize.containsKey(pcollectionImpl)) {
-      outputTargetsToMaterialize.put(pcollectionImpl, c);
-    }
-    return (Iterable<T>) c;
+  public <S> PCollection<S> emptyPCollection(PType<S> ptype) {
+    return new EmptyPCollection<S>(this, ptype);
   }
-  */
+
+  @Override
+  public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
+    return new EmptyPTable<K, V>(this, ptype);
+  }
 
   /**
    * Retrieve a ReadableSourceTarget that provides access to the contents of a {@link PCollection}.
