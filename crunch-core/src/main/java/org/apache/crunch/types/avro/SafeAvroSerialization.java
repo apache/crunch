@@ -121,7 +121,7 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
 
     public void open(OutputStream out) {
       this.out = out;
-      this.encoder = new EncoderFactory().configureBlockSize(512).binaryEncoder(out, null);
+      this.encoder = new EncoderFactory().directBinaryEncoder(out, null);
     }
 
     public void serialize(AvroWrapper<T> wrapper) throws IOException {
