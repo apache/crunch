@@ -39,6 +39,7 @@ public class CheckpointIT {
   @Test
   public void testCheckpoints() throws Exception {
     String inputPath = tmpDir.copyResourceFileName("shakes.txt");
+    Thread.sleep(2000);
     Pipeline p = new MRPipeline(CheckpointIT.class);
     String inter = tmpDir.getFileName("intermediate");
     PipelineResult one = run(p, tmpDir, inputPath, inter, false);
