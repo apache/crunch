@@ -19,8 +19,6 @@ package org.apache.crunch.materialize.pobject;
 
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
-import org.apache.crunch.Pipeline;
-import org.apache.crunch.Target;
 
 /**
  * An abstract implementation of {@link PObject} that is backed by a {@link PCollection}.
@@ -35,9 +33,11 @@ import org.apache.crunch.Target;
  */
 public abstract class PObjectImpl<S, T> implements PObject<T> {
 
-  // The underlying PCollection whose contents will be used to generate the value for this
-  // PObject.
-  private PCollection<S> collection;
+  // The name of the collection, used as the name for this instance as well.
+  private String name;
+
+  // A referenced to the materialized contents of a PCollection.
+  private Iterable<S> iterable;
 
   // A variable to hold a cached copy of the value of this {@code PObject},
   // to prevent unnecessary materializations of the backing {@code PCollection}.
@@ -52,7 +52,8 @@ public abstract class PObjectImpl<S, T> implements PObject<T> {
    * @param collect The backing {@code PCollection} for this {@code PObject}.
    */
   public PObjectImpl(PCollection<S> collect) {
-    this.collection = collect;
+    this.name = collect.toString();
+    this.iterable = collect.materialize();
     this.cachedValue = null;
     this.isCached = false;
   }
@@ -60,14 +61,14 @@ public abstract class PObjectImpl<S, T> implements PObject<T> {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return collection.toString();
+    return name;
   }
 
   /** {@inheritDoc} */
   @Override
   public final T getValue() {
     if (!isCached) {
-      cachedValue = process(collection.materialize());
+      cachedValue = process(iterable);
       isCached = true;
     }
     return cachedValue;
