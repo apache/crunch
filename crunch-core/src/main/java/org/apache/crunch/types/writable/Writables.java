@@ -32,6 +32,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.Union;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.types.PType;
@@ -288,7 +289,7 @@ public class Writables {
     }
     return instance;
   }
-  
+
   /**
    * For mapping from {@link TupleWritable} instances to {@link Tuple}s.
    * 
@@ -453,6 +454,106 @@ public class Writables {
     TWTupleMapFn input = new TWTupleMapFn(factory, wt);
     TupleTWMapFn output = new TupleTWMapFn(ptypes);
     return new WritableType(clazz, TupleWritable.class, input, output, ptypes);
+  }
+
+  /**
+   * For mapping from {@link TupleWritable} instances to {@link Tuple}s.
+   *
+   */
+  private static class UWInputFn extends MapFn<UnionWritable, Union> {
+    private final List<MapFn> fns;
+    private final List<Class<Writable>> writableClasses;
+
+    public UWInputFn(WritableType<?, ?>... ptypes) {
+      this.fns = Lists.newArrayList();
+      this.writableClasses = Lists.newArrayList();
+      for (WritableType ptype : ptypes) {
+        fns.add(ptype.getInputMapFn());
+        writableClasses.add(ptype.getSerializationClass());
+      }
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+
+    @Override
+    public void initialize() {
+      for (MapFn fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    @Override
+    public Union map(UnionWritable in) {
+      int index = in.getIndex();
+      Writable w = create(writableClasses.get(index), in.getValue());
+      return new Union(index, fns.get(index).map(w));
+    }
+  }
+
+  /**
+   * For mapping from {@code Tuple}s to {@code TupleWritable}s.
+   *
+   */
+  private static class UWOutputFn extends MapFn<Union, UnionWritable> {
+
+    private final List<MapFn> fns;
+
+    public UWOutputFn(PType<?>... ptypes) {
+      this.fns = Lists.newArrayList();
+      for (PType<?> ptype : ptypes) {
+        fns.add(ptype.getOutputMapFn());
+      }
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+
+    @Override
+    public void initialize() {
+      for (MapFn fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    @Override
+    public UnionWritable map(Union input) {
+      int index = input.getIndex();
+      Writable w = (Writable) fns.get(index).map(input.getValue());
+      return new UnionWritable(index, new BytesWritable(WritableUtils.toByteArray(w)));
+    }
+  }
+
+  public static PType<Union> unionOf(PType<?>... ptypes) {
+    WritableType[] wt = new WritableType[ptypes.length];
+    for (int i = 0; i < wt.length; i++) {
+      wt[i] = (WritableType) ptypes[i];
+    }
+    UWInputFn input= new UWInputFn(wt);
+    UWOutputFn output = new UWOutputFn(ptypes);
+    return new WritableType(Union.class, UnionWritable.class, input, output, ptypes);
   }
 
   public static <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {

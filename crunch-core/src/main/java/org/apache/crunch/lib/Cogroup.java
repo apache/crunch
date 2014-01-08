@@ -27,6 +27,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.Union;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.TupleFactory;
@@ -211,20 +212,18 @@ public class Cogroup {
     for (int i = 0; i < rest.length; i++) {
       ptypes[i + 1] = rest[i].getValueType();
     }
-    PType<TupleN> itype = ptf.tuples(ptypes);
+    PType<Union> itype = ptf.unionOf(ptypes);
     
-    PTable<K, TupleN> firstInter = first.mapValues("coGroupTag1",
-        new CogroupFn(0, 1 + rest.length),
-        itype);
-    PTable<K, TupleN>[] inter = new PTable[rest.length];
+    PTable<K, Union> firstInter = first.mapValues("coGroupTag1",
+        new CogroupFn(0), itype);
+    PTable<K, Union>[] inter = new PTable[rest.length];
     for (int i = 0; i < rest.length; i++) {
       inter[i] = rest[i].mapValues("coGroupTag" + (i + 2),
-          new CogroupFn(i + 1, 1 + rest.length),
-          itype);
+          new CogroupFn(i + 1), itype);
     }
     
-    PTable<K, TupleN> union = firstInter.union(inter);
-    PGroupedTable<K, TupleN> grouped;
+    PTable<K, Union> union = firstInter.union(inter);
+    PGroupedTable<K, Union> grouped;
     if (numReducers > 0) {
       grouped = union.groupByKey(numReducers);
     } else {
@@ -236,25 +235,21 @@ public class Cogroup {
         outputType);
   }
   
-  private static class CogroupFn<T> extends MapFn<T, TupleN> {
+  private static class CogroupFn<T> extends MapFn<T, Union> {
     private final int index;
-    private final int size;
-    
-    CogroupFn(int index, int size) {
+
+    CogroupFn(int index) {
       this.index = index;
-      this.size = size;
     }
 
     @Override
-    public TupleN map(T input) {
-      Object[] v = new Object[size];
-      v[index] = input;
-      return TupleN.of(v);
+    public Union map(T input) {
+      return new Union(index, input);
     }
   }
 
   private static class PostGroupFn<T extends Tuple> extends
-      MapFn<Iterable<TupleN>, T> {
+      MapFn<Iterable<Union>, T> {
     
     private final TupleFactory factory;
     private final PType[] ptypes;
@@ -273,18 +268,14 @@ public class Cogroup {
     }
     
     @Override
-    public T map(Iterable<TupleN> input) {
+    public T map(Iterable<Union> input) {
       Collection[] collections = new Collection[ptypes.length];
       for (int i = 0; i < ptypes.length; i++) {
         collections[i] = Lists.newArrayList();
       }
-      for (TupleN t : input) {
-        for (int i = 0; i < ptypes.length; i++) {
-          if (t.get(i) != null) {
-            collections[i].add(ptypes[i].getDetachedValue(t.get(i)));
-            break;
-          }
-        }
+      for (Union t : input) {
+        int index = t.getIndex();
+        collections[index].add(ptypes[index].getDetachedValue(t.getValue()));
       }
       return (T) factory.makeTuple(collections);
     }

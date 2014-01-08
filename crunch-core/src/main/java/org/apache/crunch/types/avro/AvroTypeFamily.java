@@ -29,6 +29,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.Union;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -160,5 +161,10 @@ public class AvroTypeFamily implements PTypeFamily {
   @Override
   public <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {
     return Avros.derived(clazz, inputFn, outputFn, base);
+  }
+
+  @Override
+  public PType<Union> unionOf(PType<?>... ptypes) {
+    return Avros.unionOf(ptypes);
   }
 }

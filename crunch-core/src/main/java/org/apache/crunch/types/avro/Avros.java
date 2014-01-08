@@ -48,6 +48,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.Union;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.types.CollectionDeepCopier;
@@ -58,6 +59,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.TupleDeepCopier;
 import org.apache.crunch.types.TupleFactory;
+import org.apache.crunch.types.UnionDeepCopier;
 import org.apache.crunch.types.writable.WritableDeepCopier;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
@@ -647,6 +649,142 @@ public class Avros {
     TupleFactory<T> factory = TupleFactory.create(clazz, typeArgs);
     return new AvroType<T>(clazz, schema, new GenericRecordToTuple(factory, ptypes), new TupleToGenericRecord(schema,
         ptypes), new TupleDeepCopier(clazz, ptypes), null, ptypes);
+  }
+
+  private static class UnionRecordToTuple extends MapFn<GenericRecord, Union> {
+    private final List<MapFn> fns;
+
+    public UnionRecordToTuple(PType<?>... ptypes) {
+      this.fns = Lists.newArrayList();
+      for (PType<?> ptype : ptypes) {
+        AvroType atype = (AvroType) ptype;
+        fns.add(atype.getInputMapFn());
+      }
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(context);
+      }
+    }
+
+    @Override
+    public void initialize() {
+      for (MapFn fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    @Override
+    public Union map(GenericRecord input) {
+      int index = (Integer) input.get(0);
+      return new Union(index, fns.get(index).map(input.get(1)));
+    }
+  }
+
+  private static class TupleToUnionRecord extends MapFn<Union, GenericRecord> {
+    private final List<MapFn> fns;
+    private final List<AvroType> avroTypes;
+    private final String jsonSchema;
+    private final boolean isReflect;
+    private transient Schema schema;
+
+    public TupleToUnionRecord(Schema schema, PType<?>... ptypes) {
+      this.fns = Lists.newArrayList();
+      this.avroTypes = Lists.newArrayList();
+      this.jsonSchema = schema.toString();
+      boolean reflectFound = false;
+      boolean specificFound = false;
+      for (PType ptype : ptypes) {
+        AvroType atype = (AvroType) ptype;
+        fns.add(atype.getOutputMapFn());
+        avroTypes.add(atype);
+        if (atype.hasReflect()) {
+          reflectFound = true;
+        }
+        if (atype.hasSpecific()) {
+          specificFound = true;
+        }
+      }
+      if (specificFound && reflectFound) {
+        checkCombiningSpecificAndReflectionSchemas();
+      }
+      this.isReflect = reflectFound;
+    }
+
+    @Override
+    public void configure(Configuration conf) {
+      for (MapFn fn : fns) {
+        fn.configure(conf);
+      }
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      for (MapFn fn : fns) {
+        fn.setContext(getContext());
+      }
+    }
+
+    @Override
+    public void initialize() {
+      this.schema = new Schema.Parser().parse(jsonSchema);
+      for (MapFn fn : fns) {
+        fn.initialize();
+      }
+    }
+
+    private GenericRecord createRecord() {
+      if (isReflect) {
+        return new ReflectGenericRecord(schema);
+      } else {
+        return new GenericData.Record(schema);
+      }
+    }
+
+    @Override
+    public GenericRecord map(Union input) {
+      GenericRecord record = createRecord();
+      int index = input.getIndex();
+      record.put(0, index);
+      record.put(1, fns.get(index).map(input.getValue()));
+      return record;
+    }
+  }
+
+  public static PType<Union> unionOf(PType<?>... ptypes) {
+    List<Schema> schemas = Lists.newArrayList();
+    MessageDigest md;
+    try {
+      md = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+    for (int i = 0; i < ptypes.length; i++) {
+      AvroType atype = (AvroType) ptypes[i];
+      Schema schema = atype.getSchema();
+      if (!schemas.contains(schema)) {
+        schemas.add(schema);
+        md.update(schema.toString().getBytes(Charsets.UTF_8));
+      }
+    }
+    List<Schema.Field> fields = Lists.newArrayList(
+        new Schema.Field("index", Schema.create(Type.INT), "", null),
+        new Schema.Field("value", Schema.createUnion(schemas), "", null));
+
+    String schemaName = "union" + Base64.encodeBase64URLSafeString(md.digest()).replace('-', 'x');
+    Schema schema = Schema.createRecord(schemaName, "", "crunch", false);
+    schema.setFields(fields);
+    return new AvroType<Union>(Union.class, schema, new UnionRecordToTuple(ptypes),
+        new TupleToUnionRecord(schema, ptypes), new UnionDeepCopier(ptypes), null, ptypes);
   }
 
   private static Schema createTupleSchema(PType<?>... ptypes) throws RuntimeException {
