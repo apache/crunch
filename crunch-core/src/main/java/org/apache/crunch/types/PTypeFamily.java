@@ -27,6 +27,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.Union;
 
 /**
  * An abstract factory for creating {@code PType} instances that have the same
@@ -67,6 +68,8 @@ public interface PTypeFamily {
   <T extends Tuple> PType<T> tuples(Class<T> clazz, PType<?>... ptypes);
 
   <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base);
+
+  PType<Union> unionOf(PType<?>... ptypes);
 
   <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value);
 
