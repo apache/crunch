@@ -19,8 +19,10 @@ package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Iterables;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.junit.Test;
 
 @SuppressWarnings("serial")
@@ -42,10 +44,10 @@ public class PairMapTest {
 
   @Test
   public void testPairMap() {
-    StoreLastEmitter<Pair<Integer, Integer>> emitter = StoreLastEmitter.create();
+    InMemoryEmitter<Pair<Integer, Integer>> emitter = InMemoryEmitter.create();
     PairMapFn<String, String, Integer, Integer> fn = new PairMapFn<String, String, Integer, Integer>(one, two);
     fn.process(Pair.of("a", "b"), emitter);
-    Pair<Integer, Integer> pair = emitter.getLast();
+    Pair<Integer, Integer> pair = Iterables.getOnlyElement(emitter.getOutput());
     assertTrue(pair.first() == 1);
     assertTrue(pair.second() == 2);
   }

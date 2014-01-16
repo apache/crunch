@@ -19,8 +19,10 @@ package org.apache.crunch.fn;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.Iterables;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.junit.Test;
 
 @SuppressWarnings("serial")
@@ -37,8 +39,8 @@ public class ExtractKeyFnTest {
 
   @Test
   public void test() {
-    StoreLastEmitter<Pair<Integer, String>> emitter = StoreLastEmitter.create();
+    InMemoryEmitter<Pair<Integer, String>> emitter = InMemoryEmitter.create();
     one.process("boza", emitter);
-    assertEquals(Pair.of("boza".hashCode(), "boza"), emitter.getLast());
+    assertEquals(Pair.of("boza".hashCode(), "boza"), Iterables.getOnlyElement(emitter.getOutput()));
   }
 }

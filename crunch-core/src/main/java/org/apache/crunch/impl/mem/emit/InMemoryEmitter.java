@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.crunch.Emitter;
 
 import com.google.common.collect.Lists;
+import org.apache.crunch.Pair;
 
 /**
  * An {@code Emitter} instance that writes emitted records to a backing
@@ -32,6 +33,10 @@ import com.google.common.collect.Lists;
 public class InMemoryEmitter<T> implements Emitter<T> {
 
   private final List<T> output;
+
+  public static <T> InMemoryEmitter<T> create() {
+    return new InMemoryEmitter<T>();
+  }
 
   public InMemoryEmitter() {
     this(Lists.<T> newArrayList());
