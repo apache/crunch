@@ -99,7 +99,7 @@ public class Sample {
   public static <T> PCollection<T> reservoirSample(
       PCollection<T> input,
       int sampleSize) {
-    return reservorSample(input, sampleSize, null);
+    return reservoirSample(input, sampleSize, null);
   }
 
   /**
@@ -112,7 +112,7 @@ public class Sample {
    * @return A {@code PCollection} made up of the sampled elements
 
    */
-  public static <T> PCollection<T> reservorSample(
+  public static <T> PCollection<T> reservoirSample(
       PCollection<T> input,
       int sampleSize,
       Long seed) {
