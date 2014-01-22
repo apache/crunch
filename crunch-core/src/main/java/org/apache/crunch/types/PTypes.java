@@ -21,8 +21,10 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+import com.google.protobuf.ExtensionRegistry;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.util.SerializableSupplier;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
@@ -41,27 +43,59 @@ import com.google.protobuf.Message;
  */
 public class PTypes {
 
+  /**
+   * A PType for Java's {@link BigInteger} type.
+   */
   public static PType<BigInteger> bigInt(PTypeFamily typeFamily) {
     return typeFamily.derived(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());
   }
 
+  /**
+   * A PType for Java's {@link UUID} type.
+   */
   public static PType<UUID> uuid(PTypeFamily ptf) {
     return ptf.derived(UUID.class, BYTE_TO_UUID, UUID_TO_BYTE, ptf.bytes());
   }
-  
+
+  /**
+   * Constructs a PType for reading a Java type from a JSON string using Jackson's {@link ObjectMapper}.
+   */
   public static <T> PType<T> jsonString(Class<T> clazz, PTypeFamily typeFamily) {
     return typeFamily
         .derived(clazz, new JacksonInputMapFn<T>(clazz), new JacksonOutputMapFn<T>(), typeFamily.strings());
   }
 
+  /**
+   * Constructs a PType for the given protocol buffer.
+   */
   public static <T extends Message> PType<T> protos(Class<T> clazz, PTypeFamily typeFamily) {
     return typeFamily.derived(clazz, new ProtoInputMapFn<T>(clazz), new ProtoOutputMapFn<T>(), typeFamily.bytes());
   }
 
+  /**
+   * Constructs a PType for a protocol buffer, using the given {@code SerializableSupplier} to provide
+   * an {@link ExtensionRegistry} to use in reading the given protobuf.
+   */
+  public static <T extends Message> PType<T> protos(
+      Class<T> clazz,
+      PTypeFamily typeFamily,
+      SerializableSupplier<ExtensionRegistry> supplier) {
+    return typeFamily.derived(clazz,
+        new ProtoInputMapFn<T>(clazz, supplier),
+        new ProtoOutputMapFn<T>(),
+        typeFamily.bytes());
+  }
+
+  /**
+   * Constructs a PType for a Thrift record.
+   */
   public static <T extends TBase> PType<T> thrifts(Class<T> clazz, PTypeFamily typeFamily) {
     return typeFamily.derived(clazz, new ThriftInputMapFn<T>(clazz), new ThriftOutputMapFn<T>(), typeFamily.bytes());
   }
 
+  /**
+   * Constructs a PType for a Java {@code Enum} type.
+   */
   public static <T extends Enum> PType<T> enums(Class<T> type, PTypeFamily typeFamily) {
     return typeFamily.derived(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
   }
@@ -126,21 +160,33 @@ public class PTypes {
   private static class ProtoInputMapFn<T extends Message> extends MapFn<ByteBuffer, T> {
 
     private final Class<T> clazz;
+    private final SerializableSupplier<ExtensionRegistry> extensionSupplier;
     private transient T instance;
+    private transient ExtensionRegistry registry;
 
     ProtoInputMapFn(Class<T> clazz) {
+      this(clazz, null);
+    }
+
+    ProtoInputMapFn(Class<T> clazz, SerializableSupplier<ExtensionRegistry> extensionSupplier) {
       this.clazz = clazz;
+      this.extensionSupplier = extensionSupplier;
     }
 
     @Override
     public void initialize() {
       this.instance = Protos.getDefaultInstance(clazz);
+      if (this.extensionSupplier != null) {
+        this.registry = extensionSupplier.get();
+      } else {
+        this.registry = ExtensionRegistry.getEmptyRegistry();
+      }
     }
 
     @Override
     public T map(ByteBuffer bb) {
       try {
-        return (T) instance.newBuilderForType().mergeFrom(bb.array(), bb.position(), bb.limit()).build();
+        return (T) instance.newBuilderForType().mergeFrom(bb.array(), bb.position(), bb.limit(), registry).build();
       } catch (InvalidProtocolBufferException e) {
         throw new CrunchRuntimeException(e);
       }
