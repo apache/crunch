@@ -24,6 +24,7 @@ import org.apache.crunch.types.writable.TupleWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +42,7 @@ public class TupleWritablePartitionerTest {
   public void testGetPartition() {
     IntWritable intWritable = new IntWritable(3);
     BytesWritable bw = new BytesWritable(WritableUtils.toByteArray(intWritable));
-    TupleWritable key = new TupleWritable(new BytesWritable[] { bw });
+    TupleWritable key = new TupleWritable(new Writable[] { bw });
     assertEquals(1, tupleWritableParitioner.getPartition(key, NullWritable.get(), 5));
     assertEquals(0, tupleWritableParitioner.getPartition(key, NullWritable.get(), 2));
   }

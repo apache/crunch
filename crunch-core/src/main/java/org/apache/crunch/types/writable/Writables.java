@@ -18,13 +18,23 @@
 package org.apache.crunch.types.writable;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
@@ -49,6 +59,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableFactories;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -63,6 +74,78 @@ import com.google.common.collect.Maps;
  * 
  */
 public class Writables {
+
+  private static final Log LOG = LogFactory.getLog(Writables.class);
+
+  static BiMap<Integer, Class<? extends Writable>> WRITABLE_CODES = HashBiMap.create(ImmutableBiMap.<Integer, Class<? extends Writable>>builder()
+          .put(1, BytesWritable.class)
+          .put(2, Text.class)
+          .put(3, IntWritable.class)
+          .put(4, LongWritable.class)
+          .put(5, FloatWritable.class)
+          .put(6, DoubleWritable.class)
+          .put(7, BooleanWritable.class)
+          .put(8, TupleWritable.class)
+          .put(9, TextMapWritable.class)
+          .put(10, UnionWritable.class)
+          .build());
+
+  /**
+   * Registers a {@code WritableComparable} class so that it can be used for comparing the fields inside of
+   * tuple types (e.g., {@code pairs}, {@code trips}, {@code tupleN}, etc.) for use in sorts and
+   * secondary sorts.
+   *
+   * @param clazz The WritableComparable class to register
+   * @return the integer code that was assigned to serialized instances of this class
+   */
+  public static void registerComparable(Class<? extends WritableComparable> clazz) {
+    int code = clazz.hashCode();
+    if (code < 0) {
+      code = -code;
+    }
+    if (code < WRITABLE_CODES.size()) {
+      code += WRITABLE_CODES.size();
+    }
+    registerComparable(clazz, code);
+  }
+
+  /**
+   * Registers a {@code WritableComparable} class with a given integer code to use for serializing
+   * and deserializing instances of this class that are defined inside of tuple types (e.g., {@code pairs},
+   * {@code trips}, {@code tupleN}, etc.) Unregistered Writables are always serialized to bytes and
+   * cannot be used in comparisons (e.g., sorts and secondary sorts) according to their underlying types.
+   *
+   * @param clazz The class to register
+   * @param code  The unique registration code for the class, which must be greater than or equal to 8
+   */
+  public static void registerComparable(Class<? extends WritableComparable> clazz, int code) {
+    if (WRITABLE_CODES.containsKey(code)) {
+      throw new IllegalArgumentException("Already have writable class assigned to code = " + code);
+    }
+  }
+
+  private static final String WRITABLE_COMPARABLE_CODES = "crunch.writable.comparable.codes";
+
+  private static void serializeWritableComparableCodes(Configuration conf) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(baos);
+    oos.writeObject(WRITABLE_CODES);
+    oos.close();
+    conf.set(WRITABLE_COMPARABLE_CODES, Base64.encodeBase64String(baos.toByteArray()));
+  }
+
+  static void reloadWritableComparableCodes(Configuration conf) throws Exception {
+    if (conf.get(WRITABLE_COMPARABLE_CODES) != null) {
+      ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(conf.get(WRITABLE_COMPARABLE_CODES)));
+      ObjectInputStream ois = new ObjectInputStream(bais);
+      BiMap<Integer, Class<? extends Writable>> codes = (BiMap<Integer, Class<? extends Writable>>) ois.readObject();
+      ois.close();
+      for (Map.Entry<Integer, Class<? extends Writable>> e : codes.entrySet()) {
+        WRITABLE_CODES.put(e.getKey(), e.getValue());
+      }
+    }
+  }
+
   private static final MapFn<NullWritable, Void> NULL_WRITABLE_TO_VOID = new MapFn<NullWritable, Void>() {
     @Override
     public Void map(NullWritable input) {
@@ -280,14 +363,19 @@ public class Writables {
     return new WritableTableType((WritableType) key, (WritableType) value);
   }
 
-  private static <W extends Writable> W create(Class<W> clazz, BytesWritable bytes) {
-    W instance = (W) WritableFactories.newInstance(clazz);
-    try {
-      instance.readFields(new DataInputStream(new ByteArrayInputStream(bytes.getBytes())));
-    } catch (IOException e) {
-      throw new CrunchRuntimeException(e);
+  private static <W extends Writable> W create(Class<W> clazz, Writable writable) {
+    if (clazz.equals(writable.getClass())) {
+      return (W) writable;
+    } else {
+      W instance = (W) WritableFactories.newInstance(clazz);
+      BytesWritable bytes = (BytesWritable) writable;
+      try {
+        instance.readFields(new DataInputStream(new ByteArrayInputStream(bytes.getBytes())));
+      } catch (IOException e) {
+        throw new CrunchRuntimeException(e);
+      }
+      return instance;
     }
-    return instance;
   }
 
   /**
@@ -307,12 +395,26 @@ public class Writables {
       this.writableClasses = Lists.newArrayList();
       for (WritableType ptype : ptypes) {
         fns.add(ptype.getInputMapFn());
-        writableClasses.add(ptype.getSerializationClass());
+        Class<Writable> clazz = ptype.getSerializationClass();
+        if (WritableComparable.class.isAssignableFrom(clazz)) {
+          if (!WRITABLE_CODES.inverse().containsKey(clazz)) {
+            LOG.warn(String.format(
+                "WritableComparable class %s in tuple type should be registered with Writables.registerComparable",
+                clazz.toString()));
+          }
+        }
+        writableClasses.add(clazz);
       }
     }
 
     @Override
     public void configure(Configuration conf) {
+      try {
+        serializeWritableComparableCodes(conf);
+      } catch (IOException e) {
+        throw new CrunchRuntimeException("Error serializing writable comparable codes", e);
+      }
+
       for (MapFn fn : fns) {
         fn.configure(conf);
       }
@@ -327,9 +429,11 @@ public class Writables {
     
     @Override
     public void initialize() {
+
       for (MapFn fn : fns) {
         fn.initialize();
       }
+
       // The rest of the methods allocate new
       // objects each time. However this one
       // uses Tuple.tuplify which does a copy
@@ -357,23 +461,28 @@ public class Writables {
    */
   private static class TupleTWMapFn extends MapFn<Tuple, TupleWritable> {
 
-    private transient TupleWritable writable;
-    private transient BytesWritable[] values;
-
     private final List<MapFn> fns;
-    private final List<Class<Writable>> writableClasses;
-    
+
+    private transient int[] written;
+    private transient Writable[] values;
+
     public TupleTWMapFn(PType<?>... ptypes) {
       this.fns = Lists.newArrayList();
-      this.writableClasses = Lists.newArrayList();
       for (PType<?> ptype : ptypes) {
         fns.add(ptype.getOutputMapFn());
-        writableClasses.add(((WritableType) ptype).getSerializationClass());
       }
+
+      this.written = new int[fns.size()];
+      this.values = new Writable[fns.size()];
     }
 
     @Override
     public void configure(Configuration conf) {
+      try {
+        serializeWritableComparableCodes(conf);
+      } catch (IOException e) {
+        throw new CrunchRuntimeException("Error serializing writable comparable codes", e);
+      }
       for (MapFn fn : fns) {
         fn.configure(conf);
       }
@@ -388,26 +497,31 @@ public class Writables {
     
     @Override
     public void initialize() {
-      this.values = new BytesWritable[fns.size()];
-      this.writable = new TupleWritable(values);
-      this.writable.setWritableClasses(writableClasses);
       for (MapFn fn : fns) {
         fn.initialize();
       }
+      this.written = new int[fns.size()];
+      this.values = new Writable[fns.size()];
     }
 
     @Override
     public TupleWritable map(Tuple input) {
-      writable.clearWritten();
+      Arrays.fill(written, (byte) 0);
+      Arrays.fill(values, null);
       for (int i = 0; i < input.size(); i++) {
         Object value = input.get(i);
         if (value != null) {
-          writable.setWritten(i);
           Writable w = (Writable) fns.get(i).map(value);
-          values[i] = new BytesWritable(WritableUtils.toByteArray(w));
+          if (WRITABLE_CODES.inverse().containsKey(w.getClass())) {
+            values[i] = w;
+            written[i] = WRITABLE_CODES.inverse().get(w.getClass());
+          } else {
+            values[i] = new BytesWritable(WritableUtils.toByteArray(w));
+            written[i] = 1; // code for BytesWritable
+          }
         }
       }
-      return writable;
+      return new TupleWritable(values, written);
     }
   }
 
