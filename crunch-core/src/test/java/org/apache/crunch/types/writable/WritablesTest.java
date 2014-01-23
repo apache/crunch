@@ -19,7 +19,6 @@ package org.apache.crunch.types.writable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 import java.io.DataInput;
@@ -123,13 +122,7 @@ public class WritablesTest {
   public void testPairs() throws Exception {
     Pair<String, String> j = Pair.of("a", "b");
     Text[] t = new Text[] { new Text("a"), new Text("b"), };
-    BytesWritable[] b = new BytesWritable[t.length];
-    for (int i = 0; i < t.length; i++) {
-      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
-    }
-    TupleWritable w = new TupleWritable(b);
-    w.setWritten(0);
-    w.setWritten(1);
+    TupleWritable w = new TupleWritable(t);
     testInputOutputFn(Writables.pairs(Writables.strings(), Writables.strings()), j, w);
   }
 
@@ -153,14 +146,7 @@ public class WritablesTest {
   public void testTriples() throws Exception {
     Tuple3 j = Tuple3.of("a", "b", "c");
     Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), };
-    BytesWritable[] b = new BytesWritable[t.length];
-    for (int i = 0; i < t.length; i++) {
-      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
-    }
-    TupleWritable w = new TupleWritable(b);
-    w.setWritten(0);
-    w.setWritten(1);
-    w.setWritten(2);
+    TupleWritable w = new TupleWritable(t);
     WritableType<?, ?> wt = Writables.triples(Writables.strings(), Writables.strings(), Writables.strings());
     testInputOutputFn(wt, j, w);
   }
@@ -170,15 +156,7 @@ public class WritablesTest {
   public void testQuads() throws Exception {
     Tuple4 j = Tuple4.of("a", "b", "c", "d");
     Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"), };
-    BytesWritable[] b = new BytesWritable[t.length];
-    for (int i = 0; i < t.length; i++) {
-      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
-    }
-    TupleWritable w = new TupleWritable(b);
-    w.setWritten(0);
-    w.setWritten(1);
-    w.setWritten(2);
-    w.setWritten(3);
+    TupleWritable w = new TupleWritable(t);
     WritableType<?, ?> wt = Writables.quads(Writables.strings(), Writables.strings(), Writables.strings(),
         Writables.strings());
     testInputOutputFn(wt, j, w);
@@ -189,16 +167,7 @@ public class WritablesTest {
     TupleN j = new TupleN("a", "b", "c", "d", "e");
     Text[] t = new Text[] { new Text("a"), new Text("b"), new Text("c"), new Text("d"),
         new Text("e"), };
-    BytesWritable[] b = new BytesWritable[t.length];
-    for (int i = 0; i < t.length; i++) {
-      b[i] = new BytesWritable(WritableUtils.toByteArray(t[i]));
-    }
-    TupleWritable w = new TupleWritable(b);
-    w.setWritten(0);
-    w.setWritten(1);
-    w.setWritten(2);
-    w.setWritten(3);
-    w.setWritten(4);
+    TupleWritable w = new TupleWritable(t);
     WritableType<?, ?> wt = Writables.tuples(Writables.strings(), Writables.strings(), Writables.strings(),
         Writables.strings(), Writables.strings());
     testInputOutputFn(wt, j, w);

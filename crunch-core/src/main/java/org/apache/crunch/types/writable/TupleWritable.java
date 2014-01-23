@@ -17,16 +17,16 @@
  */
 package org.apache.crunch.types.writable;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
 
+import com.google.common.base.Preconditions;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.CrunchRuntimeException;
-import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableFactories;
@@ -37,42 +37,64 @@ import org.apache.hadoop.io.WritableUtils;
  * added here because of its package visibility restrictions.
  * 
  */
-public class TupleWritable implements WritableComparable<TupleWritable> {
+public class TupleWritable extends Configured implements WritableComparable<TupleWritable> {
 
-  private long written;
-  private BytesWritable[] values;
-  private List<Class<Writable>> writableClasses;
-  
+  private int[] written;
+  private Writable[] values;
+
   /**
    * Create an empty tuple with no allocated storage for writables.
    */
   public TupleWritable() {
   }
 
+  @Override
+  public void setConf(Configuration conf) {
+    super.setConf(conf);
+    if (conf == null) return;
+
+    try {
+      Writables.reloadWritableComparableCodes(conf);
+    } catch (Exception e) {
+      throw new CrunchRuntimeException("Error reloading writable comparable codes", e);
+    }
+  }
+
+  private static int[] getCodes(Writable[] writables) {
+    int[] b = new int[writables.length];
+    for (int i = 0; i < b.length; i++) {
+      if (writables[i] != null) {
+        b[i] = getCode(writables[i].getClass());
+      }
+    }
+    return b;
+  }
+
+  public TupleWritable(Writable[] values) {
+    this(values, getCodes(values));
+  }
+
   /**
    * Initialize tuple with storage; unknown whether any of them contain
    * &quot;written&quot; values.
    */
-  public TupleWritable(BytesWritable[] vals) {
-    written = 0L;
-    values = vals;
+  public TupleWritable(Writable[] values, int[] written) {
+    Preconditions.checkArgument(values.length == written.length);
+    this.written = written;
+    this.values = values;
   }
 
-  public void setWritableClasses(List<Class<Writable>> writableClasses) {
-    this.writableClasses = writableClasses;
-  }
-  
   /**
    * Return true if tuple has an element at the position provided.
    */
   public boolean has(int i) {
-    return 0 != ((1 << i) & written);
+    return written[i] != 0;
   }
 
   /**
    * Get ith Writable from Tuple.
    */
-  public BytesWritable get(int i) {
+  public Writable get(int i) {
     return values[i];
   }
 
@@ -89,13 +111,13 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
   public boolean equals(Object other) {
     if (other instanceof TupleWritable) {
       TupleWritable that = (TupleWritable) other;
-      if (this.size() != that.size() || this.written != that.written) {
+      if (this.size() != that.size()) {
         return false;
       }
       for (int i = 0; i < values.length; ++i) {
         if (!has(i))
           continue;
-        if (!values[i].equals(that.get(i))) {
+        if (written[i] != that.written[i] || !values[i].equals(that.values[i])) {
           return false;
         }
       }
@@ -121,17 +143,7 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
     StringBuffer buf = new StringBuffer("[");
     for (int i = 0; i < values.length; ++i) {
       if (has(i)) {
-        if (writableClasses != null) {
-          Writable w = WritableFactories.newInstance(writableClasses.get(i));
-          try {
-            w.readFields(new DataInputStream(new ByteArrayInputStream(values[i].getBytes())));
-          } catch (IOException e) {
-            throw new CrunchRuntimeException(e);
-          }
-          buf.append(w.toString());
-        } else {
-          buf.append(values[i].toString());
-        }
+        buf.append(values[i].toString());
       }
       buf.append(",");
     }
@@ -142,6 +154,15 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
     return buf.toString();
   }
 
+  public void clear() {
+    Arrays.fill(written, (byte) 0);
+  }
+
+  public void set(int index, Writable w) {
+    written[index] = getCode(w.getClass());
+    values[index] = w;
+  }
+
   /**
    * Writes each Writable to <code>out</code>. TupleWritable format:
    * {@code
@@ -150,9 +171,9 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
    */
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeVInt(out, values.length);
-    WritableUtils.writeVLong(out, written);
     for (int i = 0; i < values.length; ++i) {
-      if (has(i)) {
+      WritableUtils.writeVInt(out, written[i]);
+      if (written[i] != 0) {
         values[i].write(out);
       }
     }
@@ -163,36 +184,32 @@ public class TupleWritable implements WritableComparable<TupleWritable> {
    */
   public void readFields(DataInput in) throws IOException {
     int card = WritableUtils.readVInt(in);
-    values = new BytesWritable[card];
-    written = WritableUtils.readVLong(in);
+    values = new Writable[card];
+    written = new int[card];
     for (int i = 0; i < card; ++i) {
-      if (has(i)) {
-        values[i] = new BytesWritable();
+      written[i] = WritableUtils.readVInt(in);
+      if (written[i] != 0) {
+        values[i] = getWritable(written[i], getConf());
         values[i].readFields(in);
       }
     }
   }
 
-  /**
-   * Record that the tuple contains an element at the position provided.
-   */
-  public void setWritten(int i) {
-    written |= 1 << i;
+  static int getCode(Class<? extends Writable> clazz) {
+    if (Writables.WRITABLE_CODES.inverse().containsKey(clazz)) {
+      return Writables.WRITABLE_CODES.inverse().get(clazz);
+    } else {
+      return 1; // default for BytesWritable
+    }
   }
 
-  /**
-   * Record that the tuple does not contain an element at the position provided.
-   */
-  public void clearWritten(int i) {
-    written &= -1 ^ (1 << i);
-  }
-
-  /**
-   * Clear any record of which writables have been written to, without releasing
-   * storage.
-   */
-  public void clearWritten() {
-    written = 0L;
+  static Writable getWritable(int code, Configuration conf) {
+    Class<? extends Writable> clazz = Writables.WRITABLE_CODES.get(code);
+    if (clazz != null) {
+      return WritableFactories.newInstance(clazz, conf);
+    } else {
+      throw new IllegalStateException("Unknown Writable code: " + code);
+    }
   }
 
   @Override

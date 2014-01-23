@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.lib;
 
-import static org.apache.crunch.types.avro.Avros.*;
 import static org.junit.Assert.assertEquals;
 
 import java.io.Serializable;
@@ -29,6 +28,9 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.CrunchTestSupport;
+import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.Test;
 
 import com.google.common.base.Joiner;
@@ -38,7 +40,16 @@ import com.google.common.collect.ImmutableList;
 public class SecondarySortIT extends CrunchTestSupport implements Serializable {
 
   @Test
-  public void testSecondarySort() throws Exception {
+  public void testSecondarySortAvros() throws Exception {
+    runSecondarySort(AvroTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testSecondarySortWritables() throws Exception {
+    runSecondarySort(WritableTypeFamily.getInstance());
+  }
+
+  public void runSecondarySort(PTypeFamily ptf) throws Exception {
     Pipeline p = new MRPipeline(SecondarySortIT.class, tempDir.getDefaultConfiguration());
     String inputFile = tempDir.copyResourceFileName("secondary_sort_input.txt");
     
@@ -50,14 +61,14 @@ public class SecondarySortIT extends CrunchTestSupport implements Serializable {
             return Pair.of(pieces[0],
                 Pair.of(Integer.valueOf(pieces[1].trim()), Integer.valueOf(pieces[2].trim())));
           }
-        }, tableOf(strings(), pairs(ints(), ints())));
+        }, ptf.tableOf(ptf.strings(), ptf.pairs(ptf.ints(), ptf.ints())));
     Iterable<String> lines = SecondarySort.sortAndApply(in, new MapFn<Pair<String, Iterable<Pair<Integer, Integer>>>, String>() {
       @Override
       public String map(Pair<String, Iterable<Pair<Integer, Integer>>> input) {
         Joiner j = Joiner.on(',');
         return j.join(input.first(), j.join(input.second()));
       }
-    }, strings()).materialize();
+    }, ptf.strings()).materialize();
     assertEquals(ImmutableList.of("one,[-5,10],[1,1],[2,-3]", "three,[0,-1]", "two,[1,7],[2,6],[4,5]"),
         ImmutableList.copyOf(lines));
     p.done();
