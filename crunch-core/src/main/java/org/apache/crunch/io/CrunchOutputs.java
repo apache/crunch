@@ -42,7 +42,8 @@ import java.util.Map;
  */
 public class CrunchOutputs<K, V> {
   public static final String CRUNCH_OUTPUTS = "crunch.outputs.dir";
-  
+  public static final String CRUNCH_DISABLE_OUTPUT_COUNTERS = "crunch.disable.output.counters";
+
   private static final char RECORD_SEP = ',';
   private static final char FIELD_SEP = ';';
   private static final Joiner JOINER = Joiner.on(FIELD_SEP);
@@ -98,11 +99,12 @@ public class CrunchOutputs<K, V> {
   private static final String BASE_OUTPUT_NAME = "mapreduce.output.basename";
   private static final String COUNTERS_GROUP = CrunchOutputs.class.getName();
 
-  private TaskInputOutputContext<?, ?, K, V> baseContext;
-  private Map<String, OutputConfig> namedOutputs;
-  private Map<String, RecordWriter<K, V>> recordWriters;
-  private Map<String, TaskAttemptContext> taskContextCache;
-  
+  private final TaskInputOutputContext<?, ?, K, V> baseContext;
+  private final Map<String, OutputConfig> namedOutputs;
+  private final Map<String, RecordWriter<K, V>> recordWriters;
+  private final Map<String, TaskAttemptContext> taskContextCache;
+  private final boolean disableOutputCounters;
+
   /**
    * Creates and initializes multiple outputs support,
    * it should be instantiated in the Mapper/Reducer setup method.
@@ -114,6 +116,7 @@ public class CrunchOutputs<K, V> {
     namedOutputs = getNamedOutputs(context);
     recordWriters = Maps.newHashMap();
     taskContextCache = Maps.newHashMap();
+    this.disableOutputCounters = context.getConfiguration().getBoolean(CRUNCH_DISABLE_OUTPUT_COUNTERS, false);
   }
   
   @SuppressWarnings("unchecked")
@@ -124,7 +127,9 @@ public class CrunchOutputs<K, V> {
         namedOutput + "'");
     }
     TaskAttemptContext taskContext = getContext(namedOutput);
-    baseContext.getCounter(COUNTERS_GROUP, namedOutput).increment(1);
+    if (!disableOutputCounters) {
+      baseContext.getCounter(COUNTERS_GROUP, namedOutput).increment(1);
+    }
     getRecordWriter(taskContext, namedOutput).write(key, value);
   }
   

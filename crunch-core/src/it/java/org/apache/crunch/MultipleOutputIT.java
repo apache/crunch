@@ -19,6 +19,7 @@ package org.apache.crunch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -27,9 +28,12 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.crunch.PipelineResult.StageResult;
 import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
+import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
@@ -98,6 +102,36 @@ public class MultipleOutputIT {
     assertEquals("parallel Dos not fused into a single job", 1, result.getStageResults().size());
   }
 
+  @Test
+  public void testCountersEnabled() throws IOException {
+    PipelineResult result = run(new MRPipeline(MultipleOutputIT.class, tmpDir.getDefaultConfiguration()),
+        WritableTypeFamily.getInstance());
+    
+    assertEquals(1, result.getStageResults().size());
+    StageResult stageResult = result.getStageResults().get(0);
+
+    String counterGroup = CrunchOutputs.class.getName();
+    assertEquals(3, stageResult.getCounterNames().get(counterGroup).size());
+    assertEquals(1l, stageResult.getCounterValue(counterGroup, "out1"));
+    assertEquals(1l, stageResult.getCounterValue(counterGroup, "out2"));
+    assertEquals(0l, stageResult.getCounterValue(counterGroup, "out3"));
+  }
+  
+  @Test
+  public void testCountersDisabled() throws IOException {
+    Configuration configuration = tmpDir.getDefaultConfiguration();
+    configuration.setBoolean(CrunchOutputs.CRUNCH_DISABLE_OUTPUT_COUNTERS, true);
+    
+    PipelineResult result = run(new MRPipeline(MultipleOutputIT.class, configuration),
+        WritableTypeFamily.getInstance());
+    
+    assertEquals(1, result.getStageResults().size());
+    StageResult stageResult = result.getStageResults().get(0);
+    
+    assertFalse(stageResult.getCounterNames().containsKey(CrunchOutputs.CRUNCH_OUTPUTS));
+  }
+  
+  
   public PipelineResult run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     String inputPath = tmpDir.copyResourceFileName("letters.txt");
     String outputPathEven = tmpDir.getFileName("even");
