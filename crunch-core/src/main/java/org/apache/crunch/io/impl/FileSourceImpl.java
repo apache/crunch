@@ -100,9 +100,7 @@ public class FileSourceImpl<T> implements Source<T> {
   public void configureSource(Job job, int inputId) throws IOException {
     // Use Crunch to handle the combined input splits
     job.setInputFormatClass(CrunchInputFormat.class);
-    for (Path path : paths) {
-      CrunchInputs.addInputPath(job, path, inputBundle, inputId);
-    }
+    CrunchInputs.addInputPaths(job, paths, inputBundle, inputId);
   }
 
   public FormatBundle<? extends InputFormat> getBundle() {

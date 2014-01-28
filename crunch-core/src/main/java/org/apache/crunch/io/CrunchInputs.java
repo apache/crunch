@@ -17,6 +17,8 @@
  */
 package org.apache.crunch.io;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +30,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -41,12 +44,23 @@ public class CrunchInputs {
 
   private static final char RECORD_SEP = ',';
   private static final char FIELD_SEP = ';';
+  private static final char PATH_SEP = '|';
   private static final Joiner JOINER = Joiner.on(FIELD_SEP);
   private static final Splitter SPLITTER = Splitter.on(FIELD_SEP);
 
   public static void addInputPath(Job job, Path path, FormatBundle inputBundle, int nodeIndex) {
+    addInputPaths(job, Collections.singleton(path), inputBundle, nodeIndex);
+  }
+
+  public static void addInputPaths(Job job, Collection<Path> paths, FormatBundle inputBundle, int nodeIndex) {
     Configuration conf = job.getConfiguration();
-    String inputs = JOINER.join(inputBundle.serialize(), String.valueOf(nodeIndex), path.toString());
+    List<String> pathStrs = Lists.newArrayListWithExpectedSize(paths.size());
+    for (Path path : paths) {
+      String pathStr = path.toString();
+      Preconditions.checkArgument(pathStr.indexOf(RECORD_SEP) == -1 && pathStr.indexOf(FIELD_SEP) == -1 && pathStr.indexOf(PATH_SEP) == -1);
+      pathStrs.add(pathStr);
+    }
+    String inputs = JOINER.join(inputBundle.serialize(), String.valueOf(nodeIndex), Joiner.on(PATH_SEP).join(pathStrs));
     String existing = conf.get(CRUNCH_INPUTS);
     conf.set(CRUNCH_INPUTS, existing == null ? inputs : existing + RECORD_SEP + inputs);
   }
@@ -68,7 +82,11 @@ public class CrunchInputs {
       if (!formatNodeMap.get(inputBundle).containsKey(nodeIndex)) {
         formatNodeMap.get(inputBundle).put(nodeIndex, Lists.<Path> newLinkedList());
       }
-      formatNodeMap.get(inputBundle).get(nodeIndex).add(new Path(fields.get(2)));
+      List<Path> formatNodePaths = formatNodeMap.get(inputBundle).get(nodeIndex);
+      String paths = fields.get(2);
+      for (String path : Splitter.on(PATH_SEP).split(paths)) {
+        formatNodePaths.add(new Path(path));
+      }
     }
     return formatNodeMap;
   }
