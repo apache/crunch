@@ -17,6 +17,12 @@
  */
 package org.apache.crunch.io;
 
+import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileReader;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.mapred.FsInput;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
@@ -31,9 +37,15 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
+import java.io.IOException;
 
 /**
  * <p>Static factory methods for creating common {@link Source} types.</p>
@@ -87,7 +99,7 @@ public class From {
    * {@code FileInputFormat<K, V>} implementations not covered by the provided {@code TableSource}
    * and {@code Source} factory methods.
    * 
-   * @param  The {@code Path} to the data
+   * @param path The {@code Path} to the data
    * @param formatClass The {@code FileInputFormat} implementation
    * @param keyClass The {@code Writable} to use for the key
    * @param valueClass The {@code Writable} to use for the value
@@ -122,7 +134,7 @@ public class From {
    * {@code FileInputFormat} implementations not covered by the provided {@code TableSource}
    * and {@code Source} factory methods.
    * 
-   * @param  The {@code Path} to the data
+   * @param path The {@code Path} to the data
    * @param formatClass The {@code FileInputFormat} implementation
    * @param keyType The {@code PType} to use for the key
    * @param valueType The {@code PType} to use for the value
@@ -177,6 +189,76 @@ public class From {
    */
   public static <T> Source<T> avroFile(Path path, AvroType<T> avroType) {
     return new AvroFileSource<T>(path, avroType);
+  }
+
+  /**
+   * Creates a {@code Source<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path. If the path is a directory, the schema of a file in the directory
+   * will be used to determine the schema to use.
+   *
+   * @param pathName The name of the path to the data on the filesystem
+   * @return A new {@code Source<GenericData.Record>} instance
+   */
+  public static Source<GenericData.Record> avroFile(String pathName) {
+    return avroFile(new Path(pathName));
+  }
+
+  /**
+   * Creates a {@code Source<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path. If the path is a directory, the schema of a file in the directory
+   * will be used to determine the schema to use.
+   *
+   * @param path The path to the data on the filesystem
+   * @return A new {@code Source<GenericData.Record>} instance
+   */
+  public static Source<GenericData.Record> avroFile(Path path) {
+    return avroFile(path, new Configuration());
+  }
+
+  /**
+   * Creates a {@code Source<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path using the {@code FileSystem} information contained in the given
+   * {@code Configuration} instance. If the path is a directory, the schema of a file in
+   * the directory will be used to determine the schema to use.
+   *
+   * @param path The path to the data on the filesystem
+   * @param conf The configuration information
+   * @return A new {@code Source<GenericData.Record>} instance
+   */
+  public static Source<GenericData.Record> avroFile(Path path, Configuration conf) {
+    return avroFile(path, Avros.generics(getSchemaFromPath(path, conf)));
+  }
+
+  static Schema getSchemaFromPath(Path path, Configuration conf) {
+    DataFileReader reader = null;
+    try {
+      FileSystem fs = FileSystem.get(conf);
+      if (!fs.isFile(path)) {
+        FileStatus[] fstat = fs.listStatus(path, new PathFilter() {
+          @Override
+          public boolean accept(Path path) {
+            String name = path.getName();
+            return !name.startsWith("_") && !name.startsWith(".");
+          }
+        });
+        if (fstat == null || fstat.length == 0) {
+          throw new IllegalArgumentException("No valid files found in directory: " + path);
+        }
+        path = fstat[0].getPath();
+      }
+      reader = new DataFileReader(new FsInput(path, conf), new GenericDatumReader<GenericRecord>());
+      return reader.getSchema();
+    } catch (IOException e) {
+      throw new RuntimeException("Error reading schema from path: "  + path, e);
+    } finally {
+      if (reader != null) {
+        try {
+          reader.close();
+        } catch (IOException e) {
+          // ignored
+        }
+      }
+    }
   }
 
   /**

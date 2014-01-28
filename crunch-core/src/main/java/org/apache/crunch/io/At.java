@@ -17,7 +17,9 @@
  */
 package org.apache.crunch.io;
 
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.specific.SpecificRecord;
+import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
@@ -29,6 +31,7 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
@@ -85,7 +88,45 @@ public class At {
   public static <T extends SpecificRecord> SourceTarget<T> avroFile(Path path, Class<T> avroClass) {
     return avroFile(path, Avros.specifics(avroClass));  
   }
-  
+
+  /**
+   * Creates a {@code SourceTarget<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path. If the path is a directory, the schema of a file in the directory
+   * will be used to determine the schema to use.
+   *
+   * @param pathName The name of the path to the data on the filesystem
+   * @return A new {@code SourceTarget<GenericData.Record>} instance
+   */
+  public static SourceTarget<GenericData.Record> avroFile(String pathName) {
+    return avroFile(new Path(pathName));
+  }
+
+  /**
+   * Creates a {@code SourceTarget<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path. If the path is a directory, the schema of a file in the directory
+   * will be used to determine the schema to use.
+   *
+   * @param path The path to the data on the filesystem
+   * @return A new {@code SourceTarget<GenericData.Record>} instance
+   */
+  public static SourceTarget<GenericData.Record> avroFile(Path path) {
+    return avroFile(path, new Configuration());
+  }
+
+  /**
+   * Creates a {@code SourceTarget<GenericData.Record>} by reading the schema of the Avro file
+   * at the given path using the {@code FileSystem} information contained in the given
+   * {@code Configuration} instance. If the path is a directory, the schema of a file in
+   * the directory will be used to determine the schema to use.
+   *
+   * @param path The path to the data on the filesystem
+   * @param conf The configuration information
+   * @return A new {@code SourceTarget<GenericData.Record>} instance
+   */
+  public static SourceTarget<GenericData.Record> avroFile(Path path, Configuration conf) {
+    return avroFile(path, Avros.generics(From.getSchemaFromPath(path, conf)));
+  }
+
   /**
    * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given path name.
    * 
