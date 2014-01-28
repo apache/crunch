@@ -19,11 +19,14 @@ package org.apache.crunch.scrunch
 
 import org.apache.crunch.io.{From => from, To => to, At => at}
 import org.apache.crunch.types.avro.AvroType
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 
 trait From {
   def avroFile[T](path: String, atype: AvroType[T]) = from.avroFile(path, atype)
   def avroFile[T](path: Path, atype: AvroType[T]) = from.avroFile(path, atype)
+  def avroFile(path: Path) = from.avroFile(path)
+  def avroFile(path: Path, conf: Configuration) = from.avroFile(path, conf)
   def textFile(path: String) = from.textFile(path)
   def textFile(path: Path) = from.textFile(path)
 }
@@ -42,6 +45,8 @@ object To extends To
 trait At {
   def avroFile[T](path: String, atype: AvroType[T]) = at.avroFile(path, atype)
   def avroFile[T](path: Path, atype: AvroType[T]) = at.avroFile(path, atype)
+  def avroFile(path: Path) = at.avroFile(path)
+  def avroFile(path: Path, conf: Configuration) = at.avroFile(path, conf)
   def textFile(path: String) = at.textFile(path)
   def textFile(path: Path) = at.textFile(path)
 }
