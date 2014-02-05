@@ -19,7 +19,10 @@ package org.apache.crunch.io.text;
 
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.List;
+
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -42,11 +45,12 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   }
 
   public TextFileSource(Path path, PType<T> ptype) {
-    super(path, ptype, getInputFormat(path, ptype));
+    this(Collections.singletonList(path), ptype);
   }
 
   public TextFileSource(List<Path> paths, PType<T> ptype) {
     super(paths, ptype, getInputFormat(paths.get(0), ptype));
+    inputBundle.set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString());
   }
 
   @Override

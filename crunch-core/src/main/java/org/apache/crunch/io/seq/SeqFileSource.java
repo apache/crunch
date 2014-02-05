@@ -19,7 +19,10 @@ package org.apache.crunch.io.seq;
 
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.List;
+
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
@@ -31,11 +34,12 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 public class SeqFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
   public SeqFileSource(Path path, PType<T> ptype) {
-    super(path, ptype, SequenceFileInputFormat.class);
+    this(Collections.<Path>singletonList(path), ptype);
   }
 
   public SeqFileSource(List<Path> paths, PType<T> ptype) {
     super(paths, ptype, SequenceFileInputFormat.class);
+    inputBundle.set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString());
   }
 
   @Override

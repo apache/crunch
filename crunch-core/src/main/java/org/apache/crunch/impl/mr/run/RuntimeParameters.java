@@ -28,6 +28,11 @@ public final class RuntimeParameters {
 
   public static final String LOG_JOB_PROGRESS = "crunch.log.job.progress";
 
+  /**
+   * Runtime property which indicates that a {@link org.apache.crunch.Source} should attempt to combine small files
+   * to reduce overhead by default splits.  Unless overridden by the {@code Source} implementation it will default to
+   * {@code true}.
+   */
   public static final String DISABLE_COMBINE_FILE = "crunch.disable.combine.file";
 
   public static final String COMBINE_FILE_BLOCK_SIZE = "crunch.combine.file.block.size";
