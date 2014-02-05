@@ -19,6 +19,7 @@ package org.apache.crunch.io.avro.trevni;
 
 import java.util.List;
 import org.apache.avro.mapred.AvroJob;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.ReadableData;
@@ -37,6 +38,7 @@ public class TrevniKeySource<T> extends FileSourceImpl<T> implements ReadableSou
     return FormatBundle.forInput(AvroTrevniKeyInputFormat.class)
         .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
         .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
+        .set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString())
         .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName());
   }
 
