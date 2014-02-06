@@ -17,25 +17,17 @@
  */
 package org.apache.crunch.lib;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-
-import org.apache.crunch.DoFn;
-import org.apache.crunch.Emitter;
-import org.apache.crunch.PCollection;
-import org.apache.crunch.PTable;
-import org.apache.crunch.Pair;
-import org.apache.crunch.Tuple3;
-import org.apache.crunch.Tuple4;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import org.apache.crunch.*;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.test.Tests;
 import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
@@ -44,9 +36,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 
 public class CogroupIT {
@@ -101,7 +97,17 @@ public class CogroupIT {
   public void testCogroup4Avro() {
     runCogroup4(AvroTypeFamily.getInstance());
   }
-  
+
+  @Test
+  public void testCogroupNWritables() {
+    runCogroupN(WritableTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testCogroupNAvro() {
+    runCogroupN(AvroTypeFamily.getInstance());
+  }
+
   public void runCogroup(PTypeFamily ptf) {
     PTableType<String, String> tt = ptf.tableOf(ptf.strings(), ptf.strings());
 
@@ -181,6 +187,38 @@ public class CogroupIT {
     );
 
     assertThat(actual, is(expected));
+  }
+
+  public void runCogroupN(PTypeFamily ptf) {
+    PTableType<String, String> tt = ptf.tableOf(ptf.strings(), ptf.strings());
+
+    PTable<String, String> kv1 = lines1.parallelDo("kv1", new KeyValueSplit(), tt);
+    PTable<String, String> kv2 = lines2.parallelDo("kv2", new KeyValueSplit(), tt);
+
+    PTable<String, TupleN> cg = Cogroup.cogroup(kv1, new PTable[]{kv2});
+
+    Map<String, TupleN> result = cg.materializeToMap();
+    Map<String, TupleN> actual = Maps.newHashMap();
+    for (Map.Entry<String, TupleN> e : result.entrySet()) {
+      Collection<String> one = ImmutableSet.copyOf((Collection<? extends String>) e.getValue().get(0));
+      Collection<String> two = ImmutableSet.copyOf((Collection<? extends String>)e.getValue().get(1));
+      actual.put(e.getKey(), TupleN.of(one, two));
+    }
+    Map<String, TupleN> expected = ImmutableMap.of(
+        "a", TupleN.of(coll("1-1", "1-4"), coll()),
+        "b", TupleN.of(coll("1-2"), coll("2-1")),
+        "c", TupleN.of(coll("1-3"), coll("2-2", "2-3")),
+        "d", TupleN.of(coll(), coll("2-4"))
+    );
+
+    assertThat(actual, is(expected));
+
+    PType<TupleN> tupleValueType = cg.getValueType();
+    List<PType> expectedSubtypes = ImmutableList.<PType>of(
+        ptf.collections(ptf.strings()),
+        ptf.collections(ptf.strings()));
+
+    assertThat(tupleValueType.getSubTypes(), is(expectedSubtypes));
   }
   
   private static class KeyValueSplit extends DoFn<String, Pair<String, String>> {
