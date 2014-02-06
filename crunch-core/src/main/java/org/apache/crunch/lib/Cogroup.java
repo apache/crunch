@@ -17,8 +17,7 @@
  */
 package org.apache.crunch.lib;
 
-import java.util.Collection;
-
+import com.google.common.collect.Lists;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PGroupedTable;
 import org.apache.crunch.PTable;
@@ -32,7 +31,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.TupleFactory;
 
-import com.google.common.collect.Lists;
+import java.util.Collection;
 
 public class Cogroup {
 
@@ -192,7 +191,7 @@ public class Cogroup {
     PType[] components = new PType[1 + rest.length];
     components[0] = tf.collections(first.getValueType());
     for (int i = 0; i < rest.length; i++) {
-      components[i + 1] = rest[i].getValueType();
+      components[i + 1] = tf.collections(rest[i].getValueType());
     }
     return cogroup(
         tf.tuples(components),
