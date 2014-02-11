@@ -1,6 +1,0 @@
-A	this doc has this text
-A	and this text as well
-A	but also this
-B	this doc has some text
-B	but not as much as the last
-B	doc
