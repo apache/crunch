@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.google.common.base.Charsets;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.commons.logging.Log;
@@ -211,17 +212,20 @@ public class MemPipeline implements Pipeline {
             LOG.warn("Defaulting to write to a text file from MemPipeline");
             Path outputPath = new Path(path, "out" + outputIndex + ".txt");
             FSDataOutputStream os = fs.create(outputPath);
+            byte[] newLine = "\r\n".getBytes(Charsets.UTF_8);
             if (collection instanceof PTable) {
+              byte[] tab = "\t".getBytes(Charsets.UTF_8);
               for (Object o : collection.materialize()) {
                 Pair p = (Pair) o;
-                os.writeBytes(p.first().toString());
-                os.writeBytes("\t");
-                os.writeBytes(p.second().toString());
-                os.writeBytes("\r\n");
+                os.write(p.first().toString().getBytes(Charsets.UTF_8));
+                os.write(tab);
+                os.write(p.second().toString().getBytes(Charsets.UTF_8));
+                os.write(newLine);
               }
             } else {
               for (Object o : collection.materialize()) {
-                os.writeBytes(o.toString() + "\r\n");
+                os.write(o.toString().getBytes(Charsets.UTF_8));
+                os.write(newLine);
               }
             }
             os.close();
