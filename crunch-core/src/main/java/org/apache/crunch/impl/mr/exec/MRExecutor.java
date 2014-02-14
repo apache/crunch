@@ -123,7 +123,8 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
       }
       List<PipelineResult.StageResult> stages = Lists.newArrayList();
       for (CrunchControlledJob job : control.getSuccessfulJobList()) {
-        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getMapredJobID().toString(), job.getCounters()));
+        stages.add(new PipelineResult.StageResult(job.getJobName(), job.getMapredJobID().toString(), job.getCounters(),
+            job.getStartTimeMsec(), job.getJobStartTimeMsec(), job.getJobEndTimeMsec(), job.getEndTimeMsec()));
       }
 
       for (PCollectionImpl<?> c : outputTargets.keySet()) {
