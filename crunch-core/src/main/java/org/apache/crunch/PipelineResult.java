@@ -41,23 +41,65 @@ public class PipelineResult {
     private final String stageName;
     private final String stageId;
     private final Counters counters;
+    private final long startTimeMsec;
+    private final long jobStartTimeMsec;
+    private final long jobEndTimeMsec;
+    private final long endTimeMsec;
 
     public StageResult(String stageName, Counters counters) {
-      this(stageName, stageName, counters);
+      this(stageName, counters, System.currentTimeMillis(), System.currentTimeMillis());
     }
 
-    public StageResult(String stageName, String stageId, Counters counters) {
+    public StageResult(String stageName, Counters counters, long startTimeMsec, long endTimeMsec) {
+      this(stageName, stageName, counters, startTimeMsec, startTimeMsec, endTimeMsec, endTimeMsec);
+    }
+
+    public StageResult(String stageName, String stageId, Counters counters, long startTimeMsec,
+        long jobStartTimeMsec, long jobEndTimeMsec, long endTimeMsec) {
       this.stageName = stageName;
       this.stageId = stageId;
       this.counters = counters;
+      this.startTimeMsec = startTimeMsec;
+      this.jobStartTimeMsec = jobStartTimeMsec;
+      this.jobEndTimeMsec = jobEndTimeMsec;
+      this.endTimeMsec = endTimeMsec;
     }
 
     public String getStageName() {
       return stageName;
     }
 
-    public String getStageId(){
+    public String getStageId() {
       return stageId;
+    }
+
+    /**
+     * @return the overall start time for this stage, that is, the time at which any pre-job hooks were
+     * started.
+     */
+    public long getStartTimeMsec() {
+      return startTimeMsec;
+    }
+
+    /**
+     * @return the time that the work for this stage was submitted to the cluster for execution, if applicable.
+     */
+    public long getJobStartTimeMsec() {
+      return jobStartTimeMsec;
+    }
+
+    /**
+     * @return the time that the work for this stage finished processing on the cluster, if applicable.
+     */
+    public long getJobEndTimeMsec() {
+      return jobEndTimeMsec;
+    }
+
+    /**
+     * @return the overall end time for this stage, that is, the time at which any post-job hooks completed.
+     */
+    public long getEndTimeMsec() {
+      return endTimeMsec;
     }
 
     /**

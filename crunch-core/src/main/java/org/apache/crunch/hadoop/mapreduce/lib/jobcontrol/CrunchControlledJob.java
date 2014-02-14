@@ -62,6 +62,10 @@ public class CrunchControlledJob implements MRJob {
   private String message;
   private String lastKnownProgress;
   private Counters counters;
+  private long preHookStartTimeMsec;
+  private long jobStartTimeMsec;
+  private long jobEndTimeMsec;
+  private long postHookEndTimeMsec;
 
   /**
    * Construct a job.
@@ -136,6 +140,22 @@ public class CrunchControlledJob implements MRJob {
    */
   public JobID getMapredJobID() {
     return this.job.getJobID();
+  }
+
+  public long getStartTimeMsec() {
+    return preHookStartTimeMsec;
+  }
+
+  public long getJobStartTimeMsec() {
+    return jobStartTimeMsec;
+  }
+
+  public long getJobEndTimeMsec() {
+    return jobEndTimeMsec;
+  }
+
+  public long getEndTimeMsec() {
+    return postHookEndTimeMsec;
   }
 
   public Counters getCounters() {
@@ -231,6 +251,7 @@ public class CrunchControlledJob implements MRJob {
   private void checkRunningState() throws IOException, InterruptedException {
     try {
       if (job.isComplete()) {
+        this.jobEndTimeMsec = System.currentTimeMillis();
         this.counters = job.getCounters();
         if (job.isSuccessful()) {
           this.state = State.SUCCESS;
@@ -256,6 +277,7 @@ public class CrunchControlledJob implements MRJob {
     }
     if (isCompleted()) {
       completionHook.run();
+      this.postHookEndTimeMsec = System.currentTimeMillis();
     }
   }
 
@@ -303,7 +325,9 @@ public class CrunchControlledJob implements MRJob {
    */
   protected synchronized void submit() {
     try {
+      this.preHookStartTimeMsec = System.currentTimeMillis();
       prepareHook.run();
+      this.jobStartTimeMsec = System.currentTimeMillis();
       job.submit();
       this.state = State.RUNNING;
       LOG.info("Running job \"" + getJobName() + "\"");

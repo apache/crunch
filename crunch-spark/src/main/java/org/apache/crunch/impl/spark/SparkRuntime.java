@@ -198,6 +198,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
 
   private void monitorLoop() {
     status.set(Status.RUNNING);
+    long start = System.currentTimeMillis();
     Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps = Maps.<PCollectionImpl<?>, PCollectionImpl<?>, Set<SourceTarget<?>>>newTreeMap(DEPTH_COMPARATOR);
     for (PCollectionImpl<?> pcollect : outputTargets.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
@@ -280,7 +281,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     }
     if (status.get() != Status.FAILED || status.get() != Status.KILLED) {
       status.set(Status.SUCCEEDED);
-      result = new PipelineResult(ImmutableList.of(new PipelineResult.StageResult("Spark", null)),
+      result = new PipelineResult(
+          ImmutableList.of(new PipelineResult.StageResult("Spark", null, start, System.currentTimeMillis())),
           Status.SUCCEEDED);
       set(result);
     } else {
