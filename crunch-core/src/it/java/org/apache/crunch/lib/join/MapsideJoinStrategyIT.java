@@ -42,6 +42,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import sun.print.resources.serviceui;
 
 public class MapsideJoinStrategyIT {
   
@@ -91,22 +92,44 @@ public class MapsideJoinStrategyIT {
 
   @Test
   public void testMapSideJoin_MemPipeline() {
-    runMapsideJoin(MemPipeline.getInstance(), true, false);
+    runMapsideJoin(MemPipeline.getInstance(), true, false, MapsideJoinStrategy.<Integer,String,String>create(false));
+  }
+
+  @Test
+  public void testLegacyMapSideJoin_MemPipeline() {
+    runLegacyMapsideJoin(MemPipeline.getInstance(), true, false, new MapsideJoinStrategy<Integer, String, String>(false));
   }
 
   @Test
   public void testMapSideJoin_MemPipeline_Materialized() {
-    runMapsideJoin(MemPipeline.getInstance(), true, true);
-  }
-  
-  @Test
-  public void testMapSideJoinLeftOuterJoin_MemPipeline() {
-    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true, false);
+    runMapsideJoin(MemPipeline.getInstance(), true, true, MapsideJoinStrategy.<Integer,String,String>create(true));
   }
 
   @Test
-  public void testMapSideJoinLeftOuterJoin_MemPipeline_Materialized() {
-    runMapsideLeftOuterJoin(MemPipeline.getInstance(), true, true);
+  public void testLegacyMapSideJoin_MemPipeline_Materialized() {
+    runLegacyMapsideJoin(MemPipeline.getInstance(), true, true, new MapsideJoinStrategy<Integer, String, String>(true));
+  }
+  
+  @Test
+  public void testMapSideJoinRightOuterJoin_MemPipeline() {
+    runMapsideRightOuterJoin(MemPipeline.getInstance(), true, false,
+                             MapsideJoinStrategy.<Integer, String, String>create(false));
+  }
+
+  @Test
+  public void testLegacyMapSideJoinLeftOuterJoin_MemPipeline() {
+    runLegacyMapsideLeftOuterJoin(MemPipeline.getInstance(), true, false, new MapsideJoinStrategy<Integer, String, String>(false));
+  }
+
+  @Test
+  public void testMapSideJoinRightOuterJoin_MemPipeline_Materialized() {
+    runMapsideRightOuterJoin(MemPipeline.getInstance(), true, true,
+                             MapsideJoinStrategy.<Integer, String, String>create(true));
+  }
+
+  @Test
+  public void testLegacyMapSideJoinLeftOuterJoin_MemPipeline_Materialized() {
+    runLegacyMapsideLeftOuterJoin(MemPipeline.getInstance(), true, true, new MapsideJoinStrategy<Integer, String, String>(true));
   }
 
   @Test
@@ -128,43 +151,92 @@ public class MapsideJoinStrategyIT {
   }
 
   @Test
+  public void testLegacyMapsideJoin_LeftSideIsEmpty() throws IOException {
+    MRPipeline pipeline = new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration());
+    PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
+    PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
+
+    PTable<Integer, String> filteredCustomerTable = customerTable
+        .parallelDo(FilterFns.<Pair<Integer, String>>REJECT_ALL(), customerTable.getPTableType());
+
+
+    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>();
+    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(customerTable, filteredCustomerTable,
+                                                                    JoinType.INNER_JOIN);
+
+    List<Pair<Integer, Pair<String, String>>> materializedJoin = Lists.newArrayList(joined.materialize());
+
+    assertTrue(materializedJoin.isEmpty());
+  }
+
+  @Test
   public void testMapsideJoin() throws IOException {
-    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, false);
+    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                   false, false, MapsideJoinStrategy.<Integer, String, String>create(false));
+  }
+
+  @Test
+  public void testLegacyMapsideJoin() throws IOException {
+    runLegacyMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                   false, false, new MapsideJoinStrategy<Integer, String, String>(false));
   }
 
   @Test
   public void testMapsideJoin_Materialized() throws IOException {
-    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, true);
+    runMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                   false, true, MapsideJoinStrategy.<Integer, String, String>create(true));
   }
 
   @Test
-  public void testMapsideJoin_LeftOuterJoin() throws IOException {
-    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, false);
+  public void testLegacyMapsideJoin_Materialized() throws IOException {
+    runLegacyMapsideJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                   false, true, new MapsideJoinStrategy<Integer, String, String>(true));
   }
 
   @Test
-  public void testMapsideJoin_LeftOuterJoin_Materialized() throws IOException {
-    runMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()), false, true);
+  public void testMapsideJoin_RightOuterJoin() throws IOException {
+    runMapsideRightOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                             false, false, MapsideJoinStrategy.<Integer, String, String>create(false));
   }
 
-  private void runMapsideJoin(Pipeline pipeline, boolean inMemory, boolean materialize) {
+  @Test
+  public void testLegacyMapsideJoin_LeftOuterJoin() throws IOException {
+    runLegacyMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                                  false, false,
+                                  new MapsideJoinStrategy<Integer, String, String>(false));
+  }
+
+  @Test
+  public void testMapsideJoin_RightOuterJoin_Materialized() throws IOException {
+    runMapsideRightOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                             false, true, MapsideJoinStrategy.<Integer, String, String>create(true));
+  }
+
+  @Test
+  public void testLegacyMapsideJoin_LeftOuterJoin_Materialized() throws IOException {
+    runLegacyMapsideLeftOuterJoin(new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration()),
+                                  false, true,
+                                  new MapsideJoinStrategy<Integer, String, String>(true));
+  }
+
+  private void runMapsideJoin(Pipeline pipeline, boolean inMemory, boolean materialize,
+                              MapsideJoinStrategy<Integer,String, String> joinStrategy) {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
     
-    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>(materialize);
-    PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.INNER_JOIN)
+    PTable<Integer, String> custOrders = joinStrategy.join(orderTable, customerTable, JoinType.INNER_JOIN)
         .mapValues("concat", new ConcatValuesFn(), Writables.strings());
 
     PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
-    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.INNER_JOIN);
+    PTable<Integer, Pair<String, String>> joined = joinStrategy.join(ORDER_TABLE, custOrders, JoinType.INNER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
-    expectedJoinResult.add(Pair.of(111, Pair.of("[John Doe,Corn flakes]", "CORN FLAKES")));
-    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PAPER")));
-    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PLUNGER")));
-    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PAPER")));
-    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PLUNGER")));
-    expectedJoinResult.add(Pair.of(333, Pair.of("[Someone Else,Toilet brush]", "TOILET BRUSH")));
+    expectedJoinResult.add(Pair.of(111, Pair.of("CORN FLAKES", "[Corn flakes,John Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PAPER", "[Toilet paper,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PAPER", "[Toilet plunger,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PLUNGER", "[Toilet paper,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PLUNGER", "[Toilet plunger,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(333, Pair.of("TOILET BRUSH", "[Toilet brush,Someone Else]")));
     Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
     
     PipelineResult res = pipeline.run();
@@ -177,17 +249,83 @@ public class MapsideJoinStrategyIT {
 
     assertEquals(expectedJoinResult, joinedResultList);
   }
-  
-  private void runMapsideLeftOuterJoin(Pipeline pipeline, boolean inMemory, boolean materialize) {
+
+  private void runLegacyMapsideJoin(Pipeline pipeline, boolean inMemory, boolean materialize,
+                                    MapsideJoinStrategy<Integer, String, String> mapsideJoinStrategy) {
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
     PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
-    
-    JoinStrategy<Integer, String, String> mapsideJoin = new MapsideJoinStrategy<Integer, String, String>(materialize);
-    PTable<Integer, String> custOrders = mapsideJoin.join(customerTable, orderTable, JoinType.LEFT_OUTER_JOIN)
+
+    PTable<Integer, String> custOrders = mapsideJoinStrategy.join(customerTable, orderTable, JoinType.INNER_JOIN)
         .mapValues("concat", new ConcatValuesFn(), Writables.strings());
 
     PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
-    PTable<Integer, Pair<String, String>> joined = mapsideJoin.join(custOrders, ORDER_TABLE, JoinType.LEFT_OUTER_JOIN);
+    PTable<Integer, Pair<String, String>> joined = mapsideJoinStrategy.join(custOrders, ORDER_TABLE, JoinType.INNER_JOIN);
+
+    List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
+    expectedJoinResult.add(Pair.of(111, Pair.of("[John Doe,Corn flakes]", "CORN FLAKES")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PAPER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet paper]", "TOILET PLUNGER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PAPER")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("[Jane Doe,Toilet plunger]", "TOILET PLUNGER")));
+    expectedJoinResult.add(Pair.of(333, Pair.of("[Someone Else,Toilet brush]", "TOILET BRUSH")));
+    Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
+
+    PipelineResult res = pipeline.run();
+    if (!inMemory) {
+      assertEquals(materialize ? 2 : 1, res.getStageResults().size());
+    }
+
+    List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);
+    Collections.sort(joinedResultList);
+
+    assertEquals(expectedJoinResult, joinedResultList);
+  }
+  
+  private void runMapsideRightOuterJoin(Pipeline pipeline, boolean inMemory, boolean materialize,
+                                        MapsideJoinStrategy<Integer, String, String> mapsideJoinStrategy) {
+    PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
+    PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
+    
+    PTable<Integer, String> custOrders = mapsideJoinStrategy.join(orderTable, customerTable, JoinType.RIGHT_OUTER_JOIN)
+        .mapValues("concat", new ConcatValuesFn(), Writables.strings());
+
+    PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
+    PTable<Integer, Pair<String, String>> joined = mapsideJoinStrategy.join(ORDER_TABLE, custOrders,
+                                                                     JoinType.RIGHT_OUTER_JOIN);
+
+    List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
+    expectedJoinResult.add(Pair.of(111, Pair.of("CORN FLAKES", "[Corn flakes,John Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PAPER", "[Toilet paper,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PAPER", "[Toilet plunger,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PLUNGER", "[Toilet paper,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(222, Pair.of("TOILET PLUNGER", "[Toilet plunger,Jane Doe]")));
+    expectedJoinResult.add(Pair.of(333, Pair.of("TOILET BRUSH", "[Toilet brush,Someone Else]")));
+    expectedJoinResult.add(Pair.of(444, Pair.<String,String>of(null, "[null,Has No Orders]")));
+    Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
+    
+    PipelineResult res = pipeline.run();
+    if (!inMemory) {
+      assertEquals(materialize ? 2 : 1, res.getStageResults().size());
+    }
+     
+    List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);
+    Collections.sort(joinedResultList);
+
+    assertEquals(expectedJoinResult, joinedResultList);
+  }
+
+  private void runLegacyMapsideLeftOuterJoin(Pipeline pipeline, boolean inMemory, boolean materialize,
+                                             MapsideJoinStrategy<Integer, String, String> legacyMapsideJoinStrategy) {
+    PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
+    PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
+
+    PTable<Integer, String> custOrders = legacyMapsideJoinStrategy.join(customerTable, orderTable,
+                                                                        JoinType.LEFT_OUTER_JOIN)
+        .mapValues("concat", new ConcatValuesFn(), Writables.strings());
+
+    PTable<Integer, String> ORDER_TABLE = orderTable.mapValues(new CapOrdersFn(), orderTable.getValueType());
+    PTable<Integer, Pair<String, String>> joined =
+        legacyMapsideJoinStrategy.join(custOrders, ORDER_TABLE, JoinType.LEFT_OUTER_JOIN);
 
     List<Pair<Integer, Pair<String, String>>> expectedJoinResult = Lists.newArrayList();
     expectedJoinResult.add(Pair.of(111, Pair.of("[John Doe,Corn flakes]", "CORN FLAKES")));
@@ -198,12 +336,12 @@ public class MapsideJoinStrategyIT {
     expectedJoinResult.add(Pair.of(333, Pair.of("[Someone Else,Toilet brush]", "TOILET BRUSH")));
     expectedJoinResult.add(Pair.of(444, Pair.<String,String>of("[Has No Orders,null]", null)));
     Iterable<Pair<Integer, Pair<String, String>>> iter = joined.materialize();
-    
+
     PipelineResult res = pipeline.run();
     if (!inMemory) {
       assertEquals(materialize ? 2 : 1, res.getStageResults().size());
     }
-     
+
     List<Pair<Integer, Pair<String, String>>> joinedResultList = Lists.newArrayList(iter);
     Collections.sort(joinedResultList);
 

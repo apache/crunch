@@ -17,12 +17,12 @@
  */
 package org.apache.crunch.lib.join;
 
-import java.io.IOException;
-import java.util.Collection;
-
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
@@ -30,17 +30,22 @@ import org.apache.crunch.ReadableData;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Utility for doing map side joins on a common key between two {@link PTable}s.
  * <p>
  * A map side join is an optimized join which doesn't use a reducer; instead,
- * the right side of the join is loaded into memory and the join is performed in
+ * one side of the join is loaded into memory and the join is performed in
  * a mapper. This style of join has the important implication that the output of
  * the join is not sorted, which is the case with a conventional (reducer-based)
  * join.
+ * <p/>
+ * Instances of this class should be instantiated via the {@link #create()} or {@link #create(boolean)} factory
+ * methods, or optionally via the deprecated public constructor for backwards compatibility with
+ * older versions of Crunch where the right-side table was loaded into memory. The public constructor will be removed
+ * in a future release.
  */
 public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
@@ -49,22 +54,52 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   /**
    * Constructs a new instance of the {@code MapsideJoinStratey}, materializing the right-side
    * join table to disk before the join is performed.
+   *
+   * @deprecated Use the {@link #create()} factory method instead
    */
+  @Deprecated
   public MapsideJoinStrategy() {
     this(true);
   }
 
   /**
-   * Constructs a new instance of the {@code MapsideJoinStrategy}. If the {@code }materialize}
+   * Constructs a new instance of the {@code MapsideJoinStrategy}. If the {@code materialize}
    * argument is true, then the right-side join {@code PTable} will be materialized to disk
    * before the in-memory join is performed. If it is false, then Crunch can optionally read
    * and process the data from the right-side table without having to run a job to materialize
    * the data to disk first.
    *
    * @param materialize Whether or not to materialize the right-side table before the join
+   *
+   * @deprecated Use the {@link #create(boolean)} factory method instead
    */
+  @Deprecated
   public MapsideJoinStrategy(boolean materialize) {
     this.materialize = materialize;
+  }
+
+  /**
+   * Create a new {@code MapsideJoinStrategy} instance that will load its left-side table into memory,
+   * and will materialize the contents of the left-side table to disk before running the in-memory join.
+   * <p/>
+   * The smaller of the two tables to be joined should be provided as the left-side table of the created join
+   * strategy instance.
+   */
+  public static <K, U, V> MapsideJoinStrategy<K, U, V> create() {
+    return create(true);
+  }
+
+  /**
+   * Create a new {@code MapsideJoinStrategy} instance that will load its left-side table into memory.
+   * <p/>
+   * If the {@code materialize} parameter is true, then the left-side {@code PTable} will be materialized to disk
+   * before the in-memory join is performed. If it is false, then Crunch can optionally read and process the data
+   * from the left-side table without having to run a job to materialize the data to disk first.
+   *
+   * @param materialize Whether or not to materialize the left-side table before the join
+   */
+  public static <K, U, V> MapsideJoinStrategy<K, U, V> create(boolean materialize) {
+    return new LoadLeftSideMapsideJoinStrategy(materialize);
   }
 
   @Override
@@ -137,5 +172,48 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
         }
       }
     }
+  }
+
+  /**
+   * Loads the left-most table (instead of the right-most) in memory while performing the join.
+   */
+  private static class LoadLeftSideMapsideJoinStrategy<K, U, V> extends MapsideJoinStrategy<K, U, V> {
+
+    private MapsideJoinStrategy<K, V, U> mapsideJoinStrategy;
+
+    public LoadLeftSideMapsideJoinStrategy(boolean materialize) {
+      mapsideJoinStrategy = new MapsideJoinStrategy<K, V, U>(materialize);
+    }
+
+    @Override
+    public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
+
+      JoinType reversedJoinType;
+      switch (joinType) {
+        case INNER_JOIN:
+          reversedJoinType = JoinType.INNER_JOIN;
+          break;
+        case RIGHT_OUTER_JOIN:
+          reversedJoinType = JoinType.LEFT_OUTER_JOIN;
+          break;
+        default:
+          throw new UnsupportedOperationException("Join type " + joinType + " is not supported");
+      }
+
+
+      return mapsideJoinStrategy.join(right, left, reversedJoinType)
+          .mapValues("Reverse order out output table values",
+                     new ReversePairOrderFn<V, U>(),
+                     left.getTypeFamily().pairs(left.getValueType(), right.getValueType()));
+    }
+  }
+
+  private static class ReversePairOrderFn<V, U> extends MapFn<Pair<V, U>, Pair<U, V>> {
+
+    @Override
+    public Pair<U, V> map(Pair<V, U> input) {
+      return Pair.of(input.second(), input.first());
+    }
+
   }
 }
