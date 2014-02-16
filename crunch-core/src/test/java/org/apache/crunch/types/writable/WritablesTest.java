@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
+import com.google.common.collect.Lists;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
@@ -44,8 +45,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 
 public class WritablesTest {
 

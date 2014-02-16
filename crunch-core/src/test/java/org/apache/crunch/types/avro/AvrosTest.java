@@ -27,6 +27,8 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
@@ -40,7 +42,7 @@ import org.apache.crunch.TupleN;
 import org.apache.crunch.test.CrunchTestSupport;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
-import org.apache.crunch.types.DeepCopier;
+import org.apache.crunch.types.NoOpDeepCopier;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
@@ -48,9 +50,6 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 /**
  * TODO test Avros.register and Avros.containers
@@ -235,7 +234,7 @@ public class AvrosTest {
 
   @Test
   public void testIsPrimitive_TruePrimitiveValue() {
-    AvroType truePrimitiveAvroType = new AvroType(int.class, Schema.create(Type.INT), new DeepCopier.NoOpDeepCopier());
+    AvroType truePrimitiveAvroType = new AvroType(int.class, Schema.create(Type.INT), NoOpDeepCopier.create());
     assertTrue(Avros.isPrimitive(truePrimitiveAvroType));
   }
 

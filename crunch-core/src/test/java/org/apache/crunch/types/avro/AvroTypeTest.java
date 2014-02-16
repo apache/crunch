@@ -17,27 +17,31 @@
  */
 package org.apache.crunch.types.avro;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.Pair;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.PTypes;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 public class AvroTypeTest {
 
@@ -283,4 +287,44 @@ public class AvroTypeTest {
     assertNotSame(person, detachedTuple.get(0));
   }
 
+  @Test
+  public void testGetDetachedValue_ImmutableDerived() {
+    PType<UUID> uuidType = PTypes.uuid(AvroTypeFamily.getInstance());
+    uuidType.initialize(new Configuration());
+
+    UUID uuid = new UUID(1L, 1L);
+    UUID detached = uuidType.getDetachedValue(uuid);
+
+    assertSame(uuid, detached);
+  }
+
+  @Test
+  public void testGetDetachedValue_MutableDerived() {
+    PType<StringWrapper> jsonType = PTypes.jsonString(StringWrapper.class, AvroTypeFamily.getInstance());
+    jsonType.initialize(new Configuration());
+
+    StringWrapper stringWrapper = new StringWrapper();
+    stringWrapper.setValue("test");
+
+    StringWrapper detachedValue = jsonType.getDetachedValue(stringWrapper);
+
+    assertNotSame(stringWrapper, detachedValue);
+    assertEquals(stringWrapper, detachedValue);
+  }
+
+  @Test
+  public void testGetDetachedValue_Bytes() {
+    byte[] buffer = new byte[]{1, 2, 3};
+    AvroType<ByteBuffer> byteType = Avros.bytes();
+    byteType.initialize(new Configuration());
+
+    ByteBuffer detachedValue = byteType.getDetachedValue(ByteBuffer.wrap(buffer));
+
+    byte[] detachedBuffer = new byte[buffer.length];
+    detachedValue.get(detachedBuffer);
+
+    assertArrayEquals(buffer, detachedBuffer);
+    buffer[0] = 99;
+    assertEquals(detachedBuffer[0], 1);
+  }
 }

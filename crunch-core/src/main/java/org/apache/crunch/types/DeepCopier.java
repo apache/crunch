@@ -43,18 +43,4 @@ public interface DeepCopier<T> extends Serializable {
    */
   T deepCopy(T source);
 
-  static class NoOpDeepCopier<V> implements DeepCopier<V> {
-
-    @Override
-    public V deepCopy(V source) {
-      return source;
-    }
-
-    @Override
-    public void initialize(Configuration conf) {
-      // No initialization needed
-    }
-
-  }
-
 }
