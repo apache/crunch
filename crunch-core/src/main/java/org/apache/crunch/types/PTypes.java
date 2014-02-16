@@ -47,14 +47,14 @@ public class PTypes {
    * A PType for Java's {@link BigInteger} type.
    */
   public static PType<BigInteger> bigInt(PTypeFamily typeFamily) {
-    return typeFamily.derived(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());
+    return typeFamily.derivedImmutable(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());
   }
 
   /**
    * A PType for Java's {@link UUID} type.
    */
   public static PType<UUID> uuid(PTypeFamily ptf) {
-    return ptf.derived(UUID.class, BYTE_TO_UUID, UUID_TO_BYTE, ptf.bytes());
+    return ptf.derivedImmutable(UUID.class, BYTE_TO_UUID, UUID_TO_BYTE, ptf.bytes());
   }
 
   /**
@@ -69,7 +69,7 @@ public class PTypes {
    * Constructs a PType for the given protocol buffer.
    */
   public static <T extends Message> PType<T> protos(Class<T> clazz, PTypeFamily typeFamily) {
-    return typeFamily.derived(clazz, new ProtoInputMapFn<T>(clazz), new ProtoOutputMapFn<T>(), typeFamily.bytes());
+    return typeFamily.derivedImmutable(clazz, new ProtoInputMapFn<T>(clazz), new ProtoOutputMapFn<T>(), typeFamily.bytes());
   }
 
   /**
@@ -80,7 +80,7 @@ public class PTypes {
       Class<T> clazz,
       PTypeFamily typeFamily,
       SerializableSupplier<ExtensionRegistry> supplier) {
-    return typeFamily.derived(clazz,
+    return typeFamily.derivedImmutable(clazz,
         new ProtoInputMapFn<T>(clazz, supplier),
         new ProtoOutputMapFn<T>(),
         typeFamily.bytes());
@@ -97,7 +97,7 @@ public class PTypes {
    * Constructs a PType for a Java {@code Enum} type.
    */
   public static <T extends Enum> PType<T> enums(Class<T> type, PTypeFamily typeFamily) {
-    return typeFamily.derived(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
+    return typeFamily.derivedImmutable(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
   }
 
   public static final MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {

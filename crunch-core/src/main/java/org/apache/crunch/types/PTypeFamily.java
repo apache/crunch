@@ -69,6 +69,12 @@ public interface PTypeFamily {
 
   <S, T> PType<T> derived(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base);
 
+  /**
+   * A derived type whose values are immutable. This variaion of derived exists to optimize for the case
+   * where deep-copying of data is never needed.
+   */
+  <S, T> PType<T> derivedImmutable(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base);
+
   PType<Union> unionOf(PType<?>... ptypes);
 
   <K, V> PTableType<K, V> tableOf(PType<K> key, PType<V> value);

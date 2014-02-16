@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
 import org.apache.avro.generic.GenericData;
@@ -52,8 +56,8 @@ import org.apache.crunch.Union;
 import org.apache.crunch.fn.CompositeMapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.types.CollectionDeepCopier;
-import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.MapDeepCopier;
+import org.apache.crunch.types.NoOpDeepCopier;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypes;
@@ -65,11 +69,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.ReflectionUtils;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 /**
  * Defines static methods that are analogous to the methods defined in
@@ -182,7 +181,7 @@ public class Avros {
   };
 
   private static final AvroType<String> strings = new AvroType<String>(String.class, Schema.create(Schema.Type.STRING),
-      UTF8_TO_STRING, STRING_TO_UTF8, new DeepCopier.NoOpDeepCopier<String>(), AvroType.AvroRecordType.GENERIC);
+      UTF8_TO_STRING, STRING_TO_UTF8, NoOpDeepCopier.<String>create(), AvroType.AvroRecordType.GENERIC);
   private static final AvroType<Void> nulls = create(Void.class, Schema.Type.NULL);
   private static final AvroType<Long> longs = create(Long.class, Schema.Type.LONG);
   private static final AvroType<Integer> ints = create(Integer.class, Schema.Type.INT);
@@ -191,7 +190,7 @@ public class Avros {
   private static final AvroType<Boolean> booleans = create(Boolean.class, Schema.Type.BOOLEAN);
   private static final AvroType<ByteBuffer> bytes = new AvroType<ByteBuffer>(ByteBuffer.class,
       Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance(),
-      new DeepCopier.NoOpDeepCopier<ByteBuffer>(), AvroType.AvroRecordType.GENERIC);
+      NoOpDeepCopier.<ByteBuffer>create(), AvroType.AvroRecordType.GENERIC);
 
   private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>> builder()
       .put(String.class, strings).put(Long.class, longs).put(Integer.class, ints).put(Float.class, floats)
@@ -215,7 +214,7 @@ public class Avros {
   }
 
   private static <T> AvroType<T> create(Class<T> clazz, Schema.Type schemaType) {
-    return new AvroType<T>(clazz, Schema.create(schemaType), new DeepCopier.NoOpDeepCopier<T>());
+    return new AvroType<T>(clazz, Schema.create(schemaType), NoOpDeepCopier.<T>create());
   }
 
   public static final AvroType<Void> nulls() {
@@ -812,7 +811,15 @@ public class Avros {
       PType<S> base) {
     AvroType<S> abase = (AvroType<S>) base;
     return new AvroType<T>(clazz, abase.getSchema(), new CompositeMapFn(abase.getInputMapFn(), inputFn),
-        new CompositeMapFn(outputFn, abase.getOutputMapFn()), new DeepCopier.NoOpDeepCopier<T>(), abase.getRecordType(),
+        new CompositeMapFn(outputFn, abase.getOutputMapFn()), new AvroDerivedValueDeepCopier(outputFn, inputFn, abase),
+        abase.getRecordType(), base.getSubTypes().toArray(new PType[0]));
+  }
+
+  public static final <S, T> AvroType<T> derivedImmutable(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn,
+                                                 PType<S> base) {
+    AvroType<S> abase = (AvroType<S>) base;
+    return new AvroType<T>(clazz, abase.getSchema(), new CompositeMapFn(abase.getInputMapFn(), inputFn),
+        new CompositeMapFn(outputFn, abase.getOutputMapFn()), NoOpDeepCopier.<T>create(), abase.getRecordType(),
         base.getSubTypes().toArray(new PType[0]));
   }
 

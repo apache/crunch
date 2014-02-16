@@ -262,27 +262,23 @@ public class Writables {
     }
   };
 
-  private static <S, W extends Writable> WritableType<S, W> create(Class<S> typeClass, Class<W> writableClass,
-      MapFn<W, S> inputDoFn, MapFn<S, W> outputDoFn) {
-    return new WritableType<S, W>(typeClass, writableClass, inputDoFn, outputDoFn);
-  }
 
-  private static final WritableType<Void, NullWritable> nulls = create(Void.class, NullWritable.class,
-      NULL_WRITABLE_TO_VOID, VOID_TO_NULL_WRITABLE);
-  private static final WritableType<String, Text> strings = create(String.class, Text.class, TEXT_TO_STRING,
-      STRING_TO_TEXT);
-  private static final WritableType<Long, LongWritable> longs = create(Long.class, LongWritable.class, LW_TO_LONG,
-      LONG_TO_LW);
-  private static final WritableType<Integer, IntWritable> ints = create(Integer.class, IntWritable.class, IW_TO_INT,
-      INT_TO_IW);
-  private static final WritableType<Float, FloatWritable> floats = create(Float.class, FloatWritable.class,
-      FW_TO_FLOAT, FLOAT_TO_FW);
-  private static final WritableType<Double, DoubleWritable> doubles = create(Double.class, DoubleWritable.class,
-      DW_TO_DOUBLE, DOUBLE_TO_DW);
-  private static final WritableType<Boolean, BooleanWritable> booleans = create(Boolean.class, BooleanWritable.class,
-      BW_TO_BOOLEAN, BOOLEAN_TO_BW);
-  private static final WritableType<ByteBuffer, BytesWritable> bytes = create(ByteBuffer.class, BytesWritable.class,
-      BW_TO_BB, BB_TO_BW);
+  private static final WritableType<Void, NullWritable> nulls = WritableType.immutableType(
+      Void.class, NullWritable.class, NULL_WRITABLE_TO_VOID, VOID_TO_NULL_WRITABLE);
+  private static final WritableType<String, Text> strings = WritableType.immutableType(
+      String.class, Text.class, TEXT_TO_STRING, STRING_TO_TEXT);
+  private static final WritableType<Long, LongWritable> longs = WritableType.immutableType(
+      Long.class, LongWritable.class, LW_TO_LONG, LONG_TO_LW);
+  private static final WritableType<Integer, IntWritable> ints = WritableType.immutableType(
+      Integer.class, IntWritable.class, IW_TO_INT, INT_TO_IW);
+  private static final WritableType<Float, FloatWritable> floats = WritableType.immutableType(
+      Float.class, FloatWritable.class, FW_TO_FLOAT, FLOAT_TO_FW);
+  private static final WritableType<Double, DoubleWritable> doubles = WritableType.immutableType(
+      Double.class, DoubleWritable.class, DW_TO_DOUBLE, DOUBLE_TO_DW);
+  private static final WritableType<Boolean, BooleanWritable> booleans = WritableType.immutableType(
+      Boolean.class, BooleanWritable.class, BW_TO_BOOLEAN, BOOLEAN_TO_BW);
+  private static final WritableType<ByteBuffer, BytesWritable> bytes = new WritableType(
+      ByteBuffer.class, BytesWritable.class, BW_TO_BB, BB_TO_BW);
 
   private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>> builder()
       .put(String.class, strings).put(Long.class, longs).put(Integer.class, ints).put(Float.class, floats)
@@ -344,7 +340,7 @@ public class Writables {
 
   public static <W extends Writable> WritableType<W, W> writables(Class<W> clazz) {
     MapFn wIdentity = IdentityFn.getInstance();
-    return new WritableType<W, W>(clazz, clazz, wIdentity, wIdentity);
+    return new WritableType(clazz, clazz, wIdentity, wIdentity);
   }
 
   public static <K, V> WritableTableType<K, V> tableOf(PType<K> key, PType<V> value) {
@@ -675,6 +671,13 @@ public class Writables {
     MapFn input = new CompositeMapFn(wt.getInputMapFn(), inputFn);
     MapFn output = new CompositeMapFn(outputFn, wt.getOutputMapFn());
     return new WritableType(clazz, wt.getSerializationClass(), input, output, base.getSubTypes().toArray(new PType[0]));
+  }
+
+  public static <S, T> PType<T> derivedImmutable(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {
+    WritableType<S, ?> wt = (WritableType<S, ?>) base;
+    MapFn input = new CompositeMapFn(wt.getInputMapFn(), inputFn);
+    MapFn output = new CompositeMapFn(outputFn, wt.getOutputMapFn());
+    return WritableType.immutableType(clazz, wt.getSerializationClass(), input, output, base.getSubTypes().toArray(new PType[0]));
   }
 
   private static class ArrayCollectionMapFn<T> extends MapFn<GenericArrayWritable, Collection<T>> {
