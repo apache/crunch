@@ -31,7 +31,6 @@ import org.apache.crunch.impl.mr.emit.OutputEmitter;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 public class RTNode implements Serializable {
 
@@ -99,7 +98,7 @@ public class RTNode implements Serializable {
       fn.process(input, emitter);
     } catch (CrunchRuntimeException e) {
       if (!e.wasLogged()) {
-        LOG.info(String.format("Crunch exception in '%s' for input: %s", nodeName, input.toString()), e);
+        LOG.info(String.format("Crunch exception in '%s' for input: %s", nodeName, input), e);
         e.markLogged();
       }
       throw e;
