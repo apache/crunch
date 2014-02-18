@@ -37,17 +37,17 @@ public class PartitionUtils {
 
   public static <T> int getRecommendedPartitions(PCollection<T> pcollection) {
     Configuration conf = pcollection.getPipeline().getConfiguration();
-    int recommended = getRecommendedPartitions(pcollection, conf);
+    return getRecommendedPartitions(pcollection, conf);
+  }
+
+  public static <T> int getRecommendedPartitions(PCollection<T> pcollection, Configuration conf) {
+    long bytesPerTask = conf.getLong(BYTES_PER_REDUCE_TASK, DEFAULT_BYTES_PER_REDUCE_TASK);
+    int recommended = 1 + (int) (pcollection.getSize() / bytesPerTask);
     int maxRecommended = conf.getInt(MAX_REDUCERS, DEFAULT_MAX_REDUCERS);
     if (maxRecommended > 0 && recommended > maxRecommended) {
       return maxRecommended;
     } else {
       return recommended;
     }
-  }
-  
-  public static <T> int getRecommendedPartitions(PCollection<T> pcollection, Configuration conf) {
-    long bytesPerTask = conf.getLong(BYTES_PER_REDUCE_TASK, DEFAULT_BYTES_PER_REDUCE_TASK);
-    return 1 + (int) (pcollection.getSize() / bytesPerTask);
   }
 }
