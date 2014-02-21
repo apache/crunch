@@ -196,7 +196,7 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     private int nbHash;
     private PType<K> keyType;
     private PType<BloomFilter> bloomFilterPType;
-    private BloomFilter bloomFilter;
+    private transient BloomFilter bloomFilter;
     private transient MapFn<K,byte[]> keyToBytesFn;
     private ReadableData<BloomFilter> bloomData;
 
