@@ -108,7 +108,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
   private void monitorLoop() {
     status.set(Status.RUNNING);
     try {
-      while (killSignal.getCount() > 0 && !control.allFinished()) {
+      while (killSignal.getCount() > 0 && !control.allFinished() && !control.anyFailures()) {
         control.pollJobStatusAndStartNewOnes();
         killSignal.await(pollInterval.get(), TimeUnit.MILLISECONDS);
       }
