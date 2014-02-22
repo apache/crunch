@@ -17,11 +17,8 @@
  */
 package org.apache.crunch.lib;
 
-import org.apache.crunch.DoFn;
-import org.apache.crunch.Emitter;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
-import org.apache.crunch.Pair;
-import org.apache.crunch.types.PType;
 
 /**
  * Utilities for controlling how the data in a {@code PCollection} is balanced across reducers
@@ -39,27 +36,24 @@ public class Shard {
    * @return A rebalanced {@code PCollection<T>} with the same contents as the input
    */
   public static <T> PCollection<T> shard(PCollection<T> pc, int numPartitions) {
-    PType<T> pt = pc.getPType();
-    return Aggregate.count(pc, numPartitions).parallelDo("shards", new ShardFn<T>(pt), pt);
+    return pc.by(new ShardFn<T>(), pc.getTypeFamily().ints())
+        .groupByKey(numPartitions)
+        .ungroup()
+        .values();
   }
   
-  private static class ShardFn<T> extends DoFn<Pair<T, Long>, T> {
-    private final PType<T> ptype;
-    
-    public ShardFn(PType<T> ptype) {
-      this.ptype = ptype;
-    }
-    
+  private static class ShardFn<T> extends MapFn<T, Integer> {
+
+    private int count;
+
     @Override
     public void initialize() {
-      ptype.initialize(getConfiguration());
+      count = 0;
     }
-    
+
     @Override
-    public void process(Pair<T, Long> input, Emitter<T> emitter) {
-      for (int i = 0; i < input.second(); i++) {
-        emitter.emit(ptype.getDetachedValue(input.first()));
-      }
+    public Integer map(T input) {
+      return count++;
     }
   }
 }
