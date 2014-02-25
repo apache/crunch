@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import com.google.common.collect.UnmodifiableIterator;
-import com.google.common.io.Closeables;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Closes the wrapped {@code Closeable} when {@link #hasNext()} returns false.  As long a client loops through to
@@ -42,7 +42,7 @@ public class AutoClosingIterator<T> extends UnmodifiableIterator<T> implements C
     if (iter.hasNext()) {
       return true;
     } else {
-      Closeables.closeQuietly(this);
+      IOUtils.closeQuietly(this);
       return false;
     }
   }

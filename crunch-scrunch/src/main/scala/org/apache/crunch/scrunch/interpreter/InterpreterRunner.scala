@@ -33,10 +33,10 @@ import scala.tools.nsc.io.Jar
 import scala.tools.nsc.io.VirtualDirectory
 
 import com.google.common.io.Files
-import com.google.common.io.Closeables
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.crunch.util.DistCache
+import org.apache.commons.io.IOUtils
 
 /**
  * An object used to run a Scala REPL with modifications to facilitate Scrunch jobs running
@@ -153,7 +153,7 @@ object InterpreterRunner extends MainGenericRunner {
       addVirtualDirectoryToJar(virtualDirectory, "", jarStream)
       return tempJar
     } finally {
-      Closeables.closeQuietly(jarStream)
+      IOUtils.closeQuietly(jarStream)
     }
   }
 
