@@ -22,5 +22,5 @@
 "fields": [
   {"name": "name", "type": ["string", "null"] },
   {"name": "age", "type": "int"},
-  {"name": "siblingnames", "type" : [{ "type": "array", "items": "string" },  "null"], "default": null } ]
+  {"name": "siblingnames", "type" : ["null", { "type": "array", "items": "string" }], "default": null } ]
 } 
