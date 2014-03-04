@@ -101,7 +101,7 @@ public class Avros {
    * @deprecated as of 0.9.0; use AvroMode.REFLECT.override(ReaderWriterFactory)
    */
   public static ReflectDataFactory REFLECT_DATA_FACTORY =
-      (ReflectDataFactory) AvroMode.REFLECT.factory;
+      (ReflectDataFactory) AvroMode.REFLECT.getFactory();
 
   /**
    * The name of the configuration parameter that tracks which reflection
@@ -116,16 +116,14 @@ public class Avros {
    */
   @Deprecated
   public static void configureReflectDataFactory(Configuration conf) {
-    AvroMode.REFLECT.override(REFLECT_DATA_FACTORY);
-    AvroMode.REFLECT.configureFactory(conf);
+    AvroMode.REFLECT.withFactory(REFLECT_DATA_FACTORY).configure(conf);
   }
 
   /**
    * @deprecated as of 0.9.0; use AvroMode.fromConfiguration(conf)
    */
   public static ReflectDataFactory getReflectDataFactory(Configuration conf) {
-    AvroMode.REFLECT.setFromConfiguration(conf);
-    return (ReflectDataFactory) AvroMode.REFLECT.factory;
+    return (ReflectDataFactory)AvroMode.REFLECT.withFactoryFromConfiguration(conf).getFactory();
   }
 
   public static void checkCombiningSpecificAndReflectionSchemas() {

@@ -36,20 +36,29 @@ import org.apache.hadoop.fs.Path;
 
 public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  private static <S> FormatBundle getBundle(AvroType<S> ptype) {
+  private static <S> FormatBundle getBundle(AvroType<S> ptype, AvroMode mode) {
     FormatBundle bundle = FormatBundle.forInput(AvroInputFormat.class)
-        .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
-        .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
-        .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName())
-        .set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString());
-    AvroMode.fromType(ptype).configure(bundle);
+          .set(AvroJob.INPUT_IS_REFLECT, String.valueOf(ptype.hasReflect()))
+          .set(AvroJob.INPUT_SCHEMA, ptype.getSchema().toString())
+          .set(Avros.REFLECT_DATA_FACTORY_CLASS, Avros.REFLECT_DATA_FACTORY.getClass().getName())
+          .set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString());
+    mode.configure(bundle);
     return bundle;
+  }
+
+
+  private static <S> FormatBundle getBundle(AvroType<S> ptype) {
+    return getBundle(ptype, AvroMode.fromType(ptype));
   }
 
   private DatumReader<T> reader;
   
   public AvroFileSource(Path path, AvroType<T> ptype) {
     super(path, ptype, getBundle(ptype));
+  }
+
+  public AvroFileSource(Path path, AvroType<T> ptype, AvroMode mode) {
+    super(path, ptype, getBundle(ptype, mode));
   }
 
   public AvroFileSource(Path path, AvroType<T> ptype, DatumReader<T> reader) {
@@ -59,6 +68,10 @@ public class AvroFileSource<T> extends FileSourceImpl<T> implements ReadableSour
 
   public AvroFileSource(List<Path> paths, AvroType<T> ptype) {
     super(paths, ptype, getBundle(ptype));
+  }
+
+  public AvroFileSource(List<Path> paths, AvroType<T> ptype, AvroMode mode) {
+    super(paths, ptype, getBundle(ptype, mode));
   }
   
   public AvroFileSource(List<Path> paths, AvroType<T> ptype, DatumReader<T> reader) {
