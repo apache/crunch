@@ -23,12 +23,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import org.apache.crunch.*;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.lib.PersonProtos.Person;
+import org.apache.crunch.lib.PersonProtos.Person.Builder;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.test.Tests;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.After;
@@ -108,6 +111,26 @@ public class CogroupIT {
     runCogroupN(AvroTypeFamily.getInstance());
   }
 
+  @Test
+  public void testCogroupProtosWritables() {
+      runCogroupProtos(WritableTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testCogroupProtosAvro() {
+      runCogroupProtos(AvroTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testCogroupProtosPairsWritables() {
+    runCogroupProtosPairs(WritableTypeFamily.getInstance());
+  }
+
+  @Test
+  public void testCogroupProtosPairsAvro() {
+    runCogroupProtosPairs(AvroTypeFamily.getInstance());
+  }
+
   public void runCogroup(PTypeFamily ptf) {
     PTableType<String, String> tt = ptf.tableOf(ptf.strings(), ptf.strings());
 
@@ -131,6 +154,32 @@ public class CogroupIT {
     );
 
     assertThat(actual, is(expected));
+  }
+
+  public void runCogroupProtos(PTypeFamily ptf) {
+    PTableType<String, Person> tt = ptf.tableOf(ptf.strings(), PTypes.protos(Person.class, ptf));
+
+    PTable<String, Person> kv1 = lines1.parallelDo("kv1", new GenerateProto(), tt);
+    PTable<String, Person> kv2 = lines2.parallelDo("kv2", new GenerateProto(), tt);
+
+    PTable<String, Pair<Collection<Person>, Collection<Person>>> cg = Cogroup.cogroup(kv1, kv2);
+
+    Map<String, Pair<Collection<Person>, Collection<Person>>> result = cg.materializeToMap();
+
+    assertThat(result.size(), is(4));
+  }
+
+  public void runCogroupProtosPairs(PTypeFamily ptf) {
+    PTableType<String, Pair<String, Person>> tt = ptf.tableOf(ptf.strings(), ptf.pairs(ptf.strings(), PTypes.protos(Person.class, ptf)));
+
+    PTable<String, Pair<String, Person>> kv1 = lines1.parallelDo("kv1", new GenerateProtoPairs(), tt);
+    PTable<String, Pair<String, Person>> kv2 = lines2.parallelDo("kv2", new GenerateProtoPairs(), tt);
+
+    PTable<String, Pair<Collection<Pair<String, Person>>, Collection<Pair<String, Person>>>> cg = Cogroup.cogroup(kv1, kv2);
+
+    Map<String, Pair<Collection<Pair<String, Person>>, Collection<Pair<String, Person>>>> result = cg.materializeToMap();
+
+    assertThat(result.size(), is(4));
   }
 
   public void runCogroup3(PTypeFamily ptf) {
@@ -227,6 +276,26 @@ public class CogroupIT {
       String[] fields = input.split(",");
       emitter.emit(Pair.of(fields[0], fields[1]));
     }
+  }
+
+  private static class GenerateProto extends DoFn<String, Pair<String, Person>> {
+      @Override
+      public void process(String input, Emitter<Pair<String, Person>> emitter) {
+          String[] fields = input.split(",");
+          String key = fields[0];
+          Builder b = Person.newBuilder().setFirst("first"+key).setLast("last"+key);
+          emitter.emit(Pair.of(fields[0], b.build()));
+      }
+  }
+
+  private static class GenerateProtoPairs extends DoFn<String, Pair<String, Pair<String, Person>>> {
+      @Override
+      public void process(String input, Emitter<Pair<String, Pair<String, Person>>> emitter) {
+          String[] fields = input.split(",");
+          String key = fields[0];
+          Builder b = Person.newBuilder().setFirst("first"+key).setLast("last"+key);
+          emitter.emit(Pair.of(fields[0], Pair.of(fields[1], b.build())));
+      }
   }
 
   private static Collection<String> coll(String... values) {
