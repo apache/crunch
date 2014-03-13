@@ -359,6 +359,14 @@ public class Writables {
     return new WritableTableType((WritableType) key, (WritableType) value);
   }
 
+  private static BytesWritable asBytesWritable(Writable w) {
+    if (w instanceof BytesWritable) {
+      return (BytesWritable) w;
+    } else {
+      return new BytesWritable(WritableUtils.toByteArray(w));
+    }
+  }
+
   private static <W extends Writable> W create(Class<W> clazz, Writable writable) {
     if (clazz.equals(writable.getClass())) {
       return (W) writable;
@@ -512,7 +520,7 @@ public class Writables {
             values[i] = w;
             written[i] = WRITABLE_CODES.inverse().get(w.getClass());
           } else {
-            values[i] = new BytesWritable(WritableUtils.toByteArray(w));
+            values[i] = asBytesWritable(w);
             written[i] = 1; // code for BytesWritable
           }
         }
@@ -652,7 +660,7 @@ public class Writables {
     public UnionWritable map(Union input) {
       int index = input.getIndex();
       Writable w = (Writable) fns.get(index).map(input.getValue());
-      return new UnionWritable(index, new BytesWritable(WritableUtils.toByteArray(w)));
+      return new UnionWritable(index, asBytesWritable(w));
     }
   }
 
@@ -744,8 +752,7 @@ public class Writables {
       BytesWritable[] w = new BytesWritable[input.size()];
       int index = 0;
       for (T in : input) {
-        Writable v = (Writable) mapFn.map(in);
-        w[index++] = new BytesWritable(WritableUtils.toByteArray(v));
+        w[index++] = asBytesWritable((Writable) mapFn.map(in));
       }
       arrayWritable.set(w);
       return arrayWritable;
@@ -822,7 +829,7 @@ public class Writables {
       TextMapWritable tmw = new TextMapWritable();
       for (Map.Entry<String, T> e : input.entrySet()) {
         Writable w = mapFn.map(e.getValue());
-        tmw.put(new Text(e.getKey()), new BytesWritable(WritableUtils.toByteArray(w)));
+        tmw.put(new Text(e.getKey()), asBytesWritable(w));
       }
       return tmw;
     }
