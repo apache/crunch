@@ -88,6 +88,11 @@ under the License.
     <scalatest.version>1.9.1</scalatest.version>
     <spark.version>0.8.0-incubating</spark.version>
     <pkg>org.apache.crunch</pkg>
+
+    <!-- Can be overridden by hadoop-2 profile, but these are the default values -->
+    <hadoop.version>1.1.2</hadoop.version>
+    <hbase.version>0.96.0-hadoop1</hbase.version>
+    <hbase.midfix>hadoop1</hbase.midfix>
   </properties>
 
   <scm>
@@ -429,23 +434,9 @@ under the License.
         <version>${scala.version}</version>
       </dependency>
     </dependencies>
-    
   </dependencyManagement>
 
   <profiles>
-    <profile>
-      <id>hadoop-1</id>
-      <activation>
-        <property>
-          <name>!crunch.platform</name>
-        </property>
-      </activation>
-      <properties>
-        <hadoop.version>1.1.2</hadoop.version>
-        <hbase.version>0.96.0-hadoop1</hbase.version>
-        <hbase.midfix>hadoop1</hbase.midfix>
-      </properties>
-    </profile>
     <profile>
       <id>hadoop-2</id>
       <activation>
@@ -458,7 +449,6 @@ under the License.
         <hadoop.version>2.2.0</hadoop.version>
         <hbase.version>0.96.0-hadoop2</hbase.version>
         <commons-lang.version>2.5</commons-lang.version>
-        <slf4j.version>1.6.1</slf4j.version>
         <hbase.midfix>hadoop2</hbase.midfix>
       </properties>
       <dependencyManagement>
