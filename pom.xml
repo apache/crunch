@@ -88,6 +88,8 @@ under the License.
     <scalatest.version>1.9.1</scalatest.version>
     <spark.version>0.8.0-incubating</spark.version>
     <pkg>org.apache.crunch</pkg>
+    <hadoop.version>1.1.2</hadoop.version>
+    <hbase.version>0.94.3</hbase.version>
   </properties>
 
   <scm>
@@ -378,10 +380,6 @@ under the License.
           <name>!crunch.platform</name>
         </property>
       </activation>
-      <properties>
-        <hadoop.version>1.1.2</hadoop.version>
-        <hbase.version>0.94.3</hbase.version>
-      </properties>
       <dependencyManagement>
         <dependencies>
           <dependency>
