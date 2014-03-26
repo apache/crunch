@@ -604,6 +604,7 @@ under the License.
             <exclude>**/resources/*.txt</exclude>
             <exclude>**/resources/**/*.txt</exclude>
             <exclude>**/resources/*.avro</exclude>
+            <exclude>**/resources/*.csv</exclude>
             <exclude>**/goal.txt</exclude>
             <exclude>**/target/generated-test-sources/**</exclude>
             <exclude>**/scripts/scrunch</exclude>
