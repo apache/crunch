@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.CrunchTestSupport;
@@ -35,6 +36,7 @@ import java.io.Serializable;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class AvroPathPerKeyIT extends CrunchTestSupport implements Serializable {
   @Test
@@ -68,4 +70,27 @@ public class AvroPathPerKeyIT extends CrunchTestSupport implements Serializable 
     assertEquals(1, bStat.length);
     assertEquals("part-r-00000.avro", bStat[0].getPath().getName());
   }
+
+  @Test
+  public void testOutputFilePerKey_NothingToOutput() throws Exception {
+    Pipeline p = new MRPipeline(AvroPathPerKeyIT.class, tempDir.getDefaultConfiguration());
+    Path outDir = tempDir.getPath("out");
+
+    p.read(From.textFile(tempDir.copyResourceFileName("docs.txt")))
+        .parallelDo(new MapFn<String, Pair<String, String>>() {
+          @Override
+          public Pair<String, String> map(String input) {
+            String[] p = input.split("\t");
+            return Pair.of(p[0], p[1]);
+          }
+        }, Avros.tableOf(Avros.strings(), Avros.strings()))
+        .filter(FilterFns.<Pair<String, String>>REJECT_ALL())
+        .groupByKey()
+        .write(new AvroPathPerKeyTarget(outDir));
+    p.done();
+
+    FileSystem fs = outDir.getFileSystem(tempDir.getDefaultConfiguration());
+    assertFalse(fs.exists(outDir));
+  }
+
 }
