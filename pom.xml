@@ -84,15 +84,18 @@ under the License.
     <junit.version>4.10</junit.version>
     <hamcrest.version>1.1</hamcrest.version>
     <mockito.version>1.9.0</mockito.version>
-    <scala.version>2.9.3</scala.version>
-    <scalatest.version>1.9.1</scalatest.version>
-    <spark.version>0.8.0-incubating</spark.version>
     <pkg>org.apache.crunch</pkg>
 
     <!-- Can be overridden by hadoop-2 profile, but these are the default values -->
     <hadoop.version>1.1.2</hadoop.version>
     <hbase.version>0.96.0-hadoop1</hbase.version>
     <hbase.midfix>hadoop1</hbase.midfix>
+
+    <!-- Can be overridden by the scala-2.10 profile, but these are the default values -->
+    <scala.base.version>2.9.3</scala.base.version>
+    <scala.version>2.9.3</scala.version>
+    <scalatest.version>1.9.1</scalatest.version>
+    <spark.version>0.8.1-incubating</spark.version>
   </properties>
 
   <scm>
@@ -412,7 +415,7 @@ under the License.
 
       <dependency>
         <groupId>org.apache.spark</groupId>
-        <artifactId>spark-core_${scala.version}</artifactId>
+        <artifactId>spark-core_${scala.base.version}</artifactId>
         <version>${spark.version}</version>
       </dependency>
 
@@ -433,6 +436,14 @@ under the License.
         <artifactId>jline</artifactId>
         <version>${scala.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>org.scalatest</groupId>
+        <artifactId>scalatest_${scala.base.version}</artifactId>
+        <version>${scalatest.version}</version>
+        <scope>test</scope>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 
@@ -486,6 +497,15 @@ under the License.
           </dependency>
         </dependencies>
       </dependencyManagement>
+    </profile>
+    <profile>
+      <id>scala-2.10</id>
+      <properties>
+        <scala.base.version>2.10</scala.base.version>
+        <scala.version>2.10.3</scala.version>
+        <scalatest.version>2.1.0</scalatest.version>
+        <spark.version>0.9.0-incubating</spark.version>
+      </properties>
     </profile>
   </profiles>
 
