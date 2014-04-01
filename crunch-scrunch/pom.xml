@@ -25,7 +25,7 @@ under the License.
     <version>0.8.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>crunch-scrunch</artifactId>
+  <artifactId>crunch-scrunch_${scala.base.version}</artifactId>
   <name>Apache Crunch for Scala</name>
 
   <dependencies>
@@ -68,6 +68,10 @@ under the License.
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scalatest</groupId>
+      <artifactId>scalatest_${scala.base.version}</artifactId>
     </dependency>
   </dependencies>
 
@@ -203,46 +207,6 @@ under the License.
           </plugin>
         </plugins>
       </build>
-    </profile>
-      <profile>
-          <id>scala-2.9.2</id>
-          <activation>
-              <activeByDefault>true</activeByDefault>
-          </activation>
-          <properties>
-              <scala.version>2.9.2</scala.version>
-              <scalatest.version>1.7.2</scalatest.version>
-          </properties>
-          <dependencies>
-              <dependency>
-                  <groupId>org.scalatest</groupId>
-                  <artifactId>scalatest_${scala.version}</artifactId>
-              </dependency>
-          </dependencies>
-          <dependencyManagement>
-              <dependencies>
-                  <dependency>
-                      <groupId>org.scalatest</groupId>
-                      <artifactId>scalatest_${scala.version}</artifactId>
-                      <version>${scalatest.version}</version>
-                  </dependency>
-              </dependencies>
-          </dependencyManagement>
-      </profile>
-    <profile>
-        <id>scala-2.10</id>
-        <properties>
-            <scala.version>2.10.2</scala.version>
-            <scalatest.version>1.9.2</scalatest.version>
-        </properties>
-        <dependencies>
-            <dependency>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest_2.10</artifactId>
-                <version>${scalatest.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
     </profile>
   </profiles>
 </project>

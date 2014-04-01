@@ -25,7 +25,7 @@ under the License.
     <version>0.8.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>crunch-spark</artifactId>
+  <artifactId>crunch-spark_${scala.base.version}</artifactId>
   <name>Apache Crunch for Spark</name>
 
   <dependencies>
@@ -50,7 +50,7 @@ under the License.
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${scala.version}</artifactId>
+      <artifactId>spark-core_${scala.base.version}</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
