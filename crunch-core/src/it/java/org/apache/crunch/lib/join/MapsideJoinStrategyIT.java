@@ -21,11 +21,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import com.google.common.collect.Lists;
+import org.apache.crunch.DoFn;
+import org.apache.crunch.Emitter;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
@@ -36,13 +41,13 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import sun.print.resources.serviceui;
 
 public class MapsideJoinStrategyIT {
   
@@ -218,6 +223,60 @@ public class MapsideJoinStrategyIT {
                                   false, true,
                                   new MapsideJoinStrategy<Integer, String, String>(true));
   }
+
+  @Test
+  public void testMapSideJoinWithImmutableBytesWritable() throws IOException, InterruptedException {
+    //Write out input files
+    FileSystem fs = FileSystem.get(tmpDir.getDefaultConfiguration());
+    Path path1 = tmpDir.getPath("input1.txt");
+    Path path2 = tmpDir.getPath("input2.txt");
+
+    OutputStream out1 = fs.create(path1, true);
+    OutputStream out2 = fs.create(path2, true);
+
+    for(int i = 0; i < 4; i++){
+      byte[] value = ("value" + i + "\n").getBytes();
+      out1.write(value);
+      out2.write(value);
+    }
+
+    out1.flush();
+    out1.close();
+    out2.flush();
+    out2.close();
+
+    final MRPipeline pipeline = new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration());
+
+    final PCollection<String> values1 = pipeline.readTextFile(path1.toString());
+    final PCollection<String> values2 = pipeline.readTextFile(path2.toString());
+
+    final PTable<Text, Text> convertedValues1 = convertStringToText(values1);
+    final PTable<Text, Text> convertedValues2 = convertStringToText(values2);
+
+    // for map side join
+    final MapsideJoinStrategy<Text, Text, Text> mapSideJoinStrategy = MapsideJoinStrategy.<Text, Text, Text>create();
+
+    final PTable<Text, Pair<Text, Text>> updatedJoinedRows = mapSideJoinStrategy.join(convertedValues1, convertedValues2, JoinType.INNER_JOIN);
+    pipeline.run();
+
+    // Join should have 2 results
+    // Join should have contentBytes1 and contentBytes2
+    assertEquals(4, updatedJoinedRows.materializeToMap().size());
+  }
+
+  /**
+   * The method is used to convert string to entity key
+   */
+  public static PTable<Text, Text> convertStringToText(final PCollection<String> entityKeysStringPCollection) {
+    return entityKeysStringPCollection.parallelDo(new DoFn<String, Pair<Text, Text>>() {
+
+      @Override
+      public void process(final String input, final Emitter<Pair<Text, Text>> emitter) {
+        emitter.emit(new Pair<Text, Text>(new Text(input), new Text(input)));
+      }
+    }, Writables.tableOf(Writables.writables(Text.class), Writables.writables(Text.class)));
+  }
+
 
   private void runMapsideJoin(Pipeline pipeline, boolean inMemory, boolean materialize,
                               MapsideJoinStrategy<Integer,String, String> joinStrategy) {

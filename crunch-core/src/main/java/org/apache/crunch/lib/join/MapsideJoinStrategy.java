@@ -27,6 +27,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
+import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.conf.Configuration;
 
@@ -119,7 +120,8 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   private PTable<K, Pair<U,V>> joinInternal(PTable<K, U> left, PTable<K, V> right, boolean includeUnmatchedLeftValues) {
     PTypeFamily tf = left.getTypeFamily();
     ReadableData<Pair<K, V>> rightReadable = right.asReadable(materialize);
-    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(rightReadable, includeUnmatchedLeftValues);
+    MapsideJoinDoFn<K, U, V> mapJoinDoFn = new MapsideJoinDoFn<K, U, V>(
+              rightReadable, right.getPTableType(), includeUnmatchedLeftValues);
     ParallelDoOptions options = ParallelDoOptions.builder()
         .sourceTargets(rightReadable.getSourceTargets())
         .build();
@@ -131,11 +133,13 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   static class MapsideJoinDoFn<K, U, V> extends DoFn<Pair<K, U>, Pair<K, Pair<U, V>>> {
 
     private final ReadableData<Pair<K, V>> readable;
+    private final PTableType<K, V> tableType;
     private final boolean includeUnmatched;
     private Multimap<K, V> joinMap;
 
-    public MapsideJoinDoFn(ReadableData<Pair<K, V>> rs, boolean includeUnmatched) {
+    public MapsideJoinDoFn(ReadableData<Pair<K, V>> rs, PTableType<K, V> tableType, boolean includeUnmatched) {
       this.readable = rs;
+      this.tableType = tableType;
       this.includeUnmatched = includeUnmatched;
     }
 
@@ -147,11 +151,13 @@ public class MapsideJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     @Override
     public void initialize() {
       super.initialize();
+      tableType.initialize(getConfiguration());
 
       joinMap = ArrayListMultimap.create();
       try {
         for (Pair<K, V> joinPair : readable.read(getContext())) {
-          joinMap.put(joinPair.first(), joinPair.second());
+          Pair<K, V> detachedPair = tableType.getDetachedValue(joinPair);
+          joinMap.put(detachedPair.first(), detachedPair.second());
         }
       } catch (IOException e) {
         throw new CrunchRuntimeException("Error reading map-side join data", e);
