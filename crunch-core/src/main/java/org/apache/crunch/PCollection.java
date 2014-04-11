@@ -267,4 +267,9 @@ public interface PCollection<S> {
    * Returns a {@code PObject} of the minimum element of this instance.
    */
   PObject<S> min();
+  
+  /**
+   * Returns a {@code PObject} of an aggregate of this instance.
+   */
+  PObject<S> aggregate(Aggregator<S> aggregator);
 }

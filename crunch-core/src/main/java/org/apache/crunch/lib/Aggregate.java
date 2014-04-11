@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -276,5 +277,17 @@ public class Aggregate {
             return collected;
           }
         }, tf.collections(collect.getValueType()));
+  }
+  
+  public static <S> PObject<S> aggregate(PCollection<S> collect, Aggregator<S> aggregator) {
+    PTypeFamily tf = collect.getTypeFamily();
+    PCollection<S> aggregation = collect.parallelDo("Aggregate.aggregator", new MapFn<S, Pair<Long, S>>() {
+      public Pair<Long,S> map(S input) {
+        return Pair.of(0L, input);
+      }
+    }, tf.tableOf(tf.longs(), collect.getPType()))
+        .groupByKey(1)
+        .combineValues(aggregator).values();
+    return new FirstElementPObject<S>(aggregation);
   }
 }
