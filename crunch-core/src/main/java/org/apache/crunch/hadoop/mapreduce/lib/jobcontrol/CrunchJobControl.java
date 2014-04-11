@@ -221,6 +221,10 @@ public class CrunchJobControl {
         && this.runningJobs.size() == 0;
   }
 
+  synchronized public boolean anyFailures() {
+    return this.failedJobs.size() > 0;
+  }
+
   /**
    * Checks the states of the running jobs Update the states of waiting jobs, and submits the jobs in
    * ready state (i.e. whose dependencies are all finished in success).

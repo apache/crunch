@@ -164,6 +164,11 @@ public class AvroTypeFamily implements PTypeFamily {
   }
 
   @Override
+  public <S, T> PType<T> derivedImmutable(Class<T> clazz, MapFn<S, T> inputFn, MapFn<T, S> outputFn, PType<S> base) {
+    return Avros.derivedImmutable(clazz, inputFn, outputFn, base);
+  }
+
+  @Override
   public PType<Union> unionOf(PType<?>... ptypes) {
     return Avros.unionOf(ptypes);
   }

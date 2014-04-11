@@ -19,6 +19,7 @@ package org.apache.crunch.types.writable;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.io.ReadableSourceTarget;
@@ -31,8 +32,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 
-import com.google.common.collect.ImmutableList;
-
 public class WritableType<T, W extends Writable> implements PType<T> {
 
   private final Class<T> typeClass;
@@ -44,14 +43,32 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   private final List<PType> subTypes;
   private boolean initialized = false;
 
+  /**
+   * Factory method for a new WritableType instance whose type class is immutable.
+   * <p/>
+   * No checking is done to ensure that instances of the type class are immutable, but deep copying will be skipped
+   * for instances denoted by the created PType.
+   */
+  public static <T, W extends Writable> WritableType<T, W> immutableType(Class<T> typeClass, Class<W> writableClass,
+                                                                         MapFn<W, T> inputDoFn, MapFn<T, W> outputDoFn,
+                                                                         PType... subTypes) {
+    return new WritableType<T, W>(typeClass, writableClass, inputDoFn, outputDoFn,
+                                  null, subTypes);
+  }
+
   public WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn,
-      MapFn<T, W> outputDoFn, PType... subTypes) {
+                       MapFn<T, W> outputDoFn, PType... subTypes) {
+    this(typeClass, writableClass, inputDoFn, outputDoFn, new WritableDeepCopier<W>(writableClass), subTypes);
+  }
+
+  private WritableType(Class<T> typeClass, Class<W> writableClass, MapFn<W, T> inputDoFn,
+      MapFn<T, W> outputDoFn, DeepCopier<W> deepCopier, PType... subTypes) {
     this.typeClass = typeClass;
     this.writableClass = writableClass;
     this.inputFn = inputDoFn;
     this.outputFn = outputDoFn;
     this.converter = new WritableValueConverter(writableClass);
-    this.deepCopier = new WritableDeepCopier<W>(writableClass);
+    this.deepCopier = deepCopier;
     this.subTypes = ImmutableList.<PType> builder().add(subTypes).build();
   }
 
@@ -118,6 +135,9 @@ public class WritableType<T, W extends Writable> implements PType<T> {
 
   @Override
   public T getDetachedValue(T value) {
+    if (deepCopier == null) {
+      return value;
+    }
     if (!initialized) {
       throw new IllegalStateException("Cannot call getDetachedValue on an uninitialized PType");
     }

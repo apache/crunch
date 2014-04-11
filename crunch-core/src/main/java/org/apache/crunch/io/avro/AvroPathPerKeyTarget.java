@@ -18,6 +18,8 @@
 package org.apache.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
@@ -26,8 +28,8 @@ import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
-import org.apache.crunch.types.avro.AvroPathPerKeyOutputFormat;
 import org.apache.crunch.types.avro.AvroMode;
+import org.apache.crunch.types.avro.AvroPathPerKeyOutputFormat;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,6 +48,8 @@ import java.io.IOException;
  * idea to write out all of the records for the same key together within each partition of the data.
  */
 public class AvroPathPerKeyTarget extends FileTargetImpl {
+
+  private static final Log LOG = LogFactory.getLog(AvroPathPerKeyTarget.class);
 
   public AvroPathPerKeyTarget(String path) {
     this(new Path(path));
@@ -89,7 +93,11 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
     Path base = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index);
-    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base), base);
+    if (!srcFs.exists(base)) {
+      LOG.warn("Nothing to copy from " + base);
+      return;
+    }
+    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base));
     FileSystem dstFs = path.getFileSystem(conf);
     if (!dstFs.exists(path)) {
       dstFs.mkdirs(path);
