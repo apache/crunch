@@ -286,7 +286,7 @@ public class Aggregate {
         return Pair.of(0L, input);
       }
     }, tf.tableOf(tf.longs(), collect.getPType()))
-        .groupByKey(1)
+        .groupByKey()
         .combineValues(aggregator).values();
     return new FirstElementPObject<S>(aggregation);
   }
