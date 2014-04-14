@@ -107,7 +107,7 @@ public abstract class DistributedPipeline implements Pipeline {
 
   @Override
   public PipelineResult done() {
-    PipelineResult res = PipelineResult.EMPTY;
+    PipelineResult res = PipelineResult.DONE;
     if (!outputTargets.isEmpty()) {
       res = run();
     }
