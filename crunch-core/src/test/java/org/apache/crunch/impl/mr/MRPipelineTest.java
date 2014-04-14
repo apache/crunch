@@ -18,12 +18,15 @@
 package org.apache.crunch.impl.mr;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
+import org.apache.crunch.PipelineExecution;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
@@ -37,7 +40,6 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class MRPipelineTest {
@@ -81,6 +83,13 @@ public class MRPipelineTest {
     when(pcollection.getMaterializedAt()).thenReturn(null);
 
     pipeline.getMaterializeSourceTarget(pcollection);
+  }
+
+  @Test
+  public void testDonePipeline_NoOutputTargets() {
+    PipelineResult res = pipeline.done();
+    assertTrue(res.succeeded());
+    assertEquals(PipelineExecution.Status.SUCCEEDED,res.status);
   }
 
 }

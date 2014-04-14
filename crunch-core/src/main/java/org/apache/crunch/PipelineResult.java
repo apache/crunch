@@ -173,6 +173,7 @@ public class PipelineResult {
   }
 
   public static final PipelineResult EMPTY = new PipelineResult(ImmutableList.<StageResult> of(), PipelineExecution.Status.READY);
+  public static final PipelineResult DONE = new PipelineResult(ImmutableList.<StageResult> of(), PipelineExecution.Status.SUCCEEDED);
 
   private final List<StageResult> stageResults;
 
