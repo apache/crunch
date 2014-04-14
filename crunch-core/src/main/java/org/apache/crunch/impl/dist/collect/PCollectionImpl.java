@@ -19,6 +19,8 @@ package org.apache.crunch.impl.dist.collect;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
@@ -258,6 +260,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public PObject<S> min() {
     return Aggregate.min(this);
+  }
+  
+  @Override
+  public PObject<S> aggregate(Aggregator<S> aggregator) {
+    return Aggregate.aggregate(this, aggregator);
   }
 
   @Override
