@@ -71,6 +71,8 @@ public interface Target {
    * Apply the given {@code WriteMode} to this {@code Target} instance.
    * 
    * @param writeMode The strategy for handling existing outputs
+   * @param lastModifiedAt the time of the most recent modification to one of the source inputs for handling based
+   *                       on the provided {@code writeMode}.
    * @param conf The ever-useful {@code Configuration} instance
    * @return true if the target did exist
    */

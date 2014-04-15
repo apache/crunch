@@ -318,7 +318,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   }
 
   protected abstract long getSizeInternal();
-  
+
+  /**
+  * The time of the most recent modification to one of the input sources to the collection.  If the time can
+  * not be determined then {@code -1} should be returned.
+  * @return time of the most recent modification to one of the input sources to the collection.
+  */
   public abstract long getLastModifiedAt();
   
   /**
