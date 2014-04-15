@@ -25,6 +25,7 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
@@ -42,6 +43,7 @@ import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
+import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -184,6 +186,9 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   @Override
+  public PObject<S> first() { return new FirstElementPObject<S>(this); }
+
+  @Override
   public ReadableData<S> asReadable(boolean materialize) {
     return new MemReadableData<S>(collect);
   }
@@ -240,6 +245,11 @@ public class MemCollection<S> implements PCollection<S> {
     return Aggregate.min(this);
   }
 
+  @Override
+  public PCollection<S> aggregate(Aggregator<S> aggregator) {
+    return Aggregate.aggregate(this, aggregator);
+  }
+  
   @Override
   public PCollection<S> filter(FilterFn<S> filterFn) {
     return parallelDo(filterFn, getPType());

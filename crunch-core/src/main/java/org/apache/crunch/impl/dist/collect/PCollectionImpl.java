@@ -19,6 +19,8 @@ package org.apache.crunch.impl.dist.collect;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
@@ -37,6 +39,7 @@ import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.materialize.pobject.CollectionPObject;
+import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
@@ -211,6 +214,9 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return new CollectionPObject<S>(this);
   }
 
+  @Override
+  public PObject<S> first() { return new FirstElementPObject<S>(this); }
+
   public SourceTarget<S> getMaterializedAt() {
     return materializedAt;
   }
@@ -258,6 +264,11 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   @Override
   public PObject<S> min() {
     return Aggregate.min(this);
+  }
+  
+  @Override
+  public PCollection<S> aggregate(Aggregator<S> aggregator) {
+    return Aggregate.aggregate(this, aggregator);
   }
 
   @Override
