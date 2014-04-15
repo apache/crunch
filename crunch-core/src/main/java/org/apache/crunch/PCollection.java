@@ -183,6 +183,11 @@ public interface PCollection<S> {
   PObject<Collection<S>> asCollection();
 
   /**
+   * @return The first element of this {@code PCollection}.
+   */
+  PObject<S> first();
+
+  /**
    * @return A reference to the data in this instance that can be read from a job running
    * on a cluster.
    *
@@ -267,4 +272,10 @@ public interface PCollection<S> {
    * Returns a {@code PObject} of the minimum element of this instance.
    */
   PObject<S> min();
+  
+  /**
+   * Returns a {@code PCollection} that contains the result of aggregating all values in this instance.
+   */
+  PCollection<S> aggregate(Aggregator<S> aggregator);
+
 }
