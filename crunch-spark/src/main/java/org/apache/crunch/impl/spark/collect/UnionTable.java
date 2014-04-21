@@ -17,12 +17,15 @@
  */
 package org.apache.crunch.impl.spark.collect;
 
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.dist.collect.BaseUnionTable;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.dist.collect.PTableBase;
 import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
+import org.apache.crunch.impl.spark.fn.PairFlatMapDoFn;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.storage.StorageLevel;
 
@@ -52,7 +55,12 @@ public class UnionTable<K, V> extends BaseUnionTable<K, V> implements SparkColle
     List<PCollectionImpl<?>> parents = getParents();
     JavaPairRDD[] rdds = new JavaPairRDD[parents.size()];
     for (int i = 0; i < rdds.length; i++) {
-      rdds[i] = (JavaPairRDD) ((SparkCollection) parents.get(i)).getJavaRDDLike(runtime);
+      if (parents.get(i) instanceof PTableBase) {
+        rdds[i] = (JavaPairRDD) ((SparkCollection) parents.get(i)).getJavaRDDLike(runtime);
+      } else {
+        JavaRDD rdd = (JavaRDD) ((SparkCollection) parents.get(i)).getJavaRDDLike(runtime);
+        rdds[i] = rdd.mapPartitions(new PairFlatMapDoFn(IdentityFn.getInstance(), runtime.getRuntimeContext()));
+      }
     }
     return runtime.getSparkContext().union(rdds);
   }

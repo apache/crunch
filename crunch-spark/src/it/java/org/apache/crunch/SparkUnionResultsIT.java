@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import org.apache.crunch.impl.spark.SparkPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
+import org.apache.crunch.lib.PTables;
 import org.apache.crunch.test.CrunchTestSupport;
 import org.apache.crunch.types.writable.Writables;
 import org.junit.Test;
@@ -75,6 +76,23 @@ public class SparkUnionResultsIT extends CrunchTestSupport implements Serializab
 
     assertEquals(expectedPairs, unionValues);
 
+    pipeline.done();
+  }
+
+  @Test
+  public void testMultiGroupBy() throws Exception {
+    String inputPath = tempDir.copyResourceFileName("set1.txt");
+    String inputPath2 = tempDir.copyResourceFileName("set2.txt");
+    String output = tempDir.getFileName("output");
+
+    Pipeline pipeline = new SparkPipeline("local", "multigroupby");
+
+    PCollection<String> set1Lines = pipeline.read(At.textFile(inputPath, Writables.strings()));
+    PCollection<Pair<String, Long>> set1Lengths = set1Lines.parallelDo(new StringLengthMapFn(),
+        Writables.pairs(Writables.strings(), Writables.longs()));
+    PTable<String, Long> set2Counts = pipeline.read(At.textFile(inputPath2, Writables.strings())).count();
+    PTables.asPTable(set2Counts.union(set1Lengths)).groupByKey().ungroup()
+        .write(At.sequenceFile(output, Writables.strings(), Writables.longs()));
     pipeline.done();
   }
 
