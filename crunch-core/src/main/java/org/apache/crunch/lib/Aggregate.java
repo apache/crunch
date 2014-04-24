@@ -102,7 +102,11 @@ public class Aggregate {
     @Override
     public int compare(Pair<K, V> left, Pair<K, V> right) {
       int cmp = ((Comparable<V>) left.second()).compareTo(right.second());
-      return ascending ? cmp : -cmp;
+      if (ascending) {
+        return cmp;
+      } else {
+        return cmp == Integer.MIN_VALUE ? Integer.MAX_VALUE : -cmp;
+      }
     }
   }
 
