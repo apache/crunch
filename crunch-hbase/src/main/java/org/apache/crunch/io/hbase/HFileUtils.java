@@ -17,6 +17,21 @@
  */
 package org.apache.crunch.io.hbase;
 
+import static org.apache.crunch.types.writable.Writables.bytes;
+import static org.apache.crunch.types.writable.Writables.nulls;
+import static org.apache.crunch.types.writable.Writables.tableOf;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Set;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -49,19 +64,6 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.SequenceFile;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Set;
-
-import static org.apache.crunch.types.writable.Writables.*;
 
 public final class HFileUtils {
 
@@ -100,7 +102,9 @@ public final class HFileUtils {
     }
 
     private int compareTimestamp(KeyValue l, KeyValue r) {
-      return -Longs.compare(l.getTimestamp(), r.getTimestamp());
+      // These arguments are intentionally reversed, with r then l, to sort
+      // the timestamps in descending order as is expected by HBase
+      return Longs.compare(r.getTimestamp(), l.getTimestamp());
     }
 
     private int compareType(KeyValue l, KeyValue r) {

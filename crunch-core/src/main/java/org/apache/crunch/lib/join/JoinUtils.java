@@ -60,7 +60,7 @@ public class JoinUtils {
   public static class TupleWritablePartitioner extends Partitioner<TupleWritable, Writable> {
     @Override
     public int getPartition(TupleWritable key, Writable value, int numPartitions) {
-      return (Math.abs(key.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
+      return (key.get(0).hashCode() & Integer.MAX_VALUE) % numPartitions;
     }
   }
 
@@ -102,7 +102,7 @@ public class JoinUtils {
       } else {
         throw new UnsupportedOperationException("Unknown avro key type: " + key);
       }
-      return (Math.abs(record.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
+      return (record.get(0).hashCode() & Integer.MAX_VALUE) % numPartitions;
     }
   }
 
