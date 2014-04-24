@@ -20,6 +20,7 @@ package org.apache.crunch.io.text;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
@@ -60,7 +61,7 @@ public class TextFileReaderFactory<T> implements FileReaderFactory<T> {
       return Iterators.emptyIterator();
     }
 
-    final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    final BufferedReader reader = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
     return new AutoClosingIterator<T>(reader, new UnmodifiableIterator<T>() {
       boolean nextChecked = false;
       private String nextLine;
