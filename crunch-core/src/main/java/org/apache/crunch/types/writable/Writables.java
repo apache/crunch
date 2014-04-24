@@ -242,7 +242,7 @@ public class Writables {
   private static final MapFn<Boolean, BooleanWritable> BOOLEAN_TO_BW = new MapFn<Boolean, BooleanWritable>() {
     @Override
     public BooleanWritable map(Boolean input) {
-      return input == Boolean.TRUE ? TRUE : FALSE;
+      return input ? TRUE : FALSE;
     }
   };
 

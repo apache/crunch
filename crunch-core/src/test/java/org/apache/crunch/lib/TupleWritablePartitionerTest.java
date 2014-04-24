@@ -43,7 +43,7 @@ public class TupleWritablePartitionerTest {
     IntWritable intWritable = new IntWritable(3);
     BytesWritable bw = new BytesWritable(WritableUtils.toByteArray(intWritable));
     TupleWritable key = new TupleWritable(new Writable[] { bw });
-    assertEquals(1, tupleWritableParitioner.getPartition(key, NullWritable.get(), 5));
+    assertEquals(2, tupleWritableParitioner.getPartition(key, NullWritable.get(), 5));
     assertEquals(0, tupleWritableParitioner.getPartition(key, NullWritable.get(), 2));
   }
 }

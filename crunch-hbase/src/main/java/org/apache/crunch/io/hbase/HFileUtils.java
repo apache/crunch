@@ -100,7 +100,8 @@ public final class HFileUtils {
     }
 
     private int compareTimestamp(KeyValue l, KeyValue r) {
-      return -Longs.compare(l.getTimestamp(), r.getTimestamp());
+      // These arguments are intentionally reversed, with r then l
+      return Longs.compare(r.getTimestamp(), l.getTimestamp());
     }
 
     private int compareType(KeyValue l, KeyValue r) {
