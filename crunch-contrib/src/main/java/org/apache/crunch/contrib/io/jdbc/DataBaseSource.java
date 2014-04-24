@@ -71,8 +71,6 @@ public class DataBaseSource<T extends DBWritable & Writable> extends FileSourceI
     private String selectClause;
     public String countClause;
 
-    //private DataBaseSource<T> dataBaseSource;
-
     public Builder(Class<T> inputClass) {
       this.inputClass = inputClass;
     }

@@ -100,8 +100,6 @@ public class SecondarySort {
     PTableType<Pair<K, V1>, Pair<V1, V2>> inter = ptf.tableOf(
         ptf.pairs(input.getKeyType(), valueType.getSubTypes().get(0)),
         valueType);
-    //PTableType<K, Collection<Pair<V1, V2>>> out =
-    ptf.tableOf(input.getKeyType(), ptf.collections(input.getValueType()));
     GroupingOptions.Builder gob = GroupingOptions.builder()
         .requireSortedKeys()
         .groupingComparatorClass(JoinUtils.getGroupingComparator(ptf))
