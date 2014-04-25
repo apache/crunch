@@ -22,24 +22,35 @@ import org.apache.spark.AccumulatorParam;
 
 import java.util.Map;
 
-public class CounterAccumulatorParam implements AccumulatorParam<Map<String, Long>> {
+public class CounterAccumulatorParam implements AccumulatorParam<Map<String, Map<String, Long>>> {
   @Override
-  public Map<String, Long> addAccumulator(Map<String, Long> current, Map<String, Long> added) {
-    for (Map.Entry<String, Long> e : added.entrySet()) {
-      Long cnt = current.get(e.getKey());
-      cnt = (cnt == null) ? e.getValue() : cnt + e.getValue();
-      current.put(e.getKey(), cnt);
+  public Map<String, Map<String, Long>> addAccumulator(
+      Map<String, Map<String, Long>> current,
+      Map<String, Map<String, Long>> added) {
+    for (Map.Entry<String, Map<String, Long>> e : added.entrySet()) {
+      Map<String, Long> grp = current.get(e.getKey());
+      if (grp == null) {
+        grp = Maps.newTreeMap();
+        current.put(e.getKey(), grp);
+      }
+      for (Map.Entry<String, Long> f : e.getValue().entrySet()) {
+        Long cnt = grp.get(f.getKey());
+        cnt = (cnt == null) ? f.getValue() : cnt + f.getValue();
+        grp.put(f.getKey(), cnt);
+      }
     }
     return current;
   }
 
   @Override
-  public Map<String, Long> addInPlace(Map<String, Long> first, Map<String, Long> second) {
+  public Map<String, Map<String, Long>> addInPlace(
+      Map<String, Map<String, Long>> first,
+      Map<String, Map<String, Long>> second) {
     return addAccumulator(first, second);
   }
 
   @Override
-  public Map<String, Long> zero(Map<String, Long> counts) {
+  public Map<String, Map<String, Long>> zero(Map<String, Map<String, Long>> counts) {
     return Maps.newHashMap();
   }
 }

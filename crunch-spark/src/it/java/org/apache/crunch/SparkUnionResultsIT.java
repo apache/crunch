@@ -39,6 +39,7 @@ public class SparkUnionResultsIT extends CrunchTestSupport implements Serializab
   static class StringLengthMapFn extends MapFn<String, Pair<String, Long>> {
     @Override
     public Pair<String, Long> map(String input) {
+      increment("my", "counter");
       return new Pair<String, Long>(input, 10L);
     }
   }
@@ -93,7 +94,8 @@ public class SparkUnionResultsIT extends CrunchTestSupport implements Serializab
     PTable<String, Long> set2Counts = pipeline.read(At.textFile(inputPath2, Writables.strings())).count();
     PTables.asPTable(set2Counts.union(set1Lengths)).groupByKey().ungroup()
         .write(At.sequenceFile(output, Writables.strings(), Writables.longs()));
-    pipeline.done();
+    PipelineResult res = pipeline.done();
+    assertEquals(4, res.getStageResults().get(0).getCounterValue("my", "counter"));
   }
 
   @Test
