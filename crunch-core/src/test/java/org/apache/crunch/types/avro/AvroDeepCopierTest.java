@@ -17,19 +17,20 @@
  */
 package org.apache.crunch.types.avro;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.avro.AvroDeepCopier.AvroSpecificDeepCopier;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 
 public class AvroDeepCopierTest {
   
@@ -104,4 +105,15 @@ public class AvroDeepCopierTest {
     assertNull(deepCopyPerson);
   }
 
+  @Test
+  public void testDeepCopy_ByteBuffer() {
+    byte[] bytes = new byte[] { 1, 2, 3 };
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    ByteBuffer deepCopied = new AvroDeepCopier.AvroByteBufferDeepCopier().INSTANCE.deepCopy(buffer);
+
+    // Change the original array to make sure we've really got a copy
+    bytes[0] = 0;
+    assertArrayEquals(new byte[] { 1, 2, 3 }, deepCopied.array());
+
+  }
 }

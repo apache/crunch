@@ -19,6 +19,7 @@ package org.apache.crunch.types.avro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -202,6 +203,28 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
       throw new CrunchRuntimeException(e);
     } catch (IllegalAccessException e) {
       throw new CrunchRuntimeException(e);
+    }
+  }
+
+  /**
+   * Copies ByteBuffers that are stored in Avro. A specific case is needed here
+   * because ByteBuffers are the one built-in case where the serialization type is different
+   * than the output type and the output type isn't immutable.
+   */
+  public static class AvroByteBufferDeepCopier implements DeepCopier<ByteBuffer> {
+
+    public static final AvroByteBufferDeepCopier INSTANCE = new AvroByteBufferDeepCopier();
+
+    @Override
+    public void initialize(Configuration conf) {
+      // No-op
+    }
+
+    @Override
+    public ByteBuffer deepCopy(ByteBuffer source) {
+      byte[] copy = new byte[source.limit()];
+      System.arraycopy(source.array(), 0, copy, 0, source.limit());
+      return ByteBuffer.wrap(copy);
     }
   }
 
