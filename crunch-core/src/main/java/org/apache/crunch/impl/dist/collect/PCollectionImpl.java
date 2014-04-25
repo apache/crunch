@@ -228,7 +228,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public PCollection<S> filter(FilterFn<S> filterFn) {
-    return parallelDo(filterFn, getPType());
+    return parallelDo("Filter with " + filterFn.getClass().getSimpleName(), filterFn, getPType());
   }
 
   @Override
