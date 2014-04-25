@@ -18,10 +18,11 @@
 package org.apache.crunch.impl.spark;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PipelineExecution;
@@ -39,12 +40,15 @@ import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.CounterGroup;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
@@ -54,7 +58,6 @@ import org.apache.spark.storage.StorageLevel;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -65,17 +68,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SparkRuntime extends AbstractFuture<PipelineResult> implements PipelineExecution {
 
+  private static final Log LOG = LogFactory.getLog(SparkRuntime.class);
+
   private SparkPipeline pipeline;
   private JavaSparkContext sparkContext;
   private Configuration conf;
   private CombineFn combineFn;
   private SparkRuntimeContext ctxt;
+  private Accumulator<Map<String, Map<String, Long>>> counters;
   private Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   private Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
   private Map<PCollection<?>, StorageLevel> toCache;
   private final CountDownLatch doneSignal = new CountDownLatch(1);
   private AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
-  private PipelineResult result;
   private boolean started;
   private Thread monitorThread;
 
@@ -103,9 +108,9 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     this.pipeline = pipeline;
     this.sparkContext = sparkContext;
     this.conf = conf;
-    this.ctxt = new SparkRuntimeContext(
-        sparkContext.broadcast(conf),
-        sparkContext.accumulator(Maps.<String, Long>newHashMap(), new CounterAccumulatorParam()));
+    this.counters = sparkContext.accumulator(Maps.<String, Map<String, Long>>newHashMap(),
+        new CounterAccumulatorParam());
+    this.ctxt = new SparkRuntimeContext(counters);
     this.outputTargets = Maps.newTreeMap(DEPTH_COMPARATOR);
     this.outputTargets.putAll(outputTargets);
     this.toMaterialize = toMaterialize;
@@ -203,13 +208,11 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     for (PCollectionImpl<?> pcollect : outputTargets.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
-
     while (!targetDeps.isEmpty() && doneSignal.getCount() > 0) {
       Set<Target> allTargets = Sets.newHashSet();
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
         allTargets.addAll(outputTargets.get(pcollect));
       }
-
       Map<PCollectionImpl<?>, JavaRDDLike<?, ?>> pcolToRdd = Maps.newTreeMap(DEPTH_COMPARATOR);
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
         if (Sets.intersection(allTargets, targetDeps.get(pcollect)).isEmpty()) {
@@ -227,6 +230,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
         }
         for (Target t : targets) {
           Configuration conf = new Configuration(getConfiguration());
+          getRuntimeContext().setConf(sparkContext.broadcast(WritableUtils.toByteArray(conf)));
           if (t instanceof MapReduceTarget) { //TODO: check this earlier
             Converter c = t.getConverter(ptype);
             JavaPairRDD<?, ?> outRDD;
@@ -239,7 +243,6 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                   .map(new PairMapFunction(ptype.getOutputMapFn(), ctxt))
                   .map(new OutputConverterFunction(c));
             }
-
             try {
               Job job = new Job(conf);
               if (t instanceof PathTarget) {
@@ -281,14 +284,24 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     }
     if (status.get() != Status.FAILED || status.get() != Status.KILLED) {
       status.set(Status.SUCCEEDED);
-      result = new PipelineResult(
-          ImmutableList.of(new PipelineResult.StageResult("Spark", null, start, System.currentTimeMillis())),
-          Status.SUCCEEDED);
-      set(result);
+      set(new PipelineResult(
+          ImmutableList.of(new PipelineResult.StageResult("Spark", getCounters(), start, System.currentTimeMillis())),
+          Status.SUCCEEDED));
     } else {
       set(PipelineResult.EMPTY);
     }
     doneSignal.countDown();
+  }
+
+  private Counters getCounters() {
+    Counters c = new Counters();
+    for (Map.Entry<String, Map<String, Long>> e : counters.value().entrySet()) {
+      CounterGroup cg = c.getGroup(e.getKey());
+      for (Map.Entry<String, Long> f : e.getValue().entrySet()) {
+        cg.findCounter(f.getKey()).setValue(f.getValue());
+      }
+    }
+    return c;
   }
 
   @Override
@@ -315,7 +328,12 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
 
   @Override
   public PipelineResult getResult() {
-    return result;
+    try {
+      return get();
+    } catch (Exception e) {
+      LOG.error("Exception retrieving PipelineResult, returning EMPTY", e);
+      return PipelineResult.EMPTY;
+    }
   }
 
   @Override

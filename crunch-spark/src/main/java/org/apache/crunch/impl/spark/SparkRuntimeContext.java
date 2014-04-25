@@ -18,19 +18,15 @@
 package org.apache.crunch.impl.spark;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import javassist.util.proxy.MethodFilter;
-import javassist.util.proxy.MethodHandler;
-import javassist.util.proxy.ProxyFactory;
+import com.google.common.collect.Maps;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
+import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.TaskInputOutputContextFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.mapred.SparkCounter;
 import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.OutputCommitter;
-import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -38,32 +34,35 @@ import org.apache.spark.Accumulator;
 import org.apache.spark.SparkFiles;
 import org.apache.spark.broadcast.Broadcast;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class SparkRuntimeContext implements Serializable {
 
-  private Broadcast<Configuration> broadConf;
-  private Accumulator<Map<String, Long>> counters;
+  private Broadcast<byte[]> broadConf;
+  private final Accumulator<Map<String, Map<String, Long>>> counters;
+  private transient Configuration conf;
   private transient TaskInputOutputContext context;
 
-  public SparkRuntimeContext(
-      Broadcast<Configuration> broadConf,
-      Accumulator<Map<String, Long>> counters) {
-    this.broadConf = broadConf;
+  public SparkRuntimeContext(Accumulator<Map<String, Map<String, Long>>> counters) {
     this.counters = counters;
+  }
+
+  public void setConf(Broadcast<byte[]> broadConf) {
+    this.broadConf = broadConf;
   }
 
   public void initialize(DoFn<?, ?> fn) {
     if (context == null) {
       configureLocalFiles();
-      context = getTaskIOContext(broadConf, counters);
+      context = TaskInputOutputContextFactory.create(getConfiguration(), new TaskAttemptID(),
+          new SparkReporter(counters));
     }
     fn.setContext(context);
     fn.initialize();
@@ -76,7 +75,6 @@ public class SparkRuntimeContext implements Serializable {
         List<String> allFiles = Lists.newArrayList();
         for (URI uri : uris) {
           File f = new File(uri.getPath());
-          String sparkFile = SparkFiles.get(f.getName());
           allFiles.add(SparkFiles.get(f.getName()));
         }
         String sparkFiles = Joiner.on(',').join(allFiles);
@@ -90,117 +88,60 @@ public class SparkRuntimeContext implements Serializable {
   }
 
   public Configuration getConfiguration() {
-    return broadConf.value();
+    if (conf == null) {
+      conf = new Configuration();
+      try {
+        ByteArrayInputStream bais = new ByteArrayInputStream(broadConf.value());
+        conf.readFields(new DataInputStream(bais));
+        bais.close();
+      } catch (Exception e) {
+        throw new RuntimeException("Error reading broadcast configuration", e);
+      }
+    }
+    return conf;
   }
 
-  public static TaskInputOutputContext getTaskIOContext(
-      final Broadcast<Configuration> conf,
-      final Accumulator<Map<String, Long>> counters) {
-    ProxyFactory factory = new ProxyFactory();
-    Class<TaskInputOutputContext> superType = TaskInputOutputContext.class;
-    Class[] types = new Class[0];
-    Object[] args = new Object[0];
-    final TaskAttemptID taskAttemptId = new TaskAttemptID();
-    if (superType.isInterface()) {
-      factory.setInterfaces(new Class[] { superType });
-    } else {
-      types = new Class[] { Configuration.class, TaskAttemptID.class, RecordWriter.class, OutputCommitter.class,
-          StatusReporter.class };
-      args = new Object[] { conf.value(), taskAttemptId, null, null, null };
-      factory.setSuperclass(superType);
+  private static class SparkReporter extends StatusReporter implements Serializable {
+
+    Accumulator<Map<String, Map<String, Long>>> accum;
+    private transient Map<String, Map<String, Counter>> counters;
+
+    public SparkReporter(Accumulator<Map<String, Map<String, Long>>> accum) {
+      this.accum = accum;
+      this.counters = Maps.newHashMap();
     }
 
-    final Set<String> handledMethods = ImmutableSet.of("getConfiguration", "getCounter",
-        "progress", "getTaskAttemptID");
-    factory.setFilter(new MethodFilter() {
-      @Override
-      public boolean isHandled(Method m) {
-        return handledMethods.contains(m.getName());
-      }
-    });
-    MethodHandler handler = new MethodHandler() {
-      @Override
-      public Object invoke(Object arg0, Method m, Method arg2, Object[] args) throws Throwable {
-        String name = m.getName();
-        if ("getConfiguration".equals(name)) {
-          return conf.value();
-        } else if ("progress".equals(name)) {
-          // no-op
-          return null;
-        } else if ("getTaskAttemptID".equals(name)) {
-          return taskAttemptId;
-        } else if ("getCounter".equals(name)){ // getCounter
-          if (args.length == 1) {
-            return getCounter(counters, args[0].getClass().getName(), ((Enum) args[0]).name());
-          } else {
-            return getCounter(counters, (String) args[0], (String) args[1]);
-          }
-        } else {
-          throw new IllegalStateException("Unhandled method " + name);
-        }
-      }
-    };
+    @Override
+    public Counter getCounter(Enum<?> anEnum) {
+      return getCounter(anEnum.getDeclaringClass().toString(), anEnum.name());
+    }
 
-    try {
-      Object newInstance = factory.create(types, args, handler);
-      return (TaskInputOutputContext<?, ?, ?, ?>) newInstance;
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
+    @Override
+    public Counter getCounter(String group, String name) {
+      Map<String, Counter> grp = counters.get(group);
+      if (grp == null) {
+        grp = Maps.newTreeMap();
+        counters.put(group, grp);
+      }
+      if (!grp.containsKey(name)) {
+        grp.put(name, new SparkCounter(group, name, accum));
+      }
+      return grp.get(name);
+    }
+
+    @Override
+    public void progress() {
+    }
+
+    @Override
+    public float getProgress() {
+      return 0;
+    }
+
+    @Override
+    public void setStatus(String s) {
+
     }
   }
 
-  private static Counter getCounter(final Accumulator<Map<String, Long>> accum, final String group,
-                                    final String counterName) {
-    ProxyFactory factory = new ProxyFactory();
-    Class<Counter> superType = Counter.class;
-    Class[] types = new Class[0];
-    Object[] args = new Object[0];
-    if (superType.isInterface()) {
-      factory.setInterfaces(new Class[] { superType });
-    } else {
-      types = new Class[] { String.class, String.class };
-      args = new Object[] { group, counterName };
-      factory.setSuperclass(superType);
-    }
-
-    final Set<String> handledMethods = ImmutableSet.of("getDisplayName", "getName",
-        "getValue", "increment", "setValue", "setDisplayName");
-    factory.setFilter(new MethodFilter() {
-      @Override
-      public boolean isHandled(Method m) {
-        return handledMethods.contains(m.getName());
-      }
-    });
-    MethodHandler handler = new MethodHandler() {
-      @Override
-      public Object invoke(Object arg0, Method m, Method arg2, Object[] args) throws Throwable {
-        String name = m.getName();
-        if ("increment".equals(name)) {
-          accum.add(ImmutableMap.of(group + ":" + counterName, (Long) args[0]));
-          return null;
-        } else if ("getDisplayName".equals(name)) {
-          return counterName;
-        } else if ("getName".equals(name)) {
-          return counterName;
-        } else if ("setDisplayName".equals(name)) {
-          // No-op
-          return null;
-        } else if ("setValue".equals(name)) {
-          throw new UnsupportedOperationException("Cannot set counter values in Spark, only increment them");
-        } else if ("getValue".equals(name)) {
-          throw new UnsupportedOperationException("Cannot read counters during Spark execution");
-        } else {
-          throw new IllegalStateException("Unhandled method " + name);
-        }
-      }
-    };
-    try {
-      Object newInstance = factory.create(types, args, handler);
-      return (Counter) newInstance;
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
-  }
 }

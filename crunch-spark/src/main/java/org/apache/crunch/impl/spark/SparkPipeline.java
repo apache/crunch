@@ -43,11 +43,17 @@ public class SparkPipeline extends DistributedPipeline {
 
   private final String sparkConnect;
   private JavaSparkContext sparkContext;
+  private Class<?> jarClass;
   private final Map<PCollection<?>, StorageLevel> cachedCollections = Maps.newHashMap();
 
   public SparkPipeline(String sparkConnect, String appName) {
+    this(sparkConnect, appName, null);
+  }
+
+  public SparkPipeline(String sparkConnect, String appName, Class<?> jarClass) {
     super(appName, new Configuration(), new SparkCollectFactory());
     this.sparkConnect = Preconditions.checkNotNull(sparkConnect);
+    this.jarClass = jarClass;
   }
 
   public SparkPipeline(JavaSparkContext sparkContext, String appName) {
@@ -113,6 +119,9 @@ public class SparkPipeline extends DistributedPipeline {
     }
     if (sparkContext == null) {
       this.sparkContext = new JavaSparkContext(sparkConnect, getName());
+      if (jarClass != null) {
+        sparkContext.addJar(JavaSparkContext.jarOfClass(jarClass)[0]);
+      }
     }
     SparkRuntime runtime = new SparkRuntime(this, sparkContext, getConfiguration(), outputTargets, toMaterialize,
         cachedCollections);
