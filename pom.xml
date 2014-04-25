@@ -144,7 +144,7 @@ under the License.
 
       <dependency>
         <groupId>org.apache.crunch</groupId>
-        <artifactId>crunch-scrunch</artifactId>
+        <artifactId>crunch-scrunch_${scala.base.version}</artifactId>
         <version>${project.version}</version>
       </dependency>
 
