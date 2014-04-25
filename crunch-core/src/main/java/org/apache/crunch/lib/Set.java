@@ -42,6 +42,7 @@ public class Set {
    */
   public static <T> PCollection<T> difference(PCollection<T> coll1, PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        "Calculate differences of sets",
         new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input, Emitter<T> emitter) {
@@ -61,6 +62,7 @@ public class Set {
    */
   public static <T> PCollection<T> intersection(PCollection<T> coll1, PCollection<T> coll2) {
     return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        "Calculate intersection of sets",
         new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, T>() {
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input, Emitter<T> emitter) {
@@ -91,6 +93,7 @@ public class Set {
     PTypeFamily typeFamily = coll1.getTypeFamily();
     PType<T> type = coll1.getPType();
     return Cogroup.cogroup(toTable(coll1), toTable(coll2)).parallelDo(
+        "Calculate common values of sets",
         new DoFn<Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>>, Tuple3<T, T, T>>() {
           @Override
           public void process(Pair<T, Pair<Collection<Boolean>, Collection<Boolean>>> input,

@@ -59,8 +59,8 @@ public class Channels {
   public static <T, U> Pair<PCollection<T>, PCollection<U>> split(PCollection<Pair<T, U>> pCollection,
       PType<T> firstPType, PType<U> secondPType) {
 
-    PCollection<T> first = pCollection.parallelDo(new FirstEmittingDoFn<T, U>(), firstPType);
-    PCollection<U> second = pCollection.parallelDo(new SecondEmittingDoFn<T, U>(), secondPType);
+    PCollection<T> first = pCollection.parallelDo("Extract first value", new FirstEmittingDoFn<T, U>(), firstPType);
+    PCollection<U> second = pCollection.parallelDo("Extract second value", new SecondEmittingDoFn<T, U>(), secondPType);
     return Pair.of(first, second);
   }
 

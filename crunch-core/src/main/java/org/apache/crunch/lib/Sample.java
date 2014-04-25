@@ -119,7 +119,7 @@ public class Sample {
     PTypeFamily ptf = input.getTypeFamily();
     PType<Pair<T, Integer>> ptype = ptf.pairs(input.getPType(), ptf.ints());
     return weightedReservoirSample(
-        input.parallelDo(new MapFn<T, Pair<T, Integer>>() {
+        input.parallelDo("Map to pairs for reservoir sampling", new MapFn<T, Pair<T, Integer>>() {
           @Override
           public Pair<T, Integer> map(T t) { return Pair.of(t, 1); }
         }, ptype),
@@ -163,7 +163,7 @@ public class Sample {
         }, ptf.tableOf(ptf.ints(), input.getPType()));
     int[] ss = { sampleSize };
     return groupedWeightedReservoirSample(groupedIn, ss, seed)
-        .parallelDo(new MapFn<Pair<Integer, T>, T>() {
+        .parallelDo("Extract sampled value from pair", new MapFn<Pair<Integer, T>, T>() {
           @Override
           public T map(Pair<Integer, T> p) {
             return p.second();
@@ -204,10 +204,10 @@ public class Sample {
     PTableType<Integer, Pair<Double, T>> ptt = ptf.tableOf(ptf.ints(),
         ptf.pairs(ptf.doubles(), ttype));
     
-    return input.parallelDo(new ReservoirSampleFn<T, N>(sampleSizes, seed, ttype), ptt)
+    return input.parallelDo("Initial reservoir sampling", new ReservoirSampleFn<T, N>(sampleSizes, seed, ttype), ptt)
         .groupByKey(1)
         .combineValues(new WRSCombineFn<T>(sampleSizes, ttype))
-        .parallelDo(new MapFn<Pair<Integer, Pair<Double, T>>, Pair<Integer, T>>() {
+        .parallelDo("Extract sampled values", new MapFn<Pair<Integer, Pair<Double, T>>, Pair<Integer, T>>() {
           @Override
           public Pair<Integer, T> map(Pair<Integer, Pair<Double, T>> p) {
             return Pair.of(p.first(), p.second().second());

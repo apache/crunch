@@ -205,7 +205,7 @@ public class Cartesian {
 
     PTypeFamily ctf = cg.getTypeFamily();
 
-    return cg.parallelDo(new MapFn<Pair<Pair<Integer, Integer>, Pair<U, V>>, Pair<U, V>>() {
+    return cg.parallelDo("Extract second element", new MapFn<Pair<Pair<Integer, Integer>, Pair<U, V>>, Pair<U, V>>() {
       @Override
       public Pair<U, V> map(Pair<Pair<Integer, Integer>, Pair<U, V>> input) {
         return input.second();
