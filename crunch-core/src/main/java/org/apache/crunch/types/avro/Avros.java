@@ -188,7 +188,7 @@ public class Avros {
   private static final AvroType<Boolean> booleans = create(Boolean.class, Schema.Type.BOOLEAN);
   private static final AvroType<ByteBuffer> bytes = new AvroType<ByteBuffer>(ByteBuffer.class,
       Schema.create(Schema.Type.BYTES), BYTES_IN, IdentityFn.getInstance(),
-      NoOpDeepCopier.<ByteBuffer>create(), AvroType.AvroRecordType.GENERIC);
+      AvroDeepCopier.AvroByteBufferDeepCopier.INSTANCE, AvroType.AvroRecordType.GENERIC);
 
   private static final Map<Class<?>, PType<?>> PRIMITIVES = ImmutableMap.<Class<?>, PType<?>> builder()
       .put(String.class, strings).put(Long.class, longs).put(Integer.class, ints).put(Float.class, floats)
