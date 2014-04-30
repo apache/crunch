@@ -259,8 +259,8 @@ public class HFileTargetIT implements Serializable {
       }
       HFile.Reader reader = null;
       try {
-        reader = HFile.createReader(fs, f, new CacheConfig(conf));
-        assertEquals(DataBlockEncoding.PREFIX, reader.getEncodingOnDisk());
+        reader = HFile.createReader(fs, f, new CacheConfig(conf), conf);
+        assertEquals(DataBlockEncoding.PREFIX, reader.getDataBlockEncoding());
       } finally {
         reader.close();
       }
@@ -328,7 +328,7 @@ public class HFileTargetIT implements Serializable {
           fs,
           f,
           new CacheConfig(fs.getConf()),
-          DataBlockEncoding.NONE);
+          fs.getConf());
       StoreFileScanner scanner = reader.getStoreFileScanner(false, false);
       scanner.seek(fakeKV); // have to call seek of each underlying scanner, otherwise KeyValueHeap won't work
       scanners.add(scanner);

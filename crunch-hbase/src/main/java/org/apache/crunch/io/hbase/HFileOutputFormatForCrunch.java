@@ -30,6 +30,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.hfile.HFile;
+import org.apache.hadoop.hbase.io.hfile.HFileContext;
 import org.apache.hadoop.hbase.io.hfile.HFileDataBlockEncoderImpl;
 import org.apache.hadoop.hbase.regionserver.HStore;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
@@ -89,12 +90,8 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
     LOG.info("HColumnDescriptor: " + hcol.toString());
     final HFile.Writer writer = HFile.getWriterFactoryNoCache(conf)
         .withPath(fs, outputPath)
-        .withBlockSize(hcol.getBlocksize())
-        .withCompression(hcol.getCompression())
         .withComparator(KeyValue.COMPARATOR)
-        .withDataBlockEncoder(new HFileDataBlockEncoderImpl(hcol.getDataBlockEncoding()))
-        .withChecksumType(HStore.getChecksumType(conf))
-        .withBytesPerChecksum(HStore.getBytesPerChecksum(conf))
+        .withFileContext(getContext(hcol))
         .create();
 
     return new RecordWriter<Object, KeyValue>() {
@@ -123,5 +120,12 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         writer.close();
       }
     };
+  }
+
+  private HFileContext getContext(HColumnDescriptor desc) {
+    HFileContext ctxt = new HFileContext();
+    ctxt.setDataBlockEncoding(desc.getDataBlockEncoding());
+    ctxt.setCompression(desc.getCompression());
+    return ctxt;
   }
 }

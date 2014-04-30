@@ -86,7 +86,7 @@ public final class HFileUtils {
       if ((cmp = compareType(l, r)) != 0) {
         return cmp;
       }
-      return compareMemstoreTS(l, r);
+      return 0;
     }
 
     private int compareFamily(KeyValue l, KeyValue r) {
@@ -111,9 +111,6 @@ public final class HFileUtils {
       return (int) r.getType() - (int) l.getType();
     }
 
-    private int compareMemstoreTS(KeyValue l, KeyValue r) {
-      return Longs.compare(l.getMemstoreTS(), r.getMemstoreTS());
-    }
   };
 
   private static class FilterByFamilyFn extends FilterFn<KeyValue> {

@@ -88,7 +88,7 @@ under the License.
 
     <!-- Can be overridden by hadoop-2 profile, but these are the default values -->
     <hadoop.version>1.1.2</hadoop.version>
-    <hbase.version>0.96.0-hadoop1</hbase.version>
+    <hbase.version>0.98.1-hadoop1</hbase.version>
     <hbase.midfix>hadoop1</hbase.midfix>
 
     <scala.base.version>2.10</scala.base.version>
@@ -457,7 +457,7 @@ under the License.
       </activation>
       <properties>
         <hadoop.version>2.2.0</hadoop.version>
-        <hbase.version>0.96.0-hadoop2</hbase.version>
+        <hbase.version>0.98.1-hadoop2</hbase.version>
         <commons-lang.version>2.5</commons-lang.version>
         <hbase.midfix>hadoop2</hbase.midfix>
       </properties>

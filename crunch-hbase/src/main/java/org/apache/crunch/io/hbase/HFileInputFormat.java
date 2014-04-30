@@ -96,7 +96,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       Path path = fileSplit.getPath();
       FileSystem fs = path.getFileSystem(conf);
       LOG.info("Initialize HFileRecordReader for " + path);
-      this.in = HFile.createReader(fs, path, new CacheConfig(conf));
+      this.in = HFile.createReader(fs, path, new CacheConfig(conf), conf);
 
       // The file info must be loaded before the scanner can be used.
       // This seems like a bug in HBase, but it's easily worked around.

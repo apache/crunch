@@ -39,7 +39,7 @@ public class HFileReaderFactory implements FileReaderFactory<KeyValue> {
     Configuration conf = fs.getConf();
     CacheConfig cacheConfig = new CacheConfig(conf);
     try {
-      HFile.Reader hfr = HFile.createReader(fs, path, cacheConfig);
+      HFile.Reader hfr = HFile.createReader(fs, path, cacheConfig, conf);
       HFileScanner scanner = hfr.getScanner(
           conf.getBoolean(HFILE_SCANNER_CACHE_BLOCKS, false),
           conf.getBoolean(HFILE_SCANNER_PREAD, false));

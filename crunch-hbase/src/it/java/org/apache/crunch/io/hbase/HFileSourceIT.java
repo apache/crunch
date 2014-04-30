@@ -38,6 +38,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
+import org.apache.hadoop.hbase.io.hfile.HFileContext;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Before;
 import org.junit.Rule;
@@ -304,6 +305,7 @@ public class HFileSourceIT implements Serializable {
       w = HFile.getWriterFactory(conf, new CacheConfig(conf))
           .withPath(fs, inputPath)
           .withComparator(KeyValue.COMPARATOR)
+          .withFileContext(new HFileContext())
           .create();
       for (KeyValue kv : sortedKVs) {
         w.append(kv);
