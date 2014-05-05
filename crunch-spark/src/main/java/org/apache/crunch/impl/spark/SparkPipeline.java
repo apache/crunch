@@ -19,6 +19,8 @@ package org.apache.crunch.impl.spark;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -40,6 +42,8 @@ import org.apache.spark.storage.StorageLevel;
 import java.util.Map;
 
 public class SparkPipeline extends DistributedPipeline {
+
+  private static final Log LOG = LogFactory.getLog(SparkPipeline.class);
 
   private final String sparkConnect;
   private JavaSparkContext sparkContext;
@@ -102,8 +106,7 @@ public class SparkPipeline extends DistributedPipeline {
       exec.waitUntilDone();
       return exec.getResult();
     } catch (Exception e) {
-      // TODO: How to handle this without changing signature?
-      // LOG.error("Exception running pipeline", e);
+      LOG.error("Exception running pipeline", e);
       return PipelineResult.EMPTY;
     }
   }
@@ -120,7 +123,12 @@ public class SparkPipeline extends DistributedPipeline {
     if (sparkContext == null) {
       this.sparkContext = new JavaSparkContext(sparkConnect, getName());
       if (jarClass != null) {
-        sparkContext.addJar(JavaSparkContext.jarOfClass(jarClass)[0]);
+        String[] jars = JavaSparkContext.jarOfClass(jarClass);
+        if (jars != null && jars.length > 0) {
+          for (String jar : jars) {
+            sparkContext.addJar(jar);
+          }
+        }
       }
     }
     SparkRuntime runtime = new SparkRuntime(this, sparkContext, getConfiguration(), outputTargets, toMaterialize,
