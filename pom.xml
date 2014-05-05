@@ -832,6 +832,18 @@ under the License.
         <version>1.7</version>
         <executions>
           <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${basedir}/src/main/scala</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
             <id>add-test-source</id>
             <phase>validate</phase>
             <goals>
