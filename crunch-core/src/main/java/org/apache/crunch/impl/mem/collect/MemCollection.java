@@ -297,7 +297,7 @@ public class MemCollection<S> implements PCollection<S> {
     }
 
     final Set<String> handledMethods = ImmutableSet.of("getConfiguration", "getCounter", 
-                                                  "progress", "getTaskAttemptID");
+                                                  "progress", "getNumReduceTasks", "getTaskAttemptID");
     factory.setFilter(new MethodFilter() {
       @Override
       public boolean isHandled(Method m) {
@@ -315,6 +315,8 @@ public class MemCollection<S> implements PCollection<S> {
           return null;
         } else if ("getTaskAttemptID".equals(name)) {
           return taskAttemptId;
+        } else if ("getNumReduceTasks".equals(name)) {
+          return 1;
         } else if ("getCounter".equals(name)){ // getCounter
           if (args.length == 1) {
             return MemPipeline.getCounters().findCounter((Enum<?>) args[0]);

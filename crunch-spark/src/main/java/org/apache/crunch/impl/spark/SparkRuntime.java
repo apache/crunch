@@ -264,7 +264,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                 throw new IllegalArgumentException("Spark execution cannot handle non-MapReduceTarget: " + t);
               }
             } catch (Exception et) {
-              et.printStackTrace();
+              LOG.error("Spark Exception", et);
               status.set(Status.FAILED);
               set(PipelineResult.EMPTY);
               doneSignal.countDown();
