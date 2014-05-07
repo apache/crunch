@@ -18,14 +18,11 @@
 package org.apache.crunch.impl.mr.plan;
 
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
@@ -41,6 +38,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableMultimap;
 
 public class MSCRPlanner {
 
@@ -140,6 +138,7 @@ public class MSCRPlanner {
         }
       }
 
+      ImmutableMultimap<Target, JobPrototype> previousStages = ImmutableMultimap.copyOf(assignments);
       for (Map.Entry<Vertex, JobPrototype> e : newAssignments.entries()) {
         if (e.getKey().isOutput()) {
           PCollectionImpl<?> pcollect = e.getKey().getPCollection();
@@ -155,6 +154,17 @@ public class MSCRPlanner {
           // Add this to the set of output assignments
           for (Target t : outputs.get(pcollect)) {
             assignments.put(t, e.getValue());
+          }
+        } else {
+          Source source = e.getKey().getSource();
+          if (source != null && source instanceof Target) {
+            JobPrototype current = e.getValue();
+            Collection<JobPrototype> parentJobPrototypes = previousStages.get((Target) source);
+            if (parentJobPrototypes != null) {
+              for (JobPrototype parentJobProto : parentJobPrototypes) {
+                current.addDependency(parentJobProto);
+              }
+            }
           }
         }
       }
