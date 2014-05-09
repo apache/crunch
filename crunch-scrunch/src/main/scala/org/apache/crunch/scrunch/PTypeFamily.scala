@@ -20,7 +20,7 @@ package org.apache.crunch.scrunch
 import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, MapFn}
 import org.apache.crunch.types.{PType, PTypeFamily => PTF}
 import org.apache.crunch.types.writable.WritableTypeFamily
-import org.apache.crunch.types.avro.{AvroTypeFamily, Avros => CAvros}
+import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
@@ -131,5 +131,5 @@ object Avros extends PTypeFamily {
 
   CAvros.REFLECT_DATA_FACTORY = new ScalaReflectDataFactory()
 
-  def reflects[T: ClassManifest]() = CAvros.reflects(classManifest[T].erasure)
+  def reflects[T: ClassManifest]() = CAvros.reflects(classManifest[T].erasure).asInstanceOf[AvroType[T]]
 }
