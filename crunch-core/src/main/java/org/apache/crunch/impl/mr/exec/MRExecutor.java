@@ -166,7 +166,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
       }
     } catch (InterruptedException e) {
       throw new AssertionError(e); // Nobody should interrupt us.
-    } catch (IOException e) {
+    } catch (Exception e) {
       LOG.error("Pipeline failed due to exception", e);
       status.set(Status.FAILED);
       setException(e);
