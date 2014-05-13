@@ -114,19 +114,22 @@ public class Aggregate {
 
     private final int limit;
     private final boolean maximize;
+    private final PType<Pair<K, V>> pairType;
     private transient PriorityQueue<Pair<K, V>> values;
 
-    public TopKFn(int limit, boolean ascending) {
+    public TopKFn(int limit, boolean ascending, PType<Pair<K, V>> pairType) {
       this.limit = limit;
       this.maximize = ascending;
+      this.pairType = pairType;
     }
 
     public void initialize() {
       this.values = new PriorityQueue<Pair<K, V>>(limit, new PairValueComparator<K, V>(maximize));
+      pairType.initialize(getConfiguration());
     }
 
     public void process(Pair<K, V> input, Emitter<Pair<Integer, Pair<K, V>>> emitter) {
-      values.add(input);
+      values.add(pairType.getDetachedValue(input));
       if (values.size() > limit) {
         values.poll();
       }
@@ -143,10 +146,17 @@ public class Aggregate {
 
     private final int limit;
     private final boolean maximize;
+    private PType<Pair<K, V>> pairType;
 
-    public TopKCombineFn(int limit, boolean maximize) {
+    public TopKCombineFn(int limit, boolean maximize, PType<Pair<K, V>> pairType) {
       this.limit = limit;
       this.maximize = maximize;
+      this.pairType = pairType;
+    }
+
+    @Override
+    public void initialize() {
+      pairType.initialize(getConfiguration());
     }
 
     @Override
@@ -155,7 +165,7 @@ public class Aggregate {
       Comparator<Pair<K, V>> cmp = new PairValueComparator<K, V>(maximize);
       PriorityQueue<Pair<K, V>> queue = new PriorityQueue<Pair<K, V>>(limit, cmp);
       for (Pair<K, V> pair : input.second()) {
-        queue.add(pair);
+        queue.add(pairType.getDetachedValue(pair));
         if (queue.size() > limit) {
           queue.poll();
         }
@@ -169,13 +179,23 @@ public class Aggregate {
     }
   }
 
+  /**
+   * Selects the top N pairs from the given table, with sorting being performed on the values (i.e. the second
+   * value in the pair) of the table.
+   *
+   * @param ptable table containing the pairs from which the top N is to be selected
+   * @param limit number of top elements to select
+   * @param maximize if true, the maximum N values from the table will be selected, otherwise the minimal
+   *                 N values will be selected
+   * @return table containing the top N values from the incoming table
+   */
   public static <K, V> PTable<K, V> top(PTable<K, V> ptable, int limit, boolean maximize) {
     PTypeFamily ptf = ptable.getTypeFamily();
     PTableType<K, V> base = ptable.getPTableType();
     PType<Pair<K, V>> pairType = ptf.pairs(base.getKeyType(), base.getValueType());
     PTableType<Integer, Pair<K, V>> inter = ptf.tableOf(ptf.ints(), pairType);
-    return ptable.parallelDo("top" + limit + "map", new TopKFn<K, V>(limit, maximize), inter)
-        .groupByKey(1).combineValues(new TopKCombineFn<K, V>(limit, maximize))
+    return ptable.parallelDo("top" + limit + "map", new TopKFn<K, V>(limit, maximize, pairType), inter)
+        .groupByKey(1).combineValues(new TopKCombineFn<K, V>(limit, maximize, pairType))
         .parallelDo("top" + limit + "reduce", new DoFn<Pair<Integer, Pair<K, V>>, Pair<K, V>>() {
           public void process(Pair<Integer, Pair<K, V>> input, Emitter<Pair<K, V>> emitter) {
             emitter.emit(input.second());

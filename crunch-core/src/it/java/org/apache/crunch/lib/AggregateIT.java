@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.crunch.MapFn;
@@ -33,7 +34,9 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.io.From;
 import org.apache.crunch.test.Employee;
+import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTableType;
@@ -136,6 +139,24 @@ public class AggregateIT {
 
     PTable<String, Integer> bottom2 = Aggregate.top(counts, 2, false);
     assertEquals(ImmutableList.of(Pair.of("foo", 12), Pair.of("bar", 17)), bottom2.materialize());
+  }
+
+  @Test
+  public void testTopN_MRPipeline() throws IOException {
+    Pipeline pipeline = new MRPipeline(AggregateIT.class, tmpDir.getDefaultConfiguration());
+    PTable<StringWrapper, String> entries = pipeline
+        .read(From.textFile(tmpDir.copyResourceFileName("set1.txt"), Avros.strings()))
+        .by(new StringWrapper.StringToStringWrapperMapFn(), Avros.reflects(StringWrapper.class));
+    PTable<StringWrapper, String> topEntries = Aggregate.top(entries, 3, true);
+    List<Pair<StringWrapper, String>> expectedTop3 = Lists.newArrayList(
+        Pair.of(StringWrapper.wrap("e"), "e"),
+        Pair.of(StringWrapper.wrap("c"), "c"),
+        Pair.of(StringWrapper.wrap("b"), "b"));
+
+    assertEquals(
+        expectedTop3,
+        Lists.newArrayList(topEntries.materialize()));
+
   }
 
   @Test
