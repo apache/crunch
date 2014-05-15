@@ -110,7 +110,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     this.conf = conf;
     this.counters = sparkContext.accumulator(Maps.<String, Map<String, Long>>newHashMap(),
         new CounterAccumulatorParam());
-    this.ctxt = new SparkRuntimeContext(counters);
+    this.ctxt = new SparkRuntimeContext(counters, sparkContext.broadcast(WritableUtils.toByteArray(conf)));
     this.outputTargets = Maps.newTreeMap(DEPTH_COMPARATOR);
     this.outputTargets.putAll(outputTargets);
     this.toMaterialize = toMaterialize;
