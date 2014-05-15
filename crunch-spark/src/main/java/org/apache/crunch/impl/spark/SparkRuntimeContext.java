@@ -50,8 +50,11 @@ public class SparkRuntimeContext implements Serializable {
   private transient Configuration conf;
   private transient TaskInputOutputContext context;
 
-  public SparkRuntimeContext(Accumulator<Map<String, Map<String, Long>>> counters) {
+  public SparkRuntimeContext(
+      Accumulator<Map<String, Map<String, Long>>> counters,
+      Broadcast<byte[]> broadConf) {
     this.counters = counters;
+    this.broadConf = broadConf;
   }
 
   public void setConf(Broadcast<byte[]> broadConf) {
