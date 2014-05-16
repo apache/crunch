@@ -37,7 +37,7 @@ object Mem extends MemEmbeddedPipeline with PipelineHelper {
   /**
    * Constructs a PCollection using in memory data.
    *
-   * @param collect The data to load.
+   * @param ts The data to load.
    * @return A PCollection containing the specified data.
    */
   def collectionOf[T](ts: T*)(implicit pt: PTypeH[T]): PCollection[T] = {

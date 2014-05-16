@@ -24,9 +24,8 @@ import scala.collection.JavaConversions._
 import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
 import org.apache.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
 import org.apache.crunch.lib.{Cartesian, Aggregate, Cogroup, PTables}
-import org.apache.crunch.lib.join.{JoinStrategy, DefaultJoinStrategy, JoinType}
+import org.apache.crunch.lib.join.{DefaultJoinStrategy, JoinType}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
-import java.util
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
   import PTable._

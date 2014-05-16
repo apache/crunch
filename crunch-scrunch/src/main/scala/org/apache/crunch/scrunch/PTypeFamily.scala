@@ -19,11 +19,13 @@ package org.apache.crunch.scrunch
 
 import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, MapFn}
 import org.apache.crunch.types.{PType, PTypeFamily => PTF}
-import org.apache.crunch.types.writable.WritableTypeFamily
+import org.apache.crunch.types.writable.{WritableTypeFamily, Writables => CWritables}
 import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
+import org.apache.hadoop.io.Writable
 
 class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boolean = false) extends MapFn[S, T] {
   override def initialize() {
@@ -40,11 +42,15 @@ trait PTypeFamily {
 
   def ptf: PTF
 
+  def writables[T <: Writable : ClassTag]: PType[T]
+
+  def as[T](ptype: PType[T]) = ptf.as(ptype)
+
   val strings = ptf.strings()
 
   val bytes = ptf.bytes()
 
-  def records[T: ClassManifest] = ptf.records(classManifest[T].erasure)
+  def records[T: ClassTag] = ptf.records(implicitly[ClassTag[T]].runtimeClass)
 
   def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
     ptf.derived(cls, new TMapFn[S, T](in, Some(pt)), new TMapFn[T, S](out), pt)
@@ -79,6 +85,8 @@ trait PTypeFamily {
     val out = (x: Boolean) => new JBoolean(x)
     derived(classOf[Boolean], in, out, ptf.booleans())
   }
+
+  def tableOf[K, V](keyType: PType[K], valueType: PType[V]) = ptf.tableOf(keyType, valueType)
 
   def collections[T](ptype: PType[T]) = {
     derived(classOf[Iterable[T]], collectionAsScalaIterable[T], asJavaCollection[T], ptf.collections(ptype))
@@ -118,18 +126,20 @@ trait PTypeFamily {
     val out = (x: (T1, T2, T3, T4)) => CTuple4.of(x._1, x._2, x._3, x._4)
     derived(classOf[(T1, T2, T3, T4)], in, out, ptf.quads(p1, p2, p3, p4))
   }
-
-  def tableOf[K, V](keyType: PType[K], valueType: PType[V]) = ptf.tableOf(keyType, valueType)
 }
 
 object Writables extends PTypeFamily {
   override def ptf = WritableTypeFamily.getInstance()
+
+  override def writables[T <: Writable : ClassTag] = CWritables.writables(
+    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 }
 
 object Avros extends PTypeFamily {
   override def ptf = AvroTypeFamily.getInstance()
 
-  CAvros.REFLECT_DATA_FACTORY = new ScalaReflectDataFactory()
+  override def writables[T <: Writable : ClassTag] = CAvros.writables(
+    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
-  def reflects[T: ClassManifest]() = CAvros.reflects(classManifest[T].erasure).asInstanceOf[AvroType[T]]
+  def reflects[T: ClassTag]() = CAvros.reflects(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[AvroType[T]]
 }

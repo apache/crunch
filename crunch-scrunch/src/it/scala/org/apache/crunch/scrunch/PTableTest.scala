@@ -18,11 +18,9 @@
 package org.apache.crunch.scrunch
 
 import org.apache.crunch.io.{From => from, To => to}
-import org.apache.crunch.test.CrunchTestSupport
 
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
-import org.scalatest.junit.JUnitSuite
 
 /**
  * Tests functionality of Scala PTable.

@@ -20,6 +20,8 @@ package org.apache.crunch.scrunch
 import org.apache.crunch.DoFn
 import org.apache.crunch.{PCollection => JCollection, Pair => JPair, Target}
 import org.apache.crunch.types.{PType, PTableType}
+import org.apache.crunch.types.writable.WritableTypeFamily
+import scala.reflect.ClassTag
 
 trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   val native: NativeType

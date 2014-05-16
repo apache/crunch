@@ -18,7 +18,7 @@
 package org.apache.crunch.scrunch
 
 import org.scalatest.junit.JUnitSuite
-import org.junit.{After, Before, Rule}
+import org.junit.{After, Before}
 import org.apache.crunch.test.TemporaryPath
 
 class CrunchSuite extends JUnitSuite{
