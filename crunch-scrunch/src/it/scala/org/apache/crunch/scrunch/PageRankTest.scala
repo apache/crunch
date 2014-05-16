@@ -52,7 +52,8 @@ class PageRankTest extends CrunchSuite {
 
   def initialInput(fileName: String) = {
     pipeline.read(from.textFile(fileName))
-      .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
+      .withPType(Avros.strings)
+      .mapWithContext((line, ctxt) => { ctxt.getConfiguration; val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
       .map((url, links) => (url, (1f, 0f, links.toList)))
   }

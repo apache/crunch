@@ -24,6 +24,7 @@ import java.nio.ByteBuffer
 import scala.collection.Iterable
 import scala.reflect.ClassTag
 import org.apache.hadoop.io.Writable
+import org.apache.hadoop.mapreduce.TaskInputOutputContext
 
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[A, El], ptype: PType[El]): To
@@ -51,8 +52,25 @@ object CanParallelTransform extends LowPriorityParallelTransforms {
 
   def kvWrapFn[A, K, V](fn: DoFn[A, (K, V)]) = {
     new DoFn[A, CPair[K, V]] {
+
+      override def setContext(ctxt: TaskInputOutputContext[_, _, _, _]) {
+        super.setContext(ctxt)
+        fn.setContext(ctxt)
+      }
+
+      override def initialize() {
+        fn.initialize()
+      }
+
       override def process(input: A, emitFn: Emitter[CPair[K, V]]) {
         fn.process(input, new Emitter[(K, V)] {
+          override def emit(kv: (K, V)) { emitFn.emit(CPair.of(kv._1, kv._2)) }
+          override def flush() { emitFn.flush() }
+        })
+      }
+
+      override def cleanup(emitFn: Emitter[CPair[K, V]]) {
+        fn.cleanup(new Emitter[(K, V)] {
           override def emit(kv: (K, V)) { emitFn.emit(CPair.of(kv._1, kv._2)) }
           override def flush() { emitFn.flush() }
         })

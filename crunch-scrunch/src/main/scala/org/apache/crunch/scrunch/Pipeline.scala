@@ -28,6 +28,7 @@ import org.apache.crunch.impl.mr.MRPipeline
 import org.apache.crunch.util.DistCache
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 import scala.reflect.ClassTag
+import org.apache.crunch.types.{PTableType, PType}
 
 /**
  * Manages the state of a pipeline execution.
