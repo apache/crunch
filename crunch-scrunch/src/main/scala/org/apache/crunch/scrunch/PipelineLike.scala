@@ -19,11 +19,9 @@ package org.apache.crunch.scrunch
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.crunch.{Pipeline => JPipeline}
-import org.apache.crunch.Source
-import org.apache.crunch.TableSource
-import org.apache.crunch.Target
+import org.apache.crunch.{Pipeline => JPipeline, _}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
+import org.apache.crunch.types.{PTableType, PType}
 
 trait PipelineLike {
   def jpipeline: JPipeline
@@ -32,6 +30,18 @@ trait PipelineLike {
    * Gets the configuration object associated with this pipeline.
    */
   def getConfiguration(): Configuration = jpipeline.getConfiguration()
+
+  /**
+   * Sets the configuration object associated with this pipeline.
+   */
+  def setConfiguration(conf: Configuration) {
+    jpipeline.setConfiguration(conf)
+  }
+
+  /**
+   * Returns the name of this pipeline instance.
+   */
+  def getName() = jpipeline.getName()
 
   /**
    * Reads a source into a [[org.apache.crunch.scrunch.PCollection]]
@@ -91,10 +101,29 @@ trait PipelineLike {
   }
 
   /**
+   * Creates an empty PCollection of the given PType.
+   */
+  def emptyPCollection[T](pt: PType[T]) = new PCollection[T](jpipeline.emptyPCollection(pt))
+
+  /**
+   * Creates an empty PTable of the given PTableType.
+   */
+  def emptyPTable[K, V](pt: PTableType[K, V]) = new PTable[K, V](jpipeline.emptyPTable(pt))
+
+  /**
+   * Returns a handler for controlling the execution of the underlying MapReduce
+   * pipeline.
+   */
+  def runAsync(): PipelineExecution = {
+    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    jpipeline.runAsync()
+  }
+
+  /**
    * Constructs and executes a series of MapReduce jobs in order
    * to write data to the output targets.
    */
-  def run(): Unit = {
+  def run(): PipelineResult = {
     InterpreterRunner.addReplJarsToJob(getConfiguration())
     jpipeline.run()
   }
@@ -104,9 +133,18 @@ trait PipelineLike {
    * clean up any intermediate data files that were created in
    * this run or previous calls to `run`.
    */
-  def done(): Unit =  {
+  def done(): PipelineResult =  {
     InterpreterRunner.addReplJarsToJob(getConfiguration())
     jpipeline.done()
+  }
+
+  /**
+   * Cleans up any artifacts created as a result of {@link #run() running} the pipeline.
+   *
+   * @param force forces the cleanup even if all targets of the pipeline have not been completed.
+   */
+  def cleanup(force: Boolean): Unit = {
+    jpipeline.cleanup(force)
   }
 
   /**

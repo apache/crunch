@@ -64,7 +64,7 @@ class PageRankClassTest extends CrunchSuite {
   lazy val pipeline = Pipeline.mapReduce[PageRankTest](tempDir.getDefaultConfiguration)
 
   def initialInput(fileName: String) = {
-    pipeline.read(from.textFile(fileName))
+    pipeline.read(from.textFile(fileName, Avros.strings))
       .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
       .map((url, links) => (url, PageRankData(1f, 0f, links.filter(x => x != null).toArray)))

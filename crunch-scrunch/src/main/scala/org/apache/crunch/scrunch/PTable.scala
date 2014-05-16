@@ -21,27 +21,43 @@ import java.util.{Collection => JCollect}
 
 import scala.collection.JavaConversions._
 
-import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import org.apache.crunch.{GroupingOptions, PTable => JTable, Pair => CPair}
+import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, _}
 import org.apache.crunch.lib.{Cartesian, Aggregate, Cogroup, PTables}
 import org.apache.crunch.lib.join.{DefaultJoinStrategy, JoinType}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
+import org.apache.crunch.types.{PTableType, PType}
+import scala.collection.Iterable
+import org.apache.hadoop.mapreduce.TaskInputOutputContext
+import org.apache.crunch.fn.IdentityFn
 
 class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
   import PTable._
 
-  def filter(f: (K, V) => Boolean): PTable[K, V] = {
-    parallelDo(filterFn[K, V](f), native.getPTableType())
-  }
+  type FunctionType[T] = (K, V) => T
+  type CtxtFunctionType[T] = (K, V, TIOC) => T
 
-  def map[T, To](f: (K, V) => T)
-      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn(f), pt.get(getTypeFamily()))
+  protected def wrapFlatMapFn[T](fmt: (K, V) => TraversableOnce[T]) = flatMapFn(fmt)
+  protected def wrapMapFn[T](fmt: (K, V) => T) = mapFn(fmt)
+  protected def wrapFilterFn(fmt: (K, V) => Boolean) = filterFn(fmt)
+  protected def wrapFlatMapWithCtxtFn[T](fmt: (K, V, TIOC) => TraversableOnce[T]) = flatMapWithCtxtFn(fmt)
+  protected def wrapMapWithCtxtFn[T](fmt: (K, V, TIOC) => T) = mapWithCtxtFn(fmt)
+  protected def wrapFilterWithCtxtFn(fmt: (K, V, TIOC) => Boolean) = filterWithCtxtFn(fmt)
+  protected def wrapPairFlatMapFn[S, T](fmt: (K, V) => TraversableOnce[(S, T)]) = pairFlatMapFn(fmt)
+  protected def wrapPairMapFn[S, T](fmt: (K, V) => (S, T)) = pairMapFn(fmt)
+
+  def withPType(pt: PTableType[K, V]): PTable[K, V] = {
+    val ident: MapFn[CPair[K, V], CPair[K, V]]  = IdentityFn.getInstance()
+    wrap(native.parallelDo("withPType", ident, pt))
   }
 
   def mapValues[T](f: V => T)(implicit pt: PTypeH[T]) = {
     val ptf = getTypeFamily()
     val ptype = ptf.tableOf(native.getKeyType(), pt.get(ptf))
+    parallelDo(mapValuesFn[K, V, T](f), ptype)
+  }
+
+  def mapValues[T](f: V => T, pt: PType[T]) = {
+    val ptype = pt.getFamily().tableOf(native.getKeyType(), pt)
     parallelDo(mapValuesFn[K, V, T](f), ptype)
   }
 
@@ -51,9 +67,9 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     parallelDo(mapKeysFn[K, V, T](f), ptype)
   }
 
-  def flatMap[T, To](f: (K, V) => Traversable[T])
-      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn(f), pt.get(getTypeFamily()))
+  def mapKeys[T](f: K => T, pt: PType[T]) = {
+    val ptype = pt.getFamily.tableOf(pt, native.getValueType())
+    parallelDo(mapKeysFn[K, V, T](f), ptype)
   }
 
   def union(others: PTable[K, V]*) = {
@@ -123,11 +139,9 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def groupByKey(options: GroupingOptions) = new PGroupedTable(native.groupByKey(options))
 
-  def wrap(newNative: AnyRef) = {
+  protected def wrap(newNative: JCollection[_]) = {
     new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
-
-  def unwrap(sc: PTable[K, V]): JTable[K, V] = sc.native
 
   def materialize(): Iterable[(K, V)] = {
     InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
@@ -143,16 +157,14 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     PObject(native.asMap())
   }
 
+  def pType() = native.getPTableType()
+
   def keyType() = native.getPTableType().getKeyType()
 
   def valueType() = native.getPTableType().getValueType()
 }
 
-trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {
-  override def accept(input: CPair[K, V]) = apply(input.first(), input.second())
-}
-
-trait SDoTableFn[K, V, T] extends DoFn[CPair[K, V], T] with Function2[K, V, Traversable[T]] {
+trait SDoTableFn[K, V, T] extends DoFn[CPair[K, V], T] with Function2[K, V, TraversableOnce[T]] {
   override def process(input: CPair[K, V], emitter: Emitter[T]) {
     for (v <- apply(input.first(), input.second())) {
       emitter.emit(v)
@@ -164,6 +176,44 @@ trait SMapTableFn[K, V, T] extends MapFn[CPair[K, V], T] with Function2[K, V, T]
   override def map(input: CPair[K, V]) = apply(input.first(), input.second())
 }
 
+trait SFilterTableFn[K, V] extends FilterFn[CPair[K, V]] with Function2[K, V, Boolean] {
+  override def accept(input: CPair[K, V]) = apply(input.first(), input.second())
+}
+
+class SDoTableWithCtxtFn[K, V, T](val f: (K, V, TaskInputOutputContext[_, _, _, _]) => TraversableOnce[T])
+  extends DoFn[CPair[K, V], T] {
+  override def process(input: CPair[K, V], emitter: Emitter[T]) {
+    for (v <- f(input.first(), input.second(), getContext)) {
+      emitter.emit(v)
+    }
+  }
+}
+
+class SMapTableWithCtxtFn[K, V, T](val f: (K, V, TaskInputOutputContext[_, _, _, _]) => T)
+  extends MapFn[CPair[K, V], T] {
+  override def map(input: CPair[K, V]) = f(input.first(), input.second(), getContext)
+}
+
+class SFilterTableWithCtxtFn[K, V](val f: (K, V, TaskInputOutputContext[_, _, _, _]) => Boolean)
+  extends FilterFn[CPair[K, V]] {
+  override def accept(input: CPair[K, V]) = f.apply(input.first(), input.second(), getContext)
+}
+
+trait SDoPairTableFn[K, V, S, T] extends DoFn[CPair[K, V], CPair[S, T]] with Function2[K, V, TraversableOnce[(S, T)]] {
+  override def process(input: CPair[K, V], emitter: Emitter[CPair[S, T]]) {
+    for (v <- apply(input.first(), input.second())) {
+      emitter.emit(CPair.of(v._1, v._2))
+    }
+  }
+}
+
+trait SMapPairTableFn[K, V, S, T] extends MapFn[CPair[K, V], CPair[S, T]] with Function2[K, V, (S, T)] {
+  override def map(input: CPair[K, V]) = {
+    val t = apply(input.first(), input.second())
+    CPair.of(t._1, t._2)
+  }
+}
+
 trait SMapTableValuesFn[K, V, T] extends MapFn[CPair[K, V], CPair[K, T]] with Function1[V, T] {
   override def map(input: CPair[K, V]) = CPair.of(input.first(), apply(input.second()))
 }
@@ -173,8 +223,30 @@ trait SMapTableKeysFn[K, V, T] extends MapFn[CPair[K, V], CPair[T, V]] with Func
 }
 
 object PTable {
+  type TIOC = TaskInputOutputContext[_, _, _, _]
+
+  def flatMapFn[K, V, T](fn: (K, V) => TraversableOnce[T]) = {
+    new SDoTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def mapFn[K, V, T](fn: (K, V) => T) = {
+    new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
   def filterFn[K, V](fn: (K, V) => Boolean) = {
     new SFilterTableFn[K, V] { def apply(k: K, v: V) = fn(k, v) }
+  }
+
+  def flatMapWithCtxtFn[K, V, T](fn: (K, V, TIOC) => TraversableOnce[T]) = {
+    new SDoTableWithCtxtFn[K, V, T](fn)
+  }
+
+  def mapWithCtxtFn[K, V, T](fn: (K, V, TIOC) => T) = {
+    new SMapTableWithCtxtFn[K, V, T](fn)
+  }
+
+  def filterWithCtxtFn[K, V](fn: (K, V, TIOC) => Boolean) = {
+    new SFilterTableWithCtxtFn[K, V](fn)
   }
 
   def mapValuesFn[K, V, T](fn: V => T) = {
@@ -185,11 +257,12 @@ object PTable {
     new SMapTableKeysFn[K, V, T] { def apply(k: K) = fn(k) }
   }
 
-  def mapFn[K, V, T](fn: (K, V) => T) = {
-    new SMapTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  def pairMapFn[K, V, S, T](fn: (K, V) => (S, T)) = {
+    new SMapPairTableFn[K, V, S, T] { def apply(k: K, v: V) = fn(k, v) }
   }
 
-  def flatMapFn[K, V, T](fn: (K, V) => Traversable[T]) = {
-    new SDoTableFn[K, V, T] { def apply(k: K, v: V) = fn(k, v) }
+  def pairFlatMapFn[K, V, S, T](fn: (K, V) => TraversableOnce[(S, T)]) = {
+    new SDoPairTableFn[K, V, S, T] { def apply(k: K, v: V) = fn(k, v) }
   }
+
 }

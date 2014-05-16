@@ -19,26 +19,32 @@ package org.apache.crunch.scrunch
 
 import scala.collection.JavaConversions
 
-import org.apache.crunch.{DoFn, Emitter, FilterFn, MapFn}
-import org.apache.crunch.{PCollection => JCollection, Pair => CPair}
+import org.apache.crunch.{PCollection => JCollection, Pair => CPair, _}
 import org.apache.crunch.lib.{Aggregate, Cartesian, Sample}
 import org.apache.crunch.scrunch.Conversions._
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
+import org.apache.hadoop.mapreduce.TaskInputOutputContext
+import org.apache.crunch.types.PType
+import org.apache.crunch.fn.IdentityFn
 
 class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
   import PCollection._
 
-  def filter(f: S => Boolean): PCollection[S] = {
-    parallelDo(filterFn[S](f), native.getPType())
-  }
+  type FunctionType[T] = S => T
+  type CtxtFunctionType[T] = (S, TIOC) => T
 
-  def map[T, To](f: S => T)(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, mapFn(f), pt.get(getTypeFamily()))
-  }
+  protected def wrapFlatMapFn[T](fmt: S => TraversableOnce[T]) = flatMapFn(fmt)
+  protected def wrapMapFn[T](fmt: S => T) = mapFn(fmt)
+  protected def wrapFilterFn(fmt: S => Boolean) = filterFn(fmt)
+  protected def wrapFlatMapWithCtxtFn[T](fmt: (S, TIOC) => TraversableOnce[T]) = flatMapWithCtxtFn(fmt)
+  protected def wrapMapWithCtxtFn[T](fmt: (S, TIOC) => T) = mapWithCtxtFn(fmt)
+  protected def wrapFilterWithCtxtFn(fmt: (S, TIOC) => Boolean) = filterWithCtxtFn(fmt)
+  protected def wrapPairFlatMapFn[K, V](fmt: S => TraversableOnce[(K, V)]) = pairFlatMapFn(fmt)
+  protected def wrapPairMapFn[K, V](fmt: S => (K, V)) = pairMapFn(fmt)
 
-  def flatMap[T, To](f: S => Traversable[T])
-      (implicit pt: PTypeH[T], b: CanParallelTransform[T, To]): To = {
-    b(this, flatMapFn(f), pt.get(getTypeFamily()))
+  def withPType(pt: PType[S]): PCollection[S] = {
+    val ident: MapFn[S, S] = IdentityFn.getInstance()
+    wrap(native.parallelDo("withPType", ident, pt))
   }
 
   def union(others: PCollection[S]*) = {
@@ -65,7 +71,7 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     JavaConversions.iterableAsScalaIterable[S](native.materialize)
   }
 
-  def wrap(newNative: AnyRef) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
+  protected def wrap(newNative: JCollection[_]) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
 
   def count() = {
     val count = new PTable[S, java.lang.Long](Aggregate.count(native))
@@ -84,10 +90,10 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     wrap(Sample.sample(native, seed, acceptanceProbability))
   }
 
-  def pType = native.getPType()
+  def pType() = native.getPType()
 }
 
-trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
+trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, TraversableOnce[T]] {
   override def process(input: S, emitter: Emitter[T]) {
     for (v <- apply(input)) {
       emitter.emit(v)
@@ -95,12 +101,43 @@ trait SDoFn[S, T] extends DoFn[S, T] with Function1[S, Traversable[T]] {
   }
 }
 
+trait SMapFn[S, T] extends MapFn[S, T] with Function1[S, T] {
+  override def map(input: S) = apply(input)
+}
+
 trait SFilterFn[T] extends FilterFn[T] with Function1[T, Boolean] {
   override def accept(input: T) = apply(input)
 }
 
-trait SMapFn[S, T] extends MapFn[S, T] with Function1[S, T] {
-  override def map(input: S) = apply(input)
+class SDoWithCtxtFn[S, T](val f: (S, TaskInputOutputContext[_, _, _, _]) => TraversableOnce[T]) extends DoFn[S, T] {
+  override def process(input: S, emitter: Emitter[T]) {
+    for (v <- f(input, getContext)) {
+      emitter.emit(v)
+    }
+  }
+}
+
+class SMapWithCtxtFn[S, T](val f: (S, TaskInputOutputContext[_, _, _, _]) => T) extends MapFn[S, T] {
+  override def map(input: S) = f(input, getContext)
+}
+
+class SFilterWithCtxtFn[T](val f: (T, TaskInputOutputContext[_, _, _, _]) => Boolean) extends FilterFn[T] {
+  override def accept(input: T) = f.apply(input, getContext)
+}
+
+trait SDoPairFn[S, K, V] extends DoFn[S, CPair[K, V]] with Function1[S, TraversableOnce[(K, V)]] {
+  override def process(input: S, emitter: Emitter[CPair[K, V]]) {
+    for (v <- apply(input)) {
+      emitter.emit(CPair.of(v._1, v._2))
+    }
+  }
+}
+
+trait SMapPairFn[S, K, V] extends MapFn[S, CPair[K, V]] with Function1[S, (K, V)] {
+  override def map(input: S): CPair[K, V] = {
+    val t = apply(input)
+    CPair.of(t._1, t._2)
+  }
 }
 
 trait SMapKeyFn[S, K] extends MapFn[S, CPair[K, S]] with Function1[S, K] {
@@ -110,19 +147,41 @@ trait SMapKeyFn[S, K] extends MapFn[S, CPair[K, S]] with Function1[S, K] {
 }
 
 object PCollection {
-  def filterFn[S](fn: S => Boolean) = {
-    new SFilterFn[S] { def apply(x: S) = fn(x) }
-  }
+  type TIOC = TaskInputOutputContext[_, _, _, _]
 
-  def mapKeyFn[S, K](fn: S => K) = {
-    new SMapKeyFn[S, K] { def apply(x: S) = fn(x) }
+  def flatMapFn[S, T](fn: S => TraversableOnce[T]) = {
+    new SDoFn[S, T] { def apply(s: S) = fn(s) }
   }
 
   def mapFn[S, T](fn: S => T) = {
     new SMapFn[S, T] { def apply(s: S) = fn(s) }
   }
 
-  def flatMapFn[S, T](fn: S => Traversable[T]) = {
-    new SDoFn[S, T] { def apply(s: S) = fn(s) }
+  def filterFn[S](fn: S => Boolean) = {
+    new SFilterFn[S] { def apply(x: S) = fn(x) }
+  }
+
+  def flatMapWithCtxtFn[S, T](fn: (S, TIOC) => TraversableOnce[T]) = {
+    new SDoWithCtxtFn[S, T](fn)
+  }
+
+  def mapWithCtxtFn[S, T](fn: (S, TIOC) => T) = {
+    new SMapWithCtxtFn[S, T](fn)
+  }
+
+  def filterWithCtxtFn[S](fn: (S, TIOC) => Boolean) = {
+    new SFilterWithCtxtFn[S](fn)
+  }
+
+  def mapKeyFn[S, K](fn: S => K) = {
+    new SMapKeyFn[S, K] { def apply(x: S) = fn(x) }
+  }
+
+  def pairMapFn[S, K, V](fn: S => (K, V)) = {
+    new SMapPairFn[S, K, V] { def apply(s: S) = fn(s) }
+  }
+
+  def pairFlatMapFn[S, K, V](fn: S => TraversableOnce[(K, V)]) = {
+    new SDoPairFn[S, K, V] { def apply(s: S) = fn(s) }
   }
 }
