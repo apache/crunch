@@ -18,6 +18,7 @@
 package org.apache.crunch.scrunch
 
 import org.apache.hadoop.conf.Configuration
+import scala.reflect.ClassTag
 
 /**
  * Adds a pipeline to the class it is being mixed in to.
@@ -32,7 +33,7 @@ trait EmbeddedPipeline {
  */
 trait MREmbeddedPipeline extends EmbeddedPipeline with EmbeddedPipelineLike {
   protected val pipeline: Pipeline = {
-    Pipeline.mapReduce(ClassManifest.fromClass(getClass()).erasure, new Configuration())
+    Pipeline.mapReduce(getClass(), new Configuration())
   }
 }
 

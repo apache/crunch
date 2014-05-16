@@ -21,11 +21,9 @@ import Avros._
 
 import org.apache.crunch.{DoFn, Emitter, Pair => P}
 import org.apache.crunch.io.{From => from}
-import org.apache.crunch.test.CrunchTestSupport
 
 import scala.collection.mutable.HashMap
 
-import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 

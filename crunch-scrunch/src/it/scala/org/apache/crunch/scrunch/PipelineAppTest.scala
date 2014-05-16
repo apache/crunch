@@ -17,9 +17,6 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.test.CrunchTestSupport
-
-import org.scalatest.junit.JUnitSuite
 import _root_.org.junit.Test
 
 object WordCount extends PipelineApp {

@@ -27,6 +27,7 @@ import org.apache.crunch.impl.mem.MemPipeline
 import org.apache.crunch.impl.mr.MRPipeline
 import org.apache.crunch.util.DistCache
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
+import scala.reflect.ClassTag
 
 /**
  * Manages the state of a pipeline execution.
@@ -131,7 +132,7 @@ object Pipeline {
    *
    * @tparam T Type of the class using the pipeline.
    */
-  def mapReduce[T : ClassManifest]: MapReducePipeline = mapReduce[T](new Configuration())
+  def mapReduce[T : ClassTag]: MapReducePipeline = mapReduce[T](new Configuration())
 
   /**
    * Creates a pipeline for running jobs on a hadoop cluster.
@@ -139,8 +140,8 @@ object Pipeline {
    * @param configuration Hadoop configuration to use.
    * @tparam T Type of the class using the pipeline.
    */
-  def mapReduce[T : ClassManifest](configuration: Configuration): MapReducePipeline = {
-    new MapReducePipeline(implicitly[ClassManifest[T]].erasure, configuration)
+  def mapReduce[T : ClassTag](configuration: Configuration): MapReducePipeline = {
+    new MapReducePipeline(implicitly[ClassTag[T]].runtimeClass, configuration)
   }
 
   /**
@@ -153,12 +154,12 @@ object Pipeline {
    *
    * @param configuration Configuration for connecting to a Hadoop cluster.
    * @param memory Option specifying whether or not the pipeline is an in memory or mapreduce pipeline.
-   * @param manifest ClassManifest for the class using the pipeline.
+   * @param ctag ClassTag for the class using the pipeline.
    * @tparam T type of the class using the pipeline.
    * @deprecated Use either {{{Pipeline.mapReduce(class, conf)}}} or {{{Pipeline.inMemory}}}
    */
   def apply[T](
     configuration: Configuration = new Configuration(),
-    memory: Boolean = false)(implicit manifest: ClassManifest[T]
-  ): Pipeline = if (memory) inMemory else mapReduce(manifest.erasure, configuration)
+    memory: Boolean = false)(implicit ctag: ClassTag[T]
+  ): Pipeline = if (memory) inMemory else mapReduce(ctag.runtimeClass, configuration)
 }

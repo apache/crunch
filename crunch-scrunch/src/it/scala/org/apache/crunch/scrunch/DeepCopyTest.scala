@@ -17,8 +17,7 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.impl.mr.MRPipeline
-import org.apache.crunch.io.{From => from, To => to}
+import org.apache.crunch.io.{From => from}
 import org.apache.crunch.types.avro.{Avros => A}
 import org.apache.avro.file.DataFileWriter
 import org.apache.hadoop.fs.{Path, FSDataOutputStream}

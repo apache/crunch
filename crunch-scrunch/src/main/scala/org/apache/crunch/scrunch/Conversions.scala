@@ -22,6 +22,8 @@ import org.apache.crunch.{Pair => CPair}
 import org.apache.crunch.types.PType
 import java.nio.ByteBuffer
 import scala.collection.Iterable
+import scala.reflect.ClassTag
+import org.apache.hadoop.io.Writable
 
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[A, El], ptype: PType[El]): To
@@ -72,6 +74,14 @@ object PTypeH {
   implicit val strings = new PTypeH[String] { def get(ptf: PTypeFamily) = ptf.strings }
   implicit val booleans = new PTypeH[Boolean] { def get(ptf: PTypeFamily) = ptf.booleans }
   implicit val bytes = new PTypeH[ByteBuffer] { def get(ptf: PTypeFamily) = ptf.bytes }
+
+  implicit def writables[W <: Writable : ClassTag] = new PTypeH[W] {
+    def get(ptf: PTypeFamily): PType[W] = ptf.writables(implicitly[ClassTag[W]])
+  }
+
+  implicit def records[T <: AnyRef : ClassTag] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = ptf.records(implicitly[ClassTag[T]]).asInstanceOf[PType[T]]
+  }
 
   implicit def collections[T: PTypeH] = {
     new PTypeH[Iterable[T]] {
@@ -129,10 +139,6 @@ object PTypeH {
             implicitly[PTypeH[C]].get(ptf), implicitly[PTypeH[D]].get(ptf))
       }
     }
-  }
-
-  implicit def records[T <: AnyRef : ClassManifest] = new PTypeH[T] {
-    def get(ptf: PTypeFamily) = ptf.records(classManifest[T]).asInstanceOf[PType[T]]
   }
 }
 
