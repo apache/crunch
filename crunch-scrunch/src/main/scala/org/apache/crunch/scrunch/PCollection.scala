@@ -27,7 +27,9 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext
 import org.apache.crunch.types.PType
 import org.apache.crunch.fn.IdentityFn
 
-class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]] {
+class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCollection[S], JCollection[S]]
+  with Incrementable[PCollection[S]] {
+
   import PCollection._
 
   type FunctionType[T] = S => T
@@ -72,6 +74,12 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   protected def wrap(newNative: JCollection[_]) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
+
+  def increment(groupName: String, counterName: String, count: Long) = {
+    new IncrementPCollection[S](this).apply(groupName, counterName, count)
+  }
+
+  def incrementIf(f: S => Boolean) = new IncrementIfPCollection[S](this, f)
 
   def count() = {
     val count = new PTable[S, java.lang.Long](Aggregate.count(native))

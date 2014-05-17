@@ -30,7 +30,8 @@ import scala.collection.Iterable
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
 import org.apache.crunch.fn.IdentityFn
 
-class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]] {
+class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V], PTable[K, V], JTable[K, V]]
+  with Incrementable[PTable[K, V]] {
   import PTable._
 
   type FunctionType[T] = (K, V) => T
@@ -142,6 +143,16 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   protected def wrap(newNative: JCollection[_]) = {
     new PTable[K, V](newNative.asInstanceOf[JTable[K, V]])
   }
+
+  def increment(groupName: String, counterName: String, count: Long) = {
+    new IncrementPTable[K, V](this).apply(groupName, counterName, count)
+  }
+
+  def incrementIf(f: (K, V) => Boolean) = new IncrementIfPTable[K, V](this, incFn(f))
+
+  def incrementIfKey(f: K => Boolean) = new IncrementIfPTable[K, V](this, incKeyFn(f))
+
+  def incrementIfValue(f: V => Boolean) = new IncrementIfPTable[K, V](this, incValueFn(f))
 
   def materialize(): Iterable[(K, V)] = {
     InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
@@ -265,4 +276,15 @@ object PTable {
     new SDoPairTableFn[K, V, S, T] { def apply(k: K, v: V) = fn(k, v) }
   }
 
+  def incFn[K, V, T](fn: (K, V) => T) = new Function1[CPair[K, V], T] with Serializable {
+    def apply(p: CPair[K, V]): T = fn(p.first(), p.second())
+  }
+
+  def incKeyFn[K, V, T](fn: K => T) = new Function1[CPair[K, V], T] with Serializable {
+    def apply(p: CPair[K, V]): T = fn(p.first())
+  }
+
+  def incValueFn[K, V, T](fn: V => T) = new Function1[CPair[K, V], T] with Serializable {
+    def apply(p: CPair[K, V]): T = fn(p.second())
+  }
 }
