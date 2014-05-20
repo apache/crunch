@@ -61,7 +61,7 @@ public class DataBaseSource<T extends DBWritable & Writable> extends FileSourceI
             .set(DBConfiguration.INPUT_COUNT_QUERY, countClause));
   }
 
-  static class Builder<T extends DBWritable & Writable> {
+  public static class Builder<T extends DBWritable & Writable> {
 
     private Class<T> inputClass;
     private String driverClass;
