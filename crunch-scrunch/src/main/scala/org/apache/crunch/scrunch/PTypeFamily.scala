@@ -178,7 +178,9 @@ object Avros extends PTypeFamily {
     CAvros.specifics(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
   }
 
-  def reflects[T: ClassTag]() = {
-    CAvros.reflects(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[AvroType[T]]
+  def reflects[T: ClassTag](): AvroType[T] = {
+    val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
+    val schema = ScalaSafeReflectData.getInstance().getSchema(clazz)
+    CAvros.reflects(clazz, schema)
   }
 }

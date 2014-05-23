@@ -26,6 +26,9 @@ import org.apache.crunch.types.{PTableType, PType}
 trait PipelineLike {
   def jpipeline: JPipeline
 
+  // Call this to ensure we set this up before any subsequent calls to the system
+  PipelineLike.setupConf(getConfiguration())
+
   /**
    * Gets the configuration object associated with this pipeline.
    */
@@ -110,12 +113,13 @@ trait PipelineLike {
    */
   def emptyPTable[K, V](pt: PTableType[K, V]) = new PTable[K, V](jpipeline.emptyPTable(pt))
 
+
   /**
    * Returns a handler for controlling the execution of the underlying MapReduce
    * pipeline.
    */
   def runAsync(): PipelineExecution = {
-    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    PipelineLike.setupConf(getConfiguration())
     jpipeline.runAsync()
   }
 
@@ -124,7 +128,7 @@ trait PipelineLike {
    * to write data to the output targets.
    */
   def run(): PipelineResult = {
-    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    PipelineLike.setupConf(getConfiguration())
     jpipeline.run()
   }
 
@@ -134,7 +138,7 @@ trait PipelineLike {
    * this run or previous calls to `run`.
    */
   def done(): PipelineResult =  {
-    InterpreterRunner.addReplJarsToJob(getConfiguration())
+    PipelineLike.setupConf(getConfiguration())
     jpipeline.done()
   }
 
@@ -151,4 +155,14 @@ trait PipelineLike {
    * Turn on debug logging for jobs that are run from this pipeline.
    */
   def debug(): Unit = jpipeline.enableDebug()
+}
+
+object PipelineLike {
+  def setupConf(conf: Configuration) {
+    InterpreterRunner.addReplJarsToJob(conf)
+    if (conf.get("crunch.reflectdatafactory", "").isEmpty) {
+      // Enables the Scala-specific ReflectDataFactory
+      conf.set("crunch.reflectdatafactory", classOf[ScalaReflectDataFactory].getCanonicalName)
+    }
+  }
 }

@@ -101,7 +101,7 @@ class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
       options.configure(job);
     }
 
-    AvroMode.fromType(att).configureShuffle(conf);
+    AvroMode.fromType(att).withFactoryFromConfiguration(conf).configureShuffle(conf);
 
     Collection<String> serializations = job.getConfiguration().getStringCollection(
         "io.serializations");

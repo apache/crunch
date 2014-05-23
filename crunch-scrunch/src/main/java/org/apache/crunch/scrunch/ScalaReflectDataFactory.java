@@ -22,22 +22,24 @@ import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 
+import org.apache.crunch.types.avro.ReaderWriterFactory;
 import org.apache.crunch.types.avro.ReflectDataFactory;
 
 /**
  * An implementation of the {@code ReflectDataFactory} class to work with Scala classes.
  */
-public class ScalaReflectDataFactory extends ReflectDataFactory {
+public class ScalaReflectDataFactory implements ReaderWriterFactory {
 
   @Override
-  public ReflectData getReflectData() { return ScalaSafeReflectData.get(); }
+  public ReflectData getData() { return ScalaSafeReflectData.getInstance(); }
   
   @Override
   public <T> ReflectDatumReader<T> getReader(Schema schema) {
     return new ScalaSafeReflectDatumReader<T>(schema);
   }
-  
-  public <T> ReflectDatumWriter<T> getWriter() {
-    return new ScalaSafeReflectDatumWriter<T>();
+
+  @Override
+  public <T> ReflectDatumWriter<T> getWriter(Schema schema) {
+    return new ScalaSafeReflectDatumWriter<T>(schema);
   }
 }

@@ -155,16 +155,17 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
   def incrementIfValue(f: V => Boolean) = new IncrementIfPTable[K, V](this, incValueFn(f))
 
   def materialize(): Iterable[(K, V)] = {
-    InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
+    setupRun()
     native.materialize.view.map(x => (x.first, x.second))
   }
 
   def materializeToMap(): Map[K, V] = {
-    InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
+    setupRun()
     native.materializeToMap().view.toMap
   }
 
   def asMap(): PObject[Map[K, V]] = {
+    setupRun()
     PObject(native.asMap())
   }
 

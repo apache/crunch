@@ -26,6 +26,7 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import org.apache.avro.Schema;
 import org.apache.avro.io.ResolvingDecoder;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -34,7 +35,7 @@ import scala.collection.JavaConversions;
 public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   
   public ScalaSafeReflectDatumReader(Schema schema) {
-    super(schema, schema, ScalaSafeReflectData.get());
+    super(schema, schema, ScalaSafeReflectData.getInstance());
   }
   
   @Override
@@ -100,25 +101,28 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   @Override
   @SuppressWarnings("unchecked")
   protected Object newArray(Object old, int size, Schema schema) {
-    ScalaSafeReflectData data = ScalaSafeReflectData.get();
-    Class collectionClass = ScalaSafeReflectData.getClassProp(schema,
-        ScalaSafeReflectData.CLASS_PROP);
-    if (collectionClass != null) {
+    Class collectionClass =
+        ScalaSafeReflectData.getClassProp(schema, ScalaSafeReflectData.CLASS_PROP);
+    Class elementClass =
+        ScalaSafeReflectData.getClassProp(schema, ScalaSafeReflectData.ELEMENT_PROP);
+
+    if (collectionClass == null && elementClass == null)
+      return super.newArray(old, size, schema);   // use specific/generic
+
+    ScalaSafeReflectData data = ScalaSafeReflectData.getInstance();
+    if (collectionClass != null && !collectionClass.isArray()) {
       if (old instanceof Collection) {
         ((Collection)old).clear();
         return old;
       }
       if (scala.collection.Iterable.class.isAssignableFrom(collectionClass) ||
-          collectionClass.isAssignableFrom(ArrayList.class)) {
-        return Lists.newArrayList();
-      }
-      return ReflectionUtils.newInstance(collectionClass, null);
+          collectionClass.isAssignableFrom(ArrayList.class))
+        return new ArrayList();
+      return data.newInstance(collectionClass, schema);
     }
-    Class elementClass = ScalaSafeReflectData.getClassProp(schema,
-        ScalaSafeReflectData.ELEMENT_PROP);
-    if (elementClass == null) {
+
+    if (elementClass == null)
       elementClass = data.getClass(schema.getElementType());
-    }
     return Array.newInstance(elementClass, size);
   }
 }

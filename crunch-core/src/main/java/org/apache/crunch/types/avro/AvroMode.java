@@ -51,12 +51,12 @@ public class AvroMode implements ReaderWriterFactory {
   /**
    * Default mode to use for reading and writing {@link ReflectData Reflect} types.
    */
-  public static final AvroMode REFLECT  = new AvroMode(ModeType.REFLECT, new ReflectDataFactory(), Avros.REFLECT_DATA_FACTORY_CLASS);
+  public static final AvroMode REFLECT = new AvroMode(ModeType.REFLECT, Avros.REFLECT_DATA_FACTORY_CLASS);
 
   /**
    * Default mode to use for reading and writing {@link SpecificData Specific} types.
    */
-  public static final AvroMode SPECIFIC =new AvroMode(ModeType.SPECIFIC, "crunch.specificfactory");
+  public static final AvroMode SPECIFIC = new AvroMode(ModeType.SPECIFIC, "crunch.specificfactory");
   /**
    * Default mode to use for reading and writing {@link GenericData Generic} types.
    */
@@ -95,11 +95,11 @@ public class AvroMode implements ReaderWriterFactory {
       if (type.hasSpecific()) {
         Avros.checkCombiningSpecificAndReflectionSchemas();
       }
-      return AvroMode.REFLECT;
+      return REFLECT;
     } else if (type.hasSpecific()) {
-      return AvroMode.SPECIFIC;
+      return SPECIFIC;
     } else {
-      return AvroMode.GENERIC;
+      return GENERIC;
     }
   }
 
@@ -352,7 +352,7 @@ public class AvroMode implements ReaderWriterFactory {
   }
 
   @SuppressWarnings("unchecked")
-  AvroMode withFactoryFromConfiguration(Configuration conf) {
+  public AvroMode withFactoryFromConfiguration(Configuration conf) {
     // although the shuffle and input/output use different properties for mode,
     // this is shared - only one ReaderWriterFactory can be used.
     Class<?> factoryClass = conf.getClass(propName, this.getClass());

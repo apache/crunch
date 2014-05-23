@@ -69,7 +69,7 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
   }
 
   def materialize() = {
-    InterpreterRunner.addReplJarsToJob(native.getPipeline().getConfiguration())
+    setupRun()
     JavaConversions.iterableAsScalaIterable[S](native.materialize)
   }
 
@@ -86,9 +86,15 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     count.mapValues(_.longValue())
   }
 
-  def max()(implicit converter: Converter[S, S]) = PObject(Aggregate.max(native))(converter)
+  def max()(implicit converter: Converter[S, S]) = {
+    setupRun()
+    PObject(Aggregate.max(native))(converter)
+  }
 
-  def min()(implicit converter: Converter[S, S]) = PObject(Aggregate.min(native))(converter)
+  def min()(implicit converter: Converter[S, S]) = {
+    setupRun()
+    PObject(Aggregate.min(native))(converter)
+  }
 
   def sample(acceptanceProbability: Double) = {
     wrap(Sample.sample(native, acceptanceProbability))

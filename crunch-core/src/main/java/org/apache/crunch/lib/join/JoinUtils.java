@@ -26,6 +26,7 @@ import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.writable.TupleWritable;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.hadoop.conf.Configuration;
@@ -108,6 +109,7 @@ public class JoinUtils {
 
   public static class AvroPairGroupingComparator<T> extends Configured implements RawComparator<AvroWrapper<T>> {
     private Schema schema;
+    private AvroMode mode;
 
     @Override
     public void setConf(Configuration conf) {
@@ -116,12 +118,13 @@ public class JoinUtils {
         Schema mapOutputSchema = AvroJob.getMapOutputSchema(conf);
         Schema keySchema = org.apache.avro.mapred.Pair.getKeySchema(mapOutputSchema);
         schema = keySchema.getFields().get(0).schema();
+        mode = AvroMode.fromShuffleConfiguration(conf);
       }
     }
 
     @Override
     public int compare(AvroWrapper<T> x, AvroWrapper<T> y) {
-      return ReflectData.get().compare(x.datum(), y.datum(), schema);
+      return mode.getData().compare(x.datum(), y.datum(), schema);
     }
 
     @Override

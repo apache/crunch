@@ -53,6 +53,7 @@ import org.apache.crunch.types.{PTableType, PType}
  * }}}
  */
 class Pipeline(val jpipeline: JPipeline) extends PipelineLike {
+
   /**
    * A convenience method for reading a text file.
    *

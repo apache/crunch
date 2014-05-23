@@ -21,6 +21,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryData;
 import org.apache.avro.mapred.AvroKey;
 import org.apache.avro.reflect.ReflectData;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.RawComparator;
@@ -28,18 +29,20 @@ import org.apache.hadoop.io.RawComparator;
 public class ReverseAvroComparator<T> extends Configured implements RawComparator<AvroKey<T>> {
 
   private Schema schema;
+  private AvroMode mode;
 
   @Override
   public void setConf(Configuration conf) {
     super.setConf(conf);
     if (conf != null) {
       schema = (new Schema.Parser()).parse(conf.get("crunch.schema"));
+      mode = AvroMode.fromShuffleConfiguration(conf);
     }
   }
 
   @Override
   public int compare(AvroKey<T> o1, AvroKey<T> o2) {
-    return ReflectData.get().compare(o2.datum(), o1.datum(), schema);
+    return mode.getData().compare(o2.datum(), o1.datum(), schema);
   }
 
   @Override
