@@ -41,6 +41,10 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   protected def wrapPairFlatMapFn[K, V](fmt: FunctionType[TraversableOnce[(K, V)]]): DoFn[S, JPair[K, V]]
   protected def wrapPairMapFn[K, V](fmt: FunctionType[(K, V)]): MapFn[S, JPair[K, V]]
 
+  protected def setupRun() {
+    PipelineLike.setupConf(native.getPipeline().getConfiguration())
+  }
+
   /**
    * Returns the underlying PCollection wrapped by this instance.
    */
@@ -254,6 +258,7 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
    * @return The number of elements in this PCollection.
    */
   def length(): PObject[Long] = {
+    setupRun()
     PObject(native.length())
   }
 
@@ -262,6 +267,7 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
    * @return
    */
   def asSeq(): PObject[Seq[S]] = {
+    setupRun()
     PObject(native.asCollection())
   }
 

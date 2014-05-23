@@ -32,11 +32,6 @@ public class ReflectDataFactory implements ReaderWriterFactory {
     return ReflectData.AllowNull.get();
   }
 
-  // for backwards-compatibility
-  public ReflectData getReflectData() {
-    return getData();
-  }
-
   @Override
   public <T> ReflectDatumReader<T> getReader(Schema schema) {
     return new ReflectDatumReader<T>(schema);

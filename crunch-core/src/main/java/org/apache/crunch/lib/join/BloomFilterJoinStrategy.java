@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.apache.avro.io.BinaryEncoder;
+import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.commons.logging.Log;
@@ -35,9 +36,9 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
-import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
@@ -304,11 +305,12 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     
     private AvroType<T> ptype;
     private BinaryEncoder encoder;
-    private ReflectDatumWriter datumWriter;
+    private DatumWriter datumWriter;
     
     AvroToBytesFn(AvroType<T> ptype, Configuration conf) {
       this.ptype = ptype;
-      datumWriter = Avros.getReflectDataFactory(conf).getWriter(ptype.getSchema());
+      datumWriter = AvroMode.fromType(ptype).withFactoryFromConfiguration(conf)
+          .getWriter(ptype.getSchema());
     }
 
     @Override

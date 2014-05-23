@@ -100,14 +100,11 @@ public class Avros {
    *
    * @deprecated as of 0.9.0; use AvroMode.REFLECT.override(ReaderWriterFactory)
    */
-  public static ReflectDataFactory REFLECT_DATA_FACTORY =
-      (ReflectDataFactory) AvroMode.REFLECT.getFactory();
+  public static ReflectDataFactory REFLECT_DATA_FACTORY = new ReflectDataFactory();
 
   /**
    * The name of the configuration parameter that tracks which reflection
    * factory to use.
-   *
-   * @deprecated as of 0.9.0; use AvroMode.REFLECT.override(ReaderWriterFactory)
    */
   public static final String REFLECT_DATA_FACTORY_CLASS = "crunch.reflectdatafactory";
 
@@ -273,7 +270,11 @@ public class Avros {
   }
 
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
-    Schema schema = REFLECT_DATA_FACTORY.getData().getSchema(clazz);
+    Schema schema = ((ReflectData) AvroMode.REFLECT.getData()).getSchema(clazz);
+    return reflects(clazz, schema);
+  }
+
+  public static final <T> AvroType<T> reflects(Class<T> clazz, Schema schema) {
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
   }
 
@@ -541,6 +542,7 @@ public class Avros {
     private final String jsonSchema;
     private final boolean isReflect;
     private transient Schema schema;
+    private transient AvroMode mode;
 
     public TupleToGenericRecord(Schema schema, PType<?>... ptypes) {
       this.fns = Lists.newArrayList();
@@ -585,11 +587,16 @@ public class Avros {
       for (MapFn fn : fns) {
         fn.initialize();
       }
+      if (getConfiguration() != null) {
+        mode = AvroMode.REFLECT.withFactoryFromConfiguration(getConfiguration());
+      } else {
+        mode = AvroMode.REFLECT;
+      }
     }
 
     private GenericRecord createRecord() {
       if (isReflect) {
-        return new ReflectGenericRecord(schema);
+        return new ReflectGenericRecord(schema, mode);
       } else {
         return new GenericData.Record(schema);
       }
@@ -693,6 +700,7 @@ public class Avros {
     private final String jsonSchema;
     private final boolean isReflect;
     private transient Schema schema;
+    private transient AvroMode mode;
 
     public TupleToUnionRecord(Schema schema, PType<?>... ptypes) {
       this.fns = Lists.newArrayList();
@@ -737,11 +745,16 @@ public class Avros {
       for (MapFn fn : fns) {
         fn.initialize();
       }
+      if (getConfiguration() != null) {
+        mode = AvroMode.REFLECT.withFactoryFromConfiguration(getConfiguration());
+      } else {
+        mode = AvroMode.REFLECT;
+      }
     }
 
     private GenericRecord createRecord() {
       if (isReflect) {
-        return new ReflectGenericRecord(schema);
+        return new ReflectGenericRecord(schema, mode);
       } else {
         return new GenericData.Record(schema);
       }
@@ -850,20 +863,23 @@ public class Avros {
 
   private static class ReflectGenericRecord extends GenericData.Record {
 
-    public ReflectGenericRecord(Schema schema) {
+    private AvroMode mode;
+
+    public ReflectGenericRecord(Schema schema, AvroMode mode) {
       super(schema);
+      this.mode = mode;
     }
 
     @Override
     public int hashCode() {
-      return reflectAwareHashCode(this, getSchema());
+      return reflectAwareHashCode(this, getSchema(), mode);
     }
   }
 
   /*
    * TODO: Remove this once we no longer have to support 1.5.4.
    */
-  private static int reflectAwareHashCode(Object o, Schema s) {
+  private static int reflectAwareHashCode(Object o, Schema s, AvroMode mode) {
     if (o == null)
       return 0; // incomplete datum
     int hashCode = 1;
@@ -872,17 +888,17 @@ public class Avros {
       for (Schema.Field f : s.getFields()) {
         if (f.order() == Schema.Field.Order.IGNORE)
           continue;
-        hashCode = hashCodeAdd(hashCode, ReflectData.get().getField(o, f.name(), f.pos()), f.schema());
+        hashCode = hashCodeAdd(hashCode, mode.getData().getField(o, f.name(), f.pos()), f.schema(), mode);
       }
       return hashCode;
     case ARRAY:
       Collection<?> a = (Collection<?>) o;
       Schema elementType = s.getElementType();
       for (Object e : a)
-        hashCode = hashCodeAdd(hashCode, e, elementType);
+        hashCode = hashCodeAdd(hashCode, e, elementType, mode);
       return hashCode;
     case UNION:
-      return reflectAwareHashCode(o, s.getTypes().get(ReflectData.get().resolveUnion(s, o)));
+      return reflectAwareHashCode(o, s.getTypes().get(mode.getData().resolveUnion(s, o)), mode);
     case ENUM:
       return s.getEnumOrdinal(o.toString());
     case NULL:
@@ -895,8 +911,8 @@ public class Avros {
   }
 
   /** Add the hash code for an object into an accumulated hash code. */
-  private static int hashCodeAdd(int hashCode, Object o, Schema s) {
-    return 31 * hashCode + reflectAwareHashCode(o, s);
+  private static int hashCodeAdd(int hashCode, Object o, Schema s, AvroMode mode) {
+    return 31 * hashCode + reflectAwareHashCode(o, s, mode);
   }
 
   private Avros() {

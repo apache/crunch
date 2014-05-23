@@ -48,7 +48,7 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
 
   private static final ScalaSafeReflectData INSTANCE = new ScalaSafeReflectData();
   
-  public static ScalaSafeReflectData get() { return INSTANCE; }
+  public static ScalaSafeReflectData getInstance() { return INSTANCE; }
   
   static final String CLASS_PROP = "java-class";
   static final String ELEMENT_PROP = "java-element-class";
@@ -88,7 +88,7 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
   protected Schema createSchema(Type type, Map<String,Schema> names) {
     if (type instanceof GenericArrayType) {                  // generic array
       Type component = ((GenericArrayType)type).getGenericComponentType();
-      if (component == Byte.TYPE)                            // byte array
+      if (component == Byte.TYPE)                           // byte array
         return Schema.create(Schema.Type.BYTES);           
       Schema result = Schema.createArray(createSchema(component, names));
       setElement(result, component);
@@ -127,8 +127,11 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
         return super.createSchema(type, names);
       if (c.isArray()) {                                     // array
         Class component = c.getComponentType();
-        if (component == Byte.TYPE)                          // byte array
-          return Schema.create(Schema.Type.BYTES);
+        if (component == Byte.TYPE) {                        // byte array
+          Schema result = Schema.create(Schema.Type.BYTES);
+          result.addProp(CLASS_PROP, c.getName()); // For scala-specific byte arrays
+          return result;
+        }
         Schema result = Schema.createArray(createSchema(component, names));
         setElement(result, component);
         return result;
@@ -288,5 +291,15 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
   @Override
   protected boolean isMap(Object datum) {
     return (datum instanceof java.util.Map) || (datum instanceof scala.collection.Map);
+  }
+
+  @Override
+  protected String getSchemaName(Object datum) {
+    if (datum != null) {
+      if(byte[].class.isAssignableFrom(datum.getClass())) {
+        return Schema.Type.BYTES.getName();
+      }
+    }
+    return super.getSchemaName(datum);
   }
 }

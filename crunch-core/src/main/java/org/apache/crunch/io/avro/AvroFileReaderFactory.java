@@ -30,6 +30,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.fs.FileSystem;
@@ -42,29 +43,32 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
   private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
 
-  private final DatumReader<T> recordReader;
+  private DatumReader<T> reader;
+  private final AvroType<?> atype;
   private final MapFn<T, T> mapFn;
 
-  public AvroFileReaderFactory(AvroType<T> atype) {
-    this(createDatumReader(atype), atype);
+  public AvroFileReaderFactory(Schema schema) {
+    this(null, Avros.generics(schema));
   }
 
-  public AvroFileReaderFactory(DatumReader<T> reader, AvroType<T> atype) {
-    this.recordReader = reader != null ? reader : createDatumReader(atype);
+  public AvroFileReaderFactory(AvroType<?> atype) {
+    this(null, atype);
+  }
+
+  public AvroFileReaderFactory(DatumReader<T> reader, AvroType<?> atype) {
+    this.reader = reader;
+    this.atype = atype;
     this.mapFn = (MapFn<T, T>) atype.getInputMapFn();
   }
 
-  public AvroFileReaderFactory(Schema schema) {
-    this.recordReader = Avros.newReader(schema);
-    this.mapFn = IdentityFn.<T>getInstance();
-  }
-
-  static <T> DatumReader<T> createDatumReader(AvroType<T> avroType) {
-    return Avros.newReader(avroType);
+  static <T> DatumReader<T> createDatumReader(AvroType<T> atype) {
+    return Avros.newReader(atype);
   }
 
   @Override
   public Iterator<T> read(FileSystem fs, final Path path) {
+    AvroMode mode = AvroMode.fromType(atype).withFactoryFromConfiguration(fs.getConf());
+    final DatumReader recordReader = reader == null ? mode.getReader(atype.getSchema()) : reader;
     this.mapFn.initialize();
     try {
       FsInput fsi = new FsInput(path, fs.getConf());

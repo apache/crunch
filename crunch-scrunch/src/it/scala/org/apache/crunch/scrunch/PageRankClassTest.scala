@@ -27,12 +27,12 @@ import scala.collection.mutable.HashMap
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 
-case class PageRankData(page_rank: Float, oldpr: Float, urls: Array[String]) {
-  def this() = this(0f, 0f, null)
+case class PageRankData(page_rank: Float, oldpr: Float, urls: Array[String], bytes: Array[Byte]) {
+  def this() = this(0f, 0f, null, Array[Byte](0))
 
   def scaledPageRank = page_rank / urls.length
 
-  def next(newPageRank: Float) = new PageRankData(newPageRank, page_rank, urls)
+  def next(newPageRank: Float) = new PageRankData(newPageRank, page_rank, urls, bytes)
 
   def delta = math.abs(page_rank - oldpr)
 }
@@ -67,7 +67,7 @@ class PageRankClassTest extends CrunchSuite {
     pipeline.read(from.textFile(fileName, Avros.strings))
       .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
-      .map((url, links) => (url, PageRankData(1f, 0f, links.filter(x => x != null).toArray)))
+      .map((url, links) => (url, PageRankData(1f, 0f, links.filter(x => x != null).toArray, Array[Byte](0))))
   }
 
   def update(prev: PTable[String, PageRankData], d: Float) = {

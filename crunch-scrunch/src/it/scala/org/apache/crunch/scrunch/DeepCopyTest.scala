@@ -73,7 +73,7 @@ class DeepCopyTest extends CrunchSuite {
   @SuppressWarnings(Array("rawtypes", "unchecked"))
   private def writeAvroFile[T <: AnyRef](outputStream: FSDataOutputStream, records: Iterable[T]) {
     val r: AnyRef = records.iterator.next()
-    val schema = new ScalaReflectDataFactory().getReflectData.getSchema(r.getClass)
+    val schema = new ScalaReflectDataFactory().getData.getSchema(r.getClass)
 
     val writer = new ScalaReflectDataFactory().getWriter[T](schema)
     val dataFileWriter = new DataFileWriter(writer)

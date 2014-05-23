@@ -20,6 +20,7 @@ package org.apache.crunch.scrunch;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.avro.Schema;
 import org.apache.avro.reflect.ReflectDatumWriter;
 
 import scala.collection.JavaConversions;
@@ -28,10 +29,10 @@ import scala.collection.JavaConversions;
  *
  */
 public class ScalaSafeReflectDatumWriter<T> extends ReflectDatumWriter<T> {
-  public ScalaSafeReflectDatumWriter() {
-    super(ScalaSafeReflectData.get());
+  public ScalaSafeReflectDatumWriter(Schema schema) {
+    super(schema, ScalaSafeReflectData.getInstance());
   }
-  
+
   @Override
   protected long getArraySize(Object array) {
     if (array instanceof scala.collection.Iterable) {
