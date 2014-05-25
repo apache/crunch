@@ -18,7 +18,6 @@
 package org.apache.crunch.scrunch
 
 import org.apache.hadoop.conf.Configuration
-import scala.reflect.ClassTag
 
 /**
  * Adds a pipeline to the class it is being mixed in to.
