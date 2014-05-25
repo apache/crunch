@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, MapFn}
+import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Union, MapFn}
 import org.apache.crunch.types.{PType, PTypeFamily => PTF}
 import org.apache.crunch.types.writable.{WritableTypeFamily, Writables => CWritables}
 import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
@@ -26,6 +26,7 @@ import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 import org.apache.hadoop.io.Writable
+import org.apache.avro.specific.SpecificRecord
 
 class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boolean = false) extends MapFn[S, T] {
   override def initialize() {
@@ -56,34 +57,66 @@ trait PTypeFamily {
     ptf.derived(cls, new TMapFn[S, T](in, Some(pt)), new TMapFn[T, S](out), pt)
   }
 
+  def derivedImmutable[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
+    ptf.derivedImmutable(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
+  }
+
+  val jlongs = ptf.longs()
+
   val longs = {
     val in = (x: JLong) => x.longValue()
     val out = (x: Long) => new JLong(x)
-    derived(classOf[Long], in, out, ptf.longs())
+    derivedImmutable(classOf[Long], in, out, ptf.longs())
   }
+
+  val jints = ptf.ints()
 
   val ints = {
     val in = (x: JInt) => x.intValue()
     val out = (x: Int) => new JInt(x)
-    derived(classOf[Int], in, out, ptf.ints())
+    derivedImmutable(classOf[Int], in, out, ptf.ints())
   }
+
+  val jfloats = ptf.floats()
 
   val floats = {
     val in = (x: JFloat) => x.floatValue()
     val out = (x: Float) => new JFloat(x)
-    derived(classOf[Float], in, out, ptf.floats())
+    derivedImmutable(classOf[Float], in, out, ptf.floats())
   }
+
+  val jdoubles = ptf.doubles()
 
   val doubles = {
     val in = (x: JDouble) => x.doubleValue()
     val out = (x: Double) => new JDouble(x)
-    derived(classOf[Double], in, out, ptf.doubles())
+    derivedImmutable(classOf[Double], in, out, ptf.doubles())
   }
+
+  val jbooleans = ptf.booleans()
 
   val booleans = {
     val in = (x: JBoolean) => x.booleanValue()
     val out = (x: Boolean) => new JBoolean(x)
-    derived(classOf[Boolean], in, out, ptf.booleans())
+    derivedImmutable(classOf[Boolean], in, out, ptf.booleans())
+  }
+
+  def options[T](ptype: PType[T]) = {
+    val in: Union => Option[T] = (x: Union) => { if (x.getIndex() == 0) None else Some(x.getValue.asInstanceOf[T]) }
+    val out = (x: Option[T]) => { if (x.isEmpty) new Union(0, null) else new Union(1, x.get) }
+    derived(classOf[Option[T]], in, out, ptf.unionOf(ptf.nulls(), ptype))
+  }
+
+  def eithers[L, R](left: PType[L], right: PType[R]): PType[Either[L, R]] = {
+    val in: Union => Either[L, R] = (x: Union) => {
+      if (x.getIndex() == 0) {
+        Left[L, R](x.getValue.asInstanceOf[L])
+      } else {
+        Right[L, R](x.getValue.asInstanceOf[R])
+      }
+    }
+    val out = (x: Either[L, R]) => { if (x.isLeft) new Union(0, x.left.get) else new Union(1, x.right.get) }
+    derived(classOf[Either[L, R]], in, out, ptf.unionOf(left, right))
   }
 
   def tableOf[K, V](keyType: PType[K], valueType: PType[V]) = ptf.tableOf(keyType, valueType)
@@ -141,5 +174,11 @@ object Avros extends PTypeFamily {
   override def writables[T <: Writable : ClassTag] = CAvros.writables(
     implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 
-  def reflects[T: ClassTag]() = CAvros.reflects(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[AvroType[T]]
+  def specifics[T <: SpecificRecord : ClassTag]() = {
+    CAvros.specifics(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  }
+
+  def reflects[T: ClassTag]() = {
+    CAvros.reflects(implicitly[ClassTag[T]].runtimeClass).asInstanceOf[AvroType[T]]
+  }
 }

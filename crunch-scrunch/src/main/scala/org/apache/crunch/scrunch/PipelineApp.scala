@@ -17,10 +17,6 @@
  */
 package org.apache.crunch.scrunch
 
-import java.io.Serializable
-
-import scala.collection.mutable.ListBuffer
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.GenericOptionsParser

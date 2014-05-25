@@ -19,12 +19,15 @@ package org.apache.crunch.scrunch
 
 import org.apache.crunch.{PCollection => JCollection, PGroupedTable => JGroupedTable, PTable => JTable, DoFn, Emitter}
 import org.apache.crunch.{Pair => CPair}
-import org.apache.crunch.types.PType
+import org.apache.crunch.types.{PTypes, PType}
 import java.nio.ByteBuffer
 import scala.collection.Iterable
 import scala.reflect.ClassTag
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
+import com.google.protobuf.Message
+import org.apache.avro.specific.SpecificRecord
+import org.apache.thrift.{TFieldIdEnum, TBase}
 
 trait CanParallelTransform[El, To] {
   def apply[A](c: PCollectionLike[A, _, JCollection[A]], fn: DoFn[A, El], ptype: PType[El]): To
@@ -83,22 +86,61 @@ trait PTypeH[T] extends Serializable {
   def get(ptf: PTypeFamily): PType[T]
 }
 
-object PTypeH {
+trait LowPriorityPTypeH {
+  implicit def records[T <: AnyRef : ClassTag] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = ptf.records(implicitly[ClassTag[T]]).asInstanceOf[PType[T]]
+  }
+}
+
+object PTypeH extends LowPriorityPTypeH {
 
   implicit val longs = new PTypeH[Long] { def get(ptf: PTypeFamily) = ptf.longs }
+  implicit val jlongs = new PTypeH[java.lang.Long] { def get(ptf: PTypeFamily) = ptf.jlongs }
   implicit val ints = new PTypeH[Int] { def get(ptf: PTypeFamily) = ptf.ints }
+  implicit val jints = new PTypeH[java.lang.Integer] { def get(ptf: PTypeFamily) = ptf.jints }
+
   implicit val floats = new PTypeH[Float] { def get(ptf: PTypeFamily) = ptf.floats }
+  implicit val jfloats = new PTypeH[java.lang.Float] { def get(ptf: PTypeFamily) = ptf.jfloats }
+
   implicit val doubles = new PTypeH[Double] { def get(ptf: PTypeFamily) = ptf.doubles }
-  implicit val strings = new PTypeH[String] { def get(ptf: PTypeFamily) = ptf.strings }
+  implicit val jdoubles = new PTypeH[java.lang.Double] { def get(ptf: PTypeFamily) = ptf.jdoubles }
+
   implicit val booleans = new PTypeH[Boolean] { def get(ptf: PTypeFamily) = ptf.booleans }
+  implicit val jbooleans = new PTypeH[java.lang.Boolean] { def get(ptf: PTypeFamily) = ptf.jbooleans }
+
+  implicit val strings = new PTypeH[String] { def get(ptf: PTypeFamily) = ptf.strings }
   implicit val bytes = new PTypeH[ByteBuffer] { def get(ptf: PTypeFamily) = ptf.bytes }
 
   implicit def writables[W <: Writable : ClassTag] = new PTypeH[W] {
     def get(ptf: PTypeFamily): PType[W] = ptf.writables(implicitly[ClassTag[W]])
   }
 
-  implicit def records[T <: AnyRef : ClassTag] = new PTypeH[T] {
-    def get(ptf: PTypeFamily) = ptf.records(implicitly[ClassTag[T]]).asInstanceOf[PType[T]]
+  implicit def protos[T <: Message : ClassTag] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = {
+      PTypes.protos(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], ptf.ptf)
+    }
+  }
+
+  implicit def thrifts[T <: TBase[_ <: TBase[_, _], _ <: TFieldIdEnum] : ClassTag] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = {
+      PTypes.thrifts(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]], ptf.ptf)
+    }
+  }
+
+  implicit def specifics[T <: SpecificRecord : ClassTag] = new PTypeH[T] {
+    def get(ptf: PTypeFamily) = Avros.specifics[T]()
+  }
+
+  implicit def options[T: PTypeH] = new PTypeH[Option[T]] {
+    def get(ptf: PTypeFamily) = {
+      ptf.options(implicitly[PTypeH[T]].get(ptf))
+    }
+  }
+
+  implicit def eithers[L: PTypeH, R: PTypeH] = new PTypeH[Either[L, R]] {
+    def get(ptf: PTypeFamily) = {
+      ptf.eithers(implicitly[PTypeH[L]].get(ptf), implicitly[PTypeH[R]].get(ptf))
+    }
   }
 
   implicit def collections[T: PTypeH] = {
