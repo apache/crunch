@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.google.common.base.Supplier;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -35,7 +36,7 @@ import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-class CrunchInputSplit extends InputSplit implements Writable, Configurable {
+class CrunchInputSplit extends InputSplit implements Writable, Configurable, Supplier<InputSplit> {
 
   private InputSplit inputSplit;
   private int nodeIndex;
@@ -58,6 +59,11 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
   }
 
   @Override
+  public InputSplit get() {
+    return inputSplit;
+  }
+
+  @Override
   public void setConf(Configuration conf) {
     this.conf = new Configuration(conf);
     if (bundle != null && conf != null) {
@@ -72,10 +78,6 @@ class CrunchInputSplit extends InputSplit implements Writable, Configurable {
 
   public int getNodeIndex() {
     return nodeIndex;
-  }
-
-  public InputSplit getInputSplit() {
-    return inputSplit;
   }
 
   public Class<? extends InputFormat<?, ?>> getInputFormatClass() {
