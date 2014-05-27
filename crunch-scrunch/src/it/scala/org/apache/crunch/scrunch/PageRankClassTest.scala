@@ -27,14 +27,14 @@ import scala.collection.mutable.HashMap
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 
-case class PageRankData(pr: Float, oldpr: Float, urls: Array[String]) {
+case class PageRankData(page_rank: Float, oldpr: Float, urls: Array[String]) {
   def this() = this(0f, 0f, null)
 
-  def scaledPageRank = pr / urls.length
+  def scaledPageRank = page_rank / urls.length
 
-  def next(newPageRank: Float) = new PageRankData(newPageRank, pr, urls)
+  def next(newPageRank: Float) = new PageRankData(newPageRank, page_rank, urls)
 
-  def delta = math.abs(pr - oldpr)
+  def delta = math.abs(page_rank - oldpr)
 }
 
 class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Float]] {
@@ -45,7 +45,7 @@ class CachingPageRankClassFn extends DoFn[P[String, PageRankData], P[String, Flo
   override def process(input: P[String, PageRankData], emitFn: Emitter[P[String, Float]]) {
     val prd = input.second()
     if (prd.urls.length > 0) {
-      val newpr = prd.pr / prd.urls.length
+      val newpr = prd.page_rank / prd.urls.length
       prd.urls.foreach(url => cache.put(url, cache(url) + newpr))
       if (cache.size > 5000) {
         cleanup(emitFn)
@@ -92,7 +92,6 @@ class PageRankClassTest extends CrunchSuite {
   }
 
   @Test def testPageRank {
-    pipeline.getConfiguration.set("crunch.debug", "true")
     var prev = initialInput(tempDir.copyResourceFileName("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
@@ -104,7 +103,6 @@ class PageRankClassTest extends CrunchSuite {
   }
 
   def testFastPageRank {
-    pipeline.getConfiguration.set("crunch.debug", "true")
     var prev = initialInput(tempDir.copyResourceFileName("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {
