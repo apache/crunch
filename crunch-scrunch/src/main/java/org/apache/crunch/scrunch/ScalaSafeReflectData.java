@@ -236,11 +236,11 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
   }
   
   private static String clean(String dirty) {
-    return dirty.replace('$', '_');
+    return dirty.replace("$", "___");
   }
   
   private static String dirty(String clean) {
-    return clean.replace('_', '$');
+    return clean.replace("___", "$");
   }
   
   // Return of this class and its superclasses to serialize.
