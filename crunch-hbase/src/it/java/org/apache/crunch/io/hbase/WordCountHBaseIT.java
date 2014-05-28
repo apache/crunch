@@ -69,6 +69,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
 
+import javax.ws.rs.HEAD;
+
 public class WordCountHBaseIT {
 
   static class StringifyFn extends MapFn<Pair<ImmutableBytesWritable, Pair<Result, Result>>, String> {
@@ -237,9 +239,18 @@ public class WordCountHBaseIT {
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "dog");
+    inputTable.flushCommits();
+
+    //Setup scan using multiple scans that simply cut the rows in half.
     Scan scan = new Scan();
     scan.addFamily(WORD_COLFAM);
-    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
+    byte[] cutoffPoint = Bytes.toBytes(2);
+    scan.setStopRow(cutoffPoint);
+    Scan scan2 = new Scan();
+    scan.addFamily(WORD_COLFAM);
+    scan2.setStartRow(cutoffPoint);
+
+    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan, scan2);
     PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
 
     Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();

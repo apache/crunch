@@ -25,21 +25,30 @@ import org.apache.crunch.Pair;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
   private static final Log LOG = LogFactory.getLog(HTableIterator.class);
 
   private final HTable table;
-  private final ResultScanner scanner;
-  private final Iterator<Result> iter;
+  private final Iterator<Scan> scans;
+  private ResultScanner scanner;
+  private Iterator<Result> iter;
 
-  public HTableIterator(HTable table, ResultScanner scanner) {
+  public HTableIterator(HTable table, List<Scan> scans) {
     this.table = table;
-    this.scanner = scanner;
+    this.scans = scans.iterator();
+    try{
+      this.scanner = table.getScanner(this.scans.next());
+    }catch(IOException ioe){
+      throw new RuntimeException(ioe);
+    }
     this.iter = scanner.iterator();
   }
 
@@ -48,10 +57,20 @@ class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
     boolean hasNext = iter.hasNext();
     if (!hasNext) {
       scanner.close();
-      try {
-        table.close();
-      } catch (IOException e) {
-        LOG.error("Exception closing HTable: " + table.getTableName(), e);
+      hasNext = scans.hasNext();
+      if(hasNext){
+        try{
+          scanner = table.getScanner(this.scans.next());
+          iter = scanner.iterator();
+        } catch(IOException ioe){
+          throw new RuntimeException("Unable to create next scanner from "+ Bytes.toString(table.getTableName()), ioe);
+        }
+      } else {
+        try {
+          table.close();
+        } catch (IOException e) {
+          LOG.error("Exception closing HTable: " + Bytes.toString(table.getTableName()), e);
+        }
       }
     }
     return hasNext;

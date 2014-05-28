@@ -26,23 +26,20 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 class HTableIterable implements Iterable<Pair<ImmutableBytesWritable, Result>> {
   private final HTable table;
-  private final Scan scan;
+  private final Scan[] scans;
 
-  public HTableIterable(HTable table, Scan scan) {
+  public HTableIterable(HTable table, Scan... scans) {
     this.table = table;
-    this.scan = scan;
+    this.scans = scans;
   }
 
   @Override
   public Iterator<Pair<ImmutableBytesWritable, Result>> iterator() {
-    try {
-      return new HTableIterator(table, table.getScanner(scan));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+      return new HTableIterator(table, Arrays.asList(scans));
   }
 }

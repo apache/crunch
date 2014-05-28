@@ -28,6 +28,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.util.StringUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -35,12 +36,12 @@ import java.util.Set;
 public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Result>> {
 
   private final String table;
-  private final String scanAsString;
+  private final String scansAsString;
   private transient SourceTarget parent;
 
-  public HBaseData(String table, String scanAsString, SourceTarget<?> parent) {
+  public HBaseData(String table, String scansAsString, SourceTarget<?> parent) {
     this.table = table;
-    this.scanAsString = scanAsString;
+    this.scansAsString = scansAsString;
     this.parent = parent;
   }
 
@@ -63,7 +64,13 @@ public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Resu
       TaskInputOutputContext<?, ?, ?, ?> ctxt) throws IOException {
     Configuration hconf = HBaseConfiguration.create(ctxt.getConfiguration());
     HTable htable = new HTable(hconf, table);
-    Scan scan = HBaseSourceTarget.convertStringToScan(scanAsString);
-    return new HTableIterable(htable, scan);
+
+    String[] scanStrings = StringUtils.getStrings(scansAsString);
+    Scan[] scans = new Scan[scanStrings.length];
+    for(int i = 0; i < scanStrings.length; i++){
+      scans[i] = HBaseSourceTarget.convertStringToScan(scanStrings[i]);
+    }
+
+    return new HTableIterable(htable, scans);
   }
 }
