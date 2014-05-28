@@ -37,9 +37,9 @@ public class JobNameBuilderTest {
     DoNode doNode = createDoNode(nodeName);
     JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
-    String jobName = jobNameBuilder.build();
+    String jobName = jobNameBuilder.jobSequence(1).build();
 
-    assertEquals(String.format("%s: %s (1/1)", pipelineName, nodeName), jobName);
+    assertEquals(String.format("%s: %s ID=1 (1/1)", pipelineName, nodeName), jobName);
   }
 
   @Test
@@ -49,7 +49,7 @@ public class JobNameBuilderTest {
     DoNode doNode = createDoNode(nodeName);
     JobNameBuilder jobNameBuilder = new JobNameBuilder(CONF, pipelineName, 1, 1);
     jobNameBuilder.visit(Lists.newArrayList(doNode));
-    String jobName = jobNameBuilder.build();
+    String jobName = jobNameBuilder.jobSequence(1).build();
 
     assertFalse(jobName.contains(nodeName)); // Tests that the very long node name was shorten
   }

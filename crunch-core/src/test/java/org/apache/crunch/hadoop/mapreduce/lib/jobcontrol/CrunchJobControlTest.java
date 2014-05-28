@@ -18,6 +18,7 @@
 package org.apache.crunch.hadoop.mapreduce.lib.jobcontrol;
 
 import org.apache.crunch.impl.mr.MRJob;
+import org.apache.crunch.impl.mr.plan.JobNameBuilder;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
@@ -65,6 +66,7 @@ public class CrunchJobControlTest {
     CrunchControlledJob job = new CrunchControlledJob(
         jobID,
         mrJob,
+        new JobNameBuilder(mrJob.getConfiguration(), "test", 1, 1),
         mock(CrunchControlledJob.Hook.class),
         mock(CrunchControlledJob.Hook.class));
     return spy(job);

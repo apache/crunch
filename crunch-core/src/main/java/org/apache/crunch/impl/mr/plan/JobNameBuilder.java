@@ -28,7 +28,7 @@ import org.apache.hadoop.conf.Configuration;
  * Visitor that traverses the {@code DoNode} instances in a job and builds a
  * String that identifies the stages of the pipeline that belong to this job.
  */
-class JobNameBuilder {
+public class JobNameBuilder {
 
   private static final Joiner JOINER = Joiner.on("+");
   private static final Joiner CHILD_JOINER = Joiner.on("/");
@@ -36,6 +36,7 @@ class JobNameBuilder {
 
   private final String pipelineName;
   private final int jobID;
+  private int jobSequence;
   private final int numOfJobs;
   List<String> rootStack = Lists.newArrayList();
   private final int maxStackNameLength;
@@ -46,6 +47,11 @@ class JobNameBuilder {
     this.numOfJobs = numOfJobs;
     this.maxStackNameLength = conf.getInt(
         PlanningParameters.JOB_NAME_MAX_STACK_LENGTH, DEFAULT_JOB_NAME_MAX_STACK_LENGTH);
+  }
+
+  public JobNameBuilder jobSequence(int jobSequence) {
+    this.jobSequence = jobSequence;
+    return this;
   }
 
   public void visit(DoNode node) {
@@ -84,10 +90,11 @@ class JobNameBuilder {
   }
 
   public String build() {
-    return String.format("%s: %s (%d/%d)",
+    return String.format("%s: %s ID=%d (%d/%d)",
         pipelineName,
         shortenRootStackName(JOINER.join(rootStack), maxStackNameLength),
         jobID,
+        jobSequence,
         numOfJobs);
   }
 
