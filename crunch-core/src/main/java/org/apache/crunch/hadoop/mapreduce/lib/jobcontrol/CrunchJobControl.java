@@ -52,6 +52,7 @@ public class CrunchJobControl {
 
   private final String groupName;
   private final int maxRunningJobs;
+  private int jobSequence = 1;
 
   /**
    * Construct a job control for a group of jobs.
@@ -198,6 +199,8 @@ public class CrunchJobControl {
       // stop submitting new jobs and wait until some running job completes.
       if (runningJobs.size() < maxRunningJobs) {
         // Submitting Job to Hadoop
+        nextJob.setJobSequence(jobSequence);
+        jobSequence++;
         nextJob.submit();
       }
       this.addToQueue(nextJob);

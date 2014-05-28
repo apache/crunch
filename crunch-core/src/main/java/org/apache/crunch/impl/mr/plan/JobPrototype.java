@@ -223,11 +223,12 @@ class JobPrototype {
       }
       job.setInputFormatClass(CrunchInputFormat.class);
     }
-    job.setJobName(createJobName(conf, pipeline.getName(), inputNodes, reduceNode, numOfJobs));
+    JobNameBuilder jobNameBuilder = createJobNameBuilder(conf, pipeline.getName(), inputNodes, reduceNode, numOfJobs);
 
     return new CrunchControlledJob(
         jobID,
         job,
+        jobNameBuilder,
         new CrunchJobHooks.PrepareHook(job),
         new CrunchJobHooks.CompletionHook(job, outputPath, outputHandler.getMultiPaths(), group == null));
   }
@@ -242,14 +243,18 @@ class JobPrototype {
     DistCache.write(conf, path, rtNodes);
   }
 
-  private String createJobName(
-      Configuration conf, String pipelineName, List<DoNode> mapNodes, DoNode reduceNode, int numOfJobs) {
+  private JobNameBuilder createJobNameBuilder(
+      Configuration conf,
+      String pipelineName,
+      List<DoNode> mapNodes,
+      DoNode reduceNode,
+      int numOfJobs) {
     JobNameBuilder builder = new JobNameBuilder(conf, pipelineName, jobID, numOfJobs);
     builder.visit(mapNodes);
     if (reduceNode != null) {
       builder.visit(reduceNode);
     }
-    return builder.build();
+    return builder;
   }
 
   private DoNode walkPath(Iterator<PCollectionImpl<?>> iter, DoNode working) {

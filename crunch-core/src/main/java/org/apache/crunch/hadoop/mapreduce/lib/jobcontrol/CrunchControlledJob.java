@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.MRJob;
+import org.apache.crunch.impl.mr.plan.JobNameBuilder;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
@@ -53,6 +54,8 @@ public class CrunchControlledJob implements MRJob {
 
   private final int jobID;
   private final Job job; // mapreduce job to be executed.
+  private final JobNameBuilder jobNameBuilder;
+
   // the jobs the current job depends on
   private final List<CrunchControlledJob> dependingJobs;
   private final Hook prepareHook;
@@ -79,9 +82,10 @@ public class CrunchControlledJob implements MRJob {
    * @param completionHook
    *          a piece of code that will run after this job gets completed.
    */
-  public CrunchControlledJob(int jobID, Job job, Hook prepareHook, Hook completionHook) {
+  public CrunchControlledJob(int jobID, Job job, JobNameBuilder jobNameBuilder, Hook prepareHook, Hook completionHook) {
     this.jobID = jobID;
     this.job = job;
+    this.jobNameBuilder = jobNameBuilder;
     this.dependingJobs = Lists.newArrayList();
     this.prepareHook = prepareHook;
     this.completionHook = completionHook;
@@ -118,14 +122,8 @@ public class CrunchControlledJob implements MRJob {
     return job.getJobName();
   }
 
-  /**
-   * Set the job name for this job.
-   *
-   * @param jobName
-   *          the job name
-   */
-  public void setJobName(String jobName) {
-    job.setJobName(jobName);
+  public void setJobSequence(int jobSequence) {
+    this.job.setJobName(jobNameBuilder.jobSequence(jobSequence).build());
   }
 
   /**
