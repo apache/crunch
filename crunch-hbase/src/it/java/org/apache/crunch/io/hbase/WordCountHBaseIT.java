@@ -153,9 +153,16 @@ public class WordCountHBaseIT {
     key = put(inputTable, key, "dog");
     inputTable.flushCommits();
 
+    //Setup scan using multiple scans that simply cut the rows in half.
     Scan scan = new Scan();
     scan.addFamily(WORD_COLFAM);
-    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan);
+    byte[] cutoffPoint = Bytes.toBytes(2);
+    scan.setStopRow(cutoffPoint);
+    Scan scan2 = new Scan();
+    scan.addFamily(WORD_COLFAM);
+    scan2.setStartRow(cutoffPoint);
+
+    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan, scan2);
     PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
 
     Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();

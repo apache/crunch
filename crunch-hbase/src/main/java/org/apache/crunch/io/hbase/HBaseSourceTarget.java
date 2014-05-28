@@ -43,6 +43,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
+import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
 import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
@@ -50,7 +51,9 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
 import org.apache.hadoop.hbase.util.Base64;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.util.StringUtils;
 
 public class HBaseSourceTarget extends HBaseTarget implements
     ReadableSourceTarget<Pair<ImmutableBytesWritable, Result>>,
@@ -61,16 +64,31 @@ public class HBaseSourceTarget extends HBaseTarget implements
   private static final PTableType<ImmutableBytesWritable, Result> PTYPE = Writables.tableOf(
       Writables.writables(ImmutableBytesWritable.class), HBaseTypes.results());
 
-  protected Scan scan;
-  private FormatBundle<TableInputFormat> inputBundle;
+  protected Scan[] scans;
+  protected String scansAsString;
+  private FormatBundle<MultiTableInputFormat> inputBundle;
   
-  public HBaseSourceTarget(String table, Scan scan) {
+  public HBaseSourceTarget(String table, Scan... scans) {
     super(table);
-    this.scan = scan;
+    this.scans = scans;
+
     try {
-      this.inputBundle = FormatBundle.forInput(TableInputFormat.class)
-          .set(TableInputFormat.INPUT_TABLE, table)
-          .set(TableInputFormat.SCAN, convertScanToString(scan));
+
+      byte[] tableName = Bytes.toBytes(table);
+      //Copy scans and enforce that they are for the table specified
+      Scan[] tableScans = new Scan[scans.length];
+      String[] scanStrings = new String[scans.length];
+      for(int i = 0; i < scans.length; i++){
+        tableScans[i] =  new Scan(scans[i]);
+        //enforce Scan is for same table
+        tableScans[i].setAttribute(Scan.SCAN_ATTRIBUTES_TABLE_NAME, tableName);
+        //Convert the Scan into a String
+        scanStrings[i] = convertScanToString(tableScans[i]);
+      }
+      this.scans = tableScans;
+      this.scansAsString = StringUtils.arrayToString(scanStrings);
+      this.inputBundle = FormatBundle.forInput(MultiTableInputFormat.class)
+          .set(MultiTableInputFormat.SCANS, scansAsString);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -104,7 +122,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(table).append(scan).toHashCode();
+    return new HashCodeBuilder().append(table).append(scansAsString).toHashCode();
   }
 
   @Override
@@ -161,16 +179,12 @@ public class HBaseSourceTarget extends HBaseTarget implements
   public Iterable<Pair<ImmutableBytesWritable, Result>> read(Configuration conf) throws IOException {
     Configuration hconf = HBaseConfiguration.create(conf);
     HTable htable = new HTable(hconf, table);
-    return new HTableIterable(htable, scan);
+    return new HTableIterable(htable, scans);
   }
 
   @Override
   public ReadableData<Pair<ImmutableBytesWritable, Result>> asReadable() {
-    try {
-      return new HBaseData(table, convertScanToString(scan), this);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+      return new HBaseData(table, scansAsString, this);
   }
 
   @Override
