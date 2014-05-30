@@ -221,33 +221,33 @@ public class From {
    * Creates a {@code Source<T>} instance from the Avro file(s) at the given path name.
    * 
    * @param pathName The name of the path to the data on the filesystem
-   * @param avroType The {@code AvroType} for the Avro records
+   * @param ptype The {@code AvroType} for the Avro records
    * @return A new {@code Source<T>} instance
    */
-  public static <T> Source<T> avroFile(String pathName, AvroType<T> avroType) {
-    return avroFile(new Path(pathName), avroType);
+  public static <T> Source<T> avroFile(String pathName, PType<T> ptype) {
+    return avroFile(new Path(pathName), ptype);
   }
 
   /**
    * Creates a {@code Source<T>} instance from the Avro file(s) at the given {@code Path}.
    * 
    * @param path The {@code Path} to the data
-   * @param avroType The {@code AvroType} for the Avro records
+   * @param ptype The {@code AvroType} for the Avro records
    * @return A new {@code Source<T>} instance
    */
-  public static <T> Source<T> avroFile(Path path, AvroType<T> avroType) {
-    return new AvroFileSource<T>(path, avroType);
+  public static <T> Source<T> avroFile(Path path, PType<T> ptype) {
+    return new AvroFileSource<T>(path, (AvroType<T>) ptype);
   }
 
   /**
    * Creates a {@code Source<T>} instance from the Avro file(s) at the given {@code Path}s.
    *
    * @param paths A list of {@code Path}s to the data
-   * @param avroType The {@code AvroType} for the Avro records
+   * @param ptype The {@code PType} for the Avro records
    * @return A new {@code Source<T>} instance
    */
-  public static <T> Source<T> avroFile(List<Path> paths, AvroType<T> avroType) {
-    return new AvroFileSource<T>(paths, avroType);
+  public static <T> Source<T> avroFile(List<Path> paths, PType<T> ptype) {
+    return new AvroFileSource<T>(paths, (AvroType<T>) ptype);
   }
 
   /**
