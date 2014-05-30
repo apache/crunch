@@ -20,19 +20,13 @@
 
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.io.{From => from, To => to, At => at, SequentialFileNamingScheme}
+import org.apache.crunch.io.{From => from, To => to, At => at}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.conf.Configuration
 import org.apache.crunch.types.PType
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.crunch.types.avro.AvroType
 import org.apache.hadoop.io.Writable
 import org.apache.avro.specific.SpecificRecord
-import org.apache.crunch.Target
-import org.apache.crunch.io.impl.FileTargetImpl
-import org.apache.crunch.io.avro.AvroFileTarget
-import org.apache.crunch.io.seq.SeqFileTarget
-import org.apache.crunch.io.text.TextFileTarget
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 
 object From {
@@ -80,16 +74,16 @@ object From {
     from.avroFile(paths, avroClass)
   }
 
-  def avroFile[T](pathName: String, avroType: AvroType[T]) = {
-    from.avroFile(pathName, avroType)
+  def avroFile[T](pathName: String, ptype: PType[T]) = {
+    from.avroFile(pathName, ptype)
   }
 
-  def avroFile[T](path: Path, avroType: AvroType[T]) = {
-    from.avroFile(path, avroType)
+  def avroFile[T](path: Path, ptype: PType[T]) = {
+    from.avroFile(path, ptype)
   }
 
-  def avroFile[T](paths: List[Path], avroType: AvroType[T]) = {
-    from.avroFile(paths, avroType)
+  def avroFile[T](paths: List[Path], ptype: PType[T]) = {
+    from.avroFile(paths, ptype)
   }
 
   def avroFile(pathName: String) = {
@@ -204,11 +198,11 @@ object At {
     at.avroFile(path, avroClass)
   }
 
-  def avroFile[T](pathName: String, avroType: AvroType[T]) = {
+  def avroFile[T](pathName: String, avroType: PType[T]) = {
     at.avroFile(pathName, avroType)
   }
 
-  def avroFile[T](path: Path, avroType: AvroType[T]) = {
+  def avroFile[T](path: Path, avroType: PType[T]) = {
     at.avroFile(path, avroType)
   }
 
