@@ -120,26 +120,9 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
     long sum = 0;
     for (Path path : getPaths()) {
       try {
-        sum += getSizeInternal(conf, path);
+        sum += SourceTargetHelper.getPathSize(conf, new Path(path, "*"));
       } catch (IOException e) {
         LOG.warn("Failed to estimate size of " + path);
-      }
-    }
-    return sum;
-  }
-
-  private long getSizeInternal(Configuration conf, Path path) throws IOException {
-    FileSystem fs = path.getFileSystem(conf);
-    FileStatus[] statuses = fs.listStatus(path, HFileInputFormat.HIDDEN_FILE_FILTER);
-    if (statuses == null) {
-      return 0;
-    }
-    long sum = 0;
-    for (FileStatus status : statuses) {
-      if (status.isDir()) {
-        sum += SourceTargetHelper.getPathSize(fs, status.getPath());
-      } else {
-        sum += status.getLen();
       }
     }
     return sum;
