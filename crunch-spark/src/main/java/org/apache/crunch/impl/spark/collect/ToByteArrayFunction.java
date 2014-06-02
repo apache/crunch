@@ -25,9 +25,9 @@ import scala.Tuple2;
 
 import java.util.List;
 
-public class ToByteArrayFunction extends PairFunction<Tuple2<IntByteArray, List<byte[]>>, ByteArray, List<byte[]>> {
+public class ToByteArrayFunction implements PairFunction<Tuple2<IntByteArray, List<byte[]>>, ByteArray, List<byte[]>> {
   @Override
   public Tuple2<ByteArray, List<byte[]>> call(Tuple2<IntByteArray, List<byte[]>> t) throws Exception {
-    return new Tuple2<ByteArray, List<byte[]>>(t._1, t._2);
+    return new Tuple2<ByteArray, List<byte[]>>(t._1(), t._2());
   }
 }

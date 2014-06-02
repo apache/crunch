@@ -25,11 +25,10 @@ import org.apache.crunch.impl.dist.collect.BaseDoTable;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
-import org.apache.crunch.impl.spark.fn.PairFlatMapDoFn;
-import org.apache.crunch.impl.spark.fn.PairFlatMapPairDoFn;
+import org.apache.crunch.impl.spark.fn.CrunchPairTuple2;
+import org.apache.crunch.impl.spark.fn.FlatMapIndexFn;
 import org.apache.crunch.types.PTableType;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.storage.StorageLevel;
 
@@ -69,10 +68,10 @@ public class DoTable<K, V> extends BaseDoTable<K, V> implements SparkCollection 
     }
     JavaRDDLike<?, ?> parentRDD = ((SparkCollection) getOnlyParent()).getJavaRDDLike(runtime);
     fn.configure(runtime.getConfiguration());
-    if (parentRDD instanceof JavaRDD) {
-      return ((JavaRDD) parentRDD).mapPartitions(new PairFlatMapDoFn(fn, runtime.getRuntimeContext()));
-    } else {
-      return ((JavaPairRDD) parentRDD).mapPartitions(new PairFlatMapPairDoFn(fn, runtime.getRuntimeContext()));
-    }
+    return parentRDD
+        .mapPartitionsWithIndex(
+            new FlatMapIndexFn(fn, parentRDD instanceof JavaPairRDD, runtime.getRuntimeContext()),
+            false)
+        .mapPartitionsToPair(new CrunchPairTuple2());
   }
 }

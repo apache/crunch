@@ -121,7 +121,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     this.conf = conf;
     this.counters = sparkContext.accumulator(Maps.<String, Map<String, Long>>newHashMap(),
         new CounterAccumulatorParam());
-    this.ctxt = new SparkRuntimeContext(counters, sparkContext.broadcast(WritableUtils.toByteArray(conf)));
+    this.ctxt = new SparkRuntimeContext(sparkContext.appName(), counters,
+        sparkContext.broadcast(WritableUtils.toByteArray(conf)));
     this.outputTargets = Maps.newTreeMap(DEPTH_COMPARATOR);
     this.outputTargets.putAll(outputTargets);
     this.toMaterialize = toMaterialize;
@@ -305,11 +306,11 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
             if (rdd instanceof JavaRDD) {
               outRDD = ((JavaRDD) rdd)
                   .map(new MapFunction(c.applyPTypeTransforms() ? ptype.getOutputMapFn() : ident, ctxt))
-                  .map(new OutputConverterFunction(c));
+                  .mapToPair(new OutputConverterFunction(c));
             } else {
               outRDD = ((JavaPairRDD) rdd)
                   .map(new PairMapFunction(c.applyPTypeTransforms() ? ptype.getOutputMapFn() : ident, ctxt))
-                  .map(new OutputConverterFunction(c));
+                  .mapToPair(new OutputConverterFunction(c));
             }
             try {
               Job job = new Job(conf);
@@ -368,7 +369,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
 
   private Counters getCounters() {
     Counters c = new Counters();
-    for (Map.Entry<String, Map<String, Long>> e : counters.value().entrySet()) {
+    Map<String, Map<String, Long>> values = counters.value();
+    for (Map.Entry<String, Map<String, Long>> e : values.entrySet()) {
       CounterGroup cg = c.getGroup(e.getKey());
       for (Map.Entry<String, Long> f : e.getValue().entrySet()) {
         cg.findCounter(f.getKey()).setValue(f.getValue());

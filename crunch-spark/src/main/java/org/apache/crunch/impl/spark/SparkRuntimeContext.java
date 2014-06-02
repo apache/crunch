@@ -18,6 +18,7 @@
 package org.apache.crunch.impl.spark;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
@@ -28,8 +29,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.mapred.SparkCounter;
 import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.spark.Accumulator;
 import org.apache.spark.SparkFiles;
@@ -44,14 +47,18 @@ import java.util.Map;
 
 public class SparkRuntimeContext implements Serializable {
 
+  private String jobName;
   private Broadcast<byte[]> broadConf;
   private final Accumulator<Map<String, Map<String, Long>>> counters;
   private transient Configuration conf;
   private transient TaskInputOutputContext context;
+  private transient Integer lastTID;
 
   public SparkRuntimeContext(
+      String jobName,
       Accumulator<Map<String, Map<String, Long>>> counters,
       Broadcast<byte[]> broadConf) {
+    this.jobName = jobName;
     this.counters = counters;
     this.broadConf = broadConf;
   }
@@ -61,11 +68,19 @@ public class SparkRuntimeContext implements Serializable {
     this.conf = null;
   }
 
-  public void initialize(DoFn<?, ?> fn) {
-    if (context == null) {
+  public void initialize(DoFn<?, ?> fn, Integer tid) {
+    if (context == null || !Objects.equal(lastTID, tid)) {
+      TaskAttemptID attemptID;
+      if (tid != null) {
+        TaskID taskId = new TaskID(new JobID(jobName, 0), false, tid);
+        attemptID = new TaskAttemptID(taskId, 0);
+        lastTID = tid;
+      } else {
+        attemptID = new TaskAttemptID();
+        lastTID = null;
+      }
       configureLocalFiles();
-      context = TaskInputOutputContextFactory.create(getConfiguration(), new TaskAttemptID(),
-          new SparkReporter(counters));
+      context = TaskInputOutputContextFactory.create(getConfiguration(), attemptID, new SparkReporter(counters));
     }
     fn.setContext(context);
     fn.initialize();

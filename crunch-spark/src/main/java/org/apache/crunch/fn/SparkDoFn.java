@@ -15,27 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.spark.fn;
+package org.apache.crunch.fn;
 
 import org.apache.crunch.DoFn;
-import org.apache.crunch.impl.spark.SparkRuntimeContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.crunch.Emitter;
 
-import java.util.Iterator;
-
-public class FlatMapDoFn<S, T> extends FlatMapFunction<Iterator<S>, T> {
-  private final DoFn<S, T> fn;
-  private final SparkRuntimeContext ctxt;
-
-  public FlatMapDoFn(DoFn<S, T> fn, SparkRuntimeContext ctxt) {
-    this.fn = fn;
-    this.ctxt = ctxt;
+abstract class SparkDoFn<T, R> extends DoFn<T, R> {
+  @Override
+  public final void initialize() {
+    // Forced no-op for Spark compatibility
   }
 
   @Override
-  public Iterable<T> call(Iterator<S> input) throws Exception {
-    ctxt.initialize(fn);
-    return new CrunchIterable<S, T>(fn, input);
+  public final void cleanup(Emitter<R> emitter) {
+    // Forced no-op for Spark compatibility
   }
-
 }

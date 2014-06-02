@@ -21,7 +21,7 @@ import org.apache.crunch.types.Converter;
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 
-public class InputConverterFunction<K, V, S> extends Function<Tuple2<K, V>, S> {
+public class InputConverterFunction<K, V, S> implements Function<Tuple2<K, V>, S> {
   private Converter<K, V, S, ?> converter;
 
   public InputConverterFunction(Converter<K, V, S, ?> converter) {

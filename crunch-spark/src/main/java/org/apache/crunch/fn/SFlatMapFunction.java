@@ -15,21 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.spark.fn;
+package org.apache.crunch.fn;
 
-import org.apache.crunch.types.Converter;
-import org.apache.spark.api.java.function.PairFunction;
-import scala.Tuple2;
+import org.apache.crunch.CrunchRuntimeException;
+import org.apache.crunch.Emitter;
+import org.apache.spark.api.java.function.FlatMapFunction;
 
-public class OutputConverterFunction<K, V, S> implements PairFunction<S, K, V> {
-  private Converter<K, V, S, ?> converter;
-
-  public OutputConverterFunction(Converter<K, V, S, ?> converter) {
-    this.converter = converter;
-  }
-
+/**
+ * A Crunch-compatible abstract base class for Spark's {@link FlatMapFunction}. Subclasses
+ * of this class may be used against either Crunch {@code PCollections} or Spark {@code RDDs}.
+ */
+public abstract class SFlatMapFunction<T, R> extends SparkDoFn<T, R>
+    implements FlatMapFunction<T, R> {
   @Override
-  public Tuple2<K, V> call(S s) throws Exception {
-    return new Tuple2<K, V>(converter.outputKey(s), converter.outputValue(s));
+  public void process(T input, Emitter<R> emitter) {
+    try {
+      for (R r : call(input)) {
+        emitter.emit(r);
+      }
+    } catch (Exception e) {
+      throw new CrunchRuntimeException(e);
+    }
   }
 }

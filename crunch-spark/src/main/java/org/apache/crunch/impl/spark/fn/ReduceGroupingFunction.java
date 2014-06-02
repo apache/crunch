@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-public class ReduceGroupingFunction extends PairFlatMapFunction<Iterator<Tuple2<ByteArray, List<byte[]>>>,
+public class ReduceGroupingFunction implements PairFlatMapFunction<Iterator<Tuple2<ByteArray, List<byte[]>>>,
     ByteArray, List<byte[]>> {
 
   private final GroupingOptions options;
@@ -97,13 +97,13 @@ public class ReduceGroupingFunction extends PairFlatMapFunction<Iterator<Tuple2<
       while (iter.hasNext()) {
         Tuple2<ByteArray, List<byte[]>> t = iter.next();
         if (key == null) {
-          key = t._1;
-          bytes.addAll(t._2);
-        } else if (cmp.compare(key.value, 0, key.value.length, t._1.value, 0, t._1.value.length) == 0) {
-          bytes.addAll(t._2);
+          key = t._1();
+          bytes.addAll(t._2());
+        } else if (cmp.compare(key.value, 0, key.value.length, t._1().value, 0, t._1().value.length) == 0) {
+          bytes.addAll(t._2());
         } else {
-          nextKey = t._1;
-          next = Lists.newArrayList(t._2);
+          nextKey = t._1();
+          next = Lists.newArrayList(t._2());
           break;
         }
       }

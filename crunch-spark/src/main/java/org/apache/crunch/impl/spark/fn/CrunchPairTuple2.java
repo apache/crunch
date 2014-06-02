@@ -17,19 +17,22 @@
  */
 package org.apache.crunch.impl.spark.fn;
 
-import org.apache.crunch.types.Converter;
-import org.apache.spark.api.java.function.PairFunction;
+import com.google.common.collect.Iterators;
+import org.apache.crunch.Pair;
+import org.apache.crunch.impl.spark.GuavaUtils;
+import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
-public class OutputConverterFunction<K, V, S> implements PairFunction<S, K, V> {
-  private Converter<K, V, S, ?> converter;
+import java.util.Iterator;
 
-  public OutputConverterFunction(Converter<K, V, S, ?> converter) {
-    this.converter = converter;
-  }
-
+public class CrunchPairTuple2<K, V> implements PairFlatMapFunction<Iterator<Pair<K, V>>, K, V> {
   @Override
-  public Tuple2<K, V> call(S s) throws Exception {
-    return new Tuple2<K, V>(converter.outputKey(s), converter.outputValue(s));
+  public Iterable<Tuple2<K, V>> call(final Iterator<Pair<K, V>> iterator) throws Exception {
+    return new Iterable<Tuple2<K, V>>() {
+      @Override
+      public Iterator<Tuple2<K, V>> iterator() {
+        return Iterators.transform(iterator, GuavaUtils.<K, V>pair2tupleFunc());
+      }
+    };
   }
 }

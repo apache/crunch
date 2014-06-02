@@ -23,11 +23,9 @@ import org.apache.crunch.impl.dist.collect.BaseDoCollection;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
-import org.apache.crunch.impl.spark.fn.FlatMapDoFn;
-import org.apache.crunch.impl.spark.fn.FlatMapPairDoFn;
+import org.apache.crunch.impl.spark.fn.FlatMapIndexFn;
 import org.apache.crunch.types.PType;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.storage.StorageLevel;
 
@@ -56,10 +54,8 @@ public class DoCollection<S> extends BaseDoCollection<S> implements SparkCollect
   private JavaRDDLike<?, ?> getJavaRDDLikeInternal(SparkRuntime runtime) {
     JavaRDDLike<?, ?> parentRDD = ((SparkCollection) getOnlyParent()).getJavaRDDLike(runtime);
     fn.configure(runtime.getConfiguration());
-    if (parentRDD instanceof JavaRDD) {
-      return ((JavaRDD) parentRDD).mapPartitions(new FlatMapDoFn(fn, runtime.getRuntimeContext()));
-    } else {
-      return ((JavaPairRDD) parentRDD).mapPartitions(new FlatMapPairDoFn(fn, runtime.getRuntimeContext()));
-    }
+    return parentRDD.mapPartitionsWithIndex(
+        new FlatMapIndexFn(fn, parentRDD instanceof JavaPairRDD, runtime.getRuntimeContext()),
+        false);
   }
 }

@@ -34,7 +34,7 @@ import scala.Tuple2;
 
 import java.io.IOException;
 
-public class PartitionedMapOutputFunction<K, V> extends PairFunction<Pair<K, V>, IntByteArray, byte[]> {
+public class PartitionedMapOutputFunction<K, V> implements PairFunction<Pair<K, V>, IntByteArray, byte[]> {
 
   private final SerDe<K> keySerde;
   private final SerDe<V> valueSerde;

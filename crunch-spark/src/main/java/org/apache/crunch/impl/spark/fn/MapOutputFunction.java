@@ -23,7 +23,7 @@ import org.apache.crunch.impl.spark.serde.SerDe;
 import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
-public class MapOutputFunction<K, V> extends PairFunction<Pair<K, V>, ByteArray, byte[]> {
+public class MapOutputFunction<K, V> implements PairFunction<Pair<K, V>, ByteArray, byte[]> {
 
   private final SerDe keySerde;
   private final SerDe valueSerde;

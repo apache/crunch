@@ -23,7 +23,7 @@ import org.apache.crunch.impl.spark.SparkRuntimeContext;
 import org.apache.spark.api.java.function.Function;
 import scala.Tuple2;
 
-public class PairMapFunction<K, V, S> extends Function<Tuple2<K, V>, S> {
+public class PairMapFunction<K, V, S> implements Function<Tuple2<K, V>, S> {
   private final MapFn<Pair<K, V>, S> fn;
   private final SparkRuntimeContext ctxt;
   private boolean initialized;
@@ -36,7 +36,7 @@ public class PairMapFunction<K, V, S> extends Function<Tuple2<K, V>, S> {
   @Override
   public S call(Tuple2<K, V> kv) throws Exception {
     if (!initialized) {
-      ctxt.initialize(fn);
+      ctxt.initialize(fn, null);
       initialized = true;
     }
     return fn.map(Pair.of(kv._1(), kv._2()));

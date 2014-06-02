@@ -21,7 +21,7 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.impl.spark.SparkRuntimeContext;
 import org.apache.spark.api.java.function.Function;
 
-public class MapFunction extends Function<Object, Object> {
+public class MapFunction implements Function<Object, Object> {
   private final MapFn fn;
   private final SparkRuntimeContext ctxt;
   private boolean initialized;
@@ -34,7 +34,7 @@ public class MapFunction extends Function<Object, Object> {
   @Override
   public Object call(Object o) throws Exception {
     if (!initialized) {
-      ctxt.initialize(fn);
+      ctxt.initialize(fn, null);
       initialized = true;
     }
     return fn.map(o);

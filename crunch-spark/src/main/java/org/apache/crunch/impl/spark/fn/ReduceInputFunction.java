@@ -19,6 +19,7 @@
  */
 package org.apache.crunch.impl.spark.fn;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.spark.ByteArray;
@@ -28,7 +29,7 @@ import scala.Tuple2;
 
 import java.util.List;
 
-public class ReduceInputFunction<K, V> extends Function<Tuple2<ByteArray, List<byte[]>>, Pair<K, List<V>>> {
+public class ReduceInputFunction<K, V> implements Function<Tuple2<ByteArray, Iterable<byte[]>>, Pair<K, Iterable<V>>> {
   private final SerDe<K> keySerDe;
   private final SerDe<V> valueSerDe;
 
@@ -38,7 +39,7 @@ public class ReduceInputFunction<K, V> extends Function<Tuple2<ByteArray, List<b
   }
 
   @Override
-  public Pair<K, List<V>> call(Tuple2<ByteArray, List<byte[]>> kv) throws Exception {
-    return Pair.of(keySerDe.fromBytes(kv._1.value), Lists.transform(kv._2, valueSerDe.fromBytesFunction()));
+  public Pair<K, Iterable<V>> call(Tuple2<ByteArray, Iterable<byte[]>> kv) throws Exception {
+    return Pair.of(keySerDe.fromBytes(kv._1().value), Iterables.transform(kv._2(), valueSerDe.fromBytesFunction()));
   }
 }

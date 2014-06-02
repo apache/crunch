@@ -59,7 +59,7 @@ public class UnionTable<K, V> extends BaseUnionTable<K, V> implements SparkColle
         rdds[i] = (JavaPairRDD) ((SparkCollection) parents.get(i)).getJavaRDDLike(runtime);
       } else {
         JavaRDD rdd = (JavaRDD) ((SparkCollection) parents.get(i)).getJavaRDDLike(runtime);
-        rdds[i] = rdd.mapPartitions(new PairFlatMapDoFn(IdentityFn.getInstance(), runtime.getRuntimeContext()));
+        rdds[i] = rdd.mapPartitionsToPair(new PairFlatMapDoFn(IdentityFn.getInstance(), runtime.getRuntimeContext()));
       }
     }
     return runtime.getSparkContext().union(rdds);

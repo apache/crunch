@@ -27,7 +27,7 @@ import scala.Tuple2;
 
 import java.util.Iterator;
 
-public class FlatMapPairDoFn<K, V, T> extends FlatMapFunction<Iterator<Tuple2<K, V>>, T> {
+public class FlatMapPairDoFn<K, V, T> implements FlatMapFunction<Iterator<Tuple2<K, V>>, T> {
   private final DoFn<Pair<K, V>, T> fn;
   private final SparkRuntimeContext ctxt;
 
@@ -38,7 +38,7 @@ public class FlatMapPairDoFn<K, V, T> extends FlatMapFunction<Iterator<Tuple2<K,
 
   @Override
   public Iterable<T> call(Iterator<Tuple2<K, V>> input) throws Exception {
-    ctxt.initialize(fn);
+    ctxt.initialize(fn, null);
     return new CrunchIterable<Pair<K, V>, T>(fn,
         Iterators.transform(input, GuavaUtils.<K, V>tuple2PairFunc()));
   }

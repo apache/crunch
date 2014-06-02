@@ -83,7 +83,8 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
   private JavaRDDLike<?, ?> getJavaRDDLikeInternal(SparkRuntime runtime, CombineFn<K, V> combineFn) {
     JavaPairRDD<K, V> parentRDD = (JavaPairRDD<K, V>) ((SparkCollection)getOnlyParent()).getJavaRDDLike(runtime);
     if (combineFn != null) {
-      parentRDD = parentRDD.mapPartitions(new CombineMapsideFunction<K, V>(combineFn, runtime.getRuntimeContext()));
+      parentRDD = parentRDD.mapPartitionsToPair(
+          new CombineMapsideFunction<K, V>(combineFn, runtime.getRuntimeContext()));
     }
     SerDe keySerde, valueSerde;
     PTableType<K, V> parentType = ptype.getTableType();
@@ -106,13 +107,14 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
     if (groupingOptions.getPartitionerClass() != null) {
       groupedRDD = parentRDD
           .map(new PairMapFunction(ptype.getOutputMapFn(), runtime.getRuntimeContext()))
-          .map(new PartitionedMapOutputFunction(keySerde, valueSerde, ptype, groupingOptions.getPartitionerClass(),
+          .mapToPair(
+              new PartitionedMapOutputFunction(keySerde, valueSerde, ptype, groupingOptions.getPartitionerClass(),
               numPartitions, runtime.getRuntimeContext()))
           .groupByKey(new SparkPartitioner(numPartitions));
     } else {
       groupedRDD = parentRDD
           .map(new PairMapFunction(ptype.getOutputMapFn(), runtime.getRuntimeContext()))
-          .map(new MapOutputFunction(keySerde, valueSerde))
+          .mapToPair(new MapOutputFunction(keySerde, valueSerde))
           .groupByKey(numPartitions);
     }
 
@@ -121,12 +123,12 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
       groupedRDD = groupedRDD.sortByKey(scmp);
     }
     if (groupingOptions.getGroupingComparatorClass() != null) {
-      groupedRDD = groupedRDD.mapPartitions(
+      groupedRDD = groupedRDD.mapPartitionsToPair(
           new ReduceGroupingFunction(groupingOptions, ptype, runtime.getRuntimeContext()));
     }
 
     return groupedRDD
         .map(new ReduceInputFunction(keySerde, valueSerde))
-        .map(new PairMapIterableFunction(ptype.getInputMapFn(), runtime.getRuntimeContext()));
+        .mapToPair(new PairMapIterableFunction(ptype.getInputMapFn(), runtime.getRuntimeContext()));
   }
 }

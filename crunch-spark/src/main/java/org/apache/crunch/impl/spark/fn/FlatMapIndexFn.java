@@ -17,33 +17,34 @@
  */
 package org.apache.crunch.impl.spark.fn;
 
-import com.google.common.collect.Iterables;
+import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.spark.GuavaUtils;
 import org.apache.crunch.impl.spark.SparkRuntimeContext;
-import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.crunch.util.DoFnIterator;
+import org.apache.spark.api.java.function.Function2;
 import scala.Tuple2;
 
+import javax.annotation.Nullable;
 import java.util.Iterator;
 
-public class PairFlatMapPairDoFn<K, V, K2, V2> extends PairFlatMapFunction<Iterator<Tuple2<K, V>>, K2, V2> {
-  private final DoFn<Pair<K, V>, Pair<K2, V2>> fn;
+public class FlatMapIndexFn<S, T> implements Function2<Integer, Iterator, Iterator<T>> {
+  private final DoFn<S, T> fn;
+  private final boolean convertInput;
   private final SparkRuntimeContext ctxt;
 
-  public PairFlatMapPairDoFn(DoFn<Pair<K, V>, Pair<K2, V2>> fn, SparkRuntimeContext ctxt) {
+  public FlatMapIndexFn(DoFn<S, T> fn, boolean convertInput, SparkRuntimeContext ctxt) {
     this.fn = fn;
+    this.convertInput = convertInput;
     this.ctxt = ctxt;
   }
 
   @Override
-  public Iterable<Tuple2<K2, V2>> call(Iterator<Tuple2<K, V>> input) throws Exception {
-    ctxt.initialize(fn);
-    return Iterables.transform(
-        new CrunchIterable<Pair<K, V>, Pair<K2, V2>>(
-            fn,
-            Iterators.transform(input, GuavaUtils.<K, V>tuple2PairFunc())),
-        GuavaUtils.<K2, V2>pair2tupleFunc());
+  public Iterator<T> call(Integer partitionId, Iterator input) throws Exception {
+    ctxt.initialize(fn, partitionId);
+    Iterator in = convertInput ? Iterators.transform(input, GuavaUtils.tuple2PairFunc()) : input;
+    return new DoFnIterator<S, T>(in, fn);
   }
 }
