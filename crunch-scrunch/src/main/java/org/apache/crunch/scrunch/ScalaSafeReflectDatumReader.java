@@ -41,21 +41,7 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   @Override
   protected Object readArray(Object old, Schema expected,
       ResolvingDecoder in) throws IOException {
-    Schema expectedType = expected.getElementType();
-    long l = in.readArrayStart();
-    if (l > 0) {
-      Object array = newArray(old, (int) l, expected);
-      long base = 0;
-      do {
-        for (long i = 0; i < l; i++) {
-          addToArray(array, base + i, read(peekArray(array), expectedType, in));
-        }
-        base += l;
-      } while ((l = in.arrayNext()) > 0);
-      return scalaIterableCheck(array, expected);
-    } else {
-      return scalaIterableCheck(newArray(old, 0, expected), expected);
-    }
+    return scalaIterableCheck(super.readArray(old, expected, in), expected);
   }
   
   @Override
