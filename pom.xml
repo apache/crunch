@@ -468,10 +468,10 @@ under the License.
       </activation>
       <properties>
         <hadoop.version>2.0.4-alpha</hadoop.version>
-        <!-- NOTE: You must build HBase 0.94.3 from source using:
+        <!-- NOTE: You must build HBase 0.94.15 from source using:
              mvn clean install -Dhadoop.profile=2.0
              for this to work. -->
-        <hbase.version>0.94.3</hbase.version>
+        <hbase.version>0.94.15</hbase.version>
         <commons-lang.version>2.5</commons-lang.version>
         <slf4j.version>1.6.1</slf4j.version>
       </properties>
