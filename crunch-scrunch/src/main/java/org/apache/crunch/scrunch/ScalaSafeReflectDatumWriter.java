@@ -46,7 +46,7 @@ public class ScalaSafeReflectDatumWriter<T> extends ReflectDatumWriter<T> {
     if (array instanceof scala.collection.Iterable) {
       return JavaConversions.asJavaIterable((scala.collection.Iterable) array).iterator(); 
     }
-    return super.getArrayElements(array);
+    return (Iterator<Object>) super.getArrayElements(array);
   }
 
   @Override
