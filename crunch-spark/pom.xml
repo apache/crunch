@@ -25,7 +25,7 @@ under the License.
     <version>0.10.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>crunch-spark_${scala.base.version}</artifactId>
+  <artifactId>crunch-spark</artifactId>
   <name>Apache Crunch for Spark</name>
 
   <dependencies>
