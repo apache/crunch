@@ -221,6 +221,9 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
     @Override
     public ByteBuffer deepCopy(ByteBuffer source) {
+      if (source == null) {
+        return null;
+      }
       byte[] copy = new byte[source.limit()];
       System.arraycopy(source.array(), 0, copy, 0, source.limit());
       return ByteBuffer.wrap(copy);
