@@ -41,11 +41,15 @@ public class AvroDeepCopierTest {
     person.age = 42;
     person.siblingnames = Lists.<CharSequence> newArrayList();
 
-    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
-        .deepCopy(person);
+    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.SCHEMA$).deepCopy(person);
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);
+  }
+
+  @Test
+  public void testDeepCopySpecific_Null() {
+    assertNull(new AvroSpecificDeepCopier<Person>(Person.SCHEMA$).deepCopy(null));
   }
 
   @Test
@@ -55,11 +59,15 @@ public class AvroDeepCopierTest {
     record.put("age", 42);
     record.put("siblingnames", Lists.newArrayList());
 
-    Record deepCopyRecord = new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$)
-        .deepCopy(record);
+    Record deepCopyRecord = new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$).deepCopy(record);
 
     assertEquals(record, deepCopyRecord);
     assertNotSame(record, deepCopyRecord);
+  }
+
+  @Test
+  public void testDeepCopyGeneric_Null() {
+    assertNull(new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$).deepCopy(null));
   }
 
   static class ReflectedPerson {
@@ -94,15 +102,14 @@ public class AvroDeepCopierTest {
     assertNotSame(person, deepCopyPerson);
 
   }
-  
+
   @Test
-  public void testDeepCopy_Null() {
-    Person person = null;
+  public void testDeepCopyReflect_Null() {
+    AvroDeepCopier<ReflectedPerson> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
+        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema());
+    avroDeepCopier.initialize(new Configuration());
 
-    Person deepCopyPerson = new AvroSpecificDeepCopier<Person>(Person.class, Person.SCHEMA$)
-        .deepCopy(person);
-
-    assertNull(deepCopyPerson);
+    assertNull(avroDeepCopier.deepCopy(null));
   }
 
   @Test

@@ -252,8 +252,8 @@ public class Avros {
   }
 
   public static final AvroType<GenericData.Record> generics(Schema schema) {
-    return new AvroType<GenericData.Record>(GenericData.Record.class, schema, new AvroDeepCopier.AvroGenericDeepCopier(
-        schema));
+    return new AvroType<GenericData.Record>(
+        GenericData.Record.class, schema, new AvroDeepCopier.AvroGenericDeepCopier(schema));
   }
 
   public static final <T> AvroType<T> containers(Class<T> clazz) {
@@ -266,7 +266,7 @@ public class Avros {
   public static final <T extends SpecificRecord> AvroType<T> specifics(Class<T> clazz) {
     T t = ReflectionUtils.newInstance(clazz, null);
     Schema schema = t.getSchema();
-    return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroSpecificDeepCopier<T>(clazz, schema));
+    return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroSpecificDeepCopier<T>(schema));
   }
 
   public static final <T> AvroType<T> reflects(Class<T> clazz) {
