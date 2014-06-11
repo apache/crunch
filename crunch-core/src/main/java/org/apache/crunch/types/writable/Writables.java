@@ -122,6 +122,7 @@ public class Writables {
     if (WRITABLE_CODES.containsKey(code)) {
       throw new IllegalArgumentException("Already have writable class assigned to code = " + code);
     }
+    WRITABLE_CODES.put(code, clazz);
   }
 
   private static final String WRITABLE_COMPARABLE_CODES = "crunch.writable.comparable.codes";
