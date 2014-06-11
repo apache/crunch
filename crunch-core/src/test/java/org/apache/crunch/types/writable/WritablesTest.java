@@ -42,7 +42,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.junit.Test;
 
@@ -172,7 +172,7 @@ public class WritablesTest {
     testInputOutputFn(wt, j, w);
   }
 
-  protected static class TestWritable implements Writable {
+  protected static class TestWritable implements WritableComparable<TestWritable> {
     String left;
     int right;
 
@@ -207,6 +207,13 @@ public class WritablesTest {
       return true;
     }
 
+    @Override
+    public int compareTo(TestWritable o) {
+      int cmp = left.compareTo(o.left);
+      if (cmp != 0)
+        return cmp;
+      return Integer.valueOf(right).compareTo(Integer.valueOf(o.right));
+    }
   }
 
   @Test
@@ -234,6 +241,12 @@ public class WritablesTest {
     WritableType<TestWritable, TestWritable> wt = Writables.writables(TestWritable.class);
     Writables.register(TestWritable.class, wt);
     assertSame(Writables.records(TestWritable.class), wt);
+  }
+
+  @Test
+  public void testRegisterComparable() throws Exception {
+    Writables.registerComparable(TestWritable.class);
+    assertNotNull(Writables.WRITABLE_CODES.inverse().get(TestWritable.class));
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
