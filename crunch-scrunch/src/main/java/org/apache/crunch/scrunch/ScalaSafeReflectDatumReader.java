@@ -83,32 +83,32 @@ public class ScalaSafeReflectDatumReader<T> extends ReflectDatumReader<T> {
   private static scala.collection.Iterable toIter(Object array) {
     return JavaConversions.collectionAsScalaIterable((Collection) array);
   }
-  
+
   @Override
   @SuppressWarnings("unchecked")
   protected Object newArray(Object old, int size, Schema schema) {
-    Class collectionClass =
-        ScalaSafeReflectData.getClassProp(schema, ScalaSafeReflectData.CLASS_PROP);
-    Class elementClass =
-        ScalaSafeReflectData.getClassProp(schema, ScalaSafeReflectData.ELEMENT_PROP);
-
+    Class collectionClass = ScalaSafeReflectData.getClassProp(schema,
+        ScalaSafeReflectData.CLASS_PROP);
+    Class elementClass = ScalaSafeReflectData.getClassProp(schema,
+        ScalaSafeReflectData.ELEMENT_PROP);
     if (collectionClass == null && elementClass == null)
-      return super.newArray(old, size, schema);   // use specific/generic
-
+      return super.newArray(old, size, schema); // use specific/generic
     ScalaSafeReflectData data = ScalaSafeReflectData.getInstance();
+
     if (collectionClass != null && !collectionClass.isArray()) {
       if (old instanceof Collection) {
         ((Collection)old).clear();
         return old;
       }
       if (scala.collection.Iterable.class.isAssignableFrom(collectionClass) ||
-          collectionClass.isAssignableFrom(ArrayList.class))
-        return new ArrayList();
+          collectionClass.isAssignableFrom(ArrayList.class)) {
+        return Lists.newArrayList();
+      }
       return data.newInstance(collectionClass, schema);
     }
-
-    if (elementClass == null)
+    if (elementClass == null) {
       elementClass = data.getClass(schema.getElementType());
+    }
     return Array.newInstance(elementClass, size);
   }
 }

@@ -58,7 +58,7 @@ class SafeAvroSerialization<T> extends Configured implements Serialization<AvroW
 
     DatumReader<T> datumReader = null;
     if (conf.getBoolean(AvroJob.MAP_OUTPUT_IS_REFLECT, false)) {
-      datumReader = AvroMode.REFLECT.getReader(schema);
+      datumReader = AvroMode.REFLECT.withFactoryFromConfiguration(conf).getReader(schema);
     } else {
       datumReader = AvroMode.fromShuffleConfiguration(conf).getReader(schema);
     }

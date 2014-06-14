@@ -22,6 +22,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -133,11 +134,16 @@ public class ScalaSafeReflectData extends ReflectData.AllowNull {
           return result;
         }
         Schema result = Schema.createArray(createSchema(component, names));
+        result.addProp(CLASS_PROP, c.getName());
+        result.addProp(ELEMENT_PROP, component.getName());
         setElement(result, component);
         return result;
       }
       if (CharSequence.class.isAssignableFrom(c))            // String
         return Schema.create(Schema.Type.STRING);
+      if (ByteBuffer.class.isAssignableFrom(c)) {
+        return Schema.create(Schema.Type.BYTES);
+      }
       String fullName = c.getName();
       Schema schema = names.get(fullName);
       if (schema == null) {

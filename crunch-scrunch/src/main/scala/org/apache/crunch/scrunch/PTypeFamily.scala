@@ -36,7 +36,15 @@ class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boo
     }
   }
 
-  override def map(input: S) = if (init) f(pt.get.getDetachedValue(input)) else f(input)
+  override def map(input: S): T = {
+    if (input == null) {
+      return null.asInstanceOf[T]
+    } else if (init) {
+      return f(pt.get.getDetachedValue(input))
+    } else {
+      return f(input)
+    }
+  }
 }
 
 trait PTypeFamily {
@@ -173,6 +181,8 @@ object Avros extends PTypeFamily {
 
   override def writables[T <: Writable : ClassTag] = CAvros.writables(
     implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+
+  override def records[T: ClassTag] = reflects()(implicitly[ClassTag[T]])
 
   def specifics[T <: SpecificRecord : ClassTag]() = {
     CAvros.specifics(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
