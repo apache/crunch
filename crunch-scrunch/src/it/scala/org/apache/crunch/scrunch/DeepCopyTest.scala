@@ -25,13 +25,50 @@ import org.apache.hadoop.conf.Configuration
 
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
+import java.nio.ByteBuffer
 
 case class Rec1(var k: Int, var v: String) { def this() = this(0, "") }
 case class Rec2(var k: Int, var k2: String, var v: Double) { def this() = this(0, "", 0.0) }
 case class Rec3(var k2: String, var v:Int) { def this() = this("", 0)}
 
+case class BBRec(var k: ByteBuffer, var ll: Array[ByteBuffer]) { def this() = this(null, null) }
+
+object DeepCopyTest {
+  def getIterator(bbr: BBRec) = new Iterator[(ByteBuffer, ByteBuffer)] {
+    val nested = bbr.ll.iterator
+
+    def hasNext() = nested.hasNext
+
+    def next() = (bbr.k, nested.next)
+  }
+}
+
 class DeepCopyTest extends CrunchSuite {
+  import DeepCopyTest._
+
   lazy val pipe = Pipeline.mapReduce[DeepCopyTest](tempDir.getDefaultConfiguration)
+
+  @Test def runDeepCopyBB {
+    val prefix = tempDir.getFileName("bytebuffers")
+    val bb1 = ByteBuffer.wrap(Array[Byte](1, 2))
+    val bb2 = ByteBuffer.wrap(Array[Byte](3, 4))
+    val bb3 = ByteBuffer.wrap(Array[Byte](5, 6))
+    val bb4 = ByteBuffer.wrap(Array[Byte](7, 8))
+
+    val ones = Seq(BBRec(bb1, Array(bb4, bb2)), BBRec(bb2, Array(bb1, bb3)))
+    val twos = Seq(BBRec(bb3, Array(bb1, bb2)), BBRec(bb4, Array(bb3, bb4)))
+    writeCollection(new Path(prefix + "/ones"), ones)
+    writeCollection(new Path(prefix + "/twos"), twos)
+
+    val oneF = pipe.read(from.avroFile(prefix + "/ones", Avros.reflects[BBRec]))
+    val twoF = pipe.read(from.avroFile(prefix + "/twos", Avros.reflects[BBRec]))
+
+    val m = oneF.flatMap(getIterator(_)).leftJoin(twoF.flatMap(getIterator(_)))
+      .keys
+      .materialize
+    assert(m.size == 4)
+    pipe.done()
+  }
 
   @Test def runDeepCopy {
     val prefix = tempDir.getFileName("isolation")
@@ -73,9 +110,9 @@ class DeepCopyTest extends CrunchSuite {
   @SuppressWarnings(Array("rawtypes", "unchecked"))
   private def writeAvroFile[T <: AnyRef](outputStream: FSDataOutputStream, records: Iterable[T]) {
     val r: AnyRef = records.iterator.next()
-    val schema = new ScalaReflectDataFactory().getData.getSchema(r.getClass)
-
-    val writer = new ScalaReflectDataFactory().getWriter[T](schema)
+    val factory = new ScalaReflectDataFactory()
+    val schema = factory.getData().getSchema(r.getClass)
+    val writer = factory.getWriter[T](schema)
     val dataFileWriter = new DataFileWriter(writer)
     dataFileWriter.create(schema, outputStream)
 
