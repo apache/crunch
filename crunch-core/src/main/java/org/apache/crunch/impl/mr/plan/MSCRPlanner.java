@@ -124,14 +124,13 @@ public class MSCRPlanner {
       // job prototype a particular GBK is assigned to.
       Multimap<Vertex, JobPrototype> newAssignments = HashMultimap.create();
       for (List<Vertex> component : components) {
-        newAssignments.putAll(constructJobPrototypes(component, components.size()));
+        newAssignments.putAll(constructJobPrototypes(component));
       }
 
       // Add in the job dependency information here.
       for (Map.Entry<Vertex, JobPrototype> e : newAssignments.entries()) {
         JobPrototype current = e.getValue();
-        List<Vertex> parents = graph.getParents(e.getKey());
-        for (Vertex parent : parents) {
+        for (Vertex parent : graph.getParents(e.getKey())) {
           for (JobPrototype parentJobProto : newAssignments.get(parent)) {
             current.addDependency(parentJobProto);
           }
@@ -206,10 +205,8 @@ public class MSCRPlanner {
     }
     
     for (Edge e : baseGraph.getAllEdges()) {
-      // Add back all of the edges where neither vertex is a GBK and we do not
-      // have an output feeding into a GBK.
-      if (!(e.getHead().isGBK() && e.getTail().isGBK()) &&
-          !(e.getHead().isOutput() && e.getTail().isGBK())) {
+      // Add back all of the edges where neither vertex is a GBK.
+      if (!e.getHead().isGBK() && !e.getTail().isGBK()) {
         Vertex head = graph.getVertexAt(e.getHead().getPCollection());
         Vertex tail = graph.getVertexAt(e.getTail().getPCollection());
         graph.getEdge(head, tail).addAllNodePaths(e.getNodePaths());
@@ -239,7 +236,23 @@ public class MSCRPlanner {
             graph.markDependency(splitHead, splitTail);
           } else if (!e.getHead().isGBK()) {
             Vertex newHead = graph.getVertexAt(e.getHead().getPCollection());
-            graph.getEdge(newHead, vertex).addAllNodePaths(e.getNodePaths());
+            Map<NodePath, PCollectionImpl> splitPoints = e.getSplitPoints(true /* breakpoints only  */);
+            if (splitPoints.isEmpty()) {
+              graph.getEdge(newHead, vertex).addAllNodePaths(e.getNodePaths());
+            } else {
+              for (Map.Entry<NodePath, PCollectionImpl> s : splitPoints.entrySet()) {
+                NodePath path = s.getKey();
+                PCollectionImpl split = s.getValue();
+                InputCollection<?> inputNode = handleSplitTarget(split);
+                Vertex splitTail = graph.addVertex(split, true);
+                Vertex splitHead = graph.addVertex(inputNode, false);
+                NodePath headPath = path.splitAt(split, splitHead.getPCollection());
+                graph.getEdge(newHead, splitTail).addNodePath(headPath);
+                graph.getEdge(splitHead, vertex).addNodePath(path);
+                // Note the dependency between the vertices in the graph.
+                graph.markDependency(splitHead, splitTail);
+              }
+            }
           }
         }
         for (Edge e : baseVertex.getOutgoingEdges()) {
@@ -249,7 +262,7 @@ public class MSCRPlanner {
           } else {
             // Execute an Edge split
             Vertex newGraphTail = graph.getVertexAt(e.getTail().getPCollection());
-            Map<NodePath, PCollectionImpl> splitPoints = e.getSplitPoints(outputs);
+            Map<NodePath, PCollectionImpl> splitPoints = e.getSplitPoints(false /* breakpoints only */);
             for (Map.Entry<NodePath, PCollectionImpl> s : splitPoints.entrySet()) {
               NodePath path = s.getKey();
               PCollectionImpl split = s.getValue();
@@ -270,7 +283,7 @@ public class MSCRPlanner {
     return graph;
   }
   
-  private Multimap<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component, int numOfJobs) {
+  private Multimap<Vertex, JobPrototype> constructJobPrototypes(List<Vertex> component) {
     Multimap<Vertex, JobPrototype> assignment = HashMultimap.create();
     List<Vertex> gbks = Lists.newArrayList();
     for (Vertex v : component) {

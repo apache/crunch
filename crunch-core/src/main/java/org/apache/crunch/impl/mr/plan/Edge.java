@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
@@ -64,7 +65,7 @@ class Edge {
     return paths;
   }
 
-  public Map<NodePath,  PCollectionImpl> getSplitPoints(Map<PCollectionImpl<?>, Set<Target>> outputs) {
+  public Map<NodePath,  PCollectionImpl> getSplitPoints(boolean breakpointsOnly) {
     List<NodePath> np = Lists.newArrayList(paths);
     List<PCollectionImpl<?>> smallestOverallPerPath = Lists.newArrayListWithExpectedSize(np.size());
     Map<PCollectionImpl<?>, Set<Integer>> pathCounts = Maps.newHashMap();
@@ -74,7 +75,7 @@ class Edge {
       boolean breakpoint = false;
       PCollectionImpl<?> best = null;
       for (PCollectionImpl<?> pc : np.get(i)) {
-        if (!(pc instanceof BaseGroupedTable)) {
+        if (!(pc instanceof BaseGroupedTable) && (!breakpointsOnly || pc.isBreakpoint())) {
           if (pc.isBreakpoint()) {
             if (!breakpoint || pc.getSize() < bestSize) {
               best = pc;
@@ -105,7 +106,11 @@ class Edge {
         missing.add(i);
       }
     }
-    if (missing.isEmpty()) {
+
+    if (breakpointsOnly && missing.size() > 0) {
+      // We can't create new splits in this mode
+      return ImmutableMap.of();
+    } else if (missing.isEmpty()) {
       return splitPoints;
     } else {
       // Need to either choose the smallest collection from each missing path,
