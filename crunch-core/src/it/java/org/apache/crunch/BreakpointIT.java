@@ -18,6 +18,7 @@
 package org.apache.crunch;
 
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
@@ -51,7 +52,7 @@ public class BreakpointIT {
         true);
   }
 
-  public static void run(Pipeline pipeline, String input, String out1, String out2, boolean breakpoint)
+  public static void run(MRPipeline pipeline, String input, String out1, String out2, boolean breakpoint)
       throws Exception {
 
     // Read a line from a file to get a PCollection.
@@ -115,15 +116,14 @@ public class BreakpointIT {
     // Write values
     pGrpTable3.ungroup().write(To.textFile(out2));
 
-    PipelineExecution pe = pipeline.runAsync();
+    MRExecutor exec = pipeline.plan();
     // Count the number of map processing steps in this pipeline
     int mapsCount = 0;
-    for (String line : pe.getPlanDotFile().split("\n")) {
+    for (String line : exec.getPlanDotFile().split("\n")) {
       if (line.contains(" subgraph ") && line.contains("-map\" {")) {
         mapsCount++;
       }
     }
     assertEquals(breakpoint ? 1 : 2, mapsCount);
-    pe.waitUntilDone();
   }
 }
