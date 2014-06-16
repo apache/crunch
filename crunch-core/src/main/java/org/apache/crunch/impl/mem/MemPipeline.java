@@ -203,7 +203,7 @@ public class MemPipeline implements Pipeline {
             writeSequenceFileFromPCollection(fs, outputPath, collection);
           }
         } else {
-          if (target instanceof AvroFileTarget && !(collection instanceof PTable)) {
+          if (target instanceof AvroFileTarget){
             Path outputPath = new Path(path, "out" + outputIndex + ".avro");
             FSDataOutputStream os = fs.create(outputPath);
             writeAvroFile(os, collection);
