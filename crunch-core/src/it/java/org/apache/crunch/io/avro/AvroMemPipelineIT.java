@@ -21,17 +21,22 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
-import org.apache.avro.generic.GenericRecord;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.To;
+import org.apache.crunch.lib.PTables;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
@@ -41,9 +46,6 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public class AvroMemPipelineIT implements Serializable {
 
@@ -155,6 +157,32 @@ public class AvroMemPipelineIT implements Serializable {
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy"));
 
     return savedRecord;
+  }
+
+  @Test
+  public void testMemPipelineWithPTable() {
+
+    String writeRecord = "John Doe";
+
+    final PCollection<String> collection = MemPipeline.typedCollectionOf(
+        Avros.strings(),
+        writeRecord);
+
+    PTable<Integer, String> writeCollection = collection.by(new MapFn<String, Integer>() {
+      @Override
+      public Integer map(String input) {
+        return input.length();
+      }
+    }, Avros.ints());
+
+    writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
+
+    PCollection<Pair<Integer, String>> readCollection = MemPipeline.getInstance().read(
+        At.avroFile(avroFile.getAbsolutePath(),
+            Avros.tableOf(Avros.ints(), Avros.strings())));
+
+    Map<Integer, String> map = PTables.asPTable(readCollection).asMap().getValue();
+    assertEquals(writeRecord, map.get(writeRecord.length()));
   }
 
 }
