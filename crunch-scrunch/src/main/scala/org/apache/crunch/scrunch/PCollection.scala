@@ -75,6 +75,10 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
 
   protected def wrap(newNative: JCollection[_]) = new PCollection[S](newNative.asInstanceOf[JCollection[S]])
 
+  def collect[T, To](pf: PartialFunction[S, T])(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]) = {
+    filter(pf.isDefinedAt(_)).map(pf)(pt, b)
+  }
+
   def increment(groupName: String, counterName: String, count: Long) = {
     new IncrementPCollection[S](this).apply(groupName, counterName, count)
   }

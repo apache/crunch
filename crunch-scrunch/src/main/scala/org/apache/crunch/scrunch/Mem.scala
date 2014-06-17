@@ -17,16 +17,10 @@
  */
 package org.apache.crunch.scrunch
 
-import java.lang.{Iterable => JIterable}
-
 import scala.collection.JavaConversions._
 
-import org.apache.hadoop.conf.Configuration
-
 import org.apache.crunch.{Pair => P}
-import org.apache.crunch.{Source, TableSource, Target}
 import org.apache.crunch.impl.mem.MemPipeline
-import org.apache.crunch.scrunch.Conversions._
 
 /**
  * Object for working with in-memory PCollection and PTable instances.

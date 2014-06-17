@@ -51,6 +51,10 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     wrap(native.parallelDo("withPType", ident, pt))
   }
 
+  def collect[T, To](pf: PartialFunction[(K, V), T])(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]) = {
+    filter((k, v) => pf.isDefinedAt((k, v))).map((k, v) => pf((k, v)))(pt, b)
+  }
+
   def mapValues[T](f: V => T)(implicit pt: PTypeH[T]) = {
     val ptf = getTypeFamily()
     val ptype = ptf.tableOf(native.getKeyType(), pt.get(ptf))
