@@ -53,6 +53,8 @@ class PCollection[S](val native: JCollection[S]) extends PCollectionLike[S, PCol
     new PCollection[S](native.union(others.map(_.native) : _*))
   }
 
+  def aggregate(agg: Aggregator[S]) = wrap(native.aggregate(agg))
+
   def by[K: PTypeH](f: S => K): PTable[K, S] = {
     val ptype = getTypeFamily().tableOf(implicitly[PTypeH[K]].get(getTypeFamily()), native.getPType())
     parallelDo(mapKeyFn[S, K](f), ptype)
