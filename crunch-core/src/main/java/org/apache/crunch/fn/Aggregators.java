@@ -121,7 +121,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Long> MAX_LONGS(int n) {
-    return new MaxLongs();
+    return new MaxNAggregator<Long>(n);
   }
 
   /**

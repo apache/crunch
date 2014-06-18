@@ -81,6 +81,7 @@ under the License.
     <libthrift.version>0.8.0</libthrift.version>
     <slf4j.version>1.6.1</slf4j.version>
     <log4j.version>1.2.15</log4j.version>
+    <algebird.version>0.6.0</algebird.version>
     <junit.version>4.10</junit.version>
     <hamcrest.version>1.1</hamcrest.version>
     <mockito.version>1.9.0</mockito.version>
@@ -422,6 +423,12 @@ under the License.
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-core_${scala.base.version}</artifactId>
         <version>${spark.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.twitter</groupId>
+        <artifactId>algebird-core_${scala.base.version}</artifactId>
+        <version>${algebird.version}</version>
       </dependency>
 
       <dependency>

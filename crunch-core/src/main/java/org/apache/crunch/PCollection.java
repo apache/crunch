@@ -277,5 +277,4 @@ public interface PCollection<S> {
    * Returns a {@code PCollection} that contains the result of aggregating all values in this instance.
    */
   PCollection<S> aggregate(Aggregator<S> aggregator);
-
 }

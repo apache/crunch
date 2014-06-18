@@ -40,10 +40,10 @@ class ScalaTypesTest extends CrunchSuite {
 
     val out = pipeline.read(From.textFile(shakespeare))
         .map(x => if (x.startsWith("a")) Some(x) else None)
+        .aggregate(Aggregators.sum) // uses Algebird Monoid[Option[String]]
         .materialize
-        .take(100)
-    pipeline.done
     assert(out.exists(!_.isEmpty))
+    pipeline.done
   }
 
   @Test
