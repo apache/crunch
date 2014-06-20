@@ -33,6 +33,13 @@ public final class PlanningParameters {
    */
   public static final String PIPELINE_PLAN_DOTFILE = "crunch.planner.dotfile";
 
+  /**
+   * Configuration key under which a directory URI can be stored where MapReduce pipeline job plans in
+   * <a href="http://www.graphviz.org">DOT</a> format are stored. The dot files are only written if this configuration
+   * parameter is set.
+   */
+  public static final String PIPELINE_DOTFILE_OUTPUT_DIR = "crunch.planner.dotfile.outputdir";
+
   public static final String JOB_NAME_MAX_STACK_LENGTH = "crunch.job.name.max.stack.length";
 
   private PlanningParameters() {

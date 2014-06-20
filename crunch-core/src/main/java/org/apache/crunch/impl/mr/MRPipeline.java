@@ -18,8 +18,16 @@
 package org.apache.crunch.impl.mr;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
+import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CachingOptions;
@@ -32,11 +40,13 @@ import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.MRCollectionFactory;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.impl.mr.plan.MSCRPlanner;
+import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.Maps;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Pipeline implementation that is executed within Hadoop MapReduce.
@@ -120,7 +130,9 @@ public class MRPipeline extends DistributedPipeline {
   
   @Override
   public MRPipelineExecution runAsync() {
-    MRPipelineExecution res = plan().execute();
+    MRExecutor mrExecutor = plan();
+    writePlanDotFile(mrExecutor.getPlanDotFile());
+    MRPipelineExecution res = mrExecutor.execute();
     outputTargets.clear();
     return res;
   }
@@ -141,4 +153,53 @@ public class MRPipeline extends DistributedPipeline {
     // Identical to materialization in a MapReduce context
     materialize(pcollection);
   }
+
+  /**
+   * Writes the MR job plan dot file contents to a timestamped file if the PIPELINE_DOTFILE_OUTPUT_DIR
+   * config key is set with an output directory.
+   *
+   * @param dotFileContents contents to be written to the dot file
+   */
+  private void writePlanDotFile(String dotFileContents) {
+    String dotFileDir = getConfiguration().get(PlanningParameters.PIPELINE_DOTFILE_OUTPUT_DIR);
+    if (dotFileDir != null) {
+      FSDataOutputStream outputStream = null;
+      Exception thrownException = null;
+      try {
+        URI uri = new URI(dotFileDir);
+        FileSystem fs = FileSystem.get(uri, getConfiguration());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss.SSS");
+        String filenameSuffix = String.format("_%s_jobplan.dot", dateFormat.format(new Date()));
+        String encodedName = URLEncoder.encode(getName(), "UTF-8");
+        // We limit the pipeline name to the first 150 characters to keep the output dotfile length less 
+        // than 200, as it's not clear what the exact limits are on the filesystem we're writing to (this
+        // might be HDFS or it might be a local filesystem)
+        final int maxPipeNameLength = 150;
+        String filenamePrefix = encodedName.substring(0, Math.min(maxPipeNameLength, encodedName.length()));
+        Path jobPlanPath = new Path(uri.getPath(), filenamePrefix + filenameSuffix);
+        LOG.info("Writing jobplan to " + jobPlanPath);
+        outputStream = fs.create(jobPlanPath, true);
+        outputStream.write(dotFileContents.getBytes(Charsets.UTF_8));
+      } catch (URISyntaxException e) {
+        thrownException = e;
+        throw new CrunchRuntimeException("Invalid dot file dir URI, job plan will not be written: " + dotFileDir, e);
+      } catch (IOException e) {
+        thrownException = e;
+        throw new CrunchRuntimeException("Error writing dotfile contents to " + dotFileDir, e);
+      } catch (RuntimeException e) {
+        thrownException = e;
+        throw e;
+      } finally {
+        if (outputStream != null) {
+          try {
+            outputStream.close();
+          } catch (IOException e) {
+            if (thrownException == null)
+              throw new CrunchRuntimeException("Error closing dotfile", e);
+          }
+        }
+      }
+    }
+  }
+
 }
