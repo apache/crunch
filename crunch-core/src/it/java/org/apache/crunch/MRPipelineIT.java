@@ -17,16 +17,22 @@
  */
 package org.apache.crunch;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URLEncoder;
 
+import com.google.common.io.Files;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.crunch.PipelineResult.StageResult;
 import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
@@ -79,5 +85,28 @@ public class MRPipelineIT implements Serializable {
     assertTrue(new File(outputDirA, "part-r-00000").exists());
     assertTrue(new File(outputDirB, "part-r-00000").exists());
   }
+ 
+  @Test
+  public void testWritingOfDotfile() throws IOException {
+    File dotfileDir = Files.createTempDir();
+    Pipeline pipeline = new MRPipeline(MRPipelineIT.class, tmpDir.getDefaultConfiguration());
+    pipeline.getConfiguration().set(PlanningParameters.PIPELINE_DOTFILE_OUTPUT_DIR, dotfileDir.getAbsolutePath());
 
+    PCollection<String> lines = pipeline.readTextFile(tmpDir.copyResourceFileName("set1.txt"));
+    pipeline.write(
+        lines.parallelDo(IdentityFn.<String>getInstance(), Writables.strings()),
+        To.textFile(tmpDir.getFile("output").getAbsolutePath()));
+    pipeline.done();
+
+    File[] files = dotfileDir.listFiles((FileFilter)new SuffixFileFilter(".dot"));
+    assertEquals(1, files.length);
+    String fileName = files[0].getName();
+    String fileNamePrefix = URLEncoder.encode(pipeline.getName(), "UTF-8");
+    fileNamePrefix = (fileNamePrefix.length() < 150) ? fileNamePrefix : fileNamePrefix.substring(0, 150);
+    assertTrue("DOT file name '" + fileName + "' did not start with the pipeline name '" + fileNamePrefix + "'.",
+        fileName.startsWith(fileNamePrefix));
+    
+    String regex = ".*_\\d{4}-\\d{2}-\\d{2}_\\d{2}\\.\\d{2}\\.\\d{2}\\.\\d{3}_jobplan\\.dot";
+    assertTrue("DOT file name '" + fileName + "' did not match regex '" + regex + "'.", fileName.matches(regex));
+  }
 }
