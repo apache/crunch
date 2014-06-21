@@ -34,17 +34,20 @@ import org.apache.hadoop.conf.Configuration;
  * that require reading a file from the filesystem into a {@code DoFn}.
  */
 public class ParallelDoOptions {
-  private final Set<SourceTarget<?>> sourceTargets;
+  private final Set targets;
   private final Map<String, String> extraConf;
 
-  private ParallelDoOptions(Set<SourceTarget<?>> sourceTargets, Map<String, String> extraConf) {
-    this.sourceTargets = sourceTargets;
+  private ParallelDoOptions(Set<Target> targets, Map<String, String> extraConf) {
+    this.targets = targets;
     this.extraConf = extraConf;
   }
-  
+
+  @Deprecated
   public Set<SourceTarget<?>> getSourceTargets() {
-    return sourceTargets;
+    return (Set<SourceTarget<?>>) targets;
   }
+
+  public Set<Target> getTargets() { return targets; }
 
   /**
    * Applies the key-value pairs that were associated with this instance to the given {@code Configuration}
@@ -62,11 +65,11 @@ public class ParallelDoOptions {
   }
   
   public static class Builder {
-    private Set<SourceTarget<?>> sourceTargets;
+    private Set<Target> targets;
     private Map<String, String> extraConf;
 
     public Builder() {
-      this.sourceTargets = Sets.newHashSet();
+      this.targets = Sets.newHashSet();
       this.extraConf = Maps.newHashMap();
     }
 
@@ -78,19 +81,29 @@ public class ParallelDoOptions {
       for (Source<?> src : sources) {
         // Only SourceTargets need to be checked for materialization
         if (src instanceof SourceTarget) {
-          sourceTargets.add((SourceTarget) src);
+          targets.add((SourceTarget) src);
         }
       }
       return this;
     }
 
     public Builder sourceTargets(SourceTarget<?>... sourceTargets) {
-      Collections.addAll(this.sourceTargets, sourceTargets);
+      Collections.addAll(this.targets, sourceTargets);
       return this;
     }
 
     public Builder sourceTargets(Collection<SourceTarget<?>> sourceTargets) {
-      this.sourceTargets.addAll(sourceTargets);
+      this.targets.addAll(sourceTargets);
+      return this;
+    }
+
+    public Builder targets(Target... targets) {
+      Collections.addAll(this.targets, targets);
+      return this;
+    }
+
+    public Builder targets(Collection<Target> targets) {
+      this.targets.addAll(targets);
       return this;
     }
 
@@ -107,7 +120,7 @@ public class ParallelDoOptions {
     }
 
     public ParallelDoOptions build() {
-      return new ParallelDoOptions(sourceTargets, extraConf);
+      return new ParallelDoOptions(targets, extraConf);
     }
   }
 }

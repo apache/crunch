@@ -19,6 +19,7 @@ package org.apache.crunch.impl.dist.collect;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.crunch.Pair;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.dist.DistributedPipeline;
@@ -35,13 +36,25 @@ public class BaseInputTable<K, V> extends PTableBase<K, V> {
   public BaseInputTable(TableSource<K, V> source, DistributedPipeline pipeline) {
     super(source.toString(), pipeline);
     this.source = source;
-    this.asCollection = pipeline.getFactory().createInputCollection(source, pipeline);
+    this.asCollection = pipeline.getFactory().createInputCollection(
+        source, pipeline, ParallelDoOptions.builder().build());
+  }
+
+  public BaseInputTable(TableSource<K, V> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source.toString(), pipeline, doOpts);
+    this.source = source;
+    this.asCollection = pipeline.getFactory().createInputCollection(source, pipeline, doOpts);
   }
 
   public TableSource<K, V> getSource() {
     return source;
   }
-  
+
+  @Override
+  protected boolean waitingOnTargets() {
+    return asCollection.waitingOnTargets();
+  }
+
   @Override
   protected long getSizeInternal() {
     return asCollection.getSizeInternal();

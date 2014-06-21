@@ -22,10 +22,21 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.PipelineCallable;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRJob.State;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.conf.Configuration;
@@ -47,6 +58,9 @@ public class CrunchJobControl {
   private Map<Integer, CrunchControlledJob> runningJobs;
   private Map<Integer, CrunchControlledJob> successfulJobs;
   private Map<Integer, CrunchControlledJob> failedJobs;
+  private Map<PipelineCallable<?>, Set<Target>> allPipelineCallables;
+  private Set<PipelineCallable<?>> activePipelineCallables;
+  private List<PipelineCallable<?>> failedCallables;
 
   private Log log = LogFactory.getLog(CrunchJobControl.class);
 
@@ -60,7 +74,8 @@ public class CrunchJobControl {
    * @param groupName
    *          a name identifying this group
    */
-  public CrunchJobControl(Configuration conf, String groupName) {
+  public CrunchJobControl(Configuration conf, String groupName,
+                          Map<PipelineCallable<?>, Set<Target>> pipelineCallables) {
     this.waitingJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.readyJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.runningJobs = new Hashtable<Integer, CrunchControlledJob>();
@@ -68,6 +83,9 @@ public class CrunchJobControl {
     this.failedJobs = new Hashtable<Integer, CrunchControlledJob>();
     this.groupName = groupName;
     this.maxRunningJobs = conf.getInt(RuntimeParameters.MAX_RUNNING_JOBS, 5);
+    this.allPipelineCallables = pipelineCallables;
+    this.activePipelineCallables = allPipelineCallables.keySet();
+    this.failedCallables = Lists.newArrayList();
   }
 
   private static List<CrunchControlledJob> toList(Map<Integer, CrunchControlledJob> jobs) {
@@ -189,6 +207,61 @@ public class CrunchJobControl {
     }
   }
 
+  private Set<Target> getUnfinishedTargets() {
+    Set<Target> unfinished = Sets.newHashSet();
+    for (CrunchControlledJob job : runningJobs.values()) {
+      unfinished.addAll(job.getAllTargets());
+    }
+    for (CrunchControlledJob job : readyJobs.values()) {
+      unfinished.addAll(job.getAllTargets());
+    }
+    for (CrunchControlledJob job : waitingJobs.values()) {
+      unfinished.addAll(job.getAllTargets());
+    }
+    return unfinished;
+  }
+
+  synchronized private void executeReadySeqDoFns() {
+    Set<Target> unfinished = getUnfinishedTargets();
+    Set<PipelineCallable<?>> oldPipelineCallables = activePipelineCallables;
+    this.activePipelineCallables = Sets.newHashSet();
+    List<Callable<PipelineCallable.Status>> callablesToRun = Lists.newArrayList();
+    for (final PipelineCallable<?> pipelineCallable : oldPipelineCallables) {
+      if (Sets.intersection(allPipelineCallables.get(pipelineCallable), unfinished).isEmpty()) {
+        if (pipelineCallable.runSingleThreaded()) {
+          try {
+            if (pipelineCallable.call() != PipelineCallable.Status.SUCCESS) {
+              failedCallables.add(pipelineCallable);
+            }
+          } catch (Throwable t) {
+            pipelineCallable.setMessage(t.getLocalizedMessage());
+            failedCallables.add(pipelineCallable);
+          }
+        } else {
+          callablesToRun.add(pipelineCallable);
+        }
+      } else {
+        // Still need to run this one
+       activePipelineCallables.add(pipelineCallable);
+      }
+    }
+
+    ListeningExecutorService es = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+    try {
+      List<Future<PipelineCallable.Status>> res = es.invokeAll(callablesToRun);
+      for (int i = 0; i < res.size(); i++) {
+        if (res.get(i).get() != PipelineCallable.Status.SUCCESS) {
+          failedCallables.add((PipelineCallable) callablesToRun.get(i));
+        }
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+      failedCallables.addAll((List) callablesToRun);
+    } finally {
+      es.shutdownNow();
+    }
+  }
+
   synchronized private void startReadyJobs() {
     Map<Integer, CrunchControlledJob> oldJobs = null;
     oldJobs = this.readyJobs;
@@ -220,8 +293,16 @@ public class CrunchJobControl {
   }
 
   synchronized public boolean allFinished() {
-    return this.waitingJobs.size() == 0 && this.readyJobs.size() == 0
-        && this.runningJobs.size() == 0;
+    return (this.waitingJobs.size() == 0 && this.readyJobs.size() == 0
+        && this.runningJobs.size() == 0);
+  }
+
+  synchronized public boolean anyFailures() {
+    return this.failedJobs.size() > 0 || failedCallables.size() > 0;
+  }
+
+  public List<PipelineCallable<?>> getFailedCallables() {
+    return failedCallables;
   }
 
   /**
@@ -231,6 +312,8 @@ public class CrunchJobControl {
   public void pollJobStatusAndStartNewOnes() throws IOException, InterruptedException {
     checkRunningJobs();
     checkWaitingJobs();
+    executeReadySeqDoFns();
     startReadyJobs();
   }
+
 }

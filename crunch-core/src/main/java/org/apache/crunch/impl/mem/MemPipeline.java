@@ -37,6 +37,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
@@ -323,6 +324,19 @@ public class MemPipeline implements Pipeline {
   @Override
   public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
     return typedTableOf(ptype, ImmutableList.<Pair<K, V>>of());
+  }
+
+  @Override
+  public <Output> Output sequentialDo(PipelineCallable<Output> callable) {
+    Output out = callable.generateOutput(this);
+    try {
+      if (PipelineCallable.Status.FAILURE == callable.call()) {
+        throw new IllegalStateException("PipelineCallable " + callable + " failed in in-memory Crunch pipeline");
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+    return out;
   }
 
   @Override

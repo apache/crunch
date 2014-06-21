@@ -25,8 +25,10 @@ import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
@@ -67,11 +69,13 @@ public abstract class DistributedPipeline implements Pipeline {
   protected final PCollectionFactory factory;
   protected final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   protected final Map<PCollectionImpl<?>, MaterializableIterable<?>> outputTargetsToMaterialize;
+  protected final Map<PipelineCallable<?>, Set<Target>> allPipelineCallables;
   private Path tempDirectory;
   private int tempFileIndex;
   private int nextAnonymousStageId;
 
   private Configuration conf;
+  private PipelineCallable currentPipelineCallable;
 
   /**
    * Instantiate with a custom name and configuration.
@@ -84,6 +88,7 @@ public abstract class DistributedPipeline implements Pipeline {
     this.factory = factory;
     this.outputTargets = Maps.newHashMap();
     this.outputTargetsToMaterialize = Maps.newHashMap();
+    this.allPipelineCallables = Maps.newHashMap();
     this.conf = conf;
     this.tempDirectory = createTempDirectory(conf);
     this.tempFileIndex = 0;
@@ -115,12 +120,44 @@ public abstract class DistributedPipeline implements Pipeline {
     return res;
   }
 
+  @Override
+  public <Output> Output sequentialDo(PipelineCallable<Output> pipelineCallable) {
+    allPipelineCallables.put(pipelineCallable, getDependencies(pipelineCallable));
+    PipelineCallable last = currentPipelineCallable;
+    currentPipelineCallable = pipelineCallable;
+    Output out = pipelineCallable.generateOutput(this);
+    currentPipelineCallable = last;
+    return out;
+  }
+
   public <S> PCollection<S> read(Source<S> source) {
-    return factory.createInputCollection(source, this);
+    return factory.createInputCollection(source, this, getCurrentPDoOptions());
   }
 
   public <K, V> PTable<K, V> read(TableSource<K, V> source) {
-    return factory.createInputTable(source, this);
+    return factory.createInputTable(source, this, getCurrentPDoOptions());
+  }
+
+  private ParallelDoOptions getCurrentPDoOptions() {
+    ParallelDoOptions.Builder pdb = ParallelDoOptions.builder();
+    if (currentPipelineCallable != null) {
+      pdb.targets(allPipelineCallables.get(currentPipelineCallable));
+    }
+    return pdb.build();
+  }
+
+  private Set<Target> getDependencies(PipelineCallable<?> callable) {
+    Set<Target> deps = Sets.newHashSet(callable.getAllTargets().values());
+    for (PCollection pc : callable.getAllPCollections().values()) {
+      PCollectionImpl pcImpl = (PCollectionImpl) pc;
+      deps.addAll(pcImpl.getTargetDependencies());
+      MaterializableIterable iter = (MaterializableIterable) pc.materialize();
+      Source pcSrc = iter.getSource();
+      if (pcSrc instanceof Target) {
+        deps.add((Target) pcSrc);
+      }
+    }
+    return deps;
   }
 
   public PCollection<String> readTextFile(String pathName) {

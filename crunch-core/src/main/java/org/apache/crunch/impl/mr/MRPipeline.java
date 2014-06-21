@@ -27,7 +27,6 @@ import java.util.Map;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CachingOptions;
@@ -107,7 +106,7 @@ public class MRPipeline extends DistributedPipeline {
         outputTargetsToMaterialize.remove(c);
       }
     }
-    MSCRPlanner planner = new MSCRPlanner(this, outputTargets, toMaterialize);
+    MSCRPlanner planner = new MSCRPlanner(this, outputTargets, toMaterialize, allPipelineCallables);
     try {
       return planner.plan(jarClass, getConfiguration());
     } catch (IOException e) {

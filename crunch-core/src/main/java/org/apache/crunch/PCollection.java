@@ -188,6 +188,18 @@ public interface PCollection<S> {
   PObject<S> first();
 
   /**
+   * Adds the materialized data in this {@code PCollection} as a dependency to the given
+   * {@code PipelineCallable} and registers it with the {@code Pipeline} associated with this
+   * instance.
+   *
+   * @param label the label to use inside of the PipelineCallable for referencing this PCollection
+   * @param pipelineCallable the function itself
+   *
+   * @return The value of the {@code getOutput} function on the given argument.
+   */
+  <Output> Output sequentialDo(String label, PipelineCallable<Output> pipelineCallable);
+
+  /**
    * @return A reference to the data in this instance that can be read from a job running
    * on a cluster.
    *

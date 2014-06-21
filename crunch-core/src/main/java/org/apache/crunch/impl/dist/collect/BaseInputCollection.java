@@ -19,6 +19,7 @@ package org.apache.crunch.impl.dist.collect;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.dist.DistributedPipeline;
@@ -33,6 +34,11 @@ public class BaseInputCollection<S> extends PCollectionImpl<S> {
 
   public BaseInputCollection(Source<S> source, DistributedPipeline pipeline) {
     super(source.toString(), pipeline);
+    this.source = source;
+  }
+
+  public BaseInputCollection(Source<S> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source.toString(), pipeline, doOpts);
     this.source = source;
   }
 
@@ -57,6 +63,11 @@ public class BaseInputCollection<S> extends PCollectionImpl<S> {
 
   public Source<S> getSource() {
     return source;
+  }
+
+  @Override
+  protected boolean waitingOnTargets() {
+    return doOptions.getTargets().contains(source);
   }
 
   @Override

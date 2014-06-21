@@ -19,9 +19,11 @@ package org.apache.crunch.hadoop.mapreduce.lib.jobcontrol;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.plan.JobNameBuilder;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
@@ -55,6 +57,7 @@ public class CrunchControlledJob implements MRJob {
   private final int jobID;
   private final Job job; // mapreduce job to be executed.
   private final JobNameBuilder jobNameBuilder;
+  private final Set<Target> allTargets;
 
   // the jobs the current job depends on
   private final List<CrunchControlledJob> dependingJobs;
@@ -77,15 +80,21 @@ public class CrunchControlledJob implements MRJob {
    *          an ID used to match with its {@link org.apache.crunch.impl.mr.plan.JobPrototype}.
    * @param job
    *          a mapreduce job to be executed.
+   * @param jobNameBuilder
+   *          code for generating a name for the executed MapReduce job.
+   * @param allTargets
+   *          the set of Targets that will exist after this job completes successfully.
    * @param prepareHook
    *          a piece of code that will run before this job is submitted.
    * @param completionHook
    *          a piece of code that will run after this job gets completed.
    */
-  public CrunchControlledJob(int jobID, Job job, JobNameBuilder jobNameBuilder, Hook prepareHook, Hook completionHook) {
+  public CrunchControlledJob(int jobID, Job job, JobNameBuilder jobNameBuilder, Set<Target> allTargets,
+                             Hook prepareHook, Hook completionHook) {
     this.jobID = jobID;
     this.job = job;
     this.jobNameBuilder = jobNameBuilder;
+    this.allTargets = allTargets;
     this.dependingJobs = Lists.newArrayList();
     this.prepareHook = prepareHook;
     this.completionHook = completionHook;
@@ -159,6 +168,8 @@ public class CrunchControlledJob implements MRJob {
   public Counters getCounters() {
     return counters;
   }
+
+  public Set<Target> getAllTargets() { return allTargets; }
 
   @Override
   public synchronized Job getJob() {

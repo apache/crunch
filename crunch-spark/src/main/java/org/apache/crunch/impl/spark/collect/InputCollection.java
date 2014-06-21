@@ -17,8 +17,8 @@
  */
 package org.apache.crunch.impl.spark.collect;
 
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
-import org.apache.crunch.SourceTarget;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.BaseInputCollection;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
@@ -26,7 +26,6 @@ import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
 import org.apache.crunch.impl.spark.fn.InputConverterFunction;
 import org.apache.crunch.impl.spark.fn.MapFunction;
-import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -36,8 +35,8 @@ import java.io.IOException;
 
 public class InputCollection<S> extends BaseInputCollection<S> implements SparkCollection {
 
-  InputCollection(Source<S> source, DistributedPipeline pipeline) {
-    super(source, pipeline);
+  InputCollection(Source<S> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, pipeline, doOpts);
   }
 
   public JavaRDDLike<?, ?> getJavaRDDLike(SparkRuntime runtime) {

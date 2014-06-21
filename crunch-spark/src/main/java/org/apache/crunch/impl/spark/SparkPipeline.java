@@ -146,7 +146,8 @@ public class SparkPipeline extends DistributedPipeline {
     }
 
     copyConfiguration(conf, sparkContext.hadoopConfiguration());
-    SparkRuntime runtime = new SparkRuntime(this, sparkContext, conf, outputTargets, toMaterialize, cachedCollections);
+    SparkRuntime runtime = new SparkRuntime(this, sparkContext, conf, outputTargets,
+        toMaterialize, cachedCollections, allPipelineCallables);
     runtime.execute();
     outputTargets.clear();
     return runtime;

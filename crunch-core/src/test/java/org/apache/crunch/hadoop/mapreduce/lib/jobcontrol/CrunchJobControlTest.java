@@ -17,15 +17,26 @@
  */
 package org.apache.crunch.hadoop.mapreduce.lib.jobcontrol;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineCallable;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.plan.JobNameBuilder;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.crunch.io.To;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -37,7 +48,8 @@ public class CrunchJobControlTest {
   public void testMaxRunningJobs() throws IOException, InterruptedException {
     Configuration conf = new Configuration();
     conf.setInt(RuntimeParameters.MAX_RUNNING_JOBS, 2);
-    CrunchJobControl jobControl = new CrunchJobControl(conf, "group");
+    CrunchJobControl jobControl = new CrunchJobControl(conf, "group",
+        ImmutableMap.<PipelineCallable<?>, Set<Target>>of());
     CrunchControlledJob job1 = createJob(1);
     CrunchControlledJob job2 = createJob(2);
     CrunchControlledJob job3 = createJob(3);
@@ -60,13 +72,81 @@ public class CrunchJobControlTest {
     verify(job3).submit();
   }
 
-  private CrunchControlledJob createJob(int jobID) throws IOException, InterruptedException {
+  private class IncrementingPipelineCallable extends PipelineCallable<Void> {
+
+    private String name;
+    private boolean executed;
+
+    public IncrementingPipelineCallable(String name) {
+      this.name = name;
+    }
+
+    @Override
+    public Status call() {
+      executed = true;
+      return Status.SUCCESS;
+    }
+
+    public boolean isExecuted() { return executed; }
+
+    @Override
+    public Void getOutput(Pipeline pipeline) {
+      return null;
+    }
+  }
+
+  @Test
+  public void testSequentialDo() throws IOException, InterruptedException {
+    Target t1 = To.textFile("foo");
+    Target t2 = To.textFile("bar");
+    Target t3 = To.textFile("baz");
+    IncrementingPipelineCallable first = new IncrementingPipelineCallable("first");
+    IncrementingPipelineCallable second = new IncrementingPipelineCallable("second");
+    IncrementingPipelineCallable third = new IncrementingPipelineCallable("third");
+    CrunchControlledJob job1 = createJob(1, ImmutableSet.of(t1));
+    CrunchControlledJob job2 = createJob(2, ImmutableSet.of(t2));
+    CrunchControlledJob job3 = createJob(3, ImmutableSet.of(t3));
+    Configuration conf = new Configuration();
+    Map<PipelineCallable<?>, Set<Target>> pipelineCallables = Maps.newHashMap();
+    pipelineCallables.put(first, ImmutableSet.<Target>of());
+    pipelineCallables.put(second, ImmutableSet.<Target>of(t1));
+    pipelineCallables.put(third, ImmutableSet.<Target>of(t2, t3));
+    CrunchJobControl jobControl = new CrunchJobControl(conf, "group", pipelineCallables);
+
+    jobControl.addJob(job1);
+    jobControl.addJob(job2);
+    jobControl.addJob(job3);
+    jobControl.pollJobStatusAndStartNewOnes();
+    verify(job1).submit();
+    verify(job2).submit();
+    verify(job3).submit();
+    assertTrue(first.isExecuted());
+
+    setSuccess(job1);
+    jobControl.pollJobStatusAndStartNewOnes();
+    assertTrue(second.isExecuted());
+
+    setSuccess(job2);
+    jobControl.pollJobStatusAndStartNewOnes();
+    assertFalse(third.isExecuted());
+
+    setSuccess(job3);
+    jobControl.pollJobStatusAndStartNewOnes();
+    assertTrue(third.isExecuted());
+  }
+
+  private CrunchControlledJob createJob(int jobID) {
+    return createJob(jobID, ImmutableSet.<Target>of());
+  }
+
+  private CrunchControlledJob createJob(int jobID, Set<Target> targets) {
     Job mrJob = mock(Job.class);
     when(mrJob.getConfiguration()).thenReturn(new Configuration());
     CrunchControlledJob job = new CrunchControlledJob(
         jobID,
         mrJob,
         new JobNameBuilder(mrJob.getConfiguration(), "test", 1, 1),
+        targets,
         mock(CrunchControlledJob.Hook.class),
         mock(CrunchControlledJob.Hook.class));
     return spy(job);
