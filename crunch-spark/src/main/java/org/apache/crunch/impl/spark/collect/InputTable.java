@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.spark.collect;
 
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.BaseInputTable;
@@ -30,8 +31,8 @@ import java.io.IOException;
 
 public class InputTable<K, V> extends BaseInputTable<K, V> implements SparkCollection {
 
-  public InputTable(TableSource<K, V> source, DistributedPipeline pipeline) {
-    super(source, pipeline);
+  public InputTable(TableSource<K, V> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, pipeline, doOpts);
   }
 
   @Override

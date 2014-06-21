@@ -31,6 +31,7 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.PGroupedTableType;
@@ -127,8 +128,8 @@ public class BaseGroupedTable<K, V> extends PCollectionImpl<Pair<K, Iterable<V>>
   }
 
   @Override
-  public Set<SourceTarget<?>> getTargetDependencies() {
-    Set<SourceTarget<?>> td = Sets.newHashSet(super.getTargetDependencies());
+  public Set<Target> getTargetDependencies() {
+    Set<Target> td = Sets.newHashSet(super.getTargetDependencies());
     if (groupingOptions != null) {
       td.addAll(groupingOptions.getSourceTargets());
     }

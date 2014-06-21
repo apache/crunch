@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 
 import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.MapFn;
@@ -30,6 +31,7 @@ import org.apache.crunch.PObject;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -44,6 +46,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -90,9 +93,16 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public Iterable<S> materialize() {
-    if (getSize() == 0) {
+    if (!waitingOnTargets() && getSize() == 0) {
       System.err.println("Materializing an empty PCollection: " + this.getName());
       return Collections.emptyList();
+    }
+    if (materializedAt != null && (materializedAt instanceof ReadableSource)) {
+      try {
+        return ((ReadableSource<S>) materializedAt).read(getPipeline().getConfiguration());
+      } catch (IOException e) {
+        throw new CrunchRuntimeException("Error reading materialized data", e);
+      }
     }
     materialized = true;
     return pipeline.materialize(this);
@@ -156,9 +166,10 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return pipeline.getFactory().createDoTable(name, getChainingCollection(), fn, type, options);
   }
 
+
   public PCollection<S> write(Target target) {
     if (materializedAt != null) {
-      getPipeline().write(pipeline.getFactory().createInputCollection(materializedAt, pipeline), target);
+      getPipeline().write(pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions), target);
     } else {
       getPipeline().write(this, target);
     }
@@ -169,7 +180,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   public PCollection<S> write(Target target, Target.WriteMode writeMode) {
     if (materializedAt != null) {
       getPipeline().write(
-          pipeline.getFactory().createInputCollection(materializedAt, pipeline),
+          pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions),
           target,
           writeMode);
     } else {
@@ -192,10 +203,19 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   public void accept(Visitor visitor) {
     if (materializedAt != null) {
-      visitor.visitInputCollection(pipeline.getFactory().createInputCollection(materializedAt, pipeline));
+      visitor.visitInputCollection(pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions));
     } else {
       acceptInternal(visitor);
     }
+  }
+
+  protected boolean waitingOnTargets() {
+    for (PCollectionImpl parent : getParents()) {
+      if (parent.waitingOnTargets()) {
+        return true;
+      }
+    }
+    return false;
   }
 
   protected abstract void acceptInternal(Visitor visitor);
@@ -216,6 +236,12 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   @Override
   public PObject<S> first() { return new FirstElementPObject<S>(this); }
+
+  @Override
+  public <Output> Output sequentialDo(String label, PipelineCallable<Output> pipelineCallable) {
+    pipelineCallable.dependsOn(label, this);
+    return getPipeline().sequentialDo(pipelineCallable);
+  }
 
   public SourceTarget<S> getMaterializedAt() {
     return materializedAt;
@@ -286,8 +312,8 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
     return parents.get(0);
   }
 
-  public Set<SourceTarget<?>> getTargetDependencies() {
-    Set<SourceTarget<?>> targetDeps = doOptions.getSourceTargets();
+  public Set<Target> getTargetDependencies() {
+    Set<Target> targetDeps = Sets.<Target>newHashSet(doOptions.getTargets());
     for (PCollectionImpl<?> parent : getParents()) {
       targetDeps = Sets.union(targetDeps, parent.getTargetDependencies());
     }

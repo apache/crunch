@@ -33,9 +33,15 @@ import java.util.List;
 
 public interface PCollectionFactory {
 
-  <S> BaseInputCollection<S> createInputCollection(Source<S> source, DistributedPipeline distributedPipeline);
+  <S> BaseInputCollection<S> createInputCollection(
+      Source<S> source,
+      DistributedPipeline distributedPipeline,
+      ParallelDoOptions doOpts);
 
-  <K, V> BaseInputTable<K, V> createInputTable(TableSource<K,V> source, DistributedPipeline distributedPipeline);
+  <K, V> BaseInputTable<K, V> createInputTable(
+      TableSource<K,V> source,
+      DistributedPipeline distributedPipeline,
+      ParallelDoOptions doOpts);
 
   <S> BaseUnionCollection<S> createUnionCollection(List<? extends PCollectionImpl<S>> internal);
 

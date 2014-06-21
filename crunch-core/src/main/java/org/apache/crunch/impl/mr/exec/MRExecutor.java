@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -33,7 +34,6 @@ import org.apache.crunch.impl.mr.MRPipelineExecution;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -73,8 +73,9 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
       Configuration conf,
       Class<?> jarClass,
       Map<PCollectionImpl<?>, Set<Target>> outputTargets,
-      Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize) {
-    this.control = new CrunchJobControl(conf, jarClass.toString());
+      Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize,
+      Map<PipelineCallable<?>, Set<Target>> pipelineCallables) {
+    this.control = new CrunchJobControl(conf, jarClass.toString(), pipelineCallables);
     this.outputTargets = outputTargets;
     this.toMaterialize = toMaterialize;
     this.monitorThread = new Thread(new Runnable() {
@@ -121,31 +122,41 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
           System.err.println(job.getJobName() + "(" + job.getJobID() + "): " + job.getMessage());
         }
       }
+      List<PipelineCallable<?>> failedCallables = control.getFailedCallables();
+      if (!failedCallables.isEmpty()) {
+        System.err.println(failedCallables.size() + " callable failure(s) occurred:");
+        for (PipelineCallable<?> c : failedCallables) {
+          System.err.println(c.getName() + ": " + c.getMessage());
+        }
+      }
+      boolean hasFailures = !failures.isEmpty() || !failedCallables.isEmpty();
       List<PipelineResult.StageResult> stages = Lists.newArrayList();
       for (CrunchControlledJob job : control.getSuccessfulJobList()) {
         stages.add(new PipelineResult.StageResult(job.getJobName(), job.getMapredJobID().toString(), job.getCounters(),
             job.getStartTimeMsec(), job.getJobStartTimeMsec(), job.getJobEndTimeMsec(), job.getEndTimeMsec()));
       }
 
-      for (PCollectionImpl<?> c : outputTargets.keySet()) {
-        if (toMaterialize.containsKey(c)) {
-          MaterializableIterable iter = toMaterialize.get(c);
-          if (iter.isSourceTarget()) {
-            iter.materialize();
-            c.materializeAt((SourceTarget) iter.getSource());
-          }
-        } else {
-          boolean materialized = false;
-          for (Target t : outputTargets.get(c)) {
-            if (!materialized) {
-              if (t instanceof SourceTarget) {
-                c.materializeAt((SourceTarget) t);
-                materialized = true;
-              } else {
-                SourceTarget st = t.asSourceTarget(c.getPType());
-                if (st != null) {
-                  c.materializeAt(st);
+      if (!hasFailures) {
+        for (PCollectionImpl<?> c : outputTargets.keySet()) {
+          if (toMaterialize.containsKey(c)) {
+            MaterializableIterable iter = toMaterialize.get(c);
+            if (iter.isSourceTarget()) {
+              iter.materialize();
+              c.materializeAt((SourceTarget) iter.getSource());
+            }
+          } else {
+            boolean materialized = false;
+            for (Target t : outputTargets.get(c)) {
+              if (!materialized) {
+                if (t instanceof SourceTarget) {
+                  c.materializeAt((SourceTarget) t);
                   materialized = true;
+                } else {
+                  SourceTarget st = t.asSourceTarget(c.getPType());
+                  if (st != null) {
+                    c.materializeAt(st);
+                    materialized = true;
+                  }
                 }
               }
             }
@@ -156,7 +167,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
       synchronized (this) {
         if (killSignal.getCount() == 0) {
           status.set(Status.KILLED);
-        } else if (!failures.isEmpty()) {
+        } else if (!failures.isEmpty() || !failedCallables.isEmpty()) {
           status.set(Status.FAILED);
         } else {
           status.set(Status.SUCCEEDED);

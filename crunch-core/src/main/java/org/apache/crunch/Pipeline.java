@@ -111,9 +111,32 @@ public interface Pipeline {
    */
   <T> void cache(PCollection<T> pcollection, CachingOptions options);
 
+  /**
+   * Creates an empty {@code PCollection} of the given {@code PType}.
+   *
+   * @param ptype The PType of the empty PCollection
+   * @return A valid PCollection with no contents
+   */
   <T> PCollection<T> emptyPCollection(PType<T> ptype);
 
+  /**
+   * Creates an empty {@code PTable} of the given {@code PTable Type}.
+   *
+   * @param ptype The PTableType of the empty PTable
+   * @return A valid PTable with no contents
+   */
   <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype);
+
+  /**
+   * Executes the given {@code PipelineCallable} on the client after the {@code Targets}
+   * that the PipelineCallable depends on (if any) have been created by other pipeline
+   * processing steps.
+   *
+   * @param pipelineCallable The sequential logic to execute
+   * @param <Output> The return type of the PipelineCallable
+   * @return The result of executing the PipelineCallable
+   */
+  <Output> Output sequentialDo(PipelineCallable<Output> pipelineCallable);
 
   /**
    * Constructs and executes a series of MapReduce jobs in order to write data

@@ -18,13 +18,17 @@
 package org.apache.crunch.impl.spark;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
@@ -58,10 +62,13 @@ import org.apache.spark.storage.StorageLevel;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,6 +86,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
   private Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   private Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
   private Map<PCollection<?>, StorageLevel> toCache;
+  private Map<PipelineCallable<?>, Set<Target>> allPipelineCallables;
+  private Set<PipelineCallable<?>> activePipelineCallables;
   private final CountDownLatch doneSignal = new CountDownLatch(1);
   private AtomicReference<Status> status = new AtomicReference<Status>(Status.READY);
   private boolean started;
@@ -104,7 +113,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                       Configuration conf,
                       Map<PCollectionImpl<?>, Set<Target>> outputTargets,
                       Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize,
-                      Map<PCollection<?>, StorageLevel> toCache) {
+                      Map<PCollection<?>, StorageLevel> toCache,
+                      Map<PipelineCallable<?>, Set<Target>> allPipelineCallables) {
     this.pipeline = pipeline;
     this.sparkContext = sparkContext;
     this.conf = conf;
@@ -115,6 +125,8 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     this.outputTargets.putAll(outputTargets);
     this.toMaterialize = toMaterialize;
     this.toCache = toCache;
+    this.allPipelineCallables = allPipelineCallables;
+    this.activePipelineCallables = allPipelineCallables.keySet();
     this.status.set(Status.READY);
     this.monitorThread = new Thread(new Runnable() {
       @Override
@@ -201,13 +213,67 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     doneSignal.await();
   }
 
+  private void runCallables(Set<Target> unfinished) {
+    Set<PipelineCallable<?>> oldCallables = activePipelineCallables;
+    activePipelineCallables = Sets.newHashSet();
+    List<PipelineCallable<?>> callablesToRun = Lists.newArrayList();
+    List<PipelineCallable<?>> failedCallables = Lists.newArrayList();
+    for (PipelineCallable<?> pipelineCallable : oldCallables) {
+      if (Sets.intersection(allPipelineCallables.get(pipelineCallable), unfinished).isEmpty()) {
+        if (pipelineCallable.runSingleThreaded()) {
+          try {
+            if (pipelineCallable.call() != PipelineCallable.Status.SUCCESS) {
+              failedCallables.add(pipelineCallable);
+            }
+          } catch (Throwable t) {
+            pipelineCallable.setMessage(t.getLocalizedMessage());
+            failedCallables.add(pipelineCallable);
+          }
+        } else {
+          callablesToRun.add(pipelineCallable);
+        }
+      } else {
+        // Still need to run this one
+        activePipelineCallables.add(pipelineCallable);
+      }
+    }
+
+    ListeningExecutorService es = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+    try {
+      List<Future<PipelineCallable.Status>> res = es.invokeAll(callablesToRun);
+      for (int i = 0; i < res.size(); i++) {
+        if (res.get(i).get() != PipelineCallable.Status.SUCCESS) {
+          failedCallables.add((PipelineCallable) callablesToRun.get(i));
+        }
+      }
+    } catch (Throwable t) {
+      t.printStackTrace();
+      failedCallables.addAll((List) callablesToRun);
+    } finally {
+      es.shutdownNow();
+    }
+
+    if (!failedCallables.isEmpty()) {
+      LOG.error(failedCallables.size() + " callable failure(s) occurred:");
+      for (PipelineCallable<?> c : failedCallables) {
+        LOG.error(c.getName() + ": " + c.getMessage());
+      }
+      status.set(Status.FAILED);
+      set(PipelineResult.EMPTY);
+      doneSignal.countDown();
+    }
+  }
+
   private void monitorLoop() {
     status.set(Status.RUNNING);
     long start = System.currentTimeMillis();
-    Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps = Maps.<PCollectionImpl<?>, PCollectionImpl<?>, Set<SourceTarget<?>>>newTreeMap(DEPTH_COMPARATOR);
+    Map<PCollectionImpl<?>, Set<Target>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
+    Set<Target> unfinished = Sets.newHashSet();
     for (PCollectionImpl<?> pcollect : outputTargets.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
+      unfinished.addAll(outputTargets.get(pcollect));
     }
+    runCallables(unfinished);
     while (!targetDeps.isEmpty() && doneSignal.getCount() > 0) {
       Set<Target> allTargets = Sets.newHashSet();
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
@@ -271,21 +337,26 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
             }
           }
         }
+        unfinished.removeAll(targets);
       }
-      for (PCollectionImpl<?> output : pcolToRdd.keySet()) {
-        if (toMaterialize.containsKey(output)) {
-          MaterializableIterable mi = toMaterialize.get(output);
-          if (mi.isSourceTarget()) {
-            output.materializeAt((SourceTarget) mi.getSource());
+      if (status.get() == Status.RUNNING) {
+        for (PCollectionImpl<?> output : pcolToRdd.keySet()) {
+          if (toMaterialize.containsKey(output)) {
+            MaterializableIterable mi = toMaterialize.get(output);
+            if (mi.isSourceTarget()) {
+              output.materializeAt((SourceTarget) mi.getSource());
+            }
           }
+          targetDeps.remove(output);
         }
-        targetDeps.remove(output);
       }
+      runCallables(unfinished);
     }
     if (status.get() != Status.FAILED || status.get() != Status.KILLED) {
       status.set(Status.SUCCEEDED);
       set(new PipelineResult(
-          ImmutableList.of(new PipelineResult.StageResult("Spark", getCounters(), start, System.currentTimeMillis())),
+          ImmutableList.of(new PipelineResult.StageResult("Spark", getCounters(),
+              start, System.currentTimeMillis())),
           Status.SUCCEEDED));
     } else {
       set(PipelineResult.EMPTY);

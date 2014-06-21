@@ -18,10 +18,16 @@
 package org.apache.crunch.impl.mr.plan;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -47,14 +53,17 @@ public class MSCRPlanner {
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
+  private final Map<PipelineCallable<?>, Set<Target>> pipelineCallables;
   private int lastJobID = 0;
 
   public MSCRPlanner(MRPipeline pipeline, Map<PCollectionImpl<?>, Set<Target>> outputs,
-      Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize) {
+      Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize,
+      Map<PipelineCallable<?>, Set<Target>> pipelineCallables) {
     this.pipeline = pipeline;
     this.outputs = new TreeMap<PCollectionImpl<?>, Set<Target>>(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
     this.toMaterialize = toMaterialize;
+    this.pipelineCallables = pipelineCallables;
   }
 
   // Used to ensure that we always build pipelines starting from the deepest
@@ -74,8 +83,7 @@ public class MSCRPlanner {
   };  
 
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
-    Map<PCollectionImpl<?>, Set<SourceTarget<?>>> targetDeps =
-        Maps.<PCollectionImpl<?>, PCollectionImpl<?>, Set<SourceTarget<?>>>newTreeMap(DEPTH_COMPARATOR);
+    Map<PCollectionImpl<?>, Set<Target>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
     for (PCollectionImpl<?> pcollect : outputs.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
@@ -109,7 +117,7 @@ public class MSCRPlanner {
       }
       if (!hasInputs) {
         LOG.warn("No input sources for pipeline, nothing to do...");
-        return new MRExecutor(conf, jarClass, outputs, toMaterialize);
+        return new MRExecutor(conf, jarClass, outputs, toMaterialize, pipelineCallables);
       }
 
       // Create a new graph that splits up up dependent GBK nodes.
@@ -183,7 +191,7 @@ public class MSCRPlanner {
     
     // Finally, construct the jobs from the prototypes and return.
     DotfileWriter dotfileWriter = new DotfileWriter();
-    MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize);
+    MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize, pipelineCallables);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
       dotfileWriter.addJobPrototype(proto);
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline, lastJobID));

@@ -147,6 +147,7 @@ class JobPrototype {
     job.setJarByClass(jarClass);
 
     Set<DoNode> outputNodes = Sets.newHashSet();
+    Set<Target> allTargets = Sets.newHashSet();
     Path outputPath = new Path(workingPath, "output");
     MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath, group == null);
     for (Target target : targetsToNodePaths.keySet()) {
@@ -159,6 +160,7 @@ class JobPrototype {
         }
         outputNodes.add(walkPath(nodePath.descendingIterator(), node));
       }
+      allTargets.add(target);
     }
 
     Set<DoNode> mapSideNodes = Sets.newHashSet();
@@ -173,7 +175,7 @@ class JobPrototype {
           }
           mapSideNodes.add(walkPath(nodePath.descendingIterator(), node));
         }
-        
+        allTargets.add(target);
       }
     }
     
@@ -229,6 +231,7 @@ class JobPrototype {
         jobID,
         job,
         jobNameBuilder,
+        allTargets,
         new CrunchJobHooks.PrepareHook(job),
         new CrunchJobHooks.CompletionHook(job, outputPath, outputHandler.getMultiPaths(), group == null));
   }

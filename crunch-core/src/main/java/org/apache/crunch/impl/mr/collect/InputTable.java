@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.dist.collect.BaseInputTable;
 import org.apache.crunch.impl.dist.collect.MRCollection;
@@ -25,8 +26,8 @@ import org.apache.crunch.impl.mr.plan.DoNode;
 
 public class InputTable<K, V> extends BaseInputTable<K, V> implements MRCollection {
 
-  public InputTable(TableSource<K, V> source, MRPipeline pipeline) {
-    super(source, pipeline);
+  public InputTable(TableSource<K, V> source, MRPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, pipeline, doOpts);
   }
 
   @Override

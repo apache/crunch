@@ -278,6 +278,14 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   def shard(numPartitions: Int) = wrap(Shard.shard(native, numPartitions))
 
   /**
+   * Adds this PCollection as a dependency for the given PipelineCallable
+   * and then registers it to the Pipeline associated with this instance.
+   */
+  def sequentialDo[Output](label: String, fn: PipelineCallable[Output]) = {
+    native.sequentialDo(label, fn)
+  }
+
+  /**
    * Gets the number of elements represented by this PCollection.
    *
    * @return The number of elements in this PCollection.

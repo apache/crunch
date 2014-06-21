@@ -43,13 +43,19 @@ import java.util.List;
 public class SparkCollectFactory implements PCollectionFactory {
 
   @Override
-  public <S> BaseInputCollection<S> createInputCollection(Source<S> source, DistributedPipeline pipeline) {
-    return new InputCollection<S>(source, pipeline);
+  public <S> BaseInputCollection<S> createInputCollection(
+      Source<S> source,
+      DistributedPipeline pipeline,
+      ParallelDoOptions doOpts) {
+    return new InputCollection<S>(source, pipeline, doOpts);
   }
 
   @Override
-  public <K, V> BaseInputTable<K, V> createInputTable(TableSource<K, V> source, DistributedPipeline pipeline) {
-    return new InputTable<K, V>(source, pipeline);
+  public <K, V> BaseInputTable<K, V> createInputTable(
+      TableSource<K, V> source,
+      DistributedPipeline pipeline,
+      ParallelDoOptions doOpts) {
+    return new InputTable<K, V>(source, pipeline, doOpts);
   }
 
   @Override

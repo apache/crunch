@@ -37,6 +37,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.ReadableData;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.impl.mem.MemPipeline;
@@ -187,6 +188,12 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public PObject<S> first() { return new FirstElementPObject<S>(this); }
+
+  @Override
+  public <Output> Output sequentialDo(String label, PipelineCallable<Output> pipelineCallable) {
+    pipelineCallable.dependsOn(label, this);
+    return getPipeline().sequentialDo(pipelineCallable);
+  }
 
   @Override
   public ReadableData<S> asReadable(boolean materialize) {

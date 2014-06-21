@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
+import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.dist.collect.BaseInputCollection;
@@ -27,8 +28,8 @@ import org.apache.crunch.io.ReadableSource;
 
 public class InputCollection<S> extends BaseInputCollection<S> implements MRCollection {
 
-  public InputCollection(Source<S> source, MRPipeline pipeline) {
-    super(source, pipeline);
+  public InputCollection(Source<S> source, MRPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, pipeline, doOpts);
   }
 
   @Override

@@ -113,6 +113,10 @@ trait PipelineLike {
    */
   def emptyPTable[K, V](pt: PTableType[K, V]) = new PTable[K, V](jpipeline.emptyPTable(pt))
 
+  /**
+   * Adds the given {@code SeqDoFn} to the pipeline execution and returns its output.
+   */
+  def sequentialDo[Output](seqDoFn: PipelineCallable[Output]) = jpipeline.sequentialDo(seqDoFn)
 
   /**
    * Returns a handler for controlling the execution of the underlying MapReduce
