@@ -78,7 +78,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
     this(table, ObjectArrays.concat(scan, additionalScans));
   }
   
-  private HBaseSourceTarget(String table, Scan[] scans) {
+  public HBaseSourceTarget(String table, Scan[] scans) {
     super(table);
     this.scans = scans;
 
