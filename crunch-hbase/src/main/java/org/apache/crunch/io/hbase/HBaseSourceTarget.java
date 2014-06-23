@@ -55,6 +55,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
 
+import com.google.common.collect.ObjectArrays;
+
 public class HBaseSourceTarget extends HBaseTarget implements
     ReadableSourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {
@@ -68,7 +70,15 @@ public class HBaseSourceTarget extends HBaseTarget implements
   protected String scansAsString;
   private FormatBundle<MultiTableInputFormat> inputBundle;
   
-  public HBaseSourceTarget(String table, Scan... scans) {
+  public HBaseSourceTarget(String table, Scan scan) {
+    this(table, new Scan[] { scan });
+  }
+  
+  public HBaseSourceTarget(String table, Scan scan, Scan... additionalScans) {
+    this(table, ObjectArrays.concat(scan, additionalScans));
+  }
+  
+  private HBaseSourceTarget(String table, Scan[] scans) {
     super(table);
     this.scans = scans;
 
