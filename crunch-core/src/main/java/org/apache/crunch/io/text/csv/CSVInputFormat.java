@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.hadoop.conf.Configurable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -28,7 +30,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -43,12 +44,13 @@ import com.google.common.annotations.VisibleForTesting;
  * format deals with the fact that CSV files can potentially have multiple lines
  * within fields which should all be treated as one record.
  */
-public class CSVInputFormat extends FileInputFormat<LongWritable, Text> {
+public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implements Configurable {
   private int bufferSize;
   private String inputFileEncoding;
   private char openQuoteChar;
   private char closeQuoteChar;
   private char escapeChar;
+  private Configuration configuration;
 
   /**
    * This method is used by crunch to get an instance of {@link CSVRecordReader}
@@ -57,10 +59,7 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> {
    *          the {@link InputSplit} that will be assigned to the record reader
    * @param context
    *          the {@TaskAttemptContext} for the job
-   * @return an instance of {@link CSVRecordReader} created using
-   *         {@link CSVInputFormat#getSeparatorChar()},
-   *         {@link CSVInputFormat#getQuoteChar()}, and
-   *         {@link CSVInputFormat#getEscapeChar()}.
+   * @return an instance of {@link CSVRecordReader} created using configured separator, quote, and escape characters.
    */
   @Override
   public RecordReader<LongWritable, Text> createRecordReader(final InputSplit split, final TaskAttemptContext context) {
@@ -83,17 +82,18 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> {
     final long splitSize = job.getConfiguration().getLong("csv.input.split.size", 67108864);
     final List<InputSplit> splits = new ArrayList<InputSplit>();
     final Path[] paths = FileUtil.stat2Paths(listStatus(job).toArray(new FileStatus[0]));
-    FileSystem fileSystem = null;
+    FileSystem fileSystem = FileSystem.get(job.getConfiguration());
     FSDataInputStream inputStream = null;
     try {
       for (final Path path : paths) {
-        fileSystem = path.getFileSystem(job.getConfiguration());
         inputStream = fileSystem.open(path);
         splits.addAll(getSplitsForFile(splitSize, fileSystem.getFileStatus(path).getLen(), path, inputStream));
       }
       return splits;
     } finally {
-      inputStream.close();
+      if(inputStream != null) {
+        inputStream.close();
+      }
     }
   }
 
@@ -166,44 +166,51 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> {
     return splitsList;
   }
 
+  @Override
+  public Configuration getConf() {
+    return configuration;
+  }
+
+  @Override
+  public void setConf(final Configuration conf) {
+    configuration = conf;
+    configure();
+  }
+
   /**
-   * This method will read the configuration that is set in
+   * This method will read the configuration options that were set in
    * {@link CSVFileSource}'s private getBundle() method
-   * 
-   * @param jobConf
-   *          The {@code JobConf} instance from which the CSV configuration
-   *          parameters will be read, if necessary.
    */
-  public void configure(JobConf jobConf) {
-    String bufferValue = jobConf.get(CSVFileSource.CSV_BUFFER_SIZE);
+  public void configure() {
+    final String bufferValue = this.configuration.get(CSVFileSource.CSV_BUFFER_SIZE);
     if ("".equals(bufferValue)) {
       bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
     } else {
       bufferSize = Integer.parseInt(bufferValue);
     }
 
-    String inputFileEncodingValue = jobConf.get(CSVFileSource.CSV_INPUT_FILE_ENCODING);
+    final String inputFileEncodingValue = this.configuration.get(CSVFileSource.CSV_INPUT_FILE_ENCODING);
     if ("".equals(inputFileEncodingValue)) {
       inputFileEncoding = CSVLineReader.DEFAULT_INPUT_FILE_ENCODING;
     } else {
       inputFileEncoding = inputFileEncodingValue;
     }
 
-    String openQuoteCharValue = jobConf.get(CSVFileSource.CSV_OPEN_QUOTE_CHAR);
+    final String openQuoteCharValue = this.configuration.get(CSVFileSource.CSV_OPEN_QUOTE_CHAR);
     if ("".equals(openQuoteCharValue)) {
       openQuoteChar = CSVLineReader.DEFAULT_QUOTE_CHARACTER;
     } else {
       openQuoteChar = openQuoteCharValue.charAt(0);
     }
 
-    String closeQuoteCharValue = jobConf.get(CSVFileSource.CSV_CLOSE_QUOTE_CHAR);
+    final String closeQuoteCharValue = this.configuration.get(CSVFileSource.CSV_CLOSE_QUOTE_CHAR);
     if ("".equals(closeQuoteCharValue)) {
       closeQuoteChar = CSVLineReader.DEFAULT_QUOTE_CHARACTER;
     } else {
       closeQuoteChar = closeQuoteCharValue.charAt(0);
     }
 
-    String escapeCharValue = jobConf.get(CSVFileSource.CSV_ESCAPE_CHAR);
+    final String escapeCharValue = this.configuration.get(CSVFileSource.CSV_ESCAPE_CHAR);
     if ("".equals(escapeCharValue)) {
       escapeChar = CSVLineReader.DEFAULT_ESCAPE_CHARACTER;
     } else {
