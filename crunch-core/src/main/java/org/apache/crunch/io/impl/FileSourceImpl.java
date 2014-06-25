@@ -17,11 +17,12 @@
  */
 package org.apache.crunch.io.impl;
 
+import java.io.IOException;
+import java.util.List;
+
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-
-import java.util.List;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,7 +40,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 public class FileSourceImpl<T> implements Source<T> {
 
@@ -64,7 +64,8 @@ public class FileSourceImpl<T> implements Source<T> {
   }
 
   public FileSourceImpl(List<Path> paths, PType<T> ptype, FormatBundle<? extends InputFormat> inputBundle) {
-    this.path = paths.isEmpty() ? null : paths.get(0);
+    Preconditions.checkArgument(!paths.isEmpty(), "Must supply at least one input path");
+    this.path = paths.get(0);
     this.paths = paths;
     this.ptype = ptype;
     this.inputBundle = inputBundle;
@@ -72,9 +73,7 @@ public class FileSourceImpl<T> implements Source<T> {
 
   @Deprecated
   public Path getPath() {
-    if (paths.isEmpty()) {
-      return null;
-    } else if (paths.size() > 1) {
+    if (paths.size() > 1) {
       LOG.warn("getPath() called for source with multiple paths, only " +
           "returning first. Source: " + this);
     }

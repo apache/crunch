@@ -17,6 +17,10 @@
  */
 package org.apache.crunch.io;
 
+import java.io.IOException;
+import java.util.List;
+
+import com.google.common.base.Preconditions;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
@@ -44,9 +48,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * <p>Static factory methods for creating common {@link Source} types.</p>
@@ -311,6 +312,7 @@ public class From {
    * @return A new {@code Source<GenericData.Record>} instance
    */
   public static Source<GenericData.Record> avroFile(List<Path> paths, Configuration conf) {
+    Preconditions.checkArgument(!paths.isEmpty(), "At least one path must be supplied");
     return avroFile(paths, Avros.generics(getSchemaFromPath(paths.get(0), conf)));
   }
 
