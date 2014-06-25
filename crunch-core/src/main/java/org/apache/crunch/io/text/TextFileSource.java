@@ -18,13 +18,12 @@
 package org.apache.crunch.io.text;
 
 import java.io.IOException;
-
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.ReadableSource;
-import org.apache.crunch.ReadableData;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroTypeFamily;
@@ -36,7 +35,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSource<T> {
 
-  private static <S> Class<? extends FileInputFormat<?, ?>> getInputFormat(Path path, PType<S> ptype) {
+  private static <S> Class<? extends FileInputFormat<?, ?>> getInputFormat(PType<S> ptype) {
     if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
       return AvroUtf8InputFormat.class;
     } else {
@@ -49,7 +48,7 @@ public class TextFileSource<T> extends FileSourceImpl<T> implements ReadableSour
   }
 
   public TextFileSource(List<Path> paths, PType<T> ptype) {
-    super(paths, ptype, getInputFormat(paths.get(0), ptype));
+    super(paths, ptype, getInputFormat(ptype));
     inputBundle.set(RuntimeParameters.DISABLE_COMBINE_FILE, Boolean.FALSE.toString());
   }
 
