@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.io.text.csv;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +36,7 @@ public class CSVLineReaderTest {
   @Test
   public void testVariousUTF8Characters() throws IOException {
     final String variousCharacters = "€Abبώиב¥£€¢₡₢₣₤₥₦§₧₨₩₪₫₭₮漢Ä©óíßä";
-    String utf8Junk = tmpDir.copyResourceFileName("UTF8.csv");
+    final String utf8Junk = tmpDir.copyResourceFileName("UTF8.csv");
     FileInputStream fileInputStream = null;
     try {
 
@@ -60,12 +60,32 @@ public class CSVLineReaderTest {
   public void testBrokenLineParsingInChinese() throws IOException {
     final String[] expectedChineseLines = { "您好我叫马克，我从亚拉巴马州来，我是软件工程师，我二十八岁", "我有一个宠物，它是一个小猫，它六岁，它很漂亮",
         "我喜欢吃饭，“我觉得这个饭最好\n＊蛋糕\n＊包子\n＊冰淇淋\n＊啤酒“，他们都很好，我也很喜欢奶酪但它是不健康的", "我是男的，我的头发很短，我穿蓝色的裤子，“我穿黑色的、“衣服”" };
-    String chineseLines = tmpDir.copyResourceFileName("brokenChineseLines.csv");
+    final String chineseLines = tmpDir.copyResourceFileName("brokenChineseLines.csv");
     FileInputStream fileInputStream = null;
     try {
       fileInputStream = new FileInputStream(new File(chineseLines));
       final CSVLineReader csvLineReader = new CSVLineReader(fileInputStream, CSVLineReader.DEFAULT_BUFFER_SIZE,
-          CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '“', '”', '、');
+          CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '“', '”', '、', CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
+      for (int i = 0; i < expectedChineseLines.length; i++) {
+        final Text readText = new Text();
+        csvLineReader.readCSVLine(readText);
+        assertEquals(expectedChineseLines[i], readText.toString());
+      }
+    } finally {
+      fileInputStream.close();
+    }
+  }
+
+  @Test(expected = IOException.class)
+  public void testMalformedBrokenLineParsingInChinese() throws IOException {
+    final String[] expectedChineseLines = { "您好我叫马克，我从亚拉巴马州来，我是软件工程师，我二十八岁", "我有一个宠物，它是一个小猫，它六岁，它很漂亮",
+        "我喜欢吃饭，“我觉得这个饭最好\n＊蛋糕\n＊包子\n＊冰淇淋\n＊啤酒“，他们都很好，我也很喜欢奶酪但它是不健康的", "我是男的，我的头发很短，我穿蓝色的裤子，“我穿黑色的、“衣服”" };
+    final String chineseLines = tmpDir.copyResourceFileName("brokenChineseLines.csv");
+    FileInputStream fileInputStream = null;
+    try {
+      fileInputStream = new FileInputStream(new File(chineseLines));
+      final CSVLineReader csvLineReader = new CSVLineReader(fileInputStream, CSVLineReader.DEFAULT_BUFFER_SIZE,
+          CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '“', '”', '、', 5);
       for (int i = 0; i < expectedChineseLines.length; i++) {
         final Text readText = new Text();
         csvLineReader.readCSVLine(readText);

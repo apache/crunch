@@ -29,6 +29,8 @@ import java.nio.charset.CharsetEncoder;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.apache.hadoop.io.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -38,6 +40,7 @@ import com.google.common.base.Preconditions;
  */
 @ParametersAreNonnullByDefault
 public class CSVLineReader {
+  private static final Logger LOGGER = LoggerFactory.getLogger(CSVLineReader.class);
 
   // InputStream related variables
   /**
@@ -74,6 +77,12 @@ public class CSVLineReader {
    * The default input file encoding to read with, UTF-8
    */
   public static final String DEFAULT_INPUT_FILE_ENCODING = "UTF-8";
+  /**
+   * The default input maximum record size
+   */
+  public static final int DEFAULT_MAXIMUM_RECORD_SIZE = 67108864;
+
+  private final int maximumRecordSize;
   private final char openQuoteChar;
   private final char closeQuoteChar;
   private final char escape;
@@ -96,7 +105,7 @@ public class CSVLineReader {
    */
   public CSVLineReader(final InputStream inputStream) throws UnsupportedEncodingException {
     this(inputStream, DEFAULT_BUFFER_SIZE, DEFAULT_INPUT_FILE_ENCODING, DEFAULT_QUOTE_CHARACTER,
-        DEFAULT_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER);
+        DEFAULT_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
@@ -118,10 +127,13 @@ public class CSVLineReader {
    *          Used to specify a custom close quote character
    * @param escape
    *          Used to specify a custom escape character
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          parsing will stop and an exception will be thrown.
    * @throws UnsupportedEncodingException
    */
   public CSVLineReader(final InputStream inputStream, final int bufferSize, final String inputFileEncoding,
-      final char openQuoteChar, final char closeQuoteChar, final char escapeChar) {
+      final char openQuoteChar, final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
     Preconditions.checkNotNull(inputStream, "inputStream may not be null");
     Preconditions.checkNotNull(inputFileEncoding, "inputFileEncoding may not be null");
     if (bufferSize <= 0) {
@@ -151,6 +163,7 @@ public class CSVLineReader {
     this.escape = escapeChar;
     this.inputFileEncoding = inputFileEncoding;
     this.charsetEncoder = Charset.forName(inputFileEncoding).newEncoder();
+    this.maximumRecordSize = maximumRecordSize;
   }
 
   /**
@@ -177,23 +190,30 @@ public class CSVLineReader {
       throw new RuntimeException("Cannot begin reading a CSV record while inside of a multi-line CSV record.");
     }
 
-    inputText.clear();
+    final StringBuilder stringBuilder = new StringBuilder();
     do {
+      // Read a line from the file and add it to the builder
+      inputText.clear();
       totalBytesConsumed += readFileLine(inputText);
-      // a line has been read. We need to see if we're still in quotes and tack
-      // on a newline if so
+      stringBuilder.append(inputText.toString());
+
       if (currentlyInQuotes && !endOfFile) {
-        // Add one LF to mark the line return, otherwise any multi-line CSV
-        // record will all be on one line.
-        inputText.set(new StringBuilder().append(inputText.toString()).append('\n').toString());
+        // If we end up in a multi-line record, we need append a newline
+        stringBuilder.append('\n');
+
+        // Do a check on the total bytes consumed to see if something has gone
+        // wrong.
+        if (totalBytesConsumed > maximumRecordSize || totalBytesConsumed > Integer.MAX_VALUE) {
+          final String record = stringBuilder.toString();
+          LOGGER.error("Possibly malformed file encountered. First line of record: "
+              + record.substring(0, record.indexOf('\n')));
+          throw new IOException("Possibly malformed file encountered. Check log statements for more information");
+        }
       }
-    } while (currentlyInQuotes);
+    } while (currentlyInQuotes && !endOfFile);
 
-    if (totalBytesConsumed > Integer.MAX_VALUE) {
-      throw new IOException("Too many bytes consumed before newline: " + Integer.MAX_VALUE);
-    }
-
-    input.set(inputText);
+    // Set the input to the multi-line record
+    input.set(stringBuilder.toString());
     return (int) totalBytesConsumed;
   }
 
@@ -222,8 +242,8 @@ public class CSVLineReader {
     }
 
     // This integer keeps track of the number of newline characters used to
-    // terminate the line being read. This
-    // could be 1, in the case of LF or CR, or 2, in the case of CRLF.
+    // terminate the line being read. This could be 1, in the case of LF or CR,
+    // or 2, in the case of CRLF.
     int newlineLength = 0;
     int inputTextLength = 0;
     long bytesConsumed = 0;
@@ -245,8 +265,7 @@ public class CSVLineReader {
 
       newlineLength = 0;
       // Iterate through the buffer looking for newline characters while keeping
-      // track of if we're in a field
-      // and/or in quotes.
+      // track of if we're in a field and/or in quotes.
       for (; bufferPosition < bufferLength; ++bufferPosition) {
         bytesConsumed += calculateCharacterByteLength(buffer[bufferPosition]);
         if (buffer[bufferPosition] == this.escape) {
@@ -271,8 +290,8 @@ public class CSVLineReader {
           if (lastCharWasCR && buffer[bufferPosition] == LF) {
             lastCharWasCR = false;
             // Check for LF (in case of CRLF line endings) and increment the
-            // counter, skip it by moving the
-            // buffer position, then record the length of the LF.
+            // counter, skip it by moving the buffer position, then record the
+            // length of the LF.
             ++newlineLength;
             ++bufferPosition;
             bytesConsumed += calculateCharacterByteLength(buffer[bufferPosition]);

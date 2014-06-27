@@ -50,6 +50,7 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
   private char openQuoteChar;
   private char closeQuoteChar;
   private char escapeChar;
+  private int maximumRecordSize;
   private Configuration configuration;
 
   /**
@@ -59,17 +60,20 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
    *          the {@link InputSplit} that will be assigned to the record reader
    * @param context
    *          the {@TaskAttemptContext} for the job
-   * @return an instance of {@link CSVRecordReader} created using configured separator, quote, and escape characters.
+   * @return an instance of {@link CSVRecordReader} created using configured
+   *         separator, quote, escape, and maximum record size.
    */
   @Override
   public RecordReader<LongWritable, Text> createRecordReader(final InputSplit split, final TaskAttemptContext context) {
     return new CSVRecordReader(this.bufferSize, this.inputFileEncoding, this.openQuoteChar, this.closeQuoteChar,
-        this.escapeChar);
+        this.escapeChar, this.maximumRecordSize);
   }
 
   /**
    * A method used by crunch to calculate the splits for each file. This will
-   * split each CSV file at the end of a valid CSV record.
+   * split each CSV file at the end of a valid CSV record. The default split
+   * size is 64mb, but this can be reconfigured by setting the
+   * "csv.inputsplitsize" option in the job configuration.
    * 
    * @param job
    *          the {@link JobContext} for the current job.
@@ -79,10 +83,10 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
    */
   @Override
   public List<InputSplit> getSplits(final JobContext job) throws IOException {
-    final long splitSize = job.getConfiguration().getLong("csv.input.split.size", 67108864);
+    final long splitSize = job.getConfiguration().getLong(CSVFileSource.INPUT_SPLIT_SIZE, 67108864);
     final List<InputSplit> splits = new ArrayList<InputSplit>();
     final Path[] paths = FileUtil.stat2Paths(listStatus(job).toArray(new FileStatus[0]));
-    FileSystem fileSystem = FileSystem.get(job.getConfiguration());
+    final FileSystem fileSystem = FileSystem.get(job.getConfiguration());
     FSDataInputStream inputStream = null;
     try {
       for (final Path path : paths) {
@@ -91,7 +95,7 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
       }
       return splits;
     } finally {
-      if(inputStream != null) {
+      if (inputStream != null) {
         inputStream.close();
       }
     }
@@ -135,13 +139,13 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
       // we need to create a new CSVLineReader around the stream.
       inputStream.seek(currentPosition);
       final CSVLineReader csvLineReader = new CSVLineReader(inputStream, this.bufferSize, this.inputFileEncoding,
-          this.openQuoteChar, this.closeQuoteChar, this.escapeChar);
+          this.openQuoteChar, this.closeQuoteChar, this.escapeChar, this.maximumRecordSize);
 
       // This line is potentially garbage because we most likely just sought to
       // the middle of a line. Read the rest of the line and leave it for the
       // previous split. Then reset the multi-line CSV record boolean, because
       // the partial line will have a very high chance of falsely triggering the
-      // class wide multi-line logic.
+      // class-wide multi-line logic.
       currentPosition += csvLineReader.readFileLine(new Text());
       csvLineReader.resetMultiLine();
 
@@ -182,6 +186,12 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
    * {@link CSVFileSource}'s private getBundle() method
    */
   public void configure() {
+
+    bufferSize = this.configuration.getInt(CSVFileSource.CSV_BUFFER_SIZE, -1);
+    if (bufferSize < 0) {
+      bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
+    }
+
     final String bufferValue = this.configuration.get(CSVFileSource.CSV_BUFFER_SIZE);
     if ("".equals(bufferValue)) {
       bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
@@ -215,6 +225,12 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
       escapeChar = CSVLineReader.DEFAULT_ESCAPE_CHARACTER;
     } else {
       escapeChar = escapeCharValue.charAt(0);
+    }
+
+    maximumRecordSize = this.configuration.getInt(CSVFileSource.MAXIMUM_RECORD_SIZE, -1);
+    if (maximumRecordSize < 0) {
+      maximumRecordSize = this.configuration.getInt(CSVFileSource.INPUT_SPLIT_SIZE,
+          CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
     }
   }
 }

@@ -99,7 +99,7 @@ public class CSVFileSourceIT {
     final Pipeline pipeline = new MRPipeline(CSVFileSourceIT.class, tmpDir.getDefaultConfiguration());
     final PCollection<String> csvLines = pipeline.read(new CSVFileSource(new Path(csvWithNewlines),
         CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '*', '*',
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER));
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE));
 
     final Collection<String> csvLinesList = csvLines.asCollection().getValue();
 
@@ -122,7 +122,8 @@ public class CSVFileSourceIT {
 
     final Pipeline pipeline = new MRPipeline(CSVFileSourceIT.class, tmpDir.getDefaultConfiguration());
     final PCollection<String> csvLines = pipeline.read(new CSVFileSource(new Path(chineseLines),
-        CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '“', '”', '、'));
+        CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING, '“', '”', '、',
+        CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE));
     final Collection<String> csvLinesList = csvLines.asCollection().getValue();
     for (int i = 0; i < expectedChineseLines.length; i++) {
       assertTrue(csvLinesList.contains(expectedChineseLines[i]));

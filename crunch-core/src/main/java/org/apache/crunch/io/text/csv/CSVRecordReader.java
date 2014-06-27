@@ -51,6 +51,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
   private final char escape;
   private final String inputFileEncoding;
   private final int fileStreamBufferSize;
+  private final int maximumRecordSize;
 
   private int totalRecordsRead = 0;
 
@@ -60,7 +61,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
   public CSVRecordReader() {
     this(CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING,
         CSVLineReader.DEFAULT_QUOTE_CHARACTER, CSVLineReader.DEFAULT_QUOTE_CHARACTER,
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER);
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
@@ -77,9 +78,13 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
    *          the character to use to close quote blocks
    * @param escape
    *          the character to use for escaping control characters and quotes
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          {@code CSVLineReader} will stop parsing and an exception will be
+   *          thrown.
    */
   public CSVRecordReader(final int bufferSize, final String inputFileEncoding, final char openQuote,
-      final char closeQuote, final char escape) {
+      final char closeQuote, final char escape, final int maximumRecordSize) {
     Preconditions.checkNotNull(openQuote, "quote cannot be null.");
     Preconditions.checkNotNull(closeQuote, "quote cannot be null.");
     Preconditions.checkNotNull(escape, "escape cannot be null.");
@@ -89,6 +94,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
     this.openQuote = openQuote;
     this.closeQuote = closeQuote;
     this.escape = escape;
+    this.maximumRecordSize = maximumRecordSize;
   }
 
   /**
@@ -116,12 +122,12 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
     LOGGER.info("Split starts at: " + start);
     LOGGER.info("Split will end at: " + end);
 
-    // Open the file, seek to the start of the split, then wrap it in a
-    // CSVLineReader
+    // Open the file, seek to the start of the split
+    // then wrap it in a CSVLineReader
     fileIn = file.getFileSystem(job).open(file);
     fileIn.seek(start);
     csvLineReader = new CSVLineReader(fileIn, this.fileStreamBufferSize, inputFileEncoding, this.openQuote,
-        this.closeQuote, this.escape);
+        this.closeQuote, this.escape, this.maximumRecordSize);
   }
 
   /**

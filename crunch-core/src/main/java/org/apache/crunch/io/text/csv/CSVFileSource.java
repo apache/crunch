@@ -66,11 +66,27 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    */
   public static final String CSV_ESCAPE_CHAR = "csv.escapechar";
 
+  /**
+   * The key used in the {@code CSVInputFormat}'s {@code FormatBundle} to set
+   * the underlying {@code CSVLineReader}'s maximum record size. If this is not
+   * set, INPUT_SPLIT_SIZE will be checked first, and if that is not set, 64mb
+   * will be assumed.
+   */
+  public static final String MAXIMUM_RECORD_SIZE = "csv.maximumrecordsize";
+
+  /**
+   * The key used in the {@code CSVInputFormat}'s {@code FormatBundle} to set
+   * the underlying {@code CSVLineReader}'s input split size. If it is not set,
+   * 64mb will be assumed.
+   */
+  public static final String INPUT_SPLIT_SIZE = "csv.inputsplitsize";
+
   private int bufferSize;
   private String inputFileEncoding;
   private char openQuoteChar;
   private char closeQuoteChar;
   private char escapeChar;
+  private int maximumRecordSize;
 
   /**
    * Create a new CSVFileSource instance
@@ -78,10 +94,10 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    * @param path
    *          The {@code Path} to the input data
    */
-  public CSVFileSource(List<Path> paths) {
+  public CSVFileSource(final List<Path> paths) {
     this(paths, CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING,
         CSVLineReader.DEFAULT_QUOTE_CHARACTER, CSVLineReader.DEFAULT_QUOTE_CHARACTER,
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER);
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
@@ -90,10 +106,10 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    * @param path
    *          The {@code Path} to the input data
    */
-  public CSVFileSource(Path path) {
+  public CSVFileSource(final Path path) {
     this(path, CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING,
         CSVLineReader.DEFAULT_QUOTE_CHARACTER, CSVLineReader.DEFAULT_QUOTE_CHARACTER,
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER);
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
@@ -116,12 +132,16 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    * @param escapeChar
    *          The character representing the escape character to be used in the
    *          underlying {@code CSVLineReader}
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          {@code CSVLineReader} will stop parsing and an exception will be
+   *          thrown.
    */
-  public CSVFileSource(List<Path> paths, final int bufferSize, final String inputFileEncoding,
-      final char openQuoteChar, final char closeQuoteChar, final char escapeChar) {
+  public CSVFileSource(final List<Path> paths, final int bufferSize, final String inputFileEncoding,
+      final char openQuoteChar, final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
     super(paths, Writables.strings(), getCSVBundle(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar,
-        escapeChar));
-    setPrivateVariables(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar);
+        escapeChar, maximumRecordSize));
+    setPrivateVariables(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar, maximumRecordSize);
   }
 
   /**
@@ -144,23 +164,28 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    * @param escapeChar
    *          The character representing the escape character to be used in the
    *          underlying {@code CSVLineReader}
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          {@code CSVLineReader} will stop parsing and an exception will be
+   *          thrown.
    */
-  public CSVFileSource(Path path, final int bufferSize, final String inputFileEncoding, final char openQuoteChar,
-      final char closeQuoteChar, final char escapeChar) {
+  public CSVFileSource(final Path path, final int bufferSize, final String inputFileEncoding, final char openQuoteChar,
+      final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
     super(path, Writables.strings(), getCSVBundle(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar,
-        escapeChar));
-    setPrivateVariables(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar);
+        escapeChar, maximumRecordSize));
+    setPrivateVariables(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar, maximumRecordSize);
   }
 
   @Override
-  public Iterable<String> read(Configuration conf) throws IOException {
-    return read(conf,
-        new CSVFileReaderFactory(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar));
+  public Iterable<String> read(final Configuration conf) throws IOException {
+    return read(conf, new CSVFileReaderFactory(bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar,
+        escapeChar, maximumRecordSize));
   }
 
   @Override
   public ReadableData<String> asReadable() {
-    return new CSVReadableData(paths, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar);
+    return new CSVReadableData(paths, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar,
+        maximumRecordSize);
   }
 
   @Override
@@ -173,19 +198,20 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
    * by {@code CSVInputFormat}
    */
   private static FormatBundle<CSVInputFormat> getCSVBundle(final int bufferSize, final String inputFileEncoding,
-      final char openQuoteChar, final char closeQuoteChar, final char escapeChar) {
-    FormatBundle<CSVInputFormat> bundle = FormatBundle.forInput(CSVInputFormat.class);
+      final char openQuoteChar, final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
+    final FormatBundle<CSVInputFormat> bundle = FormatBundle.forInput(CSVInputFormat.class);
     bundle.set(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
     bundle.set(CSV_BUFFER_SIZE, String.valueOf(bufferSize));
     bundle.set(CSV_INPUT_FILE_ENCODING, String.valueOf(inputFileEncoding));
     bundle.set(CSV_OPEN_QUOTE_CHAR, String.valueOf(openQuoteChar));
     bundle.set(CSV_CLOSE_QUOTE_CHAR, String.valueOf(closeQuoteChar));
     bundle.set(CSV_ESCAPE_CHAR, String.valueOf(escapeChar));
+    bundle.set(MAXIMUM_RECORD_SIZE, String.valueOf(maximumRecordSize));
     return bundle;
   }
 
   private void setPrivateVariables(final int bufferSize, final String inputFileEncoding, final char openQuoteChar,
-      final char closeQuoteChar, final char escapeChar) {
+      final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
     if (isSameCharacter(openQuoteChar, escapeChar)) {
       throw new IllegalArgumentException("The open quote (" + openQuoteChar + ") and escape (" + escapeChar
           + ") characters must be different!");
@@ -199,8 +225,9 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
     this.openQuoteChar = openQuoteChar;
     this.closeQuoteChar = closeQuoteChar;
     this.escapeChar = escapeChar;
+    this.maximumRecordSize = maximumRecordSize;
   }
-  
+
   private boolean isSameCharacter(final char c1, final char c2) {
     return c2 == c1;
   }
