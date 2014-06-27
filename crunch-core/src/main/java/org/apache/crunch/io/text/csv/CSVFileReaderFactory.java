@@ -35,11 +35,12 @@ import com.google.common.collect.Iterators;
  */
 public class CSVFileReaderFactory implements FileReaderFactory<String> {
   private static final Log LOG = LogFactory.getLog(CSVFileReaderFactory.class);
-  private int bufferSize;
-  private String inputFileEncoding;
-  private char openQuoteChar;
-  private char closeQuoteChar;
-  private char escapeChar;
+  private final int bufferSize;
+  private final String inputFileEncoding;
+  private final char openQuoteChar;
+  private final char closeQuoteChar;
+  private final char escapeChar;
+  private final int maximumRecordSize;
 
   /**
    * Creates a new {@code CSVFileReaderFactory} instance with default
@@ -48,11 +49,11 @@ public class CSVFileReaderFactory implements FileReaderFactory<String> {
   CSVFileReaderFactory() {
     this(CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING,
         CSVLineReader.DEFAULT_QUOTE_CHARACTER, CSVLineReader.DEFAULT_QUOTE_CHARACTER,
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER);
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
-   * Creates a new {@code CSVFileReaderFactory} instance with custon
+   * Creates a new {@code CSVFileReaderFactory} instance with custom
    * configuration
    * 
    * @param bufferSize
@@ -70,23 +71,29 @@ public class CSVFileReaderFactory implements FileReaderFactory<String> {
    * @param escapeChar
    *          The character representing the escape character to be used in the
    *          underlying {@code CSVLineReader}
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          {@code CSVLineReader} will stop parsing and an exception will be
+   *          thrown.
    */
   CSVFileReaderFactory(final int bufferSize, final String inputFileEncoding, final char openQuoteChar,
-      final char closeQuoteChar, final char escapeChar) {
+      final char closeQuoteChar, final char escapeChar, final int maximumRecordSize) {
     this.bufferSize = bufferSize;
     this.inputFileEncoding = inputFileEncoding;
     this.openQuoteChar = openQuoteChar;
     this.closeQuoteChar = closeQuoteChar;
     this.escapeChar = escapeChar;
+    this.maximumRecordSize = maximumRecordSize;
   }
 
   @Override
-  public Iterator<String> read(FileSystem fs, Path path) {
+  public Iterator<String> read(final FileSystem fs, final Path path) {
     FSDataInputStream is;
     try {
       is = fs.open(path);
-      return new CSVRecordIterator(is, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar);
-    } catch (IOException e) {
+      return new CSVRecordIterator(is, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar,
+          maximumRecordSize);
+    } catch (final IOException e) {
       LOG.info("Could not read path: " + path, e);
       return Iterators.emptyIterator();
     }

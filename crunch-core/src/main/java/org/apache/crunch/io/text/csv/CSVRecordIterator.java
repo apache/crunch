@@ -31,7 +31,7 @@ import com.google.common.io.Closeables;
  * An {@code Iterator} for an internally created {@code CSVLineReader}
  */
 public class CSVRecordIterator implements Iterator<String>, Closeable {
-  private CSVLineReader csvLineReader;
+  private final CSVLineReader csvLineReader;
   private InputStream inputStream;
   private String currentLine;
 
@@ -45,7 +45,7 @@ public class CSVRecordIterator implements Iterator<String>, Closeable {
   public CSVRecordIterator(final InputStream inputStream) throws UnsupportedEncodingException {
     this(inputStream, CSVLineReader.DEFAULT_BUFFER_SIZE, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING,
         CSVLineReader.DEFAULT_QUOTE_CHARACTER, CSVLineReader.DEFAULT_QUOTE_CHARACTER,
-        CSVLineReader.DEFAULT_ESCAPE_CHARACTER);
+        CSVLineReader.DEFAULT_ESCAPE_CHARACTER, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
   }
 
   /**
@@ -63,12 +63,17 @@ public class CSVRecordIterator implements Iterator<String>, Closeable {
    *          the character to use to close quote blocks
    * @param escape
    *          the character to use for escaping control characters and quotes
+   * @param maximumRecordSize
+   *          The maximum acceptable size of one CSV record. Beyond this limit,
+   *          {@code CSVLineReader} will stop parsing and an exception will be
+   *          thrown.
    * @throws UnsupportedEncodingException
    */
   public CSVRecordIterator(final InputStream inputStream, final int bufferSize, final String inputFileEncoding,
-      final char openQuoteChar, final char closeQuoteChar, final char escapeChar) throws UnsupportedEncodingException {
+      final char openQuoteChar, final char closeQuoteChar, final char escapeChar, final int maximumRecordSize)
+      throws UnsupportedEncodingException {
     csvLineReader = new CSVLineReader(inputStream, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar,
-        escapeChar);
+        escapeChar, maximumRecordSize);
     this.inputStream = inputStream;
     incrementValue();
   }
@@ -84,7 +89,7 @@ public class CSVRecordIterator implements Iterator<String>, Closeable {
 
   @Override
   public String next() {
-    String result = currentLine;
+    final String result = currentLine;
     incrementValue();
     return result;
   }
@@ -95,13 +100,13 @@ public class CSVRecordIterator implements Iterator<String>, Closeable {
   }
 
   private void incrementValue() {
-    Text tempText = new Text();
+    final Text tempText = new Text();
     try {
       csvLineReader.readCSVLine(tempText);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       throw new RuntimeException("A problem occurred accessing the underlying CSV file stream.", e);
     }
-    String tempTextAsString = tempText.toString();
+    final String tempTextAsString = tempText.toString();
     if ("".equals(tempTextAsString)) {
       currentLine = null;
     } else {
