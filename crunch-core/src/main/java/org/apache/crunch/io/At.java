@@ -146,7 +146,29 @@ public class At {
    * @return A new {@code SourceTarget<T>} instance
    */
   public static <T> SourceTarget<T> avroFile(Path path, PType<T> ptype) {
-    return new AvroFileSourceTarget<T>(path, (AvroType<T>) ptype);
+    return avroFile(path, (AvroType<T>) ptype);
+  }
+
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given path name.
+   *
+   * @param pathName The name of the path to the data on the filesystem
+   * @param ptype The {@code AvroType} for the Avro records
+   * @return A new {@code SourceTarget<T>} instance
+   */
+  public static <T> SourceTarget<T> avroFile(String pathName, AvroType<T> ptype) {
+    return avroFile(new Path(pathName), ptype);
+  }
+
+  /**
+   * Creates a {@code SourceTarget<T>} instance from the Avro file(s) at the given {@code Path}.
+   *
+   * @param path The {@code Path} to the data
+   * @param ptype The {@code AvroType} for the Avro records
+   * @return A new {@code SourceTarget<T>} instance
+   */
+  public static <T> SourceTarget<T> avroFile(Path path, AvroType<T> ptype) {
+    return new AvroFileSourceTarget<T>(path, ptype);
   }
 
   /**
