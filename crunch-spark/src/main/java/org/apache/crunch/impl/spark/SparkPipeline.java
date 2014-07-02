@@ -36,6 +36,7 @@ import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
 
@@ -55,13 +56,17 @@ public class SparkPipeline extends DistributedPipeline {
   }
 
   public SparkPipeline(String sparkConnect, String appName, Class<?> jarClass) {
-    super(appName, new Configuration(), new SparkCollectFactory());
+    this(sparkConnect, appName, jarClass, new Configuration());
+  }
+
+  public SparkPipeline(String sparkConnect, String appName, Class<?> jarClass, Configuration conf) {
+    super(appName, conf, new SparkCollectFactory());
     this.sparkConnect = Preconditions.checkNotNull(sparkConnect);
     this.jarClass = jarClass;
   }
 
   public SparkPipeline(JavaSparkContext sparkContext, String appName) {
-    super(appName, new Configuration(), new SparkCollectFactory());
+    super(appName, sparkContext.hadoopConfiguration(), new SparkCollectFactory());
     this.sparkContext = Preconditions.checkNotNull(sparkContext);
     this.sparkConnect = sparkContext.getSparkHome().orNull();
   }
@@ -120,8 +125,16 @@ public class SparkPipeline extends DistributedPipeline {
         outputTargetsToMaterialize.remove(c);
       }
     }
+
+    Configuration conf = getConfiguration();
     if (sparkContext == null) {
-      this.sparkContext = new JavaSparkContext(sparkConnect, getName());
+      SparkConf sparkConf = new SparkConf();
+      for (Map.Entry<String, String> e : conf) {
+        if (e.getKey().startsWith("spark.")) {
+          sparkConf.set(e.getKey(), e.getValue());
+        }
+      }
+      this.sparkContext = new JavaSparkContext(sparkConnect, getName(), sparkConf);
       if (jarClass != null) {
         String[] jars = JavaSparkContext.jarOfClass(jarClass);
         if (jars != null && jars.length > 0) {
@@ -131,8 +144,9 @@ public class SparkPipeline extends DistributedPipeline {
         }
       }
     }
-    SparkRuntime runtime = new SparkRuntime(this, sparkContext, getConfiguration(), outputTargets, toMaterialize,
-        cachedCollections);
+
+    copyConfiguration(conf, sparkContext.hadoopConfiguration());
+    SparkRuntime runtime = new SparkRuntime(this, sparkContext, conf, outputTargets, toMaterialize, cachedCollections);
     runtime.execute();
     outputTargets.clear();
     return runtime;
@@ -146,5 +160,11 @@ public class SparkPipeline extends DistributedPipeline {
       sparkContext = null;
     }
     return res;
+  }
+
+  private static void copyConfiguration(Configuration from, Configuration to) {
+    for (Map.Entry<String, String> e : from) {
+      to.set(e.getKey(), e.getValue());
+    }
   }
 }

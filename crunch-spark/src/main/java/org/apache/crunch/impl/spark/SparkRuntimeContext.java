@@ -20,6 +20,7 @@ package org.apache.crunch.impl.spark;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.ByteStreams;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.TaskInputOutputContextFactory;
@@ -34,8 +35,6 @@ import org.apache.spark.Accumulator;
 import org.apache.spark.SparkFiles;
 import org.apache.spark.broadcast.Broadcast;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -59,6 +58,7 @@ public class SparkRuntimeContext implements Serializable {
 
   public void setConf(Broadcast<byte[]> broadConf) {
     this.broadConf = broadConf;
+    this.conf = null;
   }
 
   public void initialize(DoFn<?, ?> fn) {
@@ -94,9 +94,7 @@ public class SparkRuntimeContext implements Serializable {
     if (conf == null) {
       conf = new Configuration();
       try {
-        ByteArrayInputStream bais = new ByteArrayInputStream(broadConf.value());
-        conf.readFields(new DataInputStream(bais));
-        bais.close();
+        conf.readFields(ByteStreams.newDataInput(broadConf.value()));
       } catch (Exception e) {
         throw new RuntimeException("Error reading broadcast configuration", e);
       }
