@@ -22,7 +22,6 @@ import scala.collection.JavaConversions
 import org.apache.crunch.{PCollection => JCollection, Pair => CPair, _}
 import org.apache.crunch.lib.{Aggregate, Cartesian, Sample}
 import org.apache.crunch.scrunch.Conversions._
-import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
 import org.apache.crunch.types.PType
 import org.apache.crunch.fn.IdentityFn

@@ -24,7 +24,6 @@ import scala.collection.JavaConversions._
 import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, _}
 import org.apache.crunch.lib.{Cartesian, Aggregate, Cogroup, PTables}
 import org.apache.crunch.lib.join.{DefaultJoinStrategy, JoinType}
-import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 import org.apache.crunch.types.{PTableType, PType}
 import scala.collection.Iterable
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
@@ -125,6 +124,31 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def fullJoin[V2](other: PTable[K, V2], parallelism: Int = -1): PTable[K, (V, V2)] = {
     join[V2](other, JoinType.FULL_OUTER_JOIN, parallelism)
+  }
+
+  def joinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2],
+                    joinType: JoinType): PTable[K, (V, V2)] = {
+     strategy.join(this, other, joinType)
+  }
+
+  def joinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2]): PTable[K, (V, V2)] = {
+    innerJoinUsing[V2](other, strategy)
+  }
+
+  def innerJoinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2]) = {
+    joinUsing[V2](other, strategy, JoinType.INNER_JOIN)
+  }
+
+  def leftJoinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2]) = {
+    joinUsing[V2](other, strategy, JoinType.LEFT_OUTER_JOIN)
+  }
+
+  def rightJoinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2]) = {
+    joinUsing[V2](other, strategy, JoinType.RIGHT_OUTER_JOIN)
+  }
+
+  def fullJoinUsing[V2](other: PTable[K, V2], strategy: ScrunchJoinStrategy[K, V, V2]) = {
+    joinUsing[V2](other, strategy, JoinType.FULL_OUTER_JOIN)
   }
 
   def cross[K2, V2](other: PTable[K2, V2]): PTable[(K, K2), (V, V2)] = {
