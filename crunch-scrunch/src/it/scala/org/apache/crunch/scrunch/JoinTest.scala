@@ -20,9 +20,10 @@ package org.apache.crunch.scrunch
 import org.apache.crunch.io.{From => from, To => to}
 
 import _root_.org.junit.Test
+import org.apache.crunch.lib.join.JoinType
 
 class JoinTest extends CrunchSuite {
-  lazy val pipeline = Pipeline.mapReduce[CogroupTest](tempDir.getDefaultConfiguration)
+  lazy val pipeline = Pipeline.mapReduce[JoinTest](tempDir.getDefaultConfiguration)
 
   def wordCount(fileName: String) = {
     pipeline.read(from.textFile(fileName))
@@ -37,6 +38,18 @@ class JoinTest extends CrunchSuite {
         .map((k, v) => (k, v._1 - v._2))
         .write(to.textFile(output.getAbsolutePath()))
         .filter((k, d) => d > 0).materialize
+    assert(filtered.exists(_ == ("macbeth", 66)))
+    pipeline.done
+  }
+
+  @Test def joinMapside {
+    val shakespeare = tempDir.copyResourceFileName("shakes.txt")
+    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val output = tempDir.getFile("output")
+    val filtered = wordCount(shakespeare).innerJoinUsing(wordCount(maugham), Joins.mapside())
+      .map((k, v) => (k, v._1 - v._2))
+      .write(to.textFile(output.getAbsolutePath()))
+      .filter((k, d) => d > 0).materialize
     assert(filtered.exists(_ == ("macbeth", 66)))
     pipeline.done
   }

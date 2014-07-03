@@ -65,6 +65,22 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
   }
 
   /**
+   * Cache the data in this instance using the default caching mechanism for the
+   * underlying Pipeline type.
+   *
+   * @return this instance
+   */
+  def cache() = wrap(native.cache())
+
+  /**
+   * Cache the data in this instance using the given caching options, if they are
+   * applicable for the underlying Pipeline type.
+   *
+   * @return this instance
+   */
+  def cache(opts: CachingOptions) = wrap(native.cache(opts))
+
+  /**
    * Apply a flatMap operation to this instance, returning a {@code PTable} if the return
    * type of the function is a {@code TraversableOnce[Tuple2]} and a {@code PCollection} otherwise.
    */
