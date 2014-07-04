@@ -17,8 +17,10 @@
  */
 package org.apache.crunch.io.text;
 
+import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.SequentialFileNamingScheme;
@@ -37,6 +39,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
+import java.util.Map;
+
 public class TextFileTarget extends FileTargetImpl {
   private static Class<? extends FileOutputFormat> getOutputFormat(PType<?> ptype) {
     if (ptype.getFamily().equals(AvroTypeFamily.getInstance())) {
@@ -45,6 +49,8 @@ public class TextFileTarget extends FileTargetImpl {
       return TextOutputFormat.class;
     }
   }
+
+  private final Map<String, String> extraConf = Maps.newHashMap();
 
   public <T> TextFileTarget(String path) {
     this(new Path(path));
@@ -69,11 +75,21 @@ public class TextFileTarget extends FileTargetImpl {
   }
 
   @Override
+  public Target outputConf(String key, String value) {
+    extraConf.put(key, value);
+    return this;
+  }
+
+  @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     Converter converter = ptype.getConverter();
     Class keyClass = converter.getKeyClass();
     Class valueClass = converter.getValueClass();
-    configureForMapReduce(job, keyClass, valueClass, FormatBundle.forOutput(getOutputFormat(ptype)), outputPath, name);
+    FormatBundle fb = FormatBundle.forOutput(getOutputFormat(ptype));
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      fb.set(e.getKey(), e.getValue());
+    }
+    configureForMapReduce(job, keyClass, valueClass, fb, outputPath, name);
   }
 
   @Override
