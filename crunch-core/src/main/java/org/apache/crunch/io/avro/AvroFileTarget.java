@@ -17,8 +17,10 @@
  */
 package org.apache.crunch.io.avro;
 
+import com.google.common.collect.Maps;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.OutputHandler;
@@ -32,7 +34,11 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
 
+import java.util.Map;
+
 public class AvroFileTarget extends FileTargetImpl {
+
+  private Map<String, String> extraConf = Maps.newHashMap();
 
   public AvroFileTarget(String path) {
     this(new Path(path));
@@ -61,6 +67,12 @@ public class AvroFileTarget extends FileTargetImpl {
   }
 
   @Override
+  public Target outputConf(String key, String value) {
+    extraConf.put(key, value);
+    return this;
+  }
+
+  @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     AvroType<?> atype = (AvroType<?>) ptype;
     FormatBundle bundle = FormatBundle.forOutput(AvroOutputFormat.class);
@@ -69,6 +81,9 @@ public class AvroFileTarget extends FileTargetImpl {
       schemaParam = "avro.output.schema";
     } else {
       schemaParam = "avro.output.schema." + name;
+    }
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      bundle.set(e.getKey(), e.getValue());
     }
     bundle.set(schemaParam, atype.getSchema().toString());
     AvroMode.fromType(atype).configure(bundle);

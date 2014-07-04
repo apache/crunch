@@ -17,10 +17,13 @@
  */
 package org.apache.crunch.io.parquet;
 
+import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.crunch.SourceTarget;
+import org.apache.crunch.Target;
 import org.apache.crunch.io.FileNamingScheme;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.crunch.io.impl.FileTargetImpl;
@@ -33,9 +36,13 @@ import org.apache.hadoop.mapreduce.Job;
 import parquet.avro.AvroWriteSupport;
 import parquet.hadoop.ParquetOutputFormat;
 
+import java.util.Map;
+
 public class AvroParquetFileTarget extends FileTargetImpl {
 
   private static final String PARQUET_AVRO_SCHEMA_PARAMETER = "parquet.avro.schema";
+
+  private Map<String, String> extraConf = Maps.newHashMap();
 
   public AvroParquetFileTarget(String path) {
     this(new Path(path));
@@ -47,6 +54,12 @@ public class AvroParquetFileTarget extends FileTargetImpl {
 
   public AvroParquetFileTarget(Path path, FileNamingScheme fileNamingScheme) {
     super(path, CrunchAvroParquetOutputFormat.class, fileNamingScheme);
+  }
+
+  @Override
+  public Target outputConf(String key, String value) {
+    extraConf.put(key, value);
+    return this;
   }
 
   @Override
@@ -72,21 +85,18 @@ public class AvroParquetFileTarget extends FileTargetImpl {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     AvroType<?> atype = (AvroType<?>) ptype;
-    Configuration conf = job.getConfiguration();
     String schemaParam;
     if (name == null) {
       schemaParam = PARQUET_AVRO_SCHEMA_PARAMETER;
     } else {
       schemaParam = PARQUET_AVRO_SCHEMA_PARAMETER + "." + name;
     }
-    String outputSchema = conf.get(schemaParam);
-    if (outputSchema == null) {
-      conf.set(schemaParam, atype.getSchema().toString());
-    } else if (!outputSchema.equals(atype.getSchema().toString())) {
-      throw new IllegalStateException("Avro targets must use the same output schema");
+    FormatBundle fb = FormatBundle.forOutput(CrunchAvroParquetOutputFormat.class);
+    for (Map.Entry<String, String> e : extraConf.entrySet()) {
+      fb.set(e.getKey(), e.getValue());
     }
-    configureForMapReduce(job, Void.class, atype.getTypeClass(),
-        CrunchAvroParquetOutputFormat.class, outputPath, name);
+    fb.set(schemaParam, atype.getSchema().toString());
+    configureForMapReduce(job, Void.class, atype.getTypeClass(), fb, outputPath, name);
   }
 
   @Override
