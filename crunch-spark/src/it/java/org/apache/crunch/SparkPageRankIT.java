@@ -26,6 +26,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.avro.AvroTypeFamily;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.junit.Before;
 import org.junit.Rule;
@@ -76,9 +77,9 @@ public class SparkPageRankIT {
   }
 
   @Test
-  public void testAvroJSON() throws Exception {
+  public void testAvroReflects() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
-    PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
+    PType<PageRankData> prType = Avros.reflects(PageRankData.class);
     String urlInput = tmpDir.copyResourceFileName("urls.txt");
     run(pipeline, urlInput, prType, tf);
     pipeline.done();

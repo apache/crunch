@@ -39,14 +39,18 @@ import org.apache.crunch.impl.spark.serde.AvroSerDe;
 import org.apache.crunch.impl.spark.serde.SerDe;
 import org.apache.crunch.impl.spark.serde.WritableSerDe;
 import org.apache.crunch.types.PTableType;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.writable.WritableType;
 import org.apache.crunch.util.PartitionUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.storage.StorageLevel;
 
 import java.util.List;
+import java.util.Map;
 
 public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements SparkCollection {
 
@@ -70,6 +74,12 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
     return rdd;
   }
 
+  private AvroSerDe getAvroSerde(PType ptype, Configuration conf) {
+    AvroType at = (AvroType) ptype;
+    Map<String, String> props = AvroMode.fromType(at).withFactoryFromConfiguration(conf).getModeProperties();
+    return new AvroSerDe(at, props);
+  }
+
   private JavaRDDLike<?, ?> getJavaRDDLikeInternal(SparkRuntime runtime, CombineFn<K, V> combineFn) {
     JavaPairRDD<K, V> parentRDD = (JavaPairRDD<K, V>) ((SparkCollection)getOnlyParent()).getJavaRDDLike(runtime);
     if (combineFn != null) {
@@ -78,8 +88,8 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
     SerDe keySerde, valueSerde;
     PTableType<K, V> parentType = ptype.getTableType();
     if (parentType instanceof AvroType) {
-      keySerde = new AvroSerDe((AvroType) parentType.getKeyType());
-      valueSerde = new AvroSerDe((AvroType) parentType.getValueType());
+      keySerde = getAvroSerde(parentType.getKeyType(), runtime.getConfiguration());
+      valueSerde = getAvroSerde(parentType.getValueType(), runtime.getConfiguration());
     } else {
       keySerde = new WritableSerDe(((WritableType) parentType.getKeyType()).getSerializationClass());
       valueSerde = new WritableSerDe(((WritableType) parentType.getValueType()).getSerializationClass());
