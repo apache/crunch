@@ -18,10 +18,12 @@
 package org.apache.crunch.impl.spark.serde;
 
 import com.google.common.base.Function;
+import org.apache.hadoop.conf.Configuration;
 
 import java.io.Serializable;
 
 public interface SerDe<T> extends Serializable {
+
   byte[] toBytes(T obj) throws Exception;
 
   T fromBytes(byte[] bytes);

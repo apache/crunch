@@ -18,6 +18,7 @@
 
 package org.apache.crunch.types.avro;
 
+import com.google.common.collect.Maps;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumReader;
@@ -33,6 +34,8 @@ import org.apache.avro.specific.SpecificDatumWriter;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ReflectionUtils;
+
+import java.util.Map;
 
 /**
  * AvroMode is an immutable object used for configuring the reading and writing of Avro types.
@@ -307,6 +310,19 @@ public class AvroMode implements ReaderWriterFactory {
     if (factory != null) {
       conf.setClass(propName, factory.getClass(), ReaderWriterFactory.class);
     }
+  }
+
+  /**
+   * Returns the entries that a {@code Configuration} instance needs to enable
+   * this AvroMode as a serializable map of key-value pairs.
+   */
+  public Map<String, String> getModeProperties() {
+    Map<String, String> props = Maps.newHashMap();
+    props.put(AVRO_MODE_PROPERTY, this.modeType.toString());
+    if (factory != null) {
+      props.put(propName, factory.getClass().getCanonicalName());
+    }
+    return props;
   }
 
   /**

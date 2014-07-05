@@ -26,53 +26,60 @@ import org.apache.avro.io.Decoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.Encoder;
 import org.apache.avro.io.EncoderFactory;
-import org.apache.avro.mapred.AvroWrapper;
 import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.conf.Configuration;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 public class AvroSerDe<T> implements SerDe<T> {
 
   private AvroType<T> avroType;
+  private Map<String, String> modeProperties;
+  private transient AvroMode mode;
   private transient DatumWriter<T> writer;
   private transient DatumReader<T> reader;
 
-  public AvroSerDe(AvroType<T> avroType) {
+  public AvroSerDe(AvroType<T> avroType, Map<String, String> modeProperties) {
     this.avroType = avroType;
+    this.modeProperties = modeProperties;
     if (avroType.hasReflect() && avroType.hasSpecific()) {
       Avros.checkCombiningSpecificAndReflectionSchemas();
     }
   }
 
+  private AvroMode getMode() {
+    if (mode == null) {
+      mode = AvroMode.fromType(avroType);
+      if (modeProperties != null && !modeProperties.isEmpty()) {
+        Configuration conf = new Configuration();
+        for (Map.Entry<String, String> e : modeProperties.entrySet()) {
+          conf.set(e.getKey(), e.getValue());
+        }
+        mode = mode.withFactoryFromConfiguration(conf);
+      }
+    }
+    return mode;
+  }
+
   private DatumWriter<T> getWriter() {
     if (writer == null) {
-      if (avroType.hasReflect()) {
-        writer = new ReflectDatumWriter<T>(avroType.getSchema());
-      } else if (avroType.hasSpecific()) {
-        writer = new SpecificDatumWriter<T>(avroType.getSchema());
-      } else {
-        writer = new GenericDatumWriter<T>(avroType.getSchema());
-      }
+      writer = getMode().getWriter(avroType.getSchema());
     }
     return writer;
   }
 
   private DatumReader<T> getReader() {
     if (reader == null) {
-      if (avroType.hasReflect()) {
-        reader = new ReflectDatumReader<T>(avroType.getSchema());
-      } else if (avroType.hasSpecific()) {
-        reader = new SpecificDatumReader<T>(avroType.getSchema());
-      } else {
-        reader = new GenericDatumReader<T>(avroType.getSchema());
-      }
+      reader = getMode().getReader(avroType.getSchema());
     }
     return reader;
   }
