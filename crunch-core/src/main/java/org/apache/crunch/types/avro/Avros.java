@@ -838,6 +838,16 @@ public class Avros {
     return PTypes.jsonString(clazz, AvroTypeFamily.getInstance());
   }
 
+  /**
+   * A table type with an Avro type as key and as value.
+   * <p/>
+   * The {code PTableType} returned by this method is also compatible with files containing Avro {@code Pair}s that
+   * are created using the {@code org.apache.avro.mapred.AvroJob} class.
+   *
+   * @param key the PType of the key in the table
+   * @param value the PType of the value in the table
+   * @return PTableType for reading and writing avro tables
+   */
   public static final <K, V> AvroTableType<K, V> tableOf(PType<K> key, PType<V> value) {
     if (key instanceof PTableType) {
       PTableType ptt = (PTableType) key;
@@ -850,6 +860,26 @@ public class Avros {
     AvroType<K> avroKey = (AvroType<K>) key;
     AvroType<V> avroValue = (AvroType<V>) value;
     return new AvroTableType(avroKey, avroValue, Pair.class);
+  }
+
+  /**
+   * A table type with an Avro type as key and value. The {@code PTableType} returned by this method is specifically
+   * for reading and writing files that are compatible with those created via the
+   * {@code org.apache.avro.mapreduce.AvroJob} class. For all other Avro table purposes, the
+   * {@link #tableOf(org.apache.crunch.types.PType, org.apache.crunch.types.PType)} method should be used.
+   *
+   * @param key the PType of the key in the table
+   * @param value the PType of the value in the table
+   * @return PTableType for reading and writing files compatible with those created via
+   * the {@code org.apache.avro.mapreduce.AvroJob} class
+   */
+  public static final <K, V> AvroKeyValueTableType<K, V> keyValueTableOf(PType<K> key, PType<V> value) {
+    AvroType<K> avroKey = (AvroType<K>) key;
+    AvroType<V> avroValue = (AvroType<V>) value;
+
+    return new AvroKeyValueTableType<K, V>(avroKey, avroValue,
+        // Casting this to class is an unfortunately little way to get the generics out of the way here
+        (Class)Pair.class);
   }
 
   private static final Schema NULL_SCHEMA = Schema.create(Type.NULL);

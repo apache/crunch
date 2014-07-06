@@ -23,7 +23,6 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 
 import com.google.common.collect.Lists;
 import org.apache.avro.generic.GenericData.Record;
@@ -70,27 +69,12 @@ public class AvroDeepCopierTest {
     assertNull(new AvroDeepCopier.AvroGenericDeepCopier(Person.SCHEMA$).deepCopy(null));
   }
 
-  static class ReflectedPerson {
-    String name;
-    int age;
-    List<String> siblingnames;
-
-    @Override
-    public boolean equals(Object other) {
-      if (other == null || !(other instanceof ReflectedPerson)) {
-        return false;
-      }
-      ReflectedPerson that = (ReflectedPerson) other;
-      return name.equals(that.name) && age == that.age && siblingnames.equals(that.siblingnames);
-    }
-  }
-
   @Test
   public void testDeepCopyReflect() {
     ReflectedPerson person = new ReflectedPerson();
-    person.name = "John Doe";
-    person.age = 42;
-    person.siblingnames = Lists.newArrayList();
+    person.setName("John Doe");
+    person.setAge(42);
+    person.setSiblingnames(Lists.<String>newArrayList());
 
     AvroDeepCopier<ReflectedPerson> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
         ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema());
