@@ -91,6 +91,7 @@ under the License.
     <hadoop.version>1.1.2</hadoop.version>
     <hbase.version>0.98.1-hadoop1</hbase.version>
     <hbase.midfix>hadoop1</hbase.midfix>
+    <avro.classifier>hadoop1</avro.classifier>
 
     <scala.base.version>2.10</scala.base.version>
     <scala.version>2.10.4</scala.version>
@@ -213,6 +214,7 @@ under the License.
         <groupId>org.apache.avro</groupId>
         <artifactId>avro-mapred</artifactId>
         <version>${avro.version}</version>
+        <classifier>${avro.classifier}</classifier>
         <exclusions>
           <exclusion>
             <groupId>org.apache.avro</groupId>
@@ -473,6 +475,7 @@ under the License.
         <hbase.version>0.98.1-hadoop2</hbase.version>
         <commons-lang.version>2.5</commons-lang.version>
         <hbase.midfix>hadoop2</hbase.midfix>
+        <avro.classifier>hadoop2</avro.classifier>
       </properties>
       <dependencyManagement>
         <dependencies>
