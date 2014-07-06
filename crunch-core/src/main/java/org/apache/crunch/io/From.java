@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericData;
@@ -28,9 +29,11 @@ import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.mapred.FsInput;
 import org.apache.avro.specific.SpecificRecord;
+import org.apache.crunch.Pair;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.io.avro.AvroFileSource;
+import org.apache.crunch.io.avro.AvroTableFileSource;
 import org.apache.crunch.io.impl.FileTableSourceImpl;
 import org.apache.crunch.io.seq.SeqFileSource;
 import org.apache.crunch.io.seq.SeqFileTableSource;
@@ -314,6 +317,28 @@ public class From {
   public static Source<GenericData.Record> avroFile(List<Path> paths, Configuration conf) {
     Preconditions.checkArgument(!paths.isEmpty(), "At least one path must be supplied");
     return avroFile(paths, Avros.generics(getSchemaFromPath(paths.get(0), conf)));
+  }
+
+  /**
+   * Creates a {@code TableSource<K,V>} for reading an Avro key/value file at the given path.
+   *
+   * @param path The path to the data on the filesystem
+   * @param tableType Avro table type for deserializing the table data
+   * @return a new {@code TableSource<K,V>} instance for reading Avro key/value data
+   */
+  public static <K, V> TableSource<K, V> avroTableFile(Path path, PTableType<K, V> tableType) {
+    return avroTableFile(ImmutableList.of(path), tableType);
+  }
+
+  /**
+   * Creates a {@code TableSource<K,V>} for reading an Avro key/value file at the given paths.
+   *
+   * @param paths list of paths to be read by the returned source
+   * @param tableType Avro table type for deserializing the table data
+   * @return a new {@code TableSource<K,V>} instance for reading Avro key/value data
+   */
+  public static <K, V> TableSource<K, V> avroTableFile(List<Path> paths, PTableType<K, V> tableType) {
+    return new AvroTableFileSource<K, V>(paths, (AvroType<Pair<K,V>>)tableType);
   }
 
   static Schema getSchemaFromPath(Path path, Configuration conf) {

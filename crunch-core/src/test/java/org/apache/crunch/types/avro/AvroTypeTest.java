@@ -200,29 +200,14 @@ public class AvroTypeTest {
     specificType.getDetachedValue(person);
   }
 
-  static class ReflectedPerson {
-    String name;
-    int age;
-    List<String> siblingnames;
-
-    @Override
-    public boolean equals(Object other) {
-      if (other == null || !(other instanceof ReflectedPerson)) {
-        return false;
-      }
-      ReflectedPerson that = (ReflectedPerson) other;
-      return name.equals(that.name) && age == that.age && siblingnames.equals(that.siblingnames);
-    }
-  }
-
   @Test
   public void testGetDetachedValue_ReflectAvroType() {
     AvroType<ReflectedPerson> reflectType = Avros.reflects(ReflectedPerson.class);
     reflectType.initialize(new Configuration());
     ReflectedPerson rp = new ReflectedPerson();
-    rp.name = "josh";
-    rp.age = 32;
-    rp.siblingnames = Lists.newArrayList();
+    rp.setName("josh");
+    rp.setAge(32);
+    rp.setSiblingnames(Lists.<String>newArrayList());
     ReflectedPerson detached = reflectType.getDetachedValue(rp);
     assertEquals(rp, detached);
     assertNotSame(rp, detached);

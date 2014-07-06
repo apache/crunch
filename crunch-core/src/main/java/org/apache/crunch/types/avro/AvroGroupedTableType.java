@@ -30,6 +30,7 @@ import org.apache.crunch.fn.PairMapFn;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PGroupedTableType;
+import org.apache.crunch.types.PTableType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -43,7 +44,7 @@ class AvroGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   private final MapFn inputFn;
   private final MapFn outputFn;
 
-  public AvroGroupedTableType(AvroTableType<K, V> tableType) {
+  public AvroGroupedTableType(BaseAvroTableType<K, V> tableType) {
     super(tableType);
     AvroType keyType = (AvroType) tableType.getKeyType();
     AvroType valueType = (AvroType) tableType.getValueType();

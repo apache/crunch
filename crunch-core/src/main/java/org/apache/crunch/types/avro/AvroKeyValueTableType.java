@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -9,16 +9,19 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
+
 package org.apache.crunch.types.avro;
 
 import org.apache.avro.Schema;
-import org.apache.avro.generic.IndexedRecord;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.hadoop.io.AvroKeyValue;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.lib.PTables;
@@ -30,25 +33,25 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 /**
- * The implementation of the PTableType interface for Avro-based serialization.
- * 
+ * A {@code PTableType} that is compatible with Avro key/value files that are created or read using the
+ * {@code org.apache.avro.mapreduce.AvroJob} class.
  */
-class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<K, V> {
+class AvroKeyValueTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<K, V> {
 
-  private static class PairToAvroPair extends MapFn<Pair, org.apache.avro.mapred.Pair> {
+  private static class PairToAvroKeyValueRecord extends MapFn<Pair, GenericRecord> {
     private final MapFn keyMapFn;
     private final MapFn valueMapFn;
-    private final String firstJson;
-    private final String secondJson;
+    private final String keySchemaJson;
+    private final String valueSchemaJson;
 
-    private String pairSchemaJson;
-    private transient Schema pairSchema;
+    private String keyValueSchemaJson;
+    private transient Schema keyValueSchema;
 
-    public PairToAvroPair(AvroType keyType, AvroType valueType) {
+    public PairToAvroKeyValueRecord(AvroType keyType, AvroType valueType) {
       this.keyMapFn = keyType.getOutputMapFn();
-      this.firstJson = keyType.getSchema().toString();
+      this.keySchemaJson = keyType.getSchema().toString();
       this.valueMapFn = valueType.getOutputMapFn();
-      this.secondJson = valueType.getSchema().toString();
+      this.valueSchemaJson = valueType.getSchema().toString();
     }
 
     @Override
@@ -62,33 +65,33 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
       keyMapFn.setContext(context);
       valueMapFn.setContext(context);
     }
-    
+
     @Override
     public void initialize() {
       keyMapFn.initialize();
       valueMapFn.initialize();
-      pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
-          new Schema.Parser().parse(firstJson), new Schema.Parser().parse(secondJson)).toString();
+      Schema.Parser parser = new Schema.Parser();
+      keyValueSchemaJson = AvroKeyValue.getSchema(parser.parse(keySchemaJson), parser.parse(valueSchemaJson)).toString();
     }
 
     @Override
-    public org.apache.avro.mapred.Pair map(Pair input) {
-      if (pairSchema == null) {
-        pairSchema = new Schema.Parser().parse(pairSchemaJson);
+    public GenericRecord map(Pair input) {
+      if (keyValueSchema == null) {
+        keyValueSchema = new Schema.Parser().parse(keyValueSchemaJson);
       }
-      org.apache.avro.mapred.Pair avroPair = new org.apache.avro.mapred.Pair(pairSchema);
-      avroPair.key(keyMapFn.map(input.first()));
-      avroPair.value(valueMapFn.map(input.second()));
-      return avroPair;
+      GenericRecord keyValueRecord = new GenericData.Record(keyValueSchema);
+      keyValueRecord.put(AvroKeyValue.KEY_FIELD, keyMapFn.map(input.first()));
+      keyValueRecord.put(AvroKeyValue.VALUE_FIELD, valueMapFn.map(input.second()));
+      return keyValueRecord;
     }
   }
 
-  private static class IndexedRecordToPair extends MapFn<IndexedRecord, Pair> {
+  private static class AvroKeyValueRecordToPair extends MapFn<GenericRecord, Pair> {
 
     private final MapFn firstMapFn;
     private final MapFn secondMapFn;
 
-    public IndexedRecordToPair(MapFn firstMapFn, MapFn secondMapFn) {
+    public AvroKeyValueRecordToPair(MapFn firstMapFn, MapFn secondMapFn) {
       this.firstMapFn = firstMapFn;
       this.secondMapFn = secondMapFn;
     }
@@ -104,7 +107,7 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
       firstMapFn.setContext(context);
       secondMapFn.setContext(context);
     }
-    
+
     @Override
     public void initialize() {
       firstMapFn.initialize();
@@ -112,19 +115,22 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
     }
 
     @Override
-    public Pair map(IndexedRecord input) {
-      return Pair.of(firstMapFn.map(input.get(0)), secondMapFn.map(input.get(1)));
+    public Pair map(GenericRecord input) {
+      return Pair.of(
+          firstMapFn.map(input.get(AvroKeyValue.KEY_FIELD)),
+          secondMapFn.map(input.get(AvroKeyValue.VALUE_FIELD)));
     }
   }
 
   private final AvroType<K> keyType;
   private final AvroType<V> valueType;
 
-  public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
-    super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(),
-        valueType.getSchema()), new IndexedRecordToPair(keyType.getInputMapFn(),
-        valueType.getInputMapFn()), new PairToAvroPair(keyType, valueType),
-        new TupleDeepCopier(Pair.class, keyType, valueType), null, keyType, valueType);
+  public AvroKeyValueTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
+    super(pairClass, AvroKeyValue.getSchema(keyType.getSchema(), valueType.getSchema()),
+        new AvroKeyValueRecordToPair(keyType.getInputMapFn(), valueType.getInputMapFn()),
+        new PairToAvroKeyValueRecord(keyType, valueType),
+        new TupleDeepCopier(Pair.class, keyType, valueType),
+        null, keyType, valueType);
     this.keyType = keyType;
     this.valueType = valueType;
   }
