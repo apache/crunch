@@ -17,20 +17,16 @@
  */
 package org.apache.crunch.impl.spark.fn;
 
-import com.google.common.base.Function;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.UnmodifiableIterator;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.apache.crunch.impl.spark.SparkRuntimeContext;
-import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import scala.Tuple2;
 
-import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,31 +47,36 @@ public class CombineMapsideFunction<K, V> extends PairFlatMapFunction<Iterator<T
   @Override
   public Iterable<Tuple2<K, V>> call(Iterator<Tuple2<K, V>> iter) throws Exception {
     ctxt.initialize(combineFn);
-    Multimap<K, V> cache = HashMultimap.create();
+    Map<K, List<V>> cache = Maps.newHashMap();
     int cnt = 0;
     while (iter.hasNext()) {
       Tuple2<K, V> t = iter.next();
-      cache.put(t._1, t._2);
+      List<V> values = cache.get(t._1());
+      if (values == null) {
+        values = Lists.newArrayList();
+        cache.put(t._1(), values);
+      }
+      values.add(t._2());
       cnt++;
       if (cnt % REDUCE_EVERY_N == 0) {
         cache = reduce(cache);
       }
     }
 
-    return Iterables.transform(reduce(cache).entries(), new Function<Map.Entry<K, V>, Tuple2<K, V>>() {
-      @Override
-      public Tuple2<K, V> apply(Map.Entry<K, V> input) {
-        return new Tuple2<K, V>(input.getKey(), input.getValue());
-      }
-    });
+    return new Flattener<K, V>(cache);
   }
 
-  private Multimap<K, V> reduce(Multimap<K, V> cache) {
+  private Map<K, List<V>> reduce(Map<K, List<V>> cache) {
     Set<K> keys = cache.keySet();
-    Multimap<K, V> res = HashMultimap.create(keys.size(), keys.size());
+    Map<K, List<V>> res = Maps.newHashMap();
     for (K key : keys) {
       for (Pair<K, V> p : reduce(key, cache.get(key))) {
-        res.put(p.first(), p.second());
+        List<V> values = res.get(p.first());
+        if (values == null) {
+          values = Lists.newArrayList();
+          res.put(p.first(), values);
+        }
+        values.add(p.second());
       }
     }
     return res;
@@ -86,5 +87,40 @@ public class CombineMapsideFunction<K, V> extends PairFlatMapFunction<Iterator<T
     combineFn.process(Pair.of(key, values), emitter);
     combineFn.cleanup(emitter);
     return emitter.getOutput();
+  }
+
+  private static class Flattener<K, V> implements Iterable<Tuple2<K, V>> {
+    private final Map<K, List<V>> entries;
+
+    public Flattener(Map<K, List<V>> entries) {
+      this.entries = entries;
+    }
+
+    @Override
+    public Iterator<Tuple2<K, V>> iterator() {
+      return new UnmodifiableIterator<Tuple2<K, V>>() {
+        private Iterator<K> keyIter = entries.keySet().iterator();
+        private K currentKey;
+        private Iterator<V> valueIter = null;
+
+        @Override
+        public boolean hasNext() {
+          while (valueIter == null || !valueIter.hasNext()) {
+            if (keyIter.hasNext()) {
+              currentKey = keyIter.next();
+              valueIter = entries.get(currentKey).iterator();
+            } else {
+              return false;
+            }
+          }
+          return true;
+        }
+
+        @Override
+        public Tuple2<K, V> next() {
+          return new Tuple2<K, V>(currentKey, valueIter.next());
+        }
+      };
+    }
   }
 }
