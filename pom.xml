@@ -88,6 +88,7 @@ under the License.
     <pkg>org.apache.crunch</pkg>
     <hadoop.version>1.1.2</hadoop.version>
     <hbase.version>0.94.15</hbase.version>
+    <avro.classifier>hadoop1</avro.classifier>
 
     <scala.base.version>2.10</scala.base.version>
     <scala.version>2.10.4</scala.version>
@@ -198,6 +199,7 @@ under the License.
         <groupId>org.apache.avro</groupId>
         <artifactId>avro-mapred</artifactId>
         <version>${avro.version}</version>
+        <classifier>${avro.classifier}</classifier>
         <exclusions>
           <exclusion>
             <groupId>org.apache.avro</groupId>
@@ -479,6 +481,7 @@ under the License.
              mvn clean install -Dhadoop.profile=2.0
              for this to work. -->
         <hbase.version>0.94.15</hbase.version>
+        <avro.classifier>hadoop2</avro.classifier>
         <commons-lang.version>2.5</commons-lang.version>
         <slf4j.version>1.6.1</slf4j.version>
       </properties>

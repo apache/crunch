@@ -42,6 +42,7 @@ under the License.
     <dependency>
       <groupId>org.apache.avro</groupId>
       <artifactId>avro-mapred</artifactId>
+      <classifier>${avro.classifier}</classifier>
     </dependency>
 
     <dependency>
