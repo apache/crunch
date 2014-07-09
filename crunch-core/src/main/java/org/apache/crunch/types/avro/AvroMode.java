@@ -45,7 +45,7 @@ public class AvroMode implements ReaderWriterFactory {
    * Internal enum which represents the various Avro data types.
    */
   public static enum ModeType {
-    SPECIFIC, REFLECT, GENERIC;
+    SPECIFIC, REFLECT, GENERIC
   }
 
   /**
@@ -117,8 +117,39 @@ public class AvroMode implements ReaderWriterFactory {
 
   private static ClassLoader specificLoader = null;
 
+  /**
+   * Set the {@code ClassLoader} that will be used for loading Avro {@code org.apache.avro.specific.SpecificRecord}
+   * and reflection implementation classes. It is typically not necessary to call this method -- it should only be used
+   * if a specific class loader is needed in order to load the specific datum classes.
+   *
+   * @param loader the {@code ClassLoader} to be used for loading specific datum classes
+   */
   public static void setSpecificClassLoader(ClassLoader loader) {
     specificLoader = loader;
+  }
+
+  /**
+   * Get the configured {@code ClassLoader} to be used for loading Avro {@code org.apache.specific.SpecificRecord}
+   * and reflection implementation classes. The return value may be null.
+   *
+   * @return the configured {@code ClassLoader} for loading specific or reflection datum classes, may be null
+   */
+  public static ClassLoader getSpecificClassLoader() {
+    return specificLoader;
+  }
+
+  /**
+   * Internal method for setting the specific class loader if none is already set. If no specific class loader is set,
+   * the given class loader will be set as the specific class loader. If a specific class loader is already set, this
+   * will be a no-op.
+   *
+   * @param loader the {@code ClassLoader} to be registered as the specific class loader if no specific class loader
+   *               is already set
+   */
+  static void registerSpecificClassLoaderInternal(ClassLoader loader) {
+    if (specificLoader == null) {
+      setSpecificClassLoader(loader);
+    }
   }
 
   /**
@@ -178,7 +209,11 @@ public class AvroMode implements ReaderWriterFactory {
 
     switch (this.modeType) {
       case REFLECT:
-        return new ReflectDatumReader<T>(schema);
+        if (specificLoader != null) {
+          return new ReflectDatumReader<T>(schema, schema, new ReflectData(specificLoader));
+        } else {
+          return new ReflectDatumReader<T>(schema);
+        }
       case SPECIFIC:
         if (specificLoader != null) {
           return new SpecificDatumReader<T>(
