@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
@@ -321,4 +322,31 @@ public class AvrosTest {
     assertNotSame(outputMappedValueA, outputMappedValueB);
   }
 
+  @Test
+  public void testSpecific_AutoRegisterClassLoader() {
+    AvroMode.setSpecificClassLoader(null);
+
+    // Initial sanity check
+    assertNull(AvroMode.getSpecificClassLoader());
+
+    // Calling Avros.specifics should automatically register a class loader for Avro specifics,
+    // unless there is already a specifics class loader set
+    Avros.specifics(Person.class);
+
+    assertEquals(Person.class.getClassLoader(), AvroMode.getSpecificClassLoader());
+  }
+
+  @Test
+  public void testReflect_AutoRegisterClassLoader() {
+    AvroMode.setSpecificClassLoader(null);
+
+    // Initial sanity check
+    assertNull(AvroMode.getSpecificClassLoader());
+
+    // Calling Avros.specifics should automatically register a class loader for Avro specifics,
+    // unless there is already a specifics class loader set
+    Avros.reflects(ReflectedPerson.class);
+
+    assertEquals(ReflectedPerson.class.getClassLoader(), AvroMode.getSpecificClassLoader());
+  }
 }

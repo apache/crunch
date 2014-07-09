@@ -264,6 +264,7 @@ public class Avros {
   }
 
   public static final <T extends SpecificRecord> AvroType<T> specifics(Class<T> clazz) {
+    AvroMode.registerSpecificClassLoaderInternal(clazz.getClassLoader());
     T t = ReflectionUtils.newInstance(clazz, null);
     Schema schema = t.getSchema();
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroSpecificDeepCopier<T>(schema));
@@ -275,6 +276,7 @@ public class Avros {
   }
 
   public static final <T> AvroType<T> reflects(Class<T> clazz, Schema schema) {
+    AvroMode.registerSpecificClassLoaderInternal(clazz.getClassLoader());
     return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
   }
 

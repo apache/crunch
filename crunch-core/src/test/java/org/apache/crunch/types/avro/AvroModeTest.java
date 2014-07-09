@@ -17,6 +17,14 @@
  */
 package org.apache.crunch.types.avro;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.io.DatumReader;
@@ -26,11 +34,6 @@ import org.apache.avro.specific.SpecificData;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
 
 public class AvroModeTest {
 
@@ -147,6 +150,30 @@ public class AvroModeTest {
     mode.configure(config);
     AvroMode returnedMode = AvroMode.fromConfiguration(config);
     assertThat(returnedMode.getFactory(), is(instanceOf(FakeReaderWriterFactory.class)));
+  }
+
+  @Test
+  public void testRegisterClassLoader() {
+    // First make sure things are in the default situation
+    AvroMode.setSpecificClassLoader(null);
+
+    ClassLoader classLoaderA = mock(ClassLoader.class);
+    ClassLoader classLoaderB = mock(ClassLoader.class);
+
+    // Basic sanity check to ensure that the class loader was really nulled out
+    assertNull(AvroMode.getSpecificClassLoader());
+
+    // Do an internal registration of a class loader. Because there is currently no internal class loader set,
+    // this should set the internal specific class loader
+    AvroMode.registerSpecificClassLoaderInternal(classLoaderA);
+
+    assertEquals(classLoaderA, AvroMode.getSpecificClassLoader());
+
+    // Now we do an internal register of another class loader. Because there already is an internal specific class
+    // loader set, this should have no impact (as opposed to calling setSpecificClassLoader)
+    AvroMode.registerSpecificClassLoaderInternal(classLoaderB);
+
+    assertEquals(classLoaderA, AvroMode.getSpecificClassLoader());
   }
 
   private static class FakeReaderWriterFactory implements ReaderWriterFactory{
