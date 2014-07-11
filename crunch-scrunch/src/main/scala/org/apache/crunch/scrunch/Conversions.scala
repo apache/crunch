@@ -23,6 +23,7 @@ import org.apache.crunch.types.{PTypes, PType}
 import java.nio.ByteBuffer
 import scala.collection.Iterable
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
 import com.google.protobuf.Message
@@ -86,9 +87,15 @@ trait PTypeH[T] extends Serializable {
   def get(ptf: PTypeFamily): PType[T]
 }
 
-trait LowPriorityPTypeH {
+trait VeryLowPriorityPTypeH {
   implicit def records[T <: AnyRef : ClassTag] = new PTypeH[T] {
     def get(ptf: PTypeFamily) = ptf.records(implicitly[ClassTag[T]]).asInstanceOf[PType[T]]
+  }
+}
+
+trait LowPriorityPTypeH extends VeryLowPriorityPTypeH {
+  implicit def caseClasses[T <: Product: TypeTag] = new PTypeH[T] {
+    override def get(ptf: PTypeFamily): PType[T] = ptf.caseClasses[T]
   }
 }
 
@@ -143,6 +150,14 @@ object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
     }
   }
 
+  implicit def arrays[T: PTypeH] = {
+    new PTypeH[Array[T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.arrays[T](implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+  }
+
   implicit def collections[T: PTypeH] = {
     new PTypeH[Iterable[T]] {
       def get(ptf: PTypeFamily) = {
@@ -167,10 +182,10 @@ object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
     }
   }
 
-  implicit def maps[T: PTypeH] = {
-    new PTypeH[Map[String, T]] {
+  implicit def maps[K: PTypeH, V: PTypeH] = {
+    new PTypeH[Map[K, V]] {
       def get(ptf: PTypeFamily) = {
-        ptf.maps(implicitly[PTypeH[T]].get(ptf))
+        ptf.maps(implicitly[PTypeH[K]].get(ptf), implicitly[PTypeH[V]].get(ptf))
       }
     }
   }

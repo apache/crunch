@@ -22,11 +22,16 @@ import org.apache.crunch.types.{PType, PTypeFamily => PTF}
 import org.apache.crunch.types.writable.{WritableTypeFamily, Writables => CWritables}
 import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
+import java.lang.reflect.{Array => RArray}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
+import scala.reflect.runtime.currentMirror
 import org.apache.hadoop.io.Writable
 import org.apache.avro.specific.SpecificRecord
+import java.nio.ByteBuffer
+import com.google.common.collect.Lists
 
 class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boolean = false) extends MapFn[S, T] {
   override def initialize() {
@@ -53,6 +58,18 @@ object GeneratedTupleHelper {
   }
 }
 
+class TypeMapFn(val rc: Class[_], @transient var ctor: java.lang.reflect.Constructor[_] = null)
+  extends MapFn[TupleN, Product] {
+
+  override def initialize {
+    this.ctor = rc.getConstructors().apply(0)
+  }
+
+  override def map(x: TupleN): Product = {
+    ctor.newInstance(x.getValues : _*).asInstanceOf[Product]
+  }
+}
+
 trait BasePTypeFamily {
   def ptf: PTF
 
@@ -63,7 +80,11 @@ trait BasePTypeFamily {
 
 trait PTypeFamily extends GeneratedTuplePTypeFamily {
 
-  def writables[T <: Writable : ClassTag]: PType[T]
+  def writables[T <: Writable](clazz: Class[T]): PType[T]
+
+  def writables[T <: Writable : ClassTag]: PType[T] = {
+    writables[T](implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  }
 
   def as[T](ptype: PType[T]) = ptf.as(ptype)
 
@@ -71,7 +92,9 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
 
   val bytes = ptf.bytes()
 
-  def records[T: ClassTag] = ptf.records(implicitly[ClassTag[T]].runtimeClass)
+  def records[T: ClassTag]: PType[T] = records(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+
+  def records[T](clazz: Class[T]): PType[T] = ptf.records(clazz)
 
   def derivedImmutable[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
     ptf.derivedImmutable(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
@@ -141,9 +164,38 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     derived(classOf[Iterable[T]], collectionAsScalaIterable[T], asJavaCollection[T], ptf.collections(ptype))
   }
 
-  def maps[T](ptype: PType[T]) = {
-    derived(classOf[Map[String, T]], {x: java.util.Map[String, T] => mapAsScalaMap(x).toMap}, 
-        mapAsJavaMap[String, T], ptf.maps(ptype))
+  def maps[T](ptype: PType[T]): PType[Map[String, T]] = maps(strings, ptype)
+
+  def maps[K, V](keyType: PType[K], valueType: PType[V]): PType[Map[K, V]] = {
+    if (classOf[String].equals(keyType.getTypeClass)) {
+      derived(classOf[Map[String, V]],
+        { x: java.util.Map[String, V] => mapAsScalaMap(x).toMap},
+        mapAsJavaMap[String, V],
+        ptf.maps(valueType)).asInstanceOf[PType[Map[K, V]]]
+    } else {
+      derived(classOf[Map[K, V]],
+        {x: JCollection[CPair[K, V]] => Map[K, V](x.map(y => (y.first(), y.second())).toArray : _*)},
+        {x: Map[K, V] => asJavaCollection(x.toIterable.map(y => CPair.of(y._1, y._2)))},
+        ptf.collections(ptf.pairs(keyType, valueType)))
+    }
+  }
+
+  def arrays[T](ptype: PType[T]): PType[Array[T]] = {
+    val in = (x: JCollection[_]) => {
+      val ret = RArray.newInstance(ptype.getTypeClass, x.size())
+      var i = 0
+      val iter = x.iterator()
+      while (iter.hasNext) {
+        RArray.set(ret, i, iter.next())
+        i += 1
+      }
+      ret.asInstanceOf[Array[T]]
+    }
+    val out = (x: Array[T]) => Lists.newArrayList(x: _*).asInstanceOf[JCollection[_]]
+    derived(classOf[Array[T]],
+      in, out,
+      ptf.collections(ptype).asInstanceOf[PType[JCollection[_]]])
+      .asInstanceOf[PType[Array[T]]]
   }
 
   def lists[T](ptype: PType[T]) = {
@@ -175,20 +227,104 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     val out = (x: (T1, T2, T3, T4)) => CTuple4.of(x._1, x._2, x._3, x._4)
     derived(classOf[(T1, T2, T3, T4)], in, out, ptf.quads(p1, p2, p3, p4))
   }
+
+  def namedTuples(tupleName: String, fields: List[(String, PType[_])]): PType[TupleN]
+
+  def caseClasses[T <: Product : TypeTag]: PType[T] = products[T](implicitly[TypeTag[T]].tpe)
+
+  private def products[T <: Product](tpe: Type): PType[T] = {
+    val ctor = tpe.member(nme.CONSTRUCTOR).asMethod
+    val args = ctor.paramss.head.map(x => (x.name.toString, typeToPType(x.typeSignature)))
+    val out = (x: Product) => TupleN.of(x.productIterator.toArray.asInstanceOf[Array[Object]] : _*)
+    val rtc = currentMirror.runtimeClass(tpe)
+    val base = namedTuples(rtc.getCanonicalName, args)
+    ptf.derivedImmutable(classOf[Product], new TypeMapFn(rtc), new TMapFn[Product, TupleN](out), base)
+      .asInstanceOf[PType[T]]
+  }
+
+  private val classToPrimitivePType = Map(
+    classOf[Int] -> ints,
+    classOf[java.lang.Integer] -> jints,
+    classOf[Long] -> longs,
+    classOf[java.lang.Long] -> jlongs,
+    classOf[Boolean] -> booleans,
+    classOf[java.lang.Boolean] -> jbooleans,
+    classOf[Double] -> doubles,
+    classOf[java.lang.Double] -> jdoubles,
+    classOf[Float] -> floats,
+    classOf[java.lang.Float] -> jfloats,
+    classOf[String] -> strings,
+    classOf[ByteBuffer] -> bytes
+  )
+
+  private val typeToPTypeCache: collection.mutable.Map[Type, PType[_]] = new collection.mutable.HashMap()
+
+  private def encache[T](tpe: Type, pt: PType[_]) = {
+    typeToPTypeCache.put(tpe, pt)
+    pt.asInstanceOf[PType[T]]
+  }
+
+  private def typeToPType[T](tpe: Type): PType[T] = {
+    val cpt = typeToPTypeCache.get(tpe)
+    if (cpt.isDefined) {
+      return cpt.get.asInstanceOf[PType[T]]
+    }
+
+    val rtc = currentMirror.runtimeClass(tpe)
+    val ret = classToPrimitivePType.get(rtc)
+    if (ret != null) {
+      return ret.asInstanceOf[PType[T]]
+    } else if (classOf[Writable].isAssignableFrom(rtc)) {
+      return writables(rtc.asInstanceOf[Class[Writable]]).asInstanceOf[PType[T]]
+    } else if (tpe.typeSymbol.asClass.isCaseClass) {
+      return encache(tpe, products(tpe))
+    } else {
+      val targs = if (tpe.isInstanceOf[TypeRefApi]) {
+        tpe.asInstanceOf[TypeRefApi].args
+      } else {
+        List()
+      }
+
+      if (targs.isEmpty) {
+        return encache(tpe, records(rtc))
+      } else if (targs.size == 1) {
+        if (rtc.isArray) {
+          return encache(tpe, arrays(typeToPType(targs(0))))
+        } else if (classOf[List[_]].isAssignableFrom(rtc)) {
+          return encache(tpe, lists(typeToPType(targs(0))))
+        } else if (classOf[Set[_]].isAssignableFrom(rtc)) {
+          return encache(tpe, sets(typeToPType(targs(0))))
+        } else if (classOf[Option[_]].isAssignableFrom(rtc)) {
+          return encache(tpe, options(typeToPType(targs(0))))
+        } else if (classOf[Iterable[_]].isAssignableFrom(rtc)) {
+          return encache(tpe, collections(typeToPType(targs(0))))
+        }
+      } else if (targs.size == 2) {
+        if (classOf[Either[_, _]].isAssignableFrom(rtc)) {
+          return encache(tpe, eithers(typeToPType(targs(0)), typeToPType(targs(1))))
+        } else if (classOf[Map[_, _]].isAssignableFrom(rtc)) {
+          return encache(tpe, maps(typeToPType(targs(0)), typeToPType(targs(1))))
+        }
+      }
+    }
+    throw new IllegalArgumentException("Could not handle class type = " + tpe)
+  }
 }
 
 object Writables extends PTypeFamily {
   override def ptf = WritableTypeFamily.getInstance()
 
-  override def writables[T <: Writable : ClassTag] = CWritables.writables(
-    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  override def writables[T <: Writable](clazz: Class[T]) = CWritables.writables(clazz)
+
+  override def namedTuples(tupleName: String, fields: List[(String, PType[_])]) = {
+    ptf.tuples(fields.map(_._2).toArray :_*)
+  }
 }
 
 object Avros extends PTypeFamily {
   override def ptf = AvroTypeFamily.getInstance()
 
-  override def writables[T <: Writable : ClassTag] = CAvros.writables(
-    implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
+  override def writables[T <: Writable](clazz: Class[T]) = CAvros.writables(clazz)
 
   override def records[T: ClassTag] = reflects()(implicitly[ClassTag[T]])
 
@@ -200,5 +336,9 @@ object Avros extends PTypeFamily {
     val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]]
     val schema = ScalaSafeReflectData.getInstance().getSchema(clazz)
     CAvros.reflects(clazz, schema)
+  }
+
+  override def namedTuples(tupleName: String, fields: List[(String, PType[_])]) = {
+    CAvros.namedTuples(tupleName, fields.map(_._1).toArray, fields.map(_._2).toArray)
   }
 }

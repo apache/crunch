@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -646,6 +647,14 @@ public class Avros {
         new TupleToGenericRecord(schema, ptypes), new TupleDeepCopier(TupleN.class, ptypes), null, ptypes);
   }
 
+  public static final AvroType<TupleN> namedTuples(String tupleName, String[] fieldNames, PType[] ptypes) {
+    Preconditions.checkArgument(fieldNames.length == ptypes.length,
+        "Number of field names must match number of ptypes");
+    Schema schema = createTupleSchema(tupleName, fieldNames, ptypes);
+    return new AvroType(TupleN.class, schema, new GenericRecordToTuple(TupleFactory.TUPLEN, ptypes),
+        new TupleToGenericRecord(schema, ptypes), new TupleDeepCopier(TupleN.class, ptypes), null, ptypes);
+  }
+
   public static <T extends Tuple> AvroType<T> tuples(Class<T> clazz, PType... ptypes) {
     Schema schema = createTupleSchema(ptypes);
     Class[] typeArgs = new Class[ptypes.length];
@@ -799,7 +808,19 @@ public class Avros {
         new TupleToUnionRecord(schema, ptypes), new UnionDeepCopier(ptypes), null, ptypes);
   }
 
+  private static String[] fieldNames(int len) {
+    String[] ret = new String[len];
+    for (int i = 0; i < ret.length; i++) {
+      ret[i]= "v" + i;
+    }
+    return ret;
+  }
+
   private static Schema createTupleSchema(PType<?>... ptypes) throws RuntimeException {
+    return createTupleSchema("", fieldNames(ptypes.length), ptypes);
+  }
+
+  private static Schema createTupleSchema(String tupleName, String[] fieldNames, PType<?>[] ptypes) throws RuntimeException {
     // Guarantee each tuple schema has a globally unique name
     List<Schema.Field> fields = Lists.newArrayList();
     MessageDigest md;
@@ -811,11 +832,25 @@ public class Avros {
     for (int i = 0; i < ptypes.length; i++) {
       AvroType atype = (AvroType) ptypes[i];
       Schema fieldSchema = allowNulls(atype.getSchema());
-      fields.add(new Schema.Field("v" + i, fieldSchema, "", null));
+      fields.add(new Schema.Field(fieldNames[i], fieldSchema, "", null));
+      md.update(fieldNames[i].getBytes(Charsets.UTF_8));
       md.update(fieldSchema.toString().getBytes(Charsets.UTF_8));
     }
-    String schemaName = "tuple" + Base64.encodeBase64URLSafeString(md.digest()).replace('-', 'x');
-    Schema schema = Schema.createRecord(schemaName, "", "crunch", false);
+    String schemaName, schemaNamespace;
+    if (tupleName.isEmpty()) {
+      schemaName = "tuple" + Base64.encodeBase64URLSafeString(md.digest()).replace('-', 'x');
+      schemaNamespace = "crunch";
+    } else {
+      int splitIndex = tupleName.lastIndexOf('.');
+      if (splitIndex == -1) {
+        schemaName = tupleName;
+        schemaNamespace = "crunch";
+      } else {
+        schemaName = tupleName.substring(splitIndex + 1);
+        schemaNamespace = tupleName.substring(0, splitIndex);
+      }
+    }
+    Schema schema = Schema.createRecord(schemaName, "", schemaNamespace, false);
     schema.setFields(fields);
     return schema;
   }
