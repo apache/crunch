@@ -23,10 +23,34 @@ package org.apache.crunch.scrunch
 import org.scalatest.junit.JUnitSuite
 import org.junit.Test
 
+/** Case classes for testing purposes */
+case class One(a: Int, b: String, c: List[java.lang.Long], d: Array[Long])
+case class Two(a: One, b: Set[Option[Boolean]], c: Map[String, Double], d: Map[Int, String])
+case class Three(a: List[One], b: Array[Either[One, Two]])
+
 class TupleNTest extends JUnitSuite{
   @Test def testTupleN {
     val pc = Mem.collectionOf((1, 2, "a", 3, "b"), (4, 5, "a", 6, "c"))
     val res = pc.map(x => (x._3, x._4)).groupByKey.combineValues(Aggregators.sum[Int]).materialize
     org.junit.Assert.assertEquals(List(("a", 9)), res.toList)
+  }
+
+  /**
+   * Basically, we just want to validate that we can generate schemas for these classes successfully
+   */
+  val ones = Array(One(1, "a", List(17L, 29L), Array(12L, 13L)), One(2, "b", List(0L), Array(17L, 29L)))
+  val twos = Array(Two(ones(0), Set(Some(true), None), Map("a" -> 1.2, "b" -> 2.9), Map(1 -> "a", 2 -> "b")))
+  val threes = Array(Three(ones.toList, Array(Left(ones(0)), Right(twos(0)))))
+
+  @Test def onesTest {
+    val pc = Mem.collectionOf(ones : _*)
+  }
+
+  @Test def twosTest {
+    val pc = Mem.collectionOf(twos : _*)
+  }
+
+  @Test def threesTest {
+    val pc = Mem.collectionOf(threes : _*)
   }
 }

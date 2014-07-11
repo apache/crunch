@@ -37,6 +37,8 @@ public class TupleN implements Tuple {
     System.arraycopy(values, 0, this.values, 0, values.length);
   }
 
+  public Object[] getValues() { return values; }
+
   @Override
   public Object get(int index) {
     return values[index];

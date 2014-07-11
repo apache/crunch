@@ -27,8 +27,10 @@ import scala.collection.mutable.HashMap
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 
-case class PageRankData(page_rank: Float, oldpr: Float, urls: Array[String], bytes: Array[Byte]) {
-  def this() = this(0f, 0f, null, Array[Byte](0))
+class PageRankData(val page_rank: Float, oldpr: Float, val urls: Array[String], bytes: Array[Byte]) {
+
+  // Required no-arg constructor for Avro reflection
+  def this() = this(0.0f, 0.0f, null, null)
 
   def scaledPageRank = page_rank / urls.length
 
@@ -67,7 +69,7 @@ class PageRankClassTest extends CrunchSuite {
     pipeline.read(from.textFile(fileName, Avros.strings))
       .map(line => { val urls = line.split("\\t"); (urls(0), urls(1)) })
       .groupByKey
-      .map((url, links) => (url, PageRankData(1f, 0f, links.filter(x => x != null).toArray, Array[Byte](0))))
+      .map((url, links) => (url, new PageRankData(1f, 0f, links.filter(x => x != null).toArray, Array[Byte](0))))
   }
 
   def update(prev: PTable[String, PageRankData], d: Float) = {
@@ -102,7 +104,7 @@ class PageRankClassTest extends CrunchSuite {
     pipeline.done
   }
 
-  def testFastPageRank {
+  @Test def testFastPageRank {
     var prev = initialInput(tempDir.copyResourceFileName("urls.txt"))
     var delta = 1.0f
     while (delta > 0.01f) {

@@ -29,6 +29,8 @@ object ScalaTypesTest {
   }
 }
 
+case class MyCaseClass(name: List[String], gender: Option[String], age: Int, birthday: Long)
+
 class ScalaTypesTest extends CrunchSuite {
   import ScalaTypesTest._
 
@@ -57,5 +59,25 @@ class ScalaTypesTest extends CrunchSuite {
     pipeline.done
     assert(out.exists(_.isLeft))
     assert(out.exists(_.isRight))
+  }
+
+  @Test
+  def product {
+    val pt = Avros.caseClasses[MyCaseClass]
+    pt.getInputMapFn.initialize()
+    pt.getOutputMapFn.initialize()
+    val cc = MyCaseClass(List("Josh", "Wills"), Some("Male"), 35, 1234L)
+    val ser = pt.getOutputMapFn.map(cc)
+    assert(cc == pt.getInputMapFn.map(ser))
+  }
+
+  @Test
+  def productWithNulls {
+    val pt = Avros.caseClasses[MyCaseClass]
+    pt.getInputMapFn.initialize()
+    pt.getOutputMapFn.initialize()
+    val cc = MyCaseClass(List("Josh", "Wills"), null, 35, 1234L)
+    val ser = pt.getOutputMapFn.map(cc)
+    assert(cc == pt.getInputMapFn.map(ser))
   }
 }
