@@ -23,9 +23,11 @@ import static junit.framework.Assert.assertTrue;
 import java.io.IOException;
 import java.util.List;
 
+import com.google.common.collect.Iterables;
 import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
@@ -104,8 +106,7 @@ public class MaterializeIT {
       throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
     PCollection<String> empty = pipeline.readTextFile(inputPath).filter(FilterFns.<String>REJECT_ALL());
-
-    assertTrue(Lists.newArrayList(empty.materialize()).isEmpty());
+    assertTrue(Iterables.isEmpty(empty.materialize()));
     pipeline.done();
   }
 
@@ -126,14 +127,14 @@ public class MaterializeIT {
   public void testMaterializeAvroPersonAndReflectsPair_GroupedTable() throws IOException {
     Assume.assumeTrue(Avros.CAN_COMBINE_SPECIFIC_AND_REFLECT_SCHEMAS);
     Pipeline pipeline = new MRPipeline(MaterializeIT.class);
-    List<Pair<StringWrapper, Person>> pairList = Lists.newArrayList(pipeline
+    MaterializableIterable<Pair<StringWrapper, Person>> mi = (MaterializableIterable) pipeline
         .readTextFile(tmpDir.copyResourceFileName("set1.txt"))
         .parallelDo(new StringToStringWrapperPersonPairMapFn(),
             Avros.pairs(Avros.reflects(StringWrapper.class), Avros.records(Person.class)))
-        .materialize());
+        .materialize();
     
     // We just need to make sure this doesn't crash
-    assertEquals(4, pairList.size());
-
+    assertEquals(4, Iterables.size(mi));
+    assertTrue(mi.getPipelineResult().succeeded());
   }
 }
