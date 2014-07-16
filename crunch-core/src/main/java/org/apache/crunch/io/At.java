@@ -19,7 +19,6 @@ package org.apache.crunch.io;
 
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.specific.SpecificRecord;
-import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSourceTarget;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
@@ -43,8 +42,10 @@ import org.apache.hadoop.io.Writable;
  * storing intermediate outputs that need to be passed from one run of a MapReduce pipeline to another run. The
  * {@code SourceTarget} object acts as both a {@code Source} and a {@Target}, which enables it to provide this
  * functionality.
- * 
- * <code>
+ *
+ * <pre>
+ * {@code
+ *
  *   Pipeline pipeline = new MRPipeline(this.getClass());
  *   // Create our intermediate storage location
  *   SourceTarget<String> intermediate = At.textFile("/temptext");
@@ -59,8 +60,8 @@ import org.apache.hadoop.io.Writable;
  *   // from the first phase.
  *   PCollection<String> phase2Input = pipeline.read(intermediate);
  *   ...
- * </code>
- * </p>
+ * }
+ * </pre>
  * 
  * <p>The {@code SourceTarget} abstraction is useful when we care about reading the intermediate
  * outputs of a pipeline as well as the final results.</p>

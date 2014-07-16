@@ -57,8 +57,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  * 
  * <p>The {@code From} class is intended to provide a literate API for creating
  * Crunch pipelines from common input file types.
- * 
- * <code>
+ *
+ * <pre>
+ * {@code
+ *
  *   Pipeline pipeline = new MRPipeline(this.getClass());
  *   
  *   // Reference the lines of a text file by wrapping the TextInputFormat class.
@@ -77,8 +79,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  *   // References the key-value pairs from a custom extension of FileInputFormat:
  *   PTable<KeyWritable, ValueWritable> custom = pipeline.read(From.formattedFile(
  *       "/custom", MyFileInputFormat.class, KeyWritable.class, ValueWritable.class));
- * </code>
- * </p>
+ * }
+ * </pre>
  */
 public class From {
 

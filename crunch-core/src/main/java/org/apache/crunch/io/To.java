@@ -36,7 +36,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  * the convenience {@code write} method on {@code PCollection} and {@code PTable}
  * instances.
  * 
- * <code>
+ * <pre>
+ * {@code
+ *
  *   Pipeline pipeline = new MRPipeline(this.getClass());
  *   ...
  *   // Write a PCollection<String> to a text file:
@@ -54,8 +56,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
  *   // Write a PTable to a custom FileOutputFormat:
  *   PTable<KeyWritable, ValueWritable> custom = ...;
  *   pipeline.write(custom, To.formattedFile("/custom", MyFileFormat.class));
- * </code>
- * </p>
+ * }
+ * </pre>
  */
 public class To {
 
