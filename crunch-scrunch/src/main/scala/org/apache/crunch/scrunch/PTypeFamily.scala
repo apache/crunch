@@ -17,7 +17,7 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, Union, MapFn}
+import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, TupleN, Union, MapFn}
 import org.apache.crunch.types.{PType, PTypeFamily => PTF}
 import org.apache.crunch.types.writable.{WritableTypeFamily, Writables => CWritables}
 import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
@@ -47,9 +47,21 @@ class TMapFn[S, T](val f: S => T, val pt: Option[PType[S]] = None, var init: Boo
   }
 }
 
-trait PTypeFamily {
+object GeneratedTupleHelper {
+  def tupleN(args: Any*) = {
+    TupleN.of(args.map(_.asInstanceOf[AnyRef]): _*)
+  }
+}
 
+trait BasePTypeFamily {
   def ptf: PTF
+
+  def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
+    ptf.derived(cls, new TMapFn[S, T](in, Some(pt)), new TMapFn[T, S](out), pt)
+  }
+}
+
+trait PTypeFamily extends GeneratedTuplePTypeFamily {
 
   def writables[T <: Writable : ClassTag]: PType[T]
 
@@ -60,10 +72,6 @@ trait PTypeFamily {
   val bytes = ptf.bytes()
 
   def records[T: ClassTag] = ptf.records(implicitly[ClassTag[T]].runtimeClass)
-
-  def derived[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
-    ptf.derived(cls, new TMapFn[S, T](in, Some(pt)), new TMapFn[T, S](out), pt)
-  }
 
   def derivedImmutable[S, T](cls: java.lang.Class[T], in: S => T, out: T => S, pt: PType[S]) = {
     ptf.derivedImmutable(cls, new TMapFn[S, T](in), new TMapFn[T, S](out), pt)
