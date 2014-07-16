@@ -22,18 +22,18 @@ package org.apache.crunch.scrunch
 
 import org.apache.crunch.fn.{Aggregators => JAgg}
 import org.apache.crunch._
-import com.google.common.collect.ImmutableList
+import com.google.common.collect.{UnmodifiableIterator, ImmutableList}
 import org.apache.hadoop.conf.Configuration
 import java.lang.{Iterable => JIterable}
 import scala.collection.JavaConversions
 import com.twitter.algebird.Monoid
+import scala.reflect.ClassTag
+import java.util
 
 /**
  * Scrunch versions of the common Aggregator types from Crunch.
  */
 object Aggregators {
-
-  import scala.math.Ordering._
 
   def sum[T: Monoid]: Aggregator[T] = sumUsing(implicitly[Monoid[T]])
 
@@ -176,14 +176,14 @@ object Aggregators {
    * Apply separate aggregators to each component of a {@link Tuple2}.
    */
   def pair[V1, V2](a1: Aggregator[V1], a2: Aggregator[V2]): Aggregator[(V1, V2)] = {
-    return new Aggregators.PairAggregator[V1, V2](a1, a2)
+    new Aggregators.PairAggregator[V1, V2](a1, a2)
   }
 
   /**
    * Apply separate aggregators to each component of a {@link Tuple3}.
    */
   def trip[V1, V2, V3](a1: Aggregator[V1], a2: Aggregator[V2], a3: Aggregator[V3]): Aggregator[(V1, V2, V3)] = {
-    return new Aggregators.TripAggregator[V1, V2, V3](a1, a2, a3)
+    new Aggregators.TripAggregator[V1, V2, V3](a1, a2, a3)
   }
 
   /**
@@ -191,7 +191,15 @@ object Aggregators {
    */
   def quad[V1, V2, V3, V4](a1: Aggregator[V1], a2: Aggregator[V2], a3: Aggregator[V3], a4: Aggregator[V4])
     : Aggregator[(V1, V2, V3, V4)] = {
-    return new Aggregators.QuadAggregator[V1, V2, V3, V4](a1, a2, a3, a4)
+    new Aggregators.QuadAggregator[V1, V2, V3, V4](a1, a2, a3, a4)
+  }
+
+  /**
+   * Apply separate aggregators to each component of a {@link Product} subclass.
+   */
+  def product[T <: Product : ClassTag](aggregators: Aggregator[_]*): Aggregator[T] = {
+    new Aggregators.ProductAggregator[T](Array(aggregators : _*),
+      implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
   }
 
   /**
@@ -202,20 +210,22 @@ object Aggregators {
     }
   }
 
-  private abstract class ProductAggregator[T <: Product](aggs: Array[Aggregator[_]]) extends Aggregator[T] {
+  private class ProductAggregator[T <: Product](val aggs: Array[Aggregator[_]], val clazz: Class[T])
+    extends Aggregator[T] {
+
     def initialize(configuration: Configuration) {
       for (a <- aggs) {
         a.initialize(configuration)
       }
     }
 
-    def reset {
+    def reset() {
       for (a <- aggs) {
-        a.reset
+        a.reset()
       }
     }
 
-    protected def updateTuple(t: T) {
+    override def update(t: T) {
       var i: Int = 0
       while (i < aggs.length) {
         aggs(i).asInstanceOf[Aggregator[Any]].update(t.productElement(i))
@@ -223,49 +233,40 @@ object Aggregators {
       }
     }
 
-    protected def results[T](index: Int): Iterable[T] = {
-      return JavaConversions.iterableAsScalaIterable(aggs(index).results.asInstanceOf[JIterable[T]])
+    override def results: JIterable[T] = {
+      val res = aggs.map(_.results()).map(JavaConversions.iterableAsScalaIterable(_).toList)
+      return new JIterable[T] {
+        override def iterator(): util.Iterator[T] = {
+          return new AggIterator[T](res, clazz)
+        }
+      }
+    }
+  }
+
+  private class AggIterator[T](val results: Array[List[_]], val clazz: Class[T]) extends UnmodifiableIterator[T] {
+    var offset = 0
+    val maxoffset = results.map(_.size).min
+    val construct = clazz.getConstructors.find(_.getParameterTypes.length == results.length)
+
+    override def hasNext: Boolean = offset < maxoffset
+
+    override def next(): T = {
+      val refs = results.map(x => x(offset)).asInstanceOf[Array[AnyRef]]
+      offset = offset + 1
+      construct.get.newInstance(refs : _*).asInstanceOf[T]
     }
   }
 
   private class PairAggregator[A, B](val a1: Aggregator[A], val a2: Aggregator[B])
-    extends ProductAggregator[(A, B)](Array(a1, a2)) {
-
-    def update(value: (A, B)) {
-      updateTuple(value)
-    }
-
-    def results: JIterable[(A, B)] = {
-      return JavaConversions.asJavaIterable(results[A](0).zip(results[B](1)))
-    }
+    extends ProductAggregator[(A, B)](Array(a1, a2), classOf[(A, B)]) {
   }
 
   private class TripAggregator[A, B, C](val a1: Aggregator[A], val a2: Aggregator[B], val a3: Aggregator[C])
-    extends ProductAggregator[(A, B, C)](Array(a1, a2, a3)) {
-    def update(value: (A, B, C)) {
-      updateTuple(value)
-    }
-
-    def results: JIterable[(A, B, C)] = {
-      return JavaConversions.asJavaIterable(
-        results[A](0).zip(results[B](1)).zip(results[C](2))
-          .map(x => (x._1._1, x._1._2, x._2)))
-    }
+    extends ProductAggregator[(A, B, C)](Array(a1, a2, a3), classOf[(A, B, C)]) {
   }
 
   private class QuadAggregator[A, B, C, D](val a1: Aggregator[A], val a2: Aggregator[B],
                                            val a3: Aggregator[C], val a4: Aggregator[D])
-    extends ProductAggregator[(A, B, C, D)](Array(a1, a2, a3, a4)) {
-
-    def update(value: (A, B, C, D)) {
-      updateTuple(value)
-    }
-
-    def results: JIterable[(A, B, C, D)] = {
-      return JavaConversions.asJavaIterable(
-        (results[A](0).zip(results[B](1))).zip(results[C](2).zip(results[D](3)))
-          .map(x => (x._1._1, x._1._2, x._2._1, x._2._2)))
-    }
+    extends ProductAggregator[(A, B, C, D)](Array(a1, a2, a3, a4), classOf[(A, B, C, D)]) {
   }
-
 }

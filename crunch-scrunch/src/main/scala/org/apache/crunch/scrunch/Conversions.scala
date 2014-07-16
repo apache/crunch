@@ -92,7 +92,7 @@ trait LowPriorityPTypeH {
   }
 }
 
-object PTypeH extends LowPriorityPTypeH {
+object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
 
   implicit val longs = new PTypeH[Long] { def get(ptf: PTypeFamily) = ptf.longs }
   implicit val jlongs = new PTypeH[java.lang.Long] { def get(ptf: PTypeFamily) = ptf.jlongs }
