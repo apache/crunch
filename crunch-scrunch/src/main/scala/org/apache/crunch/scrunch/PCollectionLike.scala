@@ -20,6 +20,7 @@ package org.apache.crunch.scrunch
 import org.apache.crunch.{PCollection => JCollection, Pair => JPair, _}
 import org.apache.crunch.types.{PType, PTableType}
 import org.apache.crunch.types.writable.WritableTypeFamily
+import org.apache.crunch.lib.Shard
 
 /**
  * Base trait for PCollection-like entities in Scrunch, including PTables and PGroupedTables.
@@ -267,6 +268,14 @@ trait PCollectionLike[S, +FullType, +NativeType <: JCollection[S]] {
                 opts: ParallelDoOptions) = {
     parallelDo(name, wrapPairMapFn(f), ptype, opts)
   }
+
+  /**
+   * Re-partitions this instance into the given number of partitions.
+   *
+   * @param numPartitions the number of partitions to use
+   * @return a re-partitioned version of the data in this instance
+   */
+  def shard(numPartitions: Int) = wrap(Shard.shard(native, numPartitions))
 
   /**
    * Gets the number of elements represented by this PCollection.

@@ -17,13 +17,14 @@
  */
 package org.apache.crunch.scrunch
 
+import java.lang.{Iterable => JIterable}
 import java.util.{Collection => JCollect}
 
 import scala.collection.JavaConversions._
 
 import org.apache.crunch.{PCollection => JCollection, PTable => JTable, Pair => CPair, _}
-import org.apache.crunch.lib.{Cartesian, Aggregate, Cogroup, PTables}
-import org.apache.crunch.lib.join.{DefaultJoinStrategy, JoinType}
+import org.apache.crunch.lib._
+import org.apache.crunch.lib.join.{JoinUtils, DefaultJoinStrategy, JoinType}
 import org.apache.crunch.types.{PTableType, PType}
 import scala.collection.Iterable
 import org.apache.hadoop.mapreduce.TaskInputOutputContext
@@ -52,6 +53,30 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
 
   def collect[T, To](pf: PartialFunction[(K, V), T])(implicit pt: PTypeH[T], b: CanParallelTransform[T, To]) = {
     filter((k, v) => pf.isDefinedAt((k, v))).map((k, v) => pf((k, v)))(pt, b)
+  }
+
+  def secondarySortAndMap[K2, VX, T, To](f: (K, Iterable[(K2, VX)]) => T, numReducers: Int = -1)
+    (implicit ev: <:<[V, (K2, VX)], pt: PTypeH[T], b: CanParallelTransform[T, To]) = {
+    b(prepareSecondarySort(numReducers), secSortMap(f), pt.get(getTypeFamily()))
+  }
+
+  def secondarySortAndFlatMap[K2, VX, T, To](f: (K, Iterable[(K2, VX)]) => TraversableOnce[T], numReducers: Int = -1)
+    (implicit ev: <:<[V, (K2, VX)], pt: PTypeH[T], b: CanParallelTransform[T, To]) = {
+    b(prepareSecondarySort(numReducers), secSortFlatMap(f), pt.get(getTypeFamily()))
+  }
+
+  private def prepareSecondarySort[K2, VX](numReducers: Int)(implicit ev: <:<[V, (K2, VX)]): PGroupedTable[CPair[K, K2], (K2, VX)] = {
+    val basePTF = getTypeFamily().ptf
+    val gopts = GroupingOptions.builder()
+      .requireSortedKeys()
+      .groupingComparatorClass(JoinUtils.getGroupingComparator(basePTF))
+      .partitionerClass(JoinUtils.getPartitionerClass(basePTF))
+    if (numReducers > 0) {
+      gopts.numReducers(numReducers)
+    }
+    val kt = basePTF.pairs(keyType(), valueType().getSubTypes.get(0).asInstanceOf[PType[K2]])
+    val ptt = basePTF.tableOf(kt, valueType.asInstanceOf[PType[(K2, VX)]])
+    parallelDo(new SPrepareSSFn[K, V, K2, VX], ptt).groupByKey(gopts.build())
   }
 
   def mapValues[T](f: V => T)(implicit pt: PTypeH[T]) = {
@@ -262,6 +287,30 @@ trait SMapTableKeysFn[K, V, T] extends MapFn[CPair[K, V], CPair[T, V]] with Func
   override def map(input: CPair[K, V]) = CPair.of(apply(input.first()), input.second())
 }
 
+private class SPrepareSSFn[K, V, K2, VX] extends MapFn[CPair[K, V], CPair[CPair[K, K2], (K2, VX)]] {
+  override def map(input: CPair[K, V]): CPair[CPair[K, K2], (K2, VX)] = {
+    val sec = input.second().asInstanceOf[(K2, VX)]
+    CPair.of(CPair.of(input.first(), sec._1), sec)
+  }
+}
+
+trait SecSortFlatMapFn[K, K2, VX, T] extends DoFn[CPair[CPair[K, K2], JIterable[(K2, VX)]], T]
+  with Function2[K, Iterable[(K2, VX)], TraversableOnce[T]] {
+  override def process(input: CPair[CPair[K, K2], JIterable[(K2, VX)]], emitter: Emitter[T]) {
+    val iter = iterableAsScalaIterable(input.second())
+    for (v <- apply(input.first().first(), iter)) {
+      emitter.emit(v)
+    }
+  }
+}
+
+trait SecSortMapFn[K, K2, VX, T] extends MapFn[CPair[CPair[K, K2], JIterable[(K2, VX)]], T]
+  with Function2[K, Iterable[(K2, VX)], T] {
+  override def map(input: CPair[CPair[K, K2], JIterable[(K2, VX)]]) = {
+    apply(input.first().first(), iterableAsScalaIterable(input.second()))
+  }
+}
+
 object PTable {
   type TIOC = TaskInputOutputContext[_, _, _, _]
 
@@ -315,5 +364,15 @@ object PTable {
 
   def incValueFn[K, V, T](fn: V => T) = new Function1[CPair[K, V], T] with Serializable {
     def apply(p: CPair[K, V]): T = fn(p.second())
+  }
+
+  def secSortFlatMap[K, K2, VX, T](fn: (K, Iterable[(K2, VX)]) => TraversableOnce[T]) = {
+    new SecSortFlatMapFn[K, K2, VX, T] {
+      def apply(k: K, v: Iterable[(K2, VX)]) = fn(k, v)
+    }
+  }
+
+  def secSortMap[K, K2, VX, T](fn: (K, Iterable[(K2, VX)]) => T) = new SecSortMapFn[K, K2, VX, T] {
+    def apply(k: K, v: Iterable[(K2, VX)]) = fn(k, v)
   }
 }
