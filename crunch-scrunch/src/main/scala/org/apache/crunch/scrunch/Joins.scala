@@ -43,7 +43,7 @@ class ScrunchJoinStrategy[K, U, V](val delegate: JoinStrategy[K, U, V]) {
 
 private class ReverseJoinStrategy[K, U, V](val delegate: JoinStrategy[K, V, U]) extends JoinStrategy[K, U, V] {
   override def join(left: crunch.PTable[K, U], right: crunch.PTable[K, V], joinType: JoinType) = {
-    val res: crunch.PTable[K, P[V, U]] =
+    val res: crunch.PTable[K, P[V, U]] = try {
       if (joinType == JoinType.LEFT_OUTER_JOIN) {
         delegate.join(right, left, JoinType.RIGHT_OUTER_JOIN)
       } else if (joinType == JoinType.RIGHT_OUTER_JOIN) {
@@ -51,6 +51,11 @@ private class ReverseJoinStrategy[K, U, V](val delegate: JoinStrategy[K, V, U]) 
       } else {
         delegate.join(right, left, joinType)
       }
+    }
+    catch {
+      case uoe: UnsupportedOperationException => throw new UnsupportedOperationException(
+        "Join type " + joinType + " not supported by " + delegate.getClass.getName)
+    }
     res.mapValues(new SwapFn[V, U](), SwapFn.ptype(res.getValueType))
   }
 }
