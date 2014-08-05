@@ -21,6 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
 import org.apache.crunch.Pair;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -28,21 +35,17 @@ import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.InputCollection;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
 /**
  * Writes <a href="http://www.graphviz.org">Graphviz</a> dot files to illustrate
  * the topology of Crunch pipelines.
  */
 public class DotfileWriter {
 
+  // Maximum length that a node name may have in the produced dot file
+  static final int MAX_NODE_NAME_LENGTH = 300;
+
   /** The types of tasks within a MapReduce job. */
-  enum MRTaskType { MAP, REDUCE };
+  enum MRTaskType { MAP, REDUCE }
 
   private Set<JobPrototype> jobPrototypes = Sets.newHashSet();
   private HashMultimap<Pair<JobPrototype, MRTaskType>, String> jobNodeDeclarations = HashMultimap.create();
@@ -61,7 +64,9 @@ public class DotfileWriter {
     if (pcollectionImpl instanceof InputCollection) {
       shape = "folder";
     }
-    return String.format("%s [label=\"%s\" shape=%s];", formatPCollection(pcollectionImpl, jobPrototype), pcollectionImpl.getName(),
+    return String.format("%s [label=\"%s\" shape=%s];",
+        formatPCollection(pcollectionImpl, jobPrototype),
+        limitNodeNameLength(pcollectionImpl.getName()),
         shape);
   }
 
@@ -72,7 +77,8 @@ public class DotfileWriter {
    * @return The global node declaration for the Target
    */
   String formatTargetNodeDeclaration(Target target) {
-    return String.format("\"%s\" [label=\"%s\" shape=folder];", target.toString(), target.toString());
+    String nodeName = limitNodeNameLength(target.toString());
+    return String.format("\"%s\" [label=\"%s\" shape=folder];", nodeName, nodeName);
   }
 
   /**
@@ -85,9 +91,11 @@ public class DotfileWriter {
   String formatPCollection(PCollectionImpl<?> pcollectionImpl, JobPrototype jobPrototype) {
     if (pcollectionImpl instanceof InputCollection) {
       InputCollection<?> inputCollection = (InputCollection<?>) pcollectionImpl;
-      return String.format("\"%s\"", inputCollection.getSource());
+      return String.format("\"%s\"", limitNodeNameLength(inputCollection.getSource().toString()));
     }
-    return String.format("\"%s@%d@%d\"", pcollectionImpl.getName(), pcollectionImpl.hashCode(), jobPrototype.hashCode());
+    return String.format("\"%s\"",
+        limitNodeNameLength(
+            String.format("%s@%d@%d", pcollectionImpl.getName(), pcollectionImpl.hashCode(), jobPrototype.hashCode())));
   }
 
   /**
@@ -97,7 +105,23 @@ public class DotfileWriter {
    * @return The dot-formatted chain of nodes
    */
   String formatNodeCollection(List<String> nodeCollection) {
-    return formatNodeCollection(nodeCollection, ImmutableMap.<String,String>of());
+    return formatNodeCollection(nodeCollection, ImmutableMap.<String, String>of());
+  }
+
+  /**
+   * Limit a node name length down to {@link #MAX_NODE_NAME_LENGTH}, to ensure valid (and readable) dot files. If the
+   * name is already less than or equal to the maximum length, it will be returned untouched.
+   *
+   * @param nodeName node name to be limited in length
+   * @return the abbreviated node name if it was longer than the given maximum allowable length
+   */
+  static String limitNodeNameLength(String nodeName) {
+    if (nodeName.length() <= MAX_NODE_NAME_LENGTH) {
+      return nodeName;
+    }
+    String hashString = Integer.toString(nodeName.hashCode());
+    return String.format("%s@%s",
+        StringUtils.abbreviate(nodeName, MAX_NODE_NAME_LENGTH - (hashString.length() + 1)), hashString);
   }
 
   /**
@@ -140,7 +164,7 @@ public class DotfileWriter {
         String toNode = formatPCollection(pcollection, jobPrototype);
         for(Target target : targetDeps) {
           globalNodeDeclarations.add(formatTargetNodeDeclaration(target));
-          String fromNode = String.format("\"%s\"", target.toString());
+          String fromNode = String.format("\"%s\"", limitNodeNameLength(target.toString()));
           formattedNodePaths.add(
             formatNodeCollection(
               ImmutableList.of(fromNode, toNode),
@@ -210,7 +234,7 @@ public class DotfileWriter {
           addNodePathChain(nodePath, jobPrototype);
           nodePathChains.add(formatNodeCollection(
               Lists.newArrayList(formatPCollection(nodePath.descendingIterator().next(), jobPrototype),
-                  String.format("\"%s\"", target.toString()))));
+                  String.format("\"%s\"", limitNodeNameLength(target.toString())))));
         }
       }
     }

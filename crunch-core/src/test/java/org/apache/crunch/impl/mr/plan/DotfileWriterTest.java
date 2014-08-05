@@ -18,11 +18,16 @@
 package org.apache.crunch.impl.mr.plan;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
@@ -33,10 +38,6 @@ import org.apache.crunch.impl.mr.plan.DotfileWriter.MRTaskType;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 
 public class DotfileWriterTest {
 
@@ -170,4 +171,17 @@ public class DotfileWriterTest {
     assertEquals("label = Reduce; color = red;", dotfileWriter.getTaskGraphAttributes(MRTaskType.REDUCE));
   }
 
+  @Test
+  public void testLimitNodeNameLength_AlreadyWithinLimit() {
+    String nodeName = "within_limit";
+    assertEquals(nodeName, DotfileWriter.limitNodeNameLength(nodeName));
+  }
+
+  @Test
+  public void testLimitNodeNameLength_OverLimit() {
+    String nodeName = Strings.repeat("x", DotfileWriter.MAX_NODE_NAME_LENGTH + 1);
+    String abbreviated = DotfileWriter.limitNodeNameLength(nodeName);
+    assertEquals(DotfileWriter.MAX_NODE_NAME_LENGTH, abbreviated.length());
+    assertTrue(abbreviated.startsWith("xxxxx"));
+  }
 }
