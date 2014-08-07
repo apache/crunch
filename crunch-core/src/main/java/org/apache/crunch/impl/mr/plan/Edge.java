@@ -18,6 +18,7 @@
 package org.apache.crunch.impl.mr.plan;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +43,7 @@ class Edge {
   Edge(Vertex head, Vertex tail) {
     this.head = head;
     this.tail = tail;
-    this.paths = Sets.newHashSet();
+    this.paths = Sets.newTreeSet(NODE_CMP);
   }
   
   public Vertex getHead() {
@@ -68,7 +69,7 @@ class Edge {
   public Map<NodePath,  PCollectionImpl> getSplitPoints(boolean breakpointsOnly) {
     List<NodePath> np = Lists.newArrayList(paths);
     List<PCollectionImpl<?>> smallestOverallPerPath = Lists.newArrayListWithExpectedSize(np.size());
-    Map<PCollectionImpl<?>, Set<Integer>> pathCounts = Maps.newHashMap();
+    Map<PCollectionImpl<?>, Set<Integer>> pathCounts = Maps.newTreeMap(PCOL_CMP);
     Map<NodePath, PCollectionImpl> splitPoints = Maps.newHashMap();
     for (int i = 0; i < np.size(); i++) {
       long bestSize = Long.MAX_VALUE;
@@ -165,4 +166,29 @@ class Edge {
   public String toString() {
     return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
   }
+
+  private static Comparator<NodePath> NODE_CMP = new Comparator<NodePath>() {
+    @Override
+    public int compare(NodePath left, NodePath right) {
+      if (left == right || left.equals(right)) {
+        return 0;
+      }
+      return left.toString().compareTo(right.toString());
+    }
+  };
+
+  private static Comparator<PCollectionImpl<?>> PCOL_CMP = new Comparator<PCollectionImpl<?>>() {
+    @Override
+    public int compare(PCollectionImpl<?> left, PCollectionImpl<?> right) {
+      if (left == right || left.equals(right)) {
+        return 0;
+      }
+      String leftName = left.getName();
+      String rightName = right.getName();
+      if (leftName == null || rightName == null || leftName.equals(rightName)) {
+        return left.hashCode() < right.hashCode() ? -1 : 1;
+      }
+      return leftName.compareTo(rightName);
+    }
+  };
 }
