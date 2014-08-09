@@ -53,7 +53,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
       InputFormat<?, ?> format = (InputFormat<?, ?>) ReflectionUtils.newInstance(inputBundle.getFormatClass(),
           jobCopy.getConfiguration());
       if (format instanceof FileInputFormat && !conf.getBoolean(RuntimeParameters.DISABLE_COMBINE_FILE, true)) {
-        format = new CrunchCombineFileInputFormat<Object, Object>(job);
+        format = new CrunchCombineFileInputFormat<Object, Object>(jobCopy);
       }
       for (Map.Entry<Integer, List<Path>> nodeEntry : entry.getValue().entrySet()) {
         Integer nodeIndex = nodeEntry.getKey();
