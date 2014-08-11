@@ -24,8 +24,6 @@ import org.apache.hadoop.io.NullWritable;
 
 class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, Iterable<K>> {
 
-  private transient AvroWrapper<K> wrapper = null;
-
   @Override
   public K convertInput(AvroWrapper<K> key, NullWritable value) {
     return key.datum();
@@ -33,8 +31,7 @@ class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, 
 
   @Override
   public AvroWrapper<K> outputKey(K value) {
-    getWrapper().datum(value);
-    return wrapper;
+    return new AvroKey<K>(value);
   }
 
   @Override
@@ -44,19 +41,12 @@ class AvroKeyConverter<K> implements Converter<AvroWrapper<K>, NullWritable, K, 
 
   @Override
   public Class<AvroWrapper<K>> getKeyClass() {
-    return (Class<AvroWrapper<K>>) getWrapper().getClass();
+    return (Class<AvroWrapper<K>>) (Class) AvroKey.class;
   }
 
   @Override
   public Class<NullWritable> getValueClass() {
     return NullWritable.class;
-  }
-
-  private AvroWrapper<K> getWrapper() {
-    if (wrapper == null) {
-      wrapper = new AvroKey<K>();
-    }
-    return wrapper;
   }
 
   @Override

@@ -24,6 +24,8 @@ import java.util.TreeMap;
 
 import org.apache.crunch.Aggregator;
 import org.apache.crunch.CombineFn;
+import org.apache.crunch.DoFn;
+import org.apache.crunch.Emitter;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
@@ -137,6 +139,15 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
   
   @Override
   public PTable<K, V> ungroup() {
-    return parent;
+    return parallelDo("ungroup", new UngroupFn<K, V>(), parent.getPTableType());
+  }
+
+  private static class UngroupFn<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {
+    @Override
+    public void process(Pair<K, Iterable<V>> input, Emitter<Pair<K, V>> emitter) {
+      for (V v : input.second()) {
+        emitter.emit(Pair.of(input.first(), v));
+      }
+    }
   }
 }

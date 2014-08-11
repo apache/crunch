@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mem.collect;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,12 +27,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.SingleUseIterable;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.io.RawComparator;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.base.Function;
@@ -57,49 +60,80 @@ abstract class Shuffler<K, V> implements Iterable<Pair<K, Iterable<V>>> {
   
   public static <S, T> Shuffler<S, T> create(PType<S> keyType, GroupingOptions options,
       Pipeline pipeline) {
-    Map<S, Collection<T>> map = getMapForKeyType(keyType);
+    Map<Object, Collection<T>> map = getMapForKeyType(keyType);
     
     if (options != null) {
+      Job job;
+      try {
+        job = new Job(pipeline.getConfiguration());
+      } catch (IOException e) {
+        throw new IllegalStateException("Could not create Job instance", e);
+      }
+      options.configure(job);
       if (Pair.class.equals(keyType.getTypeClass()) && options.getGroupingComparatorClass() != null) {
         PType<?> pairKey = keyType.getSubTypes().get(0);
         return new SecondarySortShuffler(getMapForKeyType(pairKey));
       } else if (options.getSortComparatorClass() != null) {
-        RawComparator<S> rc = ReflectionUtils.newInstance(options.getSortComparatorClass(),
-            pipeline.getConfiguration());
-        map = new TreeMap<S, Collection<T>>(rc);
+        RawComparator rc = ReflectionUtils.newInstance(
+            options.getSortComparatorClass(),
+            job.getConfiguration());
+        map = new TreeMap<Object, Collection<T>>(rc);
+        return new MapShuffler<S, T>(map, keyType);
       }
     }
-    
     return new MapShuffler<S, T>(map);
   }
   
-  private static class HFunction<K, V> implements Function<Map.Entry<K, Collection<V>>, Pair<K, Iterable<V>>> {
+  private static class HFunction<K, V> implements Function<Map.Entry<Object, Collection<V>>, Pair<K, Iterable<V>>> {
+    private final PType<K> keyType;
+
+    public HFunction(PType<K> keyType) {
+      this.keyType = keyType;
+    }
+
     @Override
-    public Pair<K, Iterable<V>> apply(Map.Entry<K, Collection<V>> input) {
-      return Pair.<K, Iterable<V>>of(input.getKey(), new SingleUseIterable<V>(input.getValue()));
+    public Pair<K, Iterable<V>> apply(Map.Entry<Object, Collection<V>> input) {
+      K key;
+      if (keyType == null) {
+        key = (K) input.getKey();
+      } else {
+        Object k = keyType.getConverter().convertInput(input.getKey(), null);
+        key = keyType.getInputMapFn().map(k);
+      }
+      return Pair.<K, Iterable<V>>of(key, new SingleUseIterable<V>(input.getValue()));
     }
   }
   
   private static class MapShuffler<K, V> extends Shuffler<K, V> {
-    private final Map<K, Collection<V>> map;
-    
-    public MapShuffler(Map<K, Collection<V>> map) {
+    private final Map<Object, Collection<V>> map;
+    private final PType<K> keyType;
+
+    public MapShuffler(Map<Object, Collection<V>> map) {
+      this(map, null);
+    }
+
+    public MapShuffler(Map<Object, Collection<V>> map, PType<K> keyType) {
       this.map = map;
+      this.keyType = keyType;
     }
     
     @Override
     public Iterator<Pair<K, Iterable<V>>> iterator() {
       return Iterators.transform(map.entrySet().iterator(),
-          new HFunction<K, V>());
+          new HFunction<K, V>(keyType));
     }
 
     @Override
     public void add(Pair<K, V> record) {
-      if (!map.containsKey(record.first())) {
-        Collection<V> values = Lists.newArrayList();
-        map.put(record.first(), values);
+      Object key = record.first();
+      if (keyType != null) {
+        key = keyType.getConverter().outputKey(keyType.getOutputMapFn().map((K) key));
       }
-      map.get(record.first()).add(record.second());
+      if (!map.containsKey(key)) {
+        Collection<V> values = Lists.newArrayList();
+        map.put(key, values);
+      }
+      map.get(key).add(record.second());
     }
   }
 
