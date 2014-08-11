@@ -25,6 +25,8 @@ import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
 
+import org.apache.commons.lang.SerializationException;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
@@ -101,6 +103,16 @@ public class MemCollection<S> implements PCollection<S> {
     return new MemCollection<S>(output, collections[0].getPType());
   }
 
+  private <S, T> DoFn<S, T> verifySerializable(String name, DoFn<S, T> doFn) {
+    try {
+      return (DoFn<S, T>) SerializationUtils.deserialize(SerializationUtils.serialize(doFn));
+    } catch (SerializationException e) {
+      throw new IllegalStateException(
+          doFn.getClass().getSimpleName() + " named '" + name + "' cannot be serialized",
+          e);
+    }
+  }
+
   @Override
   public <T> PCollection<T> parallelDo(DoFn<S, T> doFn, PType<T> type) {
     return parallelDo(null, doFn, type);
@@ -114,6 +126,7 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <T> PCollection<T> parallelDo(String name, DoFn<S, T> doFn, PType<T> type,
       ParallelDoOptions options) {
+    doFn = verifySerializable(name, doFn);
     InMemoryEmitter<T> emitter = new InMemoryEmitter<T>();
     Configuration conf = getPipeline().getConfiguration();
     doFn.configure(conf);
