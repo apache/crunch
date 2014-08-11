@@ -24,9 +24,10 @@ import org.apache.crunch.impl.mem.collect.MemCollection;
 import org.apache.crunch.types.writable.Writables;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class CountersTest {
+public class CountersTest implements Serializable {
 
   @Test
   public void counterTest() throws Exception {
