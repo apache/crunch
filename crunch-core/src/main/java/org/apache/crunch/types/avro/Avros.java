@@ -580,7 +580,7 @@ public class Avros {
     @Override
     public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.setContext(context);
       }
     }
     
@@ -746,7 +746,7 @@ public class Avros {
     @Override
     public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
       for (MapFn fn : fns) {
-        fn.setContext(getContext());
+        fn.setContext(context);
       }
     }
 
