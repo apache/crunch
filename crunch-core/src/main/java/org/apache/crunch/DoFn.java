@@ -19,10 +19,15 @@ package org.apache.crunch;
 
 import java.io.Serializable;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
+import com.google.common.base.Preconditions;
 
 /**
  * Base class for all data processing functions in Crunch.
@@ -36,7 +41,11 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
  * 
  */
 public abstract class DoFn<S, T> implements Serializable {
+  /** This will be null prior to being set in {@link #setContext(TaskInputOutputContext)}. */
+  @CheckForNull
   private transient TaskInputOutputContext<?, ?, ?, ?> context;
+  /** This will be null prior to being set in {@link #setConfiguration(Configuration)}. */
+  @CheckForNull
   private transient Configuration conf;
 
   /**
@@ -100,9 +109,10 @@ public abstract class DoFn<S, T> implements Serializable {
 
   /**
    * Called during setup to pass the {@link TaskInputOutputContext} to this
-   * {@code DoFn} instance.
+   * {@code DoFn} instance. The specified {@code TaskInputOutputContext} must not be null.
    */
-  public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+  public void setContext(@Nonnull TaskInputOutputContext<?, ?, ?, ?> context) {
+    Preconditions.checkNotNull(context);
     this.context = context;
   }
 
@@ -110,9 +120,11 @@ public abstract class DoFn<S, T> implements Serializable {
    * Called during the setup of an initialized {@link org.apache.crunch.types.PType} that
    * relies on this instance.
    *
-   * @param conf The configuration for the {@code PType} being initialized
+   * @param conf
+   *          The non-null configuration for the {@code PType} being initialized
    */
-  public void setConfiguration(Configuration conf) {
+  public void setConfiguration(@Nonnull Configuration conf) {
+    Preconditions.checkNotNull(conf);
     this.conf = conf;
   }
 
@@ -164,6 +176,9 @@ public abstract class DoFn<S, T> implements Serializable {
    */
   @Deprecated
   protected Counter getCounter(Enum<?> counterName) {
+    if (context == null) {
+      return null;
+    }
     return context.getCounter(counterName);
   }
 
@@ -174,6 +189,9 @@ public abstract class DoFn<S, T> implements Serializable {
    */
   @Deprecated
   protected Counter getCounter(String groupName, String counterName) {
+    if (context == null) {
+        return null;
+    }
     return context.getCounter(groupName, counterName);
   }
 
@@ -182,7 +200,9 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected void increment(String groupName, String counterName, long value) {
-    context.getCounter(groupName, counterName).increment(value);
+    if (context != null) {
+      context.getCounter(groupName, counterName).increment(value);
+    }
   }
 
   protected void increment(Enum<?> counterName) {
@@ -190,22 +210,34 @@ public abstract class DoFn<S, T> implements Serializable {
   }
 
   protected void increment(Enum<?> counterName, long value) {
-    context.getCounter(counterName).increment(value);
+    if (context != null) {
+      context.getCounter(counterName).increment(value);
+    }
   }
 
   protected void progress() {
-    context.progress();
+    if (context != null) {
+      context.progress();
+    }
   }
 
   protected TaskAttemptID getTaskAttemptID() {
+    if (context == null) {
+      return null;
+    }
     return context.getTaskAttemptID();
   }
 
   protected void setStatus(String status) {
-    context.setStatus(status);
+    if (context != null) {
+      context.setStatus(status);
+    }
   }
 
   protected String getStatus() {
+    if (context == null) {
+      return null;
+    }
     return context.getStatus();
   }
 
