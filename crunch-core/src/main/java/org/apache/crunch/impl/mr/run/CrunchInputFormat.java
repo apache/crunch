@@ -64,7 +64,7 @@ public class CrunchInputFormat<K, V> extends InputFormat<K, V> {
         // and Mapper types by wrapping in a TaggedInputSplit.
         List<InputSplit> pathSplits = format.getSplits(jobCopy);
         for (InputSplit pathSplit : pathSplits) {
-          splits.add(new CrunchInputSplit(pathSplit, inputBundle, nodeIndex, conf));
+          splits.add(new CrunchInputSplit(pathSplit, inputBundle, nodeIndex, jobCopy.getConfiguration()));
         }
       }
     }
