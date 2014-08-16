@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vocabulary_words>
+	<word>
+		<characters>认识</characters>
+		<pinyin>rèn shi</pinyin>
+		<english>to know / recognize</english>
+	</word>
+	<word>
+		<characters>男生</characters>
+		<pinyin>nán shēng</pinyin>
+		<english>male students</english>
+	</word>
+	<word>
+		<characters>女生</characters>
+		<pinyin>nǚ shēng</pinyin>
+		<english>female students</english>
+	</word>
+	<word>
+		<characters>年级</characters>
+		<pinyin>nián jí</pinyin>
+		<english>grade (school)</english>
+	</word>
+	<word>
+		<characters>班</characters>
+		<pinyin>bān</pinyin>
+		<english>class</english>
+	</word>
+	<word>
+		<characters>新</characters>
+		<pinyin>xīn</pinyin>
+		<english>new</english>
+	</word>
+	<phrase>
+		<characters>你早</characters>
+		<pinyin>nǐ zǎo</pinyin>
+		<english>good morning to you</english>
+	</phrase>
+	<word>
+		<characters>介绍</characters>
+		<pinyin>jiè shào</pinyin>
+		<english>introduce</english>
+	</word>
+	<phrase>
+		<characters>我来介绍</characters>
+		<pinyin>wǒ lái jiè shào</pinyin>
+		<english>I will introduce you</english>
+	</phrase>
+	<word>
+		<characters>欢迎</characters>
+		<pinyin>huān yíng</pinyin>
+		<english>welcome</english>
+	</word>
+	<phrase>
+		<characters>认识你们很高兴</characters>
+		<pinyin>rèn shi nǐ men hěn gāo xìng</pinyin>
+		<english>i am pleased to meet you</english>
+	</phrase>
+	<word>
+		<characters>新来</characters>
+		<pinyin>xīn lái</pinyin>
+		<english>newcomer</english>
+	</word>
+	<word>
+		<characters>借</characters>
+		<pinyin>jiè</pinyin>
+		<english>borrow / lend / make use of</english>
+	</word>
+	<word>
+		<characters>能</characters>
+		<pinyin>néng</pinyin>
+		<english>ability / skill</english>
+	</word>
+</vocabulary_words>

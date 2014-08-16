@@ -91,7 +91,7 @@ public class CSVFileSource extends FileSourceImpl<String> implements ReadableSou
   /**
    * Create a new CSVFileSource instance
    * 
-   * @param path
+   * @param paths
    *          The {@code Path} to the input data
    */
   public CSVFileSource(final List<Path> paths) {
