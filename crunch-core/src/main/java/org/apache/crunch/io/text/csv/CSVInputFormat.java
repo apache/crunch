@@ -186,17 +186,9 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
    * {@link CSVFileSource}'s private getBundle() method
    */
   public void configure() {
-
     bufferSize = this.configuration.getInt(CSVFileSource.CSV_BUFFER_SIZE, -1);
     if (bufferSize < 0) {
       bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
-    }
-
-    final String bufferValue = this.configuration.get(CSVFileSource.CSV_BUFFER_SIZE);
-    if ("".equals(bufferValue)) {
-      bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
-    } else {
-      bufferSize = Integer.parseInt(bufferValue);
     }
 
     final String inputFileEncodingValue = this.configuration.get(CSVFileSource.CSV_INPUT_FILE_ENCODING);
