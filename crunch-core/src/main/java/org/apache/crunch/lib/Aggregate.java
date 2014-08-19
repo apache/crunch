@@ -85,6 +85,9 @@ public class Aggregate {
           public Pair<Integer, Long> map(S input) {
             return Pair.of(1, 1L);
           }
+          public void cleanup(Emitter<Pair<Integer, Long>> e) {
+            e.emit(Pair.of(1, 0L));
+          }
         }, tf.tableOf(tf.ints(), tf.longs()))
         .groupByKey(GroupingOptions.builder().numReducers(1).build())
         .combineValues(Aggregators.SUM_LONGS());
