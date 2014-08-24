@@ -30,6 +30,6 @@ public class InputConverterFunction<K, V, S> extends Function<Tuple2<K, V>, S> {
 
   @Override
   public S call(Tuple2<K, V> kv) throws Exception {
-    return converter.convertInput(kv._1, kv._2);
+    return converter.convertInput(kv._1(), kv._2());
   }
 }

@@ -39,6 +39,6 @@ public class PairMapFunction<K, V, S> extends Function<Tuple2<K, V>, S> {
       ctxt.initialize(fn);
       initialized = true;
     }
-    return fn.map(Pair.of(kv._1, kv._2));
+    return fn.map(Pair.of(kv._1(), kv._2()));
   }
 }

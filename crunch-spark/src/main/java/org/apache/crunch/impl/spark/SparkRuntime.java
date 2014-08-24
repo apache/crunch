@@ -33,6 +33,7 @@ import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.spark.fn.MapFunction;
 import org.apache.crunch.impl.spark.fn.OutputConverterFunction;
@@ -299,14 +300,15 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
           getRuntimeContext().setConf(sparkContext.broadcast(WritableUtils.toByteArray(conf)));
           if (t instanceof MapReduceTarget) { //TODO: check this earlier
             Converter c = t.getConverter(ptype);
+            IdentityFn ident = IdentityFn.getInstance();
             JavaPairRDD<?, ?> outRDD;
             if (rdd instanceof JavaRDD) {
               outRDD = ((JavaRDD) rdd)
-                  .map(new MapFunction(ptype.getOutputMapFn(), ctxt))
+                  .map(new MapFunction(c.applyPTypeTransforms() ? ptype.getOutputMapFn() : ident, ctxt))
                   .map(new OutputConverterFunction(c));
             } else {
               outRDD = ((JavaPairRDD) rdd)
-                  .map(new PairMapFunction(ptype.getOutputMapFn(), ctxt))
+                  .map(new PairMapFunction(c.applyPTypeTransforms() ? ptype.getOutputMapFn() : ident, ctxt))
                   .map(new OutputConverterFunction(c));
             }
             try {

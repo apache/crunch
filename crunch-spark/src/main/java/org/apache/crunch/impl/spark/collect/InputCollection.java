@@ -17,8 +17,10 @@
  */
 package org.apache.crunch.impl.spark.collect;
 
+import org.apache.crunch.MapFn;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Source;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.BaseInputCollection;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
@@ -26,6 +28,7 @@ import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
 import org.apache.crunch.impl.spark.fn.InputConverterFunction;
 import org.apache.crunch.impl.spark.fn.MapFunction;
+import org.apache.crunch.types.Converter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -44,15 +47,17 @@ public class InputCollection<S> extends BaseInputCollection<S> implements SparkC
       Job job = new Job(runtime.getConfiguration());
       FileInputFormat.addInputPaths(job, "/tmp"); //placeholder
       source.configureSource(job, -1);
+      Converter converter = source.getConverter();
       JavaPairRDD<?, ?> input = runtime.getSparkContext().newAPIHadoopRDD(
           job.getConfiguration(),
           CrunchInputFormat.class,
-          source.getConverter().getKeyClass(),
-          source.getConverter().getValueClass());
+          converter.getKeyClass(),
+          converter.getValueClass());
       input.rdd().setName(source.toString());
+      MapFn mapFn = converter.applyPTypeTransforms() ? source.getType().getInputMapFn() : IdentityFn.getInstance();
       return input
           .map(new InputConverterFunction(source.getConverter()))
-          .map(new MapFunction(source.getType().getInputMapFn(), runtime.getRuntimeContext()));
+          .map(new MapFunction(mapFn, runtime.getRuntimeContext()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
