@@ -22,7 +22,6 @@ import java.io.IOException;
 import org.apache.avro.Schema;
 import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileWriter;
-import org.apache.avro.io.DatumWriter;
 import org.apache.avro.mapred.AvroJob;
 import org.apache.avro.mapred.AvroWrapper;
 import org.apache.hadoop.conf.Configuration;
@@ -53,7 +52,7 @@ public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWr
 
     if (org.apache.hadoop.mapred.FileOutputFormat.getCompressOutput(jc)) {
       int level = conf.getInt(org.apache.avro.mapred.AvroOutputFormat.DEFLATE_LEVEL_KEY,
-          org.apache.avro.mapred.AvroOutputFormat.DEFAULT_DEFLATE_LEVEL);
+          org.apache.avro.file.CodecFactory.DEFAULT_DEFLATE_LEVEL);
       String codecName = conf.get(AvroJob.OUTPUT_CODEC,
           org.apache.avro.file.DataFileConstants.DEFLATE_CODEC);
       CodecFactory codec = codecName.equals(org.apache.avro.file.DataFileConstants.DEFLATE_CODEC)
