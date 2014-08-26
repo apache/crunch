@@ -17,8 +17,9 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -87,9 +89,7 @@ public class StageResultsCountersIT {
 
     Map<String, Long> keywordsMap = countersToMap(result.getStageResults(), KEYWORDS_COUNTER_GROUP);
 
-    assertEquals(3, keywordsMap.size());
-
-    assertEquals("{NOT=157, AND=596, OR=81}", keywordsMap.toString());
+    assertThat(keywordsMap, is((Map<String, Long>) ImmutableMap.of("NOT", 157L, "AND", 596L, "OR", 81L)));
   }
 
   private static PipelineResult coutSpecialKeywords(Pipeline pipeline, String inputFileName, PTypeFamily tf) {
