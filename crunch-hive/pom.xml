@@ -56,6 +56,7 @@ under the License.
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-exec</artifactId>
+      <scope>provided</scope>
     </dependency>
     
   </dependencies>
