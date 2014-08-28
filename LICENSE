@@ -563,6 +563,7 @@ The Apache License, Version 2 (see above), for:
 The Scala License (see above), for:
   scala-compiler
   scala-library
+  scala-reflect
   jline
 
 --------------------------------------------------------------------------------
