@@ -27,7 +27,7 @@ import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.impl.spark.SparkCollection;
 import org.apache.crunch.impl.spark.SparkRuntime;
 import org.apache.crunch.impl.spark.fn.InputConverterFunction;
-import org.apache.crunch.impl.spark.fn.PairMapFunction;
+import org.apache.crunch.impl.spark.fn.Tuple2MapFunction;
 import org.apache.crunch.types.Converter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -56,7 +56,7 @@ public class InputTable<K, V> extends BaseInputTable<K, V> implements SparkColle
       MapFn mapFn = converter.applyPTypeTransforms() ? source.getType().getInputMapFn() : IdentityFn.getInstance();
       return input
           .map(new InputConverterFunction(source.getConverter()))
-          .map(new PairMapFunction(mapFn, runtime.getRuntimeContext()));
+          .mapToPair(new Tuple2MapFunction(mapFn, runtime.getRuntimeContext()));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

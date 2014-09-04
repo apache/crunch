@@ -15,30 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.spark;
+package org.apache.crunch.impl.spark.fn;
 
-import com.google.common.base.Function;
+import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.crunch.impl.spark.SparkRuntimeContext;
+import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
-import javax.annotation.Nullable;
+public class Tuple2MapFunction<K, V> implements PairFunction<Pair<K, V>, K, V> {
+  private final MapFn<Pair<K, V>, Pair<K, V>> fn;
+  private final SparkRuntimeContext ctxt;
+  private boolean initialized;
 
-public class GuavaUtils {
-  public static <K, V> Function<Tuple2<K, V>, Pair<K, V>> tuple2PairFunc() {
-    return new Function<Tuple2<K, V>, Pair<K, V>>() {
-      @Override
-      public Pair<K, V> apply(@Nullable Tuple2<K, V> kv) {
-        return kv == null ? null : Pair.of(kv._1(), kv._2());
-      }
-    };
+  public Tuple2MapFunction(MapFn<Pair<K, V>, Pair<K, V>> fn, SparkRuntimeContext ctxt) {
+    this.fn = fn;
+    this.ctxt = ctxt;
   }
 
-  public static <K, V> Function<Pair<K, V>, Tuple2<K, V>> pair2tupleFunc() {
-    return new Function<Pair<K, V>, Tuple2<K, V>>() {
-      @Override
-      public Tuple2<K, V> apply(@Nullable Pair<K, V> kv) {
-        return kv == null ? null : new Tuple2<K, V>(kv.first(), kv.second());
-      }
-    };
+  @Override
+  public Tuple2<K, V> call(Pair<K, V> p) throws Exception {
+    if (!initialized) {
+      ctxt.initialize(fn, null);
+      initialized = true;
+    }
+    Pair<K, V> res = fn.map(p);
+    return new Tuple2<K, V>(res.first(), res.second());
   }
 }
