@@ -21,8 +21,10 @@ import com.google.common.collect.Lists;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * An {@code Iterator<T>} that combines a delegate {@code Iterator<S>} and a {@code DoFn<S, T>}, generating
@@ -77,16 +79,16 @@ public class DoFnIterator<S, T> implements Iterator<T> {
       this.cache = Lists.newLinkedList();
     }
 
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
       return cache.isEmpty();
     }
 
-    public T poll() {
+    public synchronized T poll() {
       return cache.poll();
     }
 
     @Override
-    public void emit(T emitted) {
+    public synchronized void emit(T emitted) {
       cache.add(emitted);
     }
 
