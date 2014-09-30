@@ -118,6 +118,10 @@ object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
   implicit val strings = new PTypeH[String] { def get(ptf: PTypeFamily) = ptf.strings }
   implicit val bytes = new PTypeH[ByteBuffer] { def get(ptf: PTypeFamily) = ptf.bytes }
 
+  implicit def jenums[E <: java.lang.Enum[E] : ClassTag] = new PTypeH[E] {
+    def get(ptf: PTypeFamily): PType[E] = ptf.jenums(implicitly[ClassTag[E]])
+  }
+
   implicit def writables[W <: Writable : ClassTag] = new PTypeH[W] {
     def get(ptf: PTypeFamily): PType[W] = ptf.writables(implicitly[ClassTag[W]])
   }

@@ -18,7 +18,7 @@
 package org.apache.crunch.scrunch
 
 import org.apache.crunch.{Pair => CPair, Tuple3 => CTuple3, Tuple4 => CTuple4, TupleN, Union, MapFn}
-import org.apache.crunch.types.{PType, PTypeFamily => PTF}
+import org.apache.crunch.types.{PType, PTypeFamily => PTF, PTypes}
 import org.apache.crunch.types.writable.{WritableTypeFamily, Writables => CWritables}
 import org.apache.crunch.types.avro.{AvroType, AvroTypeFamily, Avros => CAvros}
 import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JFloat, Boolean => JBoolean}
@@ -138,6 +138,10 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     val in = (x: JBoolean) => x.booleanValue()
     val out = (x: Boolean) => new JBoolean(x)
     derivedImmutable(classOf[Boolean], in, out, ptf.booleans())
+  }
+
+  def jenums[E <: java.lang.Enum[E] : ClassTag]: PType[E] = {
+    PTypes.enums(implicitly[ClassTag[E]].runtimeClass.asInstanceOf[Class[E]], ptf).asInstanceOf[PType[E]]
   }
 
   def options[T](ptype: PType[T]) = {

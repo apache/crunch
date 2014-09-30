@@ -20,6 +20,8 @@
 
 package org.apache.crunch.scrunch
 
+import org.apache.crunch.types.avro.AvroMode
+
 import org.scalatest.junit.JUnitSuite
 import org.junit.Test
 
@@ -33,6 +35,12 @@ class TupleNTest extends JUnitSuite{
     val pc = Mem.collectionOf((1, 2, "a", 3, "b"), (4, 5, "a", 6, "c"))
     val res = pc.map(x => (x._3, x._4)).groupByKey.combineValues(Aggregators.sum[Int]).materialize
     org.junit.Assert.assertEquals(List(("a", 9)), res.toList)
+  }
+
+  @Test def testJavaEnums {
+    val pc = Mem.collectionOf((1, AvroMode.GENERIC), (2, AvroMode.SPECIFIC), (3, AvroMode.REFLECT))
+    val res = pc.map(x => (x._2, x._1)).filter((k, v) => k == AvroMode.SPECIFIC).materialize
+    org.junit.Assert.assertEquals(List((AvroMode.SPECIFIC, 2)), res.toList)
   }
 
   /**

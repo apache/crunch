@@ -97,7 +97,8 @@ public class PTypes {
    * Constructs a PType for a Java {@code Enum} type.
    */
   public static <T extends Enum> PType<T> enums(Class<T> type, PTypeFamily typeFamily) {
-    return typeFamily.derivedImmutable(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(), typeFamily.strings());
+    return typeFamily.derivedImmutable(type, new EnumInputMapper<T>(type), new EnumOutputMapper<T>(),
+        typeFamily.strings());
   }
 
   public static final MapFn<ByteBuffer, BigInteger> BYTE_TO_BIGINT = new MapFn<ByteBuffer, BigInteger>() {
