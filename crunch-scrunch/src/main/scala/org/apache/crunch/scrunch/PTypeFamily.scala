@@ -66,8 +66,6 @@ class TypeMapFn[P <: Product](val rc: Class[_], @transient var ctor: java.lang.r
   }
 
   override def map(x: TupleN): P = {
-    println(ctor)
-    x.getValues.foreach(println)
     ctor.newInstance(x.getValues : _*).asInstanceOf[P]
   }
 }
