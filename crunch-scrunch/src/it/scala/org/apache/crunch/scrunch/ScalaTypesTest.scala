@@ -29,7 +29,8 @@ object ScalaTypesTest {
   }
 }
 
-case class MyCaseClass(name: List[String], gender: Option[String], age: Int, birthday: Long)
+case class MyCaseClass(name: List[String], gender: Option[String], other: Array[MyOtherCaseClass])
+case class MyOtherCaseClass(age: Int, birthday: Long)
 
 class ScalaTypesTest extends CrunchSuite {
   import ScalaTypesTest._
@@ -66,9 +67,11 @@ class ScalaTypesTest extends CrunchSuite {
     val pt = Avros.caseClasses[MyCaseClass]
     pt.getInputMapFn.initialize()
     pt.getOutputMapFn.initialize()
-    val cc = MyCaseClass(List("Josh", "Wills"), Some("Male"), 35, 1234L)
-    val ser = pt.getOutputMapFn.map(cc)
-    assert(cc == pt.getInputMapFn.map(ser))
+    val cc = MyCaseClass(List("Josh", "Wills"), Some("Male"), Array(MyOtherCaseClass(35, 1234L)))
+    val deser = pt.getInputMapFn().map(pt.getOutputMapFn.map(cc))
+    assert(cc.gender == deser.gender)
+    assert(cc.name.equals(deser.name))
+    assert(cc.other(0) == deser.other(0))
   }
 
   @Test
@@ -76,8 +79,10 @@ class ScalaTypesTest extends CrunchSuite {
     val pt = Avros.caseClasses[MyCaseClass]
     pt.getInputMapFn.initialize()
     pt.getOutputMapFn.initialize()
-    val cc = MyCaseClass(List("Josh", "Wills"), null, 35, 1234L)
-    val ser = pt.getOutputMapFn.map(cc)
-    assert(cc == pt.getInputMapFn.map(ser))
+    val cc = MyCaseClass(List("Josh", "Wills"), null, Array(MyOtherCaseClass(35, 1234L)))
+    val deser = pt.getInputMapFn().map(pt.getOutputMapFn.map(cc))
+    assert(cc.gender == deser.gender)
+    assert(cc.name.equals(deser.name))
+    assert(cc.other(0) == deser.other(0))
   }
 }

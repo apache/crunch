@@ -58,15 +58,17 @@ object GeneratedTupleHelper {
   }
 }
 
-class TypeMapFn(val rc: Class[_], @transient var ctor: java.lang.reflect.Constructor[_] = null)
-  extends MapFn[TupleN, Product] {
+class TypeMapFn[P <: Product](val rc: Class[_], @transient var ctor: java.lang.reflect.Constructor[_] = null)
+  extends MapFn[TupleN, P] {
 
   override def initialize {
     this.ctor = rc.getConstructors().apply(0)
   }
 
-  override def map(x: TupleN): Product = {
-    ctor.newInstance(x.getValues : _*).asInstanceOf[Product]
+  override def map(x: TupleN): P = {
+    println(ctor)
+    x.getValues.foreach(println)
+    ctor.newInstance(x.getValues : _*).asInstanceOf[P]
   }
 }
 
@@ -234,7 +236,7 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
 
   def namedTuples(tupleName: String, fields: List[(String, PType[_])]): PType[TupleN]
 
-  def caseClasses[T <: Product : TypeTag]: PType[T] = products[T](implicitly[TypeTag[T]].tpe)
+  def caseClasses[T <: Product : TypeTag]: PType[T] = products(implicitly[TypeTag[T]].tpe)
 
   private def products[T <: Product](tpe: Type): PType[T] = {
     val ctor = tpe.member(nme.CONSTRUCTOR).asMethod
@@ -242,8 +244,7 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     val out = (x: Product) => TupleN.of(x.productIterator.toArray.asInstanceOf[Array[Object]] : _*)
     val rtc = currentMirror.runtimeClass(tpe)
     val base = namedTuples(rtc.getCanonicalName, args)
-    ptf.derivedImmutable(classOf[Product], new TypeMapFn(rtc), new TMapFn[Product, TupleN](out), base)
-      .asInstanceOf[PType[T]]
+    ptf.derivedImmutable(rtc.asInstanceOf[Class[T]], new TypeMapFn[T](rtc), new TMapFn[T, TupleN](out), base)
   }
 
   private val classToPrimitivePType = Map(
