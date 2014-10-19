@@ -66,8 +66,10 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.List;
@@ -104,6 +106,24 @@ public class HFileTargetIT implements Serializable {
     // We have to use mini mapreduce cluster, because LocalJobRunner allows only a single reducer
     // (we will need it to test bulk load against multiple regions).
     Configuration conf = HBaseConfiguration.create();
+
+    // Workaround for HBASE-5711, we need to set config value dfs.datanode.data.dir.perm
+    // equal to the permissions of the temp dirs on the filesystem. These temp dirs were
+    // probably created using this process' umask. So we guess the temp dir permissions as
+    // 0777 & ~umask, and use that to set the config value.
+    Process process = Runtime.getRuntime().exec("/bin/sh -c umask");
+    BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+    int rc = process.waitFor();
+    if(rc == 0) {
+      String umask = br.readLine();
+
+      int umaskBits = Integer.parseInt(umask, 8);
+      int permBits = 0777 & ~umaskBits;
+      String perms = Integer.toString(permBits, 8);
+
+      conf.set("dfs.datanode.data.dir.perm", perms);
+    }
+
     HBASE_TEST_UTILITY = new HBaseTestingUtility(conf);
     HBASE_TEST_UTILITY.startMiniCluster(1);
   }
