@@ -24,8 +24,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
@@ -44,10 +42,12 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileTargetImpl implements PathTarget {
 
-  private static final Log LOG = LogFactory.getLog(FileTargetImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(FileTargetImpl.class);
   
   protected final Path path;
   private final FormatBundle<? extends FileOutputFormat> formatBundle;
@@ -250,40 +250,40 @@ public class FileTargetImpl implements PathTarget {
         lastModForTarget = SourceTargetHelper.getLastModifiedAt(fs, path);
       }
     } catch (IOException e) {
-      LOG.error("Exception checking existence of path: " + path, e);
+      LOG.error("Exception checking existence of path: {}", path, e);
       throw new CrunchRuntimeException(e);
     }
     
     if (exists) {
       switch (strategy) {
       case DEFAULT:
-        LOG.error("Path " + path + " already exists!");
+        LOG.error("Path {} already exists!", path);
         throw new CrunchRuntimeException("Path already exists: " + path);
       case OVERWRITE:
-        LOG.info("Removing data at existing path: " + path);
+        LOG.info("Removing data at existing path: {}", path);
         try {
           fs.delete(path, true);
         } catch (IOException e) {
-          LOG.error("Exception thrown removing data at path: " + path, e);
+          LOG.error("Exception thrown removing data at path: {}", path, e);
         }
         break;
       case APPEND:
-        LOG.info("Adding output files to existing path: " + path);
+        LOG.info("Adding output files to existing path: {}", path);
         break;
       case CHECKPOINT:
         if (successful && lastModForTarget > lastModForSource) {
-          LOG.info("Re-starting pipeline from checkpoint path: " + path);
+          LOG.info("Re-starting pipeline from checkpoint path: {}", path);
           break;
         } else {
           if (!successful) {
-            LOG.info("_SUCCESS file not found, Removing data at existing checkpoint path: " + path);
+            LOG.info("_SUCCESS file not found, Removing data at existing checkpoint path: {}", path);
           } else {
-            LOG.info("Source data has recent updates. Removing data at existing checkpoint path: " + path);
+            LOG.info("Source data has recent updates. Removing data at existing checkpoint path: {}", path);
           }
           try {
             fs.delete(path, true);
           } catch (IOException e) {
-            LOG.error("Exception thrown removing data at checkpoint path: " + path, e);
+            LOG.error("Exception thrown removing data at checkpoint path: {}", path, e);
           }
           return false;
         }
@@ -291,7 +291,7 @@ public class FileTargetImpl implements PathTarget {
         throw new CrunchRuntimeException("Unknown WriteMode:  " + strategy);
       }
     } else {
-      LOG.info("Will write output files to new path: " + path);
+      LOG.info("Will write output files to new path: {}", path);
     }
     return exists;
   }

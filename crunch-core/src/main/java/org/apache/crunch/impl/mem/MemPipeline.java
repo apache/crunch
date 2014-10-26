@@ -27,8 +27,6 @@ import java.util.concurrent.TimeoutException;
 import com.google.common.base.Charsets;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.PCollection;
@@ -65,10 +63,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MemPipeline implements Pipeline {
 
-  private static final Log LOG = LogFactory.getLog(MemPipeline.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MemPipeline.class);
   private static Counters COUNTERS = new CountersWrapper();
   private static final MemPipeline INSTANCE = new MemPipeline();
 
@@ -155,7 +155,7 @@ public class MemPipeline implements Pipeline {
         throw new IllegalStateException(e);
       }
     }
-    LOG.error("Source " + source + " is not readable");
+    LOG.error("Source {} is not readable", source);
     throw new IllegalStateException("Source " + source + " is not readable");
   }
 
@@ -166,11 +166,11 @@ public class MemPipeline implements Pipeline {
         Iterable<Pair<K, V>> iterable = ((ReadableSource<Pair<K, V>>) source).read(conf);
         return new MemTable<K, V>(iterable, source.getTableType(), source.toString());
       } catch (IOException e) {
-        LOG.error("Exception reading source: " + source.toString(), e);
+        LOG.error("Exception reading source: " + source, e);
         throw new IllegalStateException(e);
       }
     }
-    LOG.error("Source " + source + " is not readable");
+    LOG.error("Source {} is not readable", source);
     throw new IllegalStateException("Source " + source + " is not readable");
   }
 
@@ -236,7 +236,7 @@ public class MemPipeline implements Pipeline {
         LOG.error("Exception writing target: " + target, e);
       }
     } else {
-      LOG.error("Target " + target + " is not a PathTarget instance");
+      LOG.error("Target {} is not a PathTarget instance", target);
     }
   }
 

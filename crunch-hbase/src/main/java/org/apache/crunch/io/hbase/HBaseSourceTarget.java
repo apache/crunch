@@ -20,8 +20,6 @@ package org.apache.crunch.io.hbase;
 import java.io.IOException;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
@@ -42,11 +40,8 @@ import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
-import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
 import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
@@ -56,12 +51,14 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
 
 import com.google.common.collect.ObjectArrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HBaseSourceTarget extends HBaseTarget implements
     ReadableSourceTarget<Pair<ImmutableBytesWritable, Result>>,
     TableSource<ImmutableBytesWritable, Result> {
 
-  private static final Log LOG = LogFactory.getLog(HBaseSourceTarget.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HBaseSourceTarget.class);
   
   private static final PTableType<ImmutableBytesWritable, Result> PTYPE = Writables.tableOf(
       Writables.writables(ImmutableBytesWritable.class), HBaseTypes.results());
@@ -174,7 +171,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   @Override
   public long getLastModifiedAt(Configuration configuration) {
-    LOG.warn("Cannot determine last modified time for source: " + toString());
+    LOG.warn("Cannot determine last modified time for source: {}", toString());
     return -1;
   }
 

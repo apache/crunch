@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
@@ -45,10 +43,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableMultimap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MSCRPlanner {
 
-  private static final Log LOG = LogFactory.getLog(MSCRPlanner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MSCRPlanner.class);
 
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;

@@ -77,7 +77,7 @@ public class OrcUtils {
   /**
    * Create an object of OrcStruct given a type string and a list of objects
    * 
-   * @param typeStr
+   * @param typeInfo
    * @param objs
    * @return
    */

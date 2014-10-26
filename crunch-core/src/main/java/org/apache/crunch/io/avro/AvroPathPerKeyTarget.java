@@ -18,8 +18,6 @@
 package org.apache.crunch.io.avro;
 
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
@@ -37,6 +35,8 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Job;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ import java.io.IOException;
  */
 public class AvroPathPerKeyTarget extends FileTargetImpl {
 
-  private static final Log LOG = LogFactory.getLog(AvroPathPerKeyTarget.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AvroPathPerKeyTarget.class);
 
   public AvroPathPerKeyTarget(String path) {
     this(new Path(path));
@@ -94,7 +94,7 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
     FileSystem srcFs = workingPath.getFileSystem(conf);
     Path base = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index);
     if (!srcFs.exists(base)) {
-      LOG.warn("Nothing to copy from " + base);
+      LOG.warn("Nothing to copy from {}", base);
       return;
     }
     Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base));

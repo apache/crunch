@@ -34,6 +34,11 @@ under the License.
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-core</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
     
     <dependency>
       <groupId>org.apache.crunch</groupId>

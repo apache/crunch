@@ -19,13 +19,13 @@ package org.apache.crunch.impl.mr.run;
 
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrunchMapper extends Mapper<Object, Object, Object, Object> {
 
-  private static final Log LOG = LogFactory.getLog(CrunchMapper.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CrunchMapper.class);
 
   private RTNode node;
   private CrunchTaskContext ctxt;

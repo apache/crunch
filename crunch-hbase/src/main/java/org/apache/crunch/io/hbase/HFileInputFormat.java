@@ -19,22 +19,15 @@ package org.apache.crunch.io.hbase;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.fs.HFileSystem;
-import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
-import org.apache.hadoop.hbase.io.hfile.FixedFileTrailer;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFile.Reader;
-import org.apache.hadoop.hbase.io.hfile.HFileReaderV2;
 import org.apache.hadoop.hbase.io.hfile.HFileScanner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
@@ -44,6 +37,8 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +49,7 @@ import java.util.List;
  */
 public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
 
-  private static final Log LOG = LogFactory.getLog(HFileInputFormat.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HFileInputFormat.class);
   static final String START_ROW_KEY = "crunch.hbase.hfile.input.format.start.row";
   static final String STOP_ROW_KEY = "crunch.hbase.hfile.input.format.stop.row";
 
@@ -95,7 +90,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       conf = context.getConfiguration();
       Path path = fileSplit.getPath();
       FileSystem fs = path.getFileSystem(conf);
-      LOG.info("Initialize HFileRecordReader for " + path);
+      LOG.info("Initialize HFileRecordReader for {}", path);
       this.in = HFile.createReader(fs, path, new CacheConfig(conf), conf);
 
       // The file info must be loaded before the scanner can be used.
@@ -129,7 +124,9 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       boolean hasNext;
       if (!seeked) {
         if (startRow != null) {
-          LOG.info("Seeking to start row " + Bytes.toStringBinary(startRow));
+          if(LOG.isInfoEnabled()) {
+            LOG.info("Seeking to start row {}", Bytes.toStringBinary(startRow));
+          }
           KeyValue kv = KeyValue.createFirstOnRow(startRow);
           hasNext = seekAtOrAfter(scanner, kv);
         } else {
@@ -147,7 +144,9 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       if (stopRow != null && Bytes.compareTo(
           value.getBuffer(), value.getRowOffset(), value.getRowLength(),
           stopRow, 0, stopRow.length) >= 0) {
-        LOG.info("Reached stop row " + Bytes.toStringBinary(stopRow));
+        if(LOG.isInfoEnabled()) {
+          LOG.info("Reached stop row {}", Bytes.toStringBinary(stopRow));
+        }
         reachedStopRow = true;
         value = null;
         return false;

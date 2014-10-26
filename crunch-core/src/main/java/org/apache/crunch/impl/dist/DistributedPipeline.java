@@ -19,8 +19,6 @@ package org.apache.crunch.impl.dist;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
@@ -54,6 +52,8 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
@@ -61,7 +61,7 @@ import java.util.Random;
 import java.util.Set;
 
 public abstract class DistributedPipeline implements Pipeline {
-  private static final Log LOG = LogFactory.getLog(DistributedPipeline.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DistributedPipeline.class);
 
   private static final Random RANDOM = new Random();
 

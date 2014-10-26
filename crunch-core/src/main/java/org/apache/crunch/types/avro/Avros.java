@@ -45,8 +45,6 @@ import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Tuple;
@@ -70,6 +68,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Defines static methods that are analogous to the methods defined in
@@ -282,7 +282,7 @@ public class Avros {
   }
 
   private static class BytesToWritableMapFn<T extends Writable> extends MapFn<Object, T> {
-    private static final Log LOG = LogFactory.getLog(BytesToWritableMapFn.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BytesToWritableMapFn.class);
 
     private final Class<T> writableClazz;
 
@@ -298,14 +298,14 @@ public class Avros {
         instance.readFields(new DataInputStream(new ByteArrayInputStream(byteBuffer.array(),
             byteBuffer.arrayOffset(), byteBuffer.limit())));
       } catch (IOException e) {
-        LOG.error("Exception thrown reading instance of: " + writableClazz, e);
+        LOG.error("Exception thrown reading instance of: {}", writableClazz, e);
       }
       return instance;
     }
   }
 
   private static class WritableToBytesMapFn<T extends Writable> extends MapFn<T, ByteBuffer> {
-    private static final Log LOG = LogFactory.getLog(WritableToBytesMapFn.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WritableToBytesMapFn.class);
 
     @Override
     public ByteBuffer map(T input) {

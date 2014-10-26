@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.impl.spark.collect;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
@@ -48,13 +46,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.storage.StorageLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements SparkCollection {
 
-  private static final Log LOG = LogFactory.getLog(PGroupedTableImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PGroupedTableImpl.class);
 
   private JavaRDDLike<?, ?> rdd;
 

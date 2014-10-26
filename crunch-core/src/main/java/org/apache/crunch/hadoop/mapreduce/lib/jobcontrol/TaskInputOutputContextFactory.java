@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.hadoop.mapreduce.lib.jobcontrol;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.OutputCommitter;
@@ -27,11 +25,13 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 
 public class TaskInputOutputContextFactory {
-  private static final Log LOG = LogFactory.getLog(TaskInputOutputContextFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TaskInputOutputContextFactory.class);
 
   private static final TaskInputOutputContextFactory INSTANCE = new TaskInputOutputContextFactory();
 
@@ -56,7 +56,7 @@ public class TaskInputOutputContextFactory {
           OutputCommitter.class, StatusReporter.class, InputSplit.class);
       this.arity = 7;
     } catch (Exception e) {
-      LOG.fatal("Could not access TaskInputOutputContext constructor, exiting", e);
+      LOG.error("Could not access TaskInputOutputContext constructor, exiting", e);
     }
   }
 

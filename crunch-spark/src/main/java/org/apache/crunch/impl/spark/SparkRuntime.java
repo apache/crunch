@@ -24,8 +24,6 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PipelineCallable;
@@ -59,6 +57,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaRDDLike;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -76,7 +76,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SparkRuntime extends AbstractFuture<PipelineResult> implements PipelineExecution {
 
-  private static final Log LOG = LogFactory.getLog(SparkRuntime.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SparkRuntime.class);
 
   private SparkPipeline pipeline;
   private JavaSparkContext sparkContext;
@@ -256,9 +256,9 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     }
 
     if (!failedCallables.isEmpty()) {
-      LOG.error(failedCallables.size() + " callable failure(s) occurred:");
+      LOG.error("{} callable failure(s) occurred:", failedCallables.size());
       for (PipelineCallable<?> c : failedCallables) {
-        LOG.error(c.getName() + ": " + c.getMessage());
+        LOG.error("{} : {}", c.getName(), c.getMessage());
       }
       status.set(Status.FAILED);
       set(PipelineResult.EMPTY);

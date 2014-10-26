@@ -17,14 +17,14 @@
  */
 package org.apache.crunch.impl.mr.run;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.SingleUseIterable;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrunchReducer extends Reducer<Object, Object, Object, Object> {
 
-  private static final Log LOG = LogFactory.getLog(CrunchReducer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CrunchReducer.class);
 
   private RTNode node;
   private CrunchTaskContext ctxt;

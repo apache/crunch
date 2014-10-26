@@ -26,8 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTableKeyValueIT;
 import org.apache.crunch.Pipeline;
@@ -49,13 +47,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(value = Parameterized.class)
 public class UnionCollectionIT {
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
 
-  private static final Log LOG = LogFactory.getLog(UnionCollectionIT.class);
+  private static final Logger LOG = LoggerFactory.getLogger(UnionCollectionIT.class);
 
   private PTypeFamily typeFamily;
   private Pipeline pipeline;
@@ -78,9 +78,9 @@ public class UnionCollectionIT {
     PCollection<String> firstCollection = pipeline.read(At.textFile(inputFile1, typeFamily.strings()));
     PCollection<String> secondCollection = pipeline.read(At.textFile(inputFile2, typeFamily.strings()));
 
-    LOG.info("Test fixture: [" + pipeline.getClass().getSimpleName() + " : " + typeFamily.getClass().getSimpleName()
-        + "]  First: " + Lists.newArrayList(firstCollection.materialize().iterator()) + ", Second: "
-        + Lists.newArrayList(secondCollection.materialize().iterator()));
+    LOG.info("Test fixture: [ {} : {}]  First: {}, Second: {}", new Object[]{pipeline.getClass().getSimpleName()
+        ,typeFamily.getClass().getSimpleName(), Lists.newArrayList(firstCollection.materialize().iterator()),
+        Lists.newArrayList(secondCollection.materialize().iterator())});
 
     union = secondCollection.union(firstCollection);
   }
@@ -107,7 +107,7 @@ public class UnionCollectionIT {
   private void checkMaterialized(Iterable<String> materialized) {
     List<String> materializedValues = Lists.newArrayList(materialized.iterator());
     Collections.sort(materializedValues);
-    LOG.info("Materialized union: " + materializedValues);
+    LOG.info("Materialized union: {}", materializedValues);
     assertEquals(EXPECTED, materializedValues);
   }
 
@@ -148,7 +148,7 @@ public class UnionCollectionIT {
 
     Collections.sort(fileContentValues);
 
-    LOG.info("Saved Union: " + fileContentValues);
+    LOG.info("Saved Union: {}", fileContentValues);
     assertEquals(EXPECTED, fileContentValues);
   }
 }

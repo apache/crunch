@@ -33,13 +33,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRJob.State;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates a set of MapReduce jobs and its dependency.
@@ -62,7 +62,7 @@ public class CrunchJobControl {
   private Set<PipelineCallable<?>> activePipelineCallables;
   private List<PipelineCallable<?>> failedCallables;
 
-  private Log log = LogFactory.getLog(CrunchJobControl.class);
+  private Logger log = LoggerFactory.getLogger(CrunchJobControl.class);
 
   private final String groupName;
   private final int maxRunningJobs;

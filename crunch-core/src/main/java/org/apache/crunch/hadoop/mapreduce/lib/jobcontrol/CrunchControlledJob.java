@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.plan.JobNameBuilder;
@@ -35,6 +33,8 @@ import org.apache.hadoop.util.StringUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates a MapReduce job and its dependency. It monitors the
@@ -52,7 +52,7 @@ public class CrunchControlledJob implements MRJob {
     public void run() throws IOException;
   }
 
-  private static final Log LOG = LogFactory.getLog(CrunchControlledJob.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CrunchControlledJob.class);
 
   private final int jobID;
   private final Job job; // mapreduce job to be executed.
@@ -339,12 +339,12 @@ public class CrunchControlledJob implements MRJob {
       this.jobStartTimeMsec = System.currentTimeMillis();
       job.submit();
       this.state = State.RUNNING;
-      LOG.info("Running job \"" + getJobName() + "\"");
-      LOG.info("Job status available at: " + job.getTrackingURL());
+      LOG.info("Running job \"{}\"", getJobName());
+      LOG.info("Job status available at: {}", job.getTrackingURL());
     } catch (Exception ioe) {
       this.state = State.FAILED;
       this.message = StringUtils.stringifyException(ioe);
-      LOG.info("Error occurred starting job \"" + getJobName() + "\":");
+      LOG.info("Error occurred starting job \"{}\":", getJobName());
       LOG.info(getMessage());
     }
   }
@@ -353,7 +353,7 @@ public class CrunchControlledJob implements MRJob {
     String progress = String.format("map %.0f%% reduce %.0f%%",
         100.0 * job.mapProgress(), 100.0 * job.reduceProgress());
     if (!Objects.equal(lastKnownProgress, progress)) {
-      LOG.info(job.getJobName() + " progress: " + progress);
+      LOG.info("{} progress: {}", job.getJobName(), progress);
       lastKnownProgress = progress;
     }
   }

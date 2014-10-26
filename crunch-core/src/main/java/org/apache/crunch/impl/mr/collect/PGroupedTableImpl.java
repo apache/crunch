@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.impl.mr.collect;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.impl.dist.collect.BaseGroupedTable;
 import org.apache.crunch.impl.dist.collect.MRCollection;
@@ -26,10 +24,12 @@ import org.apache.crunch.impl.dist.collect.PTableBase;
 import org.apache.crunch.impl.mr.plan.DoNode;
 import org.apache.crunch.util.PartitionUtils;
 import org.apache.hadoop.mapreduce.Job;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements MRCollection {
 
-  private static final Log LOG = LogFactory.getLog(PGroupedTableImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PGroupedTableImpl.class);
 
   PGroupedTableImpl(PTableBase<K, V> parent, GroupingOptions groupingOptions) {
     super(parent, groupingOptions);
@@ -41,7 +41,7 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements M
       int numReduceTasks = PartitionUtils.getRecommendedPartitions(this, getPipeline().getConfiguration());
       if (numReduceTasks > 0) {
         job.setNumReduceTasks(numReduceTasks);
-        LOG.info(String.format("Setting num reduce tasks to %d", numReduceTasks));
+        LOG.info("Setting num reduce tasks to {}", numReduceTasks);
       } else {
         LOG.warn("Attempted to set a negative number of reduce tasks");
       }

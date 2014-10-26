@@ -19,11 +19,11 @@ package org.apache.crunch.hadoop.mapreduce;
 
 import java.lang.reflect.Constructor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A factory class that allows us to hide the fact that {@code TaskAttemptContext} is a class in
@@ -32,7 +32,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 @SuppressWarnings("unchecked")
 public class TaskAttemptContextFactory {
 
-  private static final Log LOG = LogFactory.getLog(TaskAttemptContextFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TaskAttemptContextFactory.class);
 
   private static final TaskAttemptContextFactory INSTANCE = new TaskAttemptContextFactory();
 
@@ -49,13 +49,13 @@ public class TaskAttemptContextFactory {
         implClass = (Class<TaskAttemptContext>) Class.forName(
             "org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl");
       } catch (ClassNotFoundException e) {
-        LOG.fatal("Could not find TaskAttemptContextImpl class, exiting", e);
+        LOG.error("Could not find TaskAttemptContextImpl class, exiting", e);
       }
     }
     try {
       this.taskAttemptConstructor = implClass.getConstructor(Configuration.class, TaskAttemptID.class);
     } catch (Exception e) {
-      LOG.fatal("Could not access TaskAttemptContext constructor, exiting", e);
+      LOG.error("Could not access TaskAttemptContext constructor, exiting", e);
     }
   }
 

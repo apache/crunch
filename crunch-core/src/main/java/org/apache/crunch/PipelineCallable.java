@@ -20,9 +20,9 @@ package org.apache.crunch;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import parquet.Preconditions;
 
 import java.util.Map;
@@ -76,7 +76,7 @@ import java.util.concurrent.Callable;
  */
 public abstract class PipelineCallable<Output> implements Callable<PipelineCallable.Status> {
 
-  private static final Log LOG = LogFactory.getLog(PipelineCallable.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PipelineCallable.class);
 
   public enum Status { SUCCESS, FAILURE };
 
@@ -183,8 +183,7 @@ public abstract class PipelineCallable<Output> implements Callable<PipelineCalla
    */
   public String getMessage() {
     if (message == null) {
-      LOG.warn("No message specified for PipelineCallable instance \"" + getName() +
-          "\". Consider overriding PipelineCallable.getMessage()");
+      LOG.warn("No message specified for PipelineCallable instance \"{}\". Consider overriding PipelineCallable.getMessage()", getName());
       return toString();
     }
     return message;

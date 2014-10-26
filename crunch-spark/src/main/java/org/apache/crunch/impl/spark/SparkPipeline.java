@@ -19,8 +19,6 @@ package org.apache.crunch.impl.spark;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
@@ -39,12 +37,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class SparkPipeline extends DistributedPipeline {
 
-  private static final Log LOG = LogFactory.getLog(SparkPipeline.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SparkPipeline.class);
 
   private final String sparkConnect;
   private JavaSparkContext sparkContext;

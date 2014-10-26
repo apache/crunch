@@ -20,8 +20,6 @@ package org.apache.crunch.io.hbase;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
@@ -42,13 +40,15 @@ import org.apache.hadoop.hbase.mapreduce.MutationSerialization;
 import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.mapreduce.Job;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
 public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSource<KeyValue> {
 
-  private static final Log LOG = LogFactory.getLog(HFileSource.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HFileSource.class);
   private static final PType<KeyValue> KEY_VALUE_PTYPE = HBaseTypes.keyValues();
 
   public HFileSource(Path path) {
@@ -122,9 +122,9 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
       try {
         sum += getSizeInternal(conf, path);
       } catch (IOException e) {
-        LOG.warn("Failed to estimate size of " + path);
+        LOG.warn("Failed to estimate size of {}", path);
       }
-      System.out.println("Size after read of path = " + path.toString() + " = " + sum);
+      LOG.info("Size after read of path = {} = {}", path.toString(), sum);
     }
     return sum;
   }

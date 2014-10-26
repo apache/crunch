@@ -33,8 +33,6 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
@@ -67,6 +65,8 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Defines static methods that are analogous to the methods defined in
@@ -75,7 +75,7 @@ import com.google.common.collect.Maps;
  */
 public class Writables {
 
-  private static final Log LOG = LogFactory.getLog(Writables.class);
+  private static final Logger LOG = LoggerFactory.getLogger(Writables.class);
 
   static BiMap<Integer, Class<? extends Writable>> WRITABLE_CODES = HashBiMap.create(ImmutableBiMap.<Integer, Class<? extends Writable>>builder()
           .put(1, BytesWritable.class)
@@ -403,9 +403,8 @@ public class Writables {
         Class<Writable> clazz = ptype.getSerializationClass();
         if (WritableComparable.class.isAssignableFrom(clazz)) {
           if (!WRITABLE_CODES.inverse().containsKey(clazz)) {
-            LOG.warn(String.format(
-                "WritableComparable class %s in tuple type should be registered with Writables.registerComparable",
-                clazz.toString()));
+            LOG.warn("WritableComparable class {} in tuple type should be registered with Writables.registerComparable",
+                clazz.toString());
           }
         }
         writableClasses.add(clazz);

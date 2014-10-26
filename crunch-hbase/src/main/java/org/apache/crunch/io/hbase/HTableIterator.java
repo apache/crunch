@@ -19,21 +19,21 @@
  */
 package org.apache.crunch.io.hbase;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Pair;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
 class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
-  private static final Log LOG = LogFactory.getLog(HTableIterator.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HTableIterator.class);
 
   private final HTable table;
   private final Iterator<Scan> scans;
@@ -68,7 +68,7 @@ class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
         try {
           table.close();
         } catch (IOException e) {
-          LOG.error("Exception closing HTable: " + table.getName(), e);
+          LOG.error("Exception closing HTable: {}", table.getName(), e);
         }
       }
     }

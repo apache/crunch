@@ -130,11 +130,6 @@ under the License.
       <artifactId>libthrift</artifactId>
       <scope>provided</scope>
     </dependency>
-
-    <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-    </dependency>
    
     <dependency>
       <groupId>org.slf4j</groupId>

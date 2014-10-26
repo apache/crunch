@@ -20,8 +20,6 @@ package org.apache.crunch.impl.mr.run;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -31,10 +29,12 @@ import org.apache.crunch.impl.mr.emit.OutputEmitter;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RTNode implements Serializable {
 
-  private static final Log LOG = LogFactory.getLog(RTNode.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RTNode.class);
 
   private final String nodeName;
   private DoFn<Object, Object> fn;
@@ -98,7 +98,7 @@ public class RTNode implements Serializable {
       fn.process(input, emitter);
     } catch (CrunchRuntimeException e) {
       if (!e.wasLogged()) {
-        LOG.info(String.format("Crunch exception in '%s' for input: %s", nodeName, input), e);
+        LOG.info("Crunch exception in '{}' for input: {}", new Object[]{nodeName, input, e});
         e.markLogged();
       }
       throw e;

@@ -17,8 +17,8 @@
  */
 package org.apache.crunch.contrib.text;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base class for the common case {@code Extractor} instances that construct a single
@@ -27,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class AbstractSimpleExtractor<T> implements Extractor<T> {
 
-  private static final Log LOG = LogFactory.getLog(AbstractSimpleExtractor.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractSimpleExtractor.class);
   private static final int LOG_ERROR_LIMIT = 100;
   
   private int errors;
@@ -60,9 +60,7 @@ public abstract class AbstractSimpleExtractor<T> implements Extractor<T> {
       errorOnLast = true;
       errors++;
       if (errors < LOG_ERROR_LIMIT) {
-        String msg = String.format("Error occurred parsing input '%s' using extractor %s",
-            input, this); 
-        LOG.error(msg);
+        LOG.error("Error occurred parsing input '{}' using extractor {}", input, this);
       }
     }
     return res;

@@ -20,21 +20,21 @@ package org.apache.crunch.io.text.csv;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Iterators;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@code FileReaderFactory} instance that is responsible for building a
  * {@code CSVRecordIterator}
  */
 public class CSVFileReaderFactory implements FileReaderFactory<String> {
-  private static final Log LOG = LogFactory.getLog(CSVFileReaderFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(CSVFileReaderFactory.class);
   private final int bufferSize;
   private final String inputFileEncoding;
   private final char openQuoteChar;
@@ -94,7 +94,7 @@ public class CSVFileReaderFactory implements FileReaderFactory<String> {
       return new CSVRecordIterator(is, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar,
           maximumRecordSize);
     } catch (final IOException e) {
-      LOG.info("Could not read path: " + path, e);
+      LOG.info("Could not read path: {}", path, e);
       return Iterators.emptyIterator();
     }
   }

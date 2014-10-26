@@ -23,8 +23,6 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.fn.IdentityFn;
@@ -37,13 +35,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.trevni.Input;
 import org.apache.trevni.avro.AvroColumnReader;
 import org.apache.trevni.avro.HadoopInput;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 public class TrevniFileReaderFactory<T> implements FileReaderFactory<T> {
 
-  private static final Log LOG = LogFactory.getLog(TrevniFileReaderFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TrevniFileReaderFactory.class);
   private final AvroType<T> aType;
   private final MapFn<T, T> mapFn;
   private final Schema schema;
@@ -99,7 +99,7 @@ public class TrevniFileReaderFactory<T> implements FileReaderFactory<T> {
         }
       });
     } catch (IOException e) {
-      LOG.info("Could not read avro file at path: " + path, e);
+      LOG.info("Could not read avro file at path: {}", path, e);
       return Iterators.emptyIterator();
     }
   }

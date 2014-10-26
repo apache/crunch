@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import com.google.common.collect.Iterators;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
@@ -31,6 +29,8 @@ import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.impl.FileSourceImpl;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A reference to the materialized output of a {@code PCollection} created
@@ -38,7 +38,7 @@ import org.apache.hadoop.fs.Path;
  */
 public class MaterializableIterable<E> implements Iterable<E> {
 
-  private static final Log LOG = LogFactory.getLog(MaterializableIterable.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MaterializableIterable.class);
 
   private final Pipeline pipeline;
   private final ReadableSource<E> source;
@@ -106,7 +106,7 @@ public class MaterializableIterable<E> implements Iterable<E> {
     try {
       materialized = source.read(pipeline.getConfiguration());
     } catch (IOException e) {
-      LOG.error("Could not materialize: " + source, e);
+      LOG.error("Could not materialize: {}", source, e);
       throw new CrunchRuntimeException(e);
     }
   }

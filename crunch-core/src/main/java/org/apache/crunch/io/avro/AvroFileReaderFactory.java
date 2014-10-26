@@ -24,10 +24,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.mapred.FsInput;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
-import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.avro.AvroMode;
@@ -38,10 +35,12 @@ import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
 
-  private static final Log LOG = LogFactory.getLog(AvroFileReaderFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AvroFileReaderFactory.class);
 
   private DatumReader<T> reader;
   private final AvroType<?> atype;
@@ -85,7 +84,7 @@ public class AvroFileReaderFactory<T> implements FileReaderFactory<T> {
         }
       });
     } catch (IOException e) {
-      LOG.info("Could not read avro file at path: " + path, e);
+      LOG.info("Could not read avro file at path: {}", path, e);
       return Iterators.emptyIterator();
     }
   }

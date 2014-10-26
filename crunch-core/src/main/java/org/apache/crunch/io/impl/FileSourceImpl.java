@@ -24,8 +24,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.io.CompositePathIterable;
@@ -40,10 +38,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileSourceImpl<T> implements Source<T> {
 
-  private static final Log LOG = LogFactory.getLog(FileSourceImpl.class);
+  private static final Logger LOG = LoggerFactory.getLogger(FileSourceImpl.class);
 
   @Deprecated
   protected final Path path;
@@ -74,8 +74,7 @@ public class FileSourceImpl<T> implements Source<T> {
   @Deprecated
   public Path getPath() {
     if (paths.size() > 1) {
-      LOG.warn("getPath() called for source with multiple paths, only " +
-          "returning first. Source: " + this);
+      LOG.warn("getPath() called for source with multiple paths, only returning first. Source: {}", this);
     }
     return paths.get(0);
   }
@@ -118,7 +117,7 @@ public class FileSourceImpl<T> implements Source<T> {
       try {
         size += SourceTargetHelper.getPathSize(configuration, path);
       } catch (IOException e) {
-        LOG.warn(String.format("Exception thrown looking up size of: %s", path), e);
+        LOG.warn("Exception thrown looking up size of: {}", path, e);
         throw new IllegalStateException("Failed to get the file size of:" + path, e);
       }
     }
@@ -154,7 +153,7 @@ public class FileSourceImpl<T> implements Source<T> {
           lastMod = lm;
         }
       } catch (IOException e) {
-        LOG.error("Could not determine last modification time for source: " + toString(), e);
+        LOG.error("Could not determine last modification time for source: {}", toString(), e);
       }
     }
     return lastMod;

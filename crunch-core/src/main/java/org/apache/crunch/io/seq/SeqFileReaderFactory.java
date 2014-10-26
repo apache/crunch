@@ -20,10 +20,7 @@ package org.apache.crunch.io.seq;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.crunch.MapFn;
-import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.impl.AutoClosingIterator;
 import org.apache.crunch.types.Converter;
@@ -39,10 +36,12 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
 
-  private static final Log LOG = LogFactory.getLog(SeqFileReaderFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SeqFileReaderFactory.class);
 
   private final Converter converter;
   private final MapFn<Object, T> mapFn;
@@ -89,7 +88,7 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
             nextChecked = true;
             return hasNext;
           } catch (IOException e) {
-            LOG.info("Error reading from path: " + path, e);
+            LOG.info("Error reading from path: {}", path, e);
             return false;
           }
         }
@@ -104,7 +103,7 @@ public class SeqFileReaderFactory<T> implements FileReaderFactory<T> {
         }
       });
     } catch (IOException e) {
-      LOG.info("Could not read seqfile at path: " + path, e);
+      LOG.info("Could not read seqfile at path: {}", path, e);
       return Iterators.emptyIterator();
     }
   }
