@@ -106,7 +106,7 @@ public class MRPipeline extends DistributedPipeline {
         outputTargetsToMaterialize.remove(c);
       }
     }
-    MSCRPlanner planner = new MSCRPlanner(this, outputTargets, toMaterialize, allPipelineCallables);
+    MSCRPlanner planner = new MSCRPlanner(this, outputTargets, toMaterialize, appendedTargets, allPipelineCallables);
     try {
       return planner.plan(jarClass, getConfiguration());
     } catch (IOException e) {

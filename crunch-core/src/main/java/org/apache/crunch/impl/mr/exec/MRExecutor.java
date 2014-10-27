@@ -59,6 +59,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
   private final CrunchJobControl control;
   private final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
+  private final Set<Target> appendedTargets;
   private final CountDownLatch doneSignal = new CountDownLatch(1);
   private final CountDownLatch killSignal = new CountDownLatch(1);
   private final CappedExponentialCounter pollInterval;
@@ -74,10 +75,12 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
       Class<?> jarClass,
       Map<PCollectionImpl<?>, Set<Target>> outputTargets,
       Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize,
+      Set<Target> appendedTargets,
       Map<PipelineCallable<?>, Set<Target>> pipelineCallables) {
     this.control = new CrunchJobControl(conf, jarClass.toString(), pipelineCallables);
     this.outputTargets = outputTargets;
     this.toMaterialize = toMaterialize;
+    this.appendedTargets = appendedTargets;
     this.monitorThread = new Thread(new Runnable() {
       @Override
       public void run() {
@@ -147,7 +150,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
           } else {
             boolean materialized = false;
             for (Target t : outputTargets.get(c)) {
-              if (!materialized) {
+              if (!materialized && !appendedTargets.contains(t)) {
                 if (t instanceof SourceTarget) {
                   c.materializeAt((SourceTarget) t);
                   materialized = true;

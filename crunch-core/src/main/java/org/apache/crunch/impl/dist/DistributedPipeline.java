@@ -70,6 +70,7 @@ public abstract class DistributedPipeline implements Pipeline {
   protected final Map<PCollectionImpl<?>, Set<Target>> outputTargets;
   protected final Map<PCollectionImpl<?>, MaterializableIterable<?>> outputTargetsToMaterialize;
   protected final Map<PipelineCallable<?>, Set<Target>> allPipelineCallables;
+  protected final Set<Target> appendedTargets;
   private Path tempDirectory;
   private int tempFileIndex;
   private int nextAnonymousStageId;
@@ -89,6 +90,7 @@ public abstract class DistributedPipeline implements Pipeline {
     this.outputTargets = Maps.newHashMap();
     this.outputTargetsToMaterialize = Maps.newHashMap();
     this.allPipelineCallables = Maps.newHashMap();
+    this.appendedTargets = Sets.newHashSet();
     this.conf = conf;
     this.tempDirectory = createTempDirectory(conf);
     this.tempFileIndex = 0;
@@ -191,6 +193,12 @@ public abstract class DistributedPipeline implements Pipeline {
       throw new CrunchRuntimeException("Target " + target + " is already written in current run." +
           " Use WriteMode.APPEND in order to write additional data to it.");
     }
+
+    // Need special handling for append targets in the case of materialization
+    if (writeMode == Target.WriteMode.APPEND) {
+      appendedTargets.add(target);
+    }
+
     addOutput((PCollectionImpl<?>) pcollection, target);
   }
 
@@ -264,7 +272,7 @@ public abstract class DistributedPipeline implements Pipeline {
     ReadableSourceTarget<T> srcTarget = null;
     if (outputTargets.containsKey(pcollection)) {
       for (Target target : outputTargets.get(impl)) {
-        if (target instanceof ReadableSourceTarget) {
+        if (target instanceof ReadableSourceTarget && !appendedTargets.contains(target)) {
           return (ReadableSourceTarget<T>) target;
         }
       }

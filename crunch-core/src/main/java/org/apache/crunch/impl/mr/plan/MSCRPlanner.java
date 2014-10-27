@@ -53,16 +53,19 @@ public class MSCRPlanner {
   private final MRPipeline pipeline;
   private final Map<PCollectionImpl<?>, Set<Target>> outputs;
   private final Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize;
+  private final Set<Target> appendedTargets;
   private final Map<PipelineCallable<?>, Set<Target>> pipelineCallables;
   private int lastJobID = 0;
 
   public MSCRPlanner(MRPipeline pipeline, Map<PCollectionImpl<?>, Set<Target>> outputs,
       Map<PCollectionImpl<?>, MaterializableIterable> toMaterialize,
+      Set<Target> appendedTargets,
       Map<PipelineCallable<?>, Set<Target>> pipelineCallables) {
     this.pipeline = pipeline;
     this.outputs = new TreeMap<PCollectionImpl<?>, Set<Target>>(DEPTH_COMPARATOR);
     this.outputs.putAll(outputs);
     this.toMaterialize = toMaterialize;
+    this.appendedTargets = appendedTargets;
     this.pipelineCallables = pipelineCallables;
   }
 
@@ -117,7 +120,7 @@ public class MSCRPlanner {
       }
       if (!hasInputs) {
         LOG.warn("No input sources for pipeline, nothing to do...");
-        return new MRExecutor(conf, jarClass, outputs, toMaterialize, pipelineCallables);
+        return new MRExecutor(conf, jarClass, outputs, toMaterialize, appendedTargets, pipelineCallables);
       }
 
       // Create a new graph that splits up up dependent GBK nodes.
@@ -191,7 +194,7 @@ public class MSCRPlanner {
     
     // Finally, construct the jobs from the prototypes and return.
     DotfileWriter dotfileWriter = new DotfileWriter();
-    MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize, pipelineCallables);
+    MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize, appendedTargets, pipelineCallables);
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
       dotfileWriter.addJobPrototype(proto);
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline, lastJobID));

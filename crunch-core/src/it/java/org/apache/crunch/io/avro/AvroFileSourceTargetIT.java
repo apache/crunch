@@ -34,9 +34,11 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
 import org.apache.crunch.io.From;
+import org.apache.crunch.io.To;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
 import org.apache.crunch.test.TemporaryPath;
@@ -58,11 +60,15 @@ public class AvroFileSourceTargetIT implements Serializable {
 
   @Before
   public void setUp() throws IOException {
-    avroFile = tmpDir.getFile("test.avro");
+    avroFile = getTmpFile("test.avro");
   }
 
-  private void populateGenericFile(List<GenericRecord> genericRecords, Schema schema) throws IOException {
-    FileOutputStream outputStream = new FileOutputStream(this.avroFile);
+  private File getTmpFile(String file){
+      return tmpDir.getFile(file);
+  }
+
+  private void populateGenericFile(File outFile, List<GenericRecord> genericRecords, Schema schema) throws IOException {
+    FileOutputStream outputStream = new FileOutputStream(outFile);
     GenericDatumWriter<GenericRecord> genericDatumWriter = new GenericDatumWriter<GenericRecord>(schema);
 
     DataFileWriter<GenericRecord> dataFileWriter = new DataFileWriter<GenericRecord>(genericDatumWriter);
@@ -83,7 +89,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("name", "John Doe");
     savedRecord.put("age", 42);
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+    populateGenericFile(avroFile, Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Person> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
@@ -92,15 +98,59 @@ public class AvroFileSourceTargetIT implements Serializable {
     List<Person> personList = Lists.newArrayList(genericCollection.materialize());
 
     Person expectedPerson = new Person();
-    expectedPerson.name = "John Doe";
-    expectedPerson.age = 42;
+    expectedPerson.setName("John Doe");
+    expectedPerson.setAge(42);
 
     List<CharSequence> siblingNames = Lists.newArrayList();
     siblingNames.add("Jimmy");
     siblingNames.add("Jane");
-    expectedPerson.siblingnames = siblingNames;
+    expectedPerson.setSiblingnames(siblingNames);
 
     assertEquals(Lists.newArrayList(expectedPerson), Lists.newArrayList(personList));
+  }
+
+  @Test
+  public void testMaterializeAppendMode() throws IOException {
+    File parentPath = getTmpFile("existing");
+    parentPath.mkdir();
+    File existingRecordsFile = new File(parentPath, "test.avro");
+    GenericRecord savedRecord = new GenericData.Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(existingRecordsFile, Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    GenericRecord secondRecord = new GenericData.Record(Person.SCHEMA$);
+    secondRecord.put("name", "Admiral Ackbar");
+    secondRecord.put("age", 37);
+    secondRecord.put("siblingnames", Lists.newArrayList("Itsa", "Trap"));
+
+    File newRecordsParent = getTmpFile("new");
+    newRecordsParent.mkdir();
+    File newRecordsFile = new File(newRecordsParent, "test.avro");
+    populateGenericFile(newRecordsFile, Lists.newArrayList(secondRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Person> people = pipeline.read(At.avroFile(newRecordsParent.getAbsolutePath(),
+            Avros.records(Person.class)));
+
+    pipeline.write(people, To.avroFile(parentPath.getAbsolutePath()), Target.WriteMode.APPEND);
+    pipeline.run();
+
+    List<Person> personList = Lists.newArrayList(people.materialize());
+
+    Person expectedPerson = new Person();
+    expectedPerson.setName("Admiral Ackbar");
+    expectedPerson.setAge(37);
+
+    List<CharSequence> siblingNames = Lists.newArrayList();
+    siblingNames.add("Itsa");
+    siblingNames.add("Trap");
+    expectedPerson.setSiblingnames(siblingNames);
+
+    assertEquals(Lists.newArrayList(expectedPerson), Lists.newArrayList(personList));
+
+    pipeline.done();
   }
 
   @Test
@@ -109,7 +159,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("name", "John Doe");
     savedRecord.put("age", 42);
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+    populateGenericFile(avroFile, Lists.newArrayList(savedRecord), Person.SCHEMA$);
 
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<GenericData.Record> genericCollection = pipeline.read(From.avroFile(
@@ -129,7 +179,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     savedRecord.put("name", "John Doe");
     savedRecord.put("age", 42);
     savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
-    populateGenericFile(Lists.newArrayList(savedRecord), genericPersonSchema);
+    populateGenericFile(avroFile, Lists.newArrayList(savedRecord), genericPersonSchema);
 
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Record> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
@@ -145,7 +195,7 @@ public class AvroFileSourceTargetIT implements Serializable {
     Schema pojoPersonSchema = ReflectData.get().getSchema(StringWrapper.class);
     GenericRecord savedRecord = new GenericData.Record(pojoPersonSchema);
     savedRecord.put("value", "stringvalue");
-    populateGenericFile(Lists.newArrayList(savedRecord), pojoPersonSchema);
+    populateGenericFile(avroFile, Lists.newArrayList(savedRecord), pojoPersonSchema);
 
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<StringWrapper> stringValueCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
