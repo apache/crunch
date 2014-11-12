@@ -38,28 +38,36 @@ import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 import parquet.avro.AvroParquetInputFormat;
 import parquet.avro.AvroReadSupport;
 import parquet.filter.UnboundRecordFilter;
+import parquet.hadoop.ParquetInputSplit;
 
 public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceImpl<T> implements ReadableSource<T> {
+
+  private static final String AVRO_READ_SCHEMA = "parquet.avro.read.schema";
 
   private final String projSchema;
 
   private static <S> FormatBundle<AvroParquetInputFormat> getBundle(
       AvroType<S> ptype,
-      Schema extSchema,
+      Schema projSchema,
       Class<? extends UnboundRecordFilter> filterClass) {
-    Schema schema = extSchema == null ? ptype.getSchema() : extSchema;
-    // Need to check that all fields are accounted for in ptype schema...
     FormatBundle<AvroParquetInputFormat> fb = FormatBundle.forInput(AvroParquetInputFormat.class)
-        .set(AvroReadSupport.AVRO_REQUESTED_PROJECTION, schema.toString())
-        // ParquetRecordReader expects ParquetInputSplits, not FileSplits, so it
-        // doesn't work with CombineFileInputFormat
-        .set(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
+        .set(AVRO_READ_SCHEMA, ptype.getSchema().toString());
+
+    if (projSchema != null) {
+      fb.set(AvroReadSupport.AVRO_REQUESTED_PROJECTION, projSchema.toString());
+    }
     if (filterClass != null) {
       fb.set("parquet.read.filter", filterClass.getName());
+    }
+    if (!FileSplit.class.isAssignableFrom(ParquetInputSplit.class)) {
+      // Older ParquetRecordReader expects ParquetInputSplits, not FileSplits, so it
+      // doesn't work with CombineFileInputFormat
+      fb.set(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
     }
     return fb;
   }
@@ -68,16 +76,32 @@ public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceIm
     this(ImmutableList.of(path), ptype);
   }
 
-  public AvroParquetFileSource(Path path, AvroType<T> ptype, Schema schema) {
-    this(ImmutableList.of(path), ptype, schema);
+  /**
+   * Read the Parquet data at the given path using the schema of the {@code AvroType}, and projecting
+   * a subset of the columns from this schema via the separately given {@code Schema}.
+   *
+   * @param path the path of the file to read
+   * @param ptype the AvroType to use in reading the file
+   * @param projSchema the subset of columns from the input schema to read
+   */
+  public AvroParquetFileSource(Path path, AvroType<T> ptype, Schema projSchema) {
+    this(ImmutableList.of(path), ptype, projSchema);
   }
 
   public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype) {
     this(paths, ptype, null, null);
   }
-  
-  public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype, Schema schema) {
-    this(paths, ptype, schema, null);
+
+  /**
+   * Read the Parquet data at the given paths using the schema of the {@code AvroType}, and projecting
+   * a subset of the columns from this schema via the separately given {@code Schema}.
+   *
+   * @param paths the list of paths to read
+   * @param ptype the AvroType to use in reading the file
+   * @param projSchema the subset of columns from the input schema to read
+   */
+  public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype, Schema projSchema) {
+    this(paths, ptype, projSchema, null);
   }
 
   public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype,
@@ -85,10 +109,19 @@ public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceIm
     this(paths, ptype, null, filterClass);
   }
 
-  public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype, Schema schema,
+  /**
+   * Read the Parquet data at the given paths using the schema of the {@code AvroType}, projecting
+   * a subset of the columns from this schema via the separately given {@code Schema}, and using
+   * the filter class to select the input records.
+   *
+   * @param paths the list of paths to read
+   * @param ptype the AvroType to use in reading the file
+   * @param projSchema the subset of columns from the input schema to read
+   */
+  public AvroParquetFileSource(List<Path> paths, AvroType<T> ptype, Schema projSchema,
                                Class<? extends UnboundRecordFilter> filterClass) {
-    super(paths, ptype, getBundle(ptype, schema, filterClass));
-    projSchema = schema == null ? null : schema.toString();
+    super(paths, ptype, getBundle(ptype, projSchema, filterClass));
+    this.projSchema = projSchema == null ? null : projSchema.toString();
   }
 
   public Schema getProjectedSchema() {

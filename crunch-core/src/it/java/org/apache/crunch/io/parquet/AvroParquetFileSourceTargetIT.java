@@ -20,20 +20,26 @@ package org.apache.crunch.io.parquet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+import com.google.common.collect.Iterables;
 import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.util.Utf8;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
 import org.apache.crunch.io.avro.AvroFileSource;
 import org.apache.crunch.test.Person;
@@ -145,14 +151,13 @@ public class AvroParquetFileSourceTargetIT implements Serializable {
     PCollection<Person> ageOnly = pipeline2.read(
         new AvroFileSource<Person>(new Path(outputFile.getAbsolutePath()), Avros.specifics(Person.class)));
 
-    for (Person person : ageOnly.materialize()) {
-      assertNull(person.getName());
-      assertEquals(person.getAge(), new Integer(42));
-      assertNull(person.getSiblingnames());
-    }
+    Person person = Iterables.getOnlyElement(ageOnly.materialize());
+    assertNull(person.getName());
+    assertEquals(person.getAge(), new Integer(42));
+    assertNull(person.getSiblingnames());
   }
 
-  @Test(expected = IndexOutOfBoundsException.class)
+  @Test
   public void testProjectionGeneric() throws IOException {
     GenericRecord savedRecord = new Record(Person.SCHEMA$);
     savedRecord.put("name", "John Doe");
@@ -176,10 +181,126 @@ public class AvroParquetFileSourceTargetIT implements Serializable {
     PCollection<Record> ageOnly = pipeline2.read(
         new AvroFileSource<Record>(new Path(outputFile.getAbsolutePath()), Avros.generics(src.getProjectedSchema())));
 
-    for (Record person : ageOnly.materialize()) {
-      assertEquals(person.get(0), 42);
-      Object notAge = person.get(1);
+    Record person = Iterables.getOnlyElement(ageOnly.materialize());
+    assertEquals(person.get(0), 42);
+    try {
+      person.get(1);
+      fail("Trying to get field outside of projection should fail");
+    } catch (IndexOutOfBoundsException e) {
+      // Expected
     }
+  }
+
+  @Test
+  public void testCustomReadSchema_FieldSubset() throws IOException {
+    Schema readSchema = SchemaBuilder.record("PersonSubset")
+        .namespace("org.apache.crunch.test")
+        .fields()
+        .optionalString("name")
+        .endRecord();
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<GenericRecord> genericCollection = pipeline.read(
+        AvroParquetFileSource.builder(readSchema)
+            .includeField("name")
+            .build(new Path(avroFile.getAbsolutePath())));
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.write(avroFile);
+    pipeline.done();
+
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<GenericData.Record> namedPersonRecords = pipeline2.read(
+        From.avroFile(new Path(outputFile.getAbsolutePath())));
+
+    GenericRecord personSubset = Iterables.getOnlyElement(namedPersonRecords.materialize());
+
+    assertEquals(readSchema, personSubset.getSchema());
+    assertEquals(new Utf8("John Doe"), personSubset.get("name"));
+  }
+
+  @Test
+  public void testCustomReadSchemaGeneric_FieldSuperset() throws IOException {
+    Schema readSchema = SchemaBuilder.record("PersonSuperset")
+        .namespace("org.apache.crunch.test")
+        .fields()
+        .optionalString("name")
+        .optionalInt("age")
+        .name("siblingnames").type(Person.SCHEMA$.getField("siblingnames").schema()).withDefault(null)
+        .name("employer").type().stringType().stringDefault("Acme Corp")
+        .endRecord();
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<GenericRecord> genericCollection = pipeline.read(
+        AvroParquetFileSource.builder(readSchema)
+            .build(new Path(avroFile.getAbsolutePath())));
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.write(avroFile);
+    pipeline.done();
+
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<GenericData.Record> namedPersonRecords = pipeline2.read(
+        From.avroFile(new Path(outputFile.getAbsolutePath())));
+
+    GenericRecord personSuperset = Iterables.getOnlyElement(namedPersonRecords.materialize());
+
+    assertEquals(readSchema, personSuperset.getSchema());
+    assertEquals(new Utf8("John Doe"), personSuperset.get("name"));
+    assertEquals(42, personSuperset.get("age"));
+    assertEquals(Lists.newArrayList(new Utf8("Jimmy"), new Utf8("Jane")), personSuperset.get("siblingnames"));
+    assertEquals(new Utf8("Acme Corp"), personSuperset.get("employer"));
+  }
+
+  @Test
+  public void testCustomReadSchemaWithProjection() throws IOException {
+    Schema readSchema = SchemaBuilder.record("PersonSubsetWithProjection")
+        .namespace("org.apache.crunch.test")
+        .fields()
+        .optionalString("name")
+        .optionalInt("age")
+        .endRecord();
+    GenericRecord savedRecord = new Record(Person.SCHEMA$);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+    populateGenericFile(Lists.newArrayList(savedRecord), Person.SCHEMA$);
+
+    Pipeline pipeline = new MRPipeline(AvroParquetFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<GenericRecord> genericCollection = pipeline.read(
+        AvroParquetFileSource.builder(readSchema)
+            .includeField("name")
+            .build(new Path(avroFile.getAbsolutePath())));
+
+    File outputFile = tmpDir.getFile("output");
+    Target avroFile = To.avroFile(outputFile.getAbsolutePath());
+    genericCollection.write(avroFile);
+    pipeline.done();
+
+    Pipeline pipeline2 = new MRPipeline(AvroParquetFileSourceTargetIT.class,
+        tmpDir.getDefaultConfiguration());
+    PCollection<GenericData.Record> namedPersonRecords = pipeline2.read(
+        From.avroFile(new Path(outputFile.getAbsolutePath())));
+
+    GenericRecord personSubset = Iterables.getOnlyElement(namedPersonRecords.materialize());
+
+    assertEquals(readSchema, personSubset.getSchema());
+    assertEquals(new Utf8("John Doe"), personSubset.get("name"));
+    assertNull(personSubset.get("age"));
   }
 
   @Test
