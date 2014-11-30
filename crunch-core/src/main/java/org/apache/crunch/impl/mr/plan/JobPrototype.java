@@ -34,6 +34,7 @@ import org.apache.crunch.impl.mr.exec.CrunchJobHooks;
 import org.apache.crunch.impl.mr.run.CrunchCombiner;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
+import org.apache.crunch.impl.mr.run.CrunchOutputFormat;
 import org.apache.crunch.impl.mr.run.CrunchReducer;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
@@ -214,6 +215,7 @@ class JobPrototype {
       job.setNumReduceTasks(0);
       inputNodes = Lists.newArrayList(outputNodes);
     }
+    job.setOutputFormatClass(CrunchOutputFormat.class);
     serialize(inputNodes, conf, workingPath, NodeContext.MAP);
 
     if (inputNodes.size() == 1) {
