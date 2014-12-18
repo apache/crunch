@@ -237,4 +237,6 @@ object Conversions {
   implicit def pair2tuple[K, V](p: CPair[K, V]) = (p.first(), p.second())
 
   implicit def tuple2pair[K, V](t: (K, V)) = CPair.of(t._1, t._2)
+  
+  implicit def ptable2pcollect[K, V](table: PTable[K, V]): PCollection[(K, V)] = table.asPCollection()
 }

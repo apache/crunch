@@ -222,6 +222,13 @@ class PTable[K, V](val native: JTable[K, V]) extends PCollectionLike[CPair[K, V]
     PObject(native.asMap())
   }
 
+  def asPCollection(): PCollection[(K, V)] = {
+    val pType = getTypeFamily().tuple2(native.getKeyType, native.getValueType)
+    new PCollection(native.parallelDo(new MapFn[CPair[K, V], (K, V)] {
+      override def map(input: CPair[K, V]): (K, V) = (input.first(), input.second())
+    }, pType))
+  }
+
   def pType() = native.getPTableType()
 
   def keyType() = native.getPTableType().getKeyType()
