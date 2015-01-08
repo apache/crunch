@@ -36,15 +36,15 @@ import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.exec.MRExecutor;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.ImmutableMultimap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class MSCRPlanner {
 
@@ -86,19 +86,26 @@ public class MSCRPlanner {
   };  
 
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
+
+    DotfileUtills dotfileUtills = new DotfileUtills(jarClass, conf);
+
+    // Generate the debug lineage dotfiles (if configuration is enabled)
+    dotfileUtills.buildLineageDotfile(outputs);
+
     Map<PCollectionImpl<?>, Set<Target>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
     for (PCollectionImpl<?> pcollect : outputs.keySet()) {
       targetDeps.put(pcollect, pcollect.getTargetDependencies());
     }
-    
+
     Multimap<Target, JobPrototype> assignments = HashMultimap.create();
+
     while (!targetDeps.isEmpty()) {
       Set<Target> allTargets = Sets.newHashSet();
       for (PCollectionImpl<?> pcollect : targetDeps.keySet()) {
         allTargets.addAll(outputs.get(pcollect));
       }
       GraphBuilder graphBuilder = new GraphBuilder();
-      
+
       // Walk the current plan tree and build a graph in which the vertices are
       // sources, targets, and GBK operations.
       Set<PCollectionImpl<?>> currentStage = Sets.newHashSet();
@@ -109,7 +116,7 @@ public class MSCRPlanner {
           currentStage.add(output);
         }
       }
-      
+
       Graph baseGraph = graphBuilder.getGraph();
       boolean hasInputs = false;
       for (Vertex v : baseGraph) {
@@ -125,10 +132,14 @@ public class MSCRPlanner {
 
       // Create a new graph that splits up up dependent GBK nodes.
       Graph graph = prepareFinalGraph(baseGraph);
-      
+
       // Break the graph up into connected components.
       List<List<Vertex>> components = graph.connectedComponents();
-      
+
+      // Generate the debug graph dotfiles (if configuration is enabled)
+      dotfileUtills.buildBaseGraphDotfile(outputs, graph);
+      dotfileUtills.buildSplitGraphDotfile(outputs, graph, components);
+
       // For each component, we will create one or more job prototypes,
       // depending on its profile.
       // For dependency handling, we only need to care about which
@@ -191,18 +202,22 @@ public class MSCRPlanner {
         targetDeps.remove(output);
       }
     }
-    
+
     // Finally, construct the jobs from the prototypes and return.
-    DotfileWriter dotfileWriter = new DotfileWriter();
     MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize, appendedTargets, pipelineCallables);
+
+    // Generate the debug Plan dotfiles
+    dotfileUtills.buildPlanDotfile(exec, assignments, pipeline, lastJobID);
+
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
-      dotfileWriter.addJobPrototype(proto);
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline, lastJobID));
     }
 
-    String planDotFile = dotfileWriter.buildDotfile();
-    exec.setPlanDotFile(planDotFile);
-    conf.set(PlanningParameters.PIPELINE_PLAN_DOTFILE, planDotFile);
+    // Generate the debug RTNode dotfiles (if configuration is enabled)
+    dotfileUtills.buildRTNodesDotfile(exec);
+
+    // Attach the dotfiles to the MRExcutor context
+    dotfileUtills.addDotfilesToContext(exec);
 
     return exec;
   }

@@ -18,8 +18,10 @@
 package org.apache.crunch.impl.mr.exec;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
+
 import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.SourceTarget;
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +71,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
   private Thread monitorThread;
   private boolean started;
 
-  private String planDotFile;
+  private Map<String, String> namedDotFiles;
   
   public MRExecutor(
       Configuration conf,
@@ -90,16 +93,28 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
     this.pollInterval = isLocalMode()
       ? new CappedExponentialCounter(50, 1000)
       : new CappedExponentialCounter(500, 10000);
+
+    this.namedDotFiles = new ConcurrentHashMap<String, String>();
   }
 
   public void addJob(CrunchControlledJob job) {
     this.control.addJob(job);
   }
 
-  public void setPlanDotFile(String planDotFile) {
-    this.planDotFile = planDotFile;
+  public void addNamedDotFile(String fileName, String planDotFile) {
+    this.namedDotFiles.put(fileName, planDotFile);
+  }
+
+  @Override
+  public String getPlanDotFile() {
+    return this.namedDotFiles.get("jobplan");
   }
   
+  @Override
+  public Map<String, String> getNamedDotFiles() {
+    return ImmutableMap.copyOf(this.namedDotFiles);
+  }
+
   public synchronized MRPipelineExecution execute() {
     if (!started) {
       monitorThread.start();
@@ -187,11 +202,6 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
     } finally {
       doneSignal.countDown();
     }
-  }
-
-  @Override
-  public String getPlanDotFile() {
-    return planDotFile;
   }
 
   @Override

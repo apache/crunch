@@ -126,4 +126,37 @@ public class RTNode implements Serializable {
     return "RTNode [nodeName=" + nodeName + ", fn=" + fn + ", children=" + children + ", inputConverter="
         + inputConverter + ", outputConverter=" + outputConverter + ", outputName=" + outputName + "]";
   }
+
+  // Attributes needed to plot the dotfile diagrams
+  public String getNodeName() {
+    return this.nodeName;
+  }
+
+  public String getOutputName() {
+    return this.outputName;
+  }
+
+  public PType getPType() {
+    return outputPType;
+  }
+
+  public List<RTNode> getChildren() {
+    return children;
+  }
+
+  public DoFn<Object, Object> getDoFn() {
+    return fn;
+  }
+
+  public Converter getInputConverter() {
+    return inputConverter;
+  }
+
+  public Converter getOutputConverter() {
+    return outputConverter;
+  }
+
+  public Emitter<Object> getEmitter() {
+    return emitter;
+  }
 }

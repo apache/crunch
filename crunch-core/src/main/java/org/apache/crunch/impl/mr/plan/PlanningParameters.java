@@ -33,6 +33,8 @@ public final class PlanningParameters {
    */
   public static final String PIPELINE_PLAN_DOTFILE = "crunch.planner.dotfile";
 
+  public static final String DEBUG_DOTFILES_ENABLED  = "crunch.internals.dotfiles";
+
   /**
    * Configuration key under which a directory URI can be stored where MapReduce pipeline job plans in
    * <a href="http://www.graphviz.org">DOT</a> format are stored. The dot files are only written if this configuration

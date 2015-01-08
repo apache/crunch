@@ -17,20 +17,14 @@
  */
 package org.apache.crunch.io;
 
-import com.google.common.collect.Sets;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.JobStatus;
-import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.base.Joiner;
@@ -41,7 +35,6 @@ import com.google.common.collect.Maps;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * An analogue of {@link CrunchInputs} for handling multiple {@code OutputFormat} instances
@@ -71,32 +64,7 @@ public class CrunchOutputs<K, V> {
     conf.set(CRUNCH_OUTPUTS, existing == null ? inputs : existing + RECORD_SEP + inputs);
   }
 
-  public static void checkOutputSpecs(JobContext jc) throws IOException, InterruptedException {
-    Map<String, OutputConfig> outputs = getNamedOutputs(jc.getConfiguration());
-    for (Map.Entry<String, OutputConfig> e : outputs.entrySet()) {
-      String namedOutput = e.getKey();
-      Job job = getJob(e.getKey(), jc.getConfiguration());
-      OutputFormat fmt = getOutputFormat(namedOutput, job, e.getValue());
-      fmt.checkOutputSpecs(jc);
-    }
-  }
-
-  public static OutputCommitter getOutputCommitter(TaskAttemptContext tac) throws IOException, InterruptedException {
-    Map<String, OutputConfig> outputs = getNamedOutputs(tac.getConfiguration());
-    Map<String, OutputCommitter> committers = Maps.newHashMap();
-    for (Map.Entry<String, OutputConfig> e : outputs.entrySet()) {
-      String namedOutput = e.getKey();
-      Job job = getJob(e.getKey(), tac.getConfiguration());
-      OutputFormat fmt = getOutputFormat(namedOutput, job, e.getValue());
-      TaskAttemptContext taskContext = TaskAttemptContextFactory.create(
-          job.getConfiguration(), tac.getTaskAttemptID());
-      OutputCommitter oc = fmt.getOutputCommitter(taskContext);
-      committers.put(namedOutput, oc);
-    }
-    return new CompositeOutputCommitter(outputs, committers);
-  }
-
-  private static class OutputConfig<K, V> {
+  public static class OutputConfig<K, V> {
     public FormatBundle<OutputFormat<K, V>> bundle;
     public Class<K> keyClass;
     public Class<V> valueClass;
@@ -108,14 +76,15 @@ public class CrunchOutputs<K, V> {
       this.valueClass = valueClass;
     }
   }
-  
-  private static Map<String, OutputConfig> getNamedOutputs(Configuration conf) {
+
+  private static Map<String, OutputConfig> getNamedOutputs(
+      TaskInputOutputContext<?, ?, ?, ?> context) {
+    return getNamedOutputs(context.getConfiguration());
+  }
+
+  public static Map<String, OutputConfig> getNamedOutputs(Configuration conf) {
     Map<String, OutputConfig> out = Maps.newHashMap();
-    String serOut = conf.get(CRUNCH_OUTPUTS);
-    if (serOut == null || serOut.isEmpty()) {
-      return out;
-    }
-    for (String input : Splitter.on(RECORD_SEP).split(serOut)) {
+    for (String input : Splitter.on(RECORD_SEP).split(conf.get(CRUNCH_OUTPUTS))) {
       List<String> fields = Lists.newArrayList(SPLITTER.split(input));
       String name = fields.get(0);
       FormatBundle<OutputFormat> bundle = FormatBundle.fromSerialized(fields.get(1), conf);
@@ -129,14 +98,13 @@ public class CrunchOutputs<K, V> {
     }
     return out;
   }
-  
   private static final String BASE_OUTPUT_NAME = "mapreduce.output.basename";
   private static final String COUNTERS_GROUP = CrunchOutputs.class.getName();
 
-  private TaskInputOutputContext<?, ?, K, V> baseContext;
-  private Configuration baseConf;
+  private final TaskInputOutputContext<?, ?, K, V> baseContext;
   private final Map<String, OutputConfig> namedOutputs;
-  private final Map<String, OutputState<K, V>> outputStates;
+  private final Map<String, RecordWriter<K, V>> recordWriters;
+  private final Map<String, TaskAttemptContext> taskContextCache;
   private final boolean disableOutputCounters;
 
   /**
@@ -146,15 +114,11 @@ public class CrunchOutputs<K, V> {
    * @param context the TaskInputOutputContext object
    */
   public CrunchOutputs(TaskInputOutputContext<?, ?, K, V> context) {
-    this(context.getConfiguration());
     this.baseContext = context;
-  }
-
-  public CrunchOutputs(Configuration conf) {
-    this.baseConf = conf;
-    this.namedOutputs = getNamedOutputs(conf);
-    this.outputStates = Maps.newHashMap();
-    this.disableOutputCounters = conf.getBoolean(CRUNCH_DISABLE_OUTPUT_COUNTERS, false);
+    namedOutputs = getNamedOutputs(context);
+    recordWriters = Maps.newHashMap();
+    taskContextCache = Maps.newHashMap();
+    this.disableOutputCounters = context.getConfiguration().getBoolean(CRUNCH_DISABLE_OUTPUT_COUNTERS, false);
   }
 
   @SuppressWarnings("unchecked")
@@ -164,174 +128,63 @@ public class CrunchOutputs<K, V> {
       throw new IllegalArgumentException("Undefined named output '" +
         namedOutput + "'");
     }
+    TaskAttemptContext taskContext = getContext(namedOutput);
     if (!disableOutputCounters) {
       baseContext.getCounter(COUNTERS_GROUP, namedOutput).increment(1);
     }
-    getOutputState(namedOutput).write(key, value);
+    getRecordWriter(taskContext, namedOutput).write(key, value);
   }
   
   public void close() throws IOException, InterruptedException {
-    for (OutputState<?, ?> out : outputStates.values()) {
-      out.close();
+    for (RecordWriter<?, ?> writer : recordWriters.values()) {
+      writer.close(baseContext);
     }
   }
   
-  private OutputState<K, V> getOutputState(String namedOutput) throws IOException, InterruptedException {
-    OutputState<?, ?> out = outputStates.get(namedOutput);
-    if (out != null) {
-      return (OutputState<K, V>) out;
+  private TaskAttemptContext getContext(String nameOutput) throws IOException {
+    TaskAttemptContext taskContext = taskContextCache.get(nameOutput);
+    if (taskContext != null) {
+      return taskContext;
     }
 
     // The following trick leverages the instantiation of a record writer via
     // the job thus supporting arbitrary output formats.
-    Job job = getJob(namedOutput, baseConf);
-    OutputFormat<K, V> fmt = getOutputFormat(namedOutput, job, namedOutputs.get(namedOutput));
-    TaskAttemptContext taskContext = null;
-    RecordWriter<K, V> recordWriter = null;
-    if (baseContext != null) {
-      taskContext = TaskAttemptContextFactory.create(
-          job.getConfiguration(), baseContext.getTaskAttemptID());
-      recordWriter = fmt.getRecordWriter(taskContext);
-    }
-    OutputState<K, V> outputState = new OutputState(taskContext, recordWriter);
-    this.outputStates.put(namedOutput, outputState);
-    return outputState;
+    OutputConfig outConfig = namedOutputs.get(nameOutput);
+    Configuration conf = new Configuration(baseContext.getConfiguration());
+    Job job = new Job(conf);
+    job.getConfiguration().set("crunch.namedoutput", nameOutput);
+    job.setOutputFormatClass(outConfig.bundle.getFormatClass());
+    job.setOutputKeyClass(outConfig.keyClass);
+    job.setOutputValueClass(outConfig.valueClass);
+    outConfig.bundle.configure(job.getConfiguration());
+    taskContext = TaskAttemptContextFactory.create(
+      job.getConfiguration(), baseContext.getTaskAttemptID());
+
+    taskContextCache.put(nameOutput, taskContext);
+    return taskContext;
   }
 
-  private static Job getJob(String namedOutput, Configuration baseConf) throws IOException {
-    Job job = new Job(new Configuration(baseConf));
-    job.getConfiguration().set("crunch.namedoutput", namedOutput);
-    return job;
-  }
+  private synchronized RecordWriter<K, V> getRecordWriter(
+      TaskAttemptContext taskContext, String namedOutput)
+      throws IOException, InterruptedException {
+    // look for record-writer in the cache
+    RecordWriter<K, V> writer = recordWriters.get(namedOutput);
 
-  private static void configureJob(
-    String namedOutput,
-    Job job,
-    OutputConfig outConfig) throws IOException {
-      job.getConfiguration().set(BASE_OUTPUT_NAME, namedOutput);
-      job.setOutputFormatClass(outConfig.bundle.getFormatClass());
-      job.setOutputKeyClass(outConfig.keyClass);
-      job.setOutputValueClass(outConfig.valueClass);
-      outConfig.bundle.configure(job.getConfiguration());
-    }
-
-  private static OutputFormat getOutputFormat(
-      String namedOutput,
-      Job job,
-      OutputConfig outConfig) throws IOException {
-    configureJob(namedOutput, job, outConfig);
-    try {
-      return ReflectionUtils.newInstance(
-          job.getOutputFormatClass(),
-          job.getConfiguration());
-    } catch (ClassNotFoundException e) {
-      throw new IOException(e);
-    }
-  }
-
-  private static class OutputState<K, V> {
-    private final TaskAttemptContext context;
-    private final RecordWriter<K, V> recordWriter;
-
-    public OutputState(TaskAttemptContext context, RecordWriter<K, V> recordWriter) {
-      this.context = context;
-      this.recordWriter = recordWriter;
-    }
-
-    public void write(K key, V value) throws IOException, InterruptedException {
-      recordWriter.write(key, value);
-    }
-
-    public void close() throws IOException, InterruptedException {
-      recordWriter.close(context);
-    }
-  }
-
-  private static class CompositeOutputCommitter extends OutputCommitter {
-
-    private final Map<String, OutputConfig> outputs;
-    private final Map<String, OutputCommitter> committers;
-
-    public CompositeOutputCommitter(Map<String, OutputConfig> outputs, Map<String, OutputCommitter> committers) {
-      this.outputs = outputs;
-      this.committers = committers;
-    }
-
-    private TaskAttemptContext getContext(String namedOutput, TaskAttemptContext baseContext) throws IOException {
-      Job job = getJob(namedOutput, baseContext.getConfiguration());
-      configureJob(namedOutput, job, outputs.get(namedOutput));
-      return TaskAttemptContextFactory.create(job.getConfiguration(), baseContext.getTaskAttemptID());
-    }
-
-    @Override
-    public void setupJob(JobContext jobContext) throws IOException {
-      Configuration conf = jobContext.getConfiguration();
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        Job job = getJob(e.getKey(), conf);
-        configureJob(e.getKey(), job, outputs.get(e.getKey()));
-        e.getValue().setupJob(job);
+    // If not in cache, create a new one
+    if (writer == null) {
+      // get the record writer from context output format
+      taskContext.getConfiguration().set(BASE_OUTPUT_NAME, namedOutput);
+      try {
+        OutputFormat format = ReflectionUtils.newInstance(
+            taskContext.getOutputFormatClass(),
+            taskContext.getConfiguration());
+        writer = format.getRecordWriter(taskContext);
+      } catch (ClassNotFoundException e) {
+        throw new IOException(e);
       }
+      recordWriters.put(namedOutput, writer);
     }
 
-    @Override
-    public void setupTask(TaskAttemptContext taskAttemptContext) throws IOException {
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        e.getValue().setupTask(getContext(e.getKey(), taskAttemptContext));
-      }
-    }
-
-    @Override
-    public boolean needsTaskCommit(TaskAttemptContext taskAttemptContext) throws IOException {
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        if (e.getValue().needsTaskCommit(getContext(e.getKey(), taskAttemptContext))) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    @Override
-    public void commitTask(TaskAttemptContext taskAttemptContext) throws IOException {
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        e.getValue().commitTask(getContext(e.getKey(), taskAttemptContext));
-      }
-    }
-
-    @Override
-    public void abortTask(TaskAttemptContext taskAttemptContext) throws IOException {
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        e.getValue().abortTask(getContext(e.getKey(), taskAttemptContext));
-      }
-    }
-
-    @Override
-    public void commitJob(JobContext jobContext) throws IOException {
-      Configuration conf = jobContext.getConfiguration();
-      Set<Path> handledPaths = Sets.newHashSet();
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        OutputCommitter oc = e.getValue();
-        if (oc instanceof FileOutputCommitter) {
-          Path workPath = ((FileOutputCommitter) oc).getWorkPath();
-          if (handledPaths.contains(workPath)) {
-            continue;
-          } else {
-            handledPaths.add(workPath);
-          }
-        }
-        Job job = getJob(e.getKey(), conf);
-        configureJob(e.getKey(), job, outputs.get(e.getKey()));
-        oc.commitJob(job);
-      }
-    }
-
-    @Override
-    public void abortJob(JobContext jobContext, JobStatus.State state) throws IOException {
-      Configuration conf = jobContext.getConfiguration();
-      for (Map.Entry<String, OutputCommitter> e : committers.entrySet()) {
-        Job job = getJob(e.getKey(), conf);
-        configureJob(e.getKey(), job, outputs.get(e.getKey()));
-        e.getValue().abortJob(job, state);
-      }
-    }
+    return writer;
   }
 }

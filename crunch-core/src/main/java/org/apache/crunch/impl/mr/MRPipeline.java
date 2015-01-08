@@ -24,9 +24,11 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
+
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.PCollection;
@@ -130,7 +132,9 @@ public class MRPipeline extends DistributedPipeline {
   @Override
   public MRPipelineExecution runAsync() {
     MRExecutor mrExecutor = plan();
-    writePlanDotFile(mrExecutor.getPlanDotFile());
+    for (Entry<String, String> dotEntry: mrExecutor.getNamedDotFiles().entrySet()){
+      writePlanDotFile(dotEntry.getKey(), dotEntry.getValue());
+    }
     MRPipelineExecution res = mrExecutor.execute();
     outputTargets.clear();
     return res;
@@ -159,7 +163,7 @@ public class MRPipeline extends DistributedPipeline {
    *
    * @param dotFileContents contents to be written to the dot file
    */
-  private void writePlanDotFile(String dotFileContents) {
+  private void writePlanDotFile(String fileName, String dotFileContents) {
     String dotFileDir = getConfiguration().get(PlanningParameters.PIPELINE_DOTFILE_OUTPUT_DIR);
     if (dotFileDir != null) {
       FSDataOutputStream outputStream = null;
@@ -168,7 +172,7 @@ public class MRPipeline extends DistributedPipeline {
         URI uri = new URI(dotFileDir);
         FileSystem fs = FileSystem.get(uri, getConfiguration());
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss.SSS");
-        String filenameSuffix = String.format("_%s_jobplan.dot", dateFormat.format(new Date()));
+        String filenameSuffix = String.format("_%s_%s.dot", dateFormat.format(new Date()), fileName);
         String encodedName = URLEncoder.encode(getName(), "UTF-8");
         // We limit the pipeline name to the first 150 characters to keep the output dotfile length less 
         // than 200, as it's not clear what the exact limits are on the filesystem we're writing to (this

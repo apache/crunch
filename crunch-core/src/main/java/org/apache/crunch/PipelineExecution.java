@@ -19,6 +19,7 @@ package org.apache.crunch;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +35,12 @@ public interface PipelineExecution extends ListenableFuture<PipelineResult> {
    * pipeline.
    */
   String getPlanDotFile();
+
+  /**
+   * Returns all .dot files that allows a client to graph the Crunch execution plan internals.
+   * Key is the name of the dot file and the value is the file itself
+   */
+  Map<String, String> getNamedDotFiles();
 
   /** Blocks until pipeline completes or the specified waiting time elapsed. */
    void waitFor(long timeout, TimeUnit timeUnit) throws InterruptedException;
