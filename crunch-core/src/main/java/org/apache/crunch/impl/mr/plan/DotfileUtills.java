@@ -122,13 +122,13 @@ public class DotfileUtills {
   void buildPlanDotfile(MRExecutor exec, Multimap<Target, JobPrototype> assignments, MRPipeline pipeline, int lastJobID) {
     try {
       DotfileWriter dotfileWriter = new DotfileWriter();
-      
+
       for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
         dotfileWriter.addJobPrototype(proto);
       }
 
       planDotFile = dotfileWriter.buildDotfile();
-      
+
     } catch (Exception ex) {
       LOG.error("Problem creating debug dotfile:", ex);
     }
