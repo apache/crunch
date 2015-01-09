@@ -64,7 +64,7 @@ public class PartitionedMapOutputFunction<K, V> implements PairFunction<Pair<K, 
     int partition = getPartitioner().getPartition(p.first(), p.second(), numPartitions);
     return new Tuple2<IntByteArray, byte[]>(
         new IntByteArray(partition, keySerde.toBytes(p.first())),
-        valueSerde.toBytes(p.second()));
+        valueSerde.toBytes(p.second()).value);
   }
 
   private Partitioner getPartitioner() {

@@ -17,34 +17,32 @@
  */
 package org.apache.crunch.impl.spark;
 
-import com.google.common.primitives.UnsignedBytes;
-
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class ByteArray implements Serializable, Comparable<ByteArray> {
 
   public final byte[] value;
+  protected final ByteArrayHelper helper;
 
-  public ByteArray(byte[] value) {
+  public ByteArray(byte[] value, ByteArrayHelper helper) {
     this.value = value;
+    this.helper = helper;
   }
 
   @Override
   public boolean equals(Object o) {
     if (o == null || getClass() != o.getClass()) return false;
     ByteArray byteArray = (ByteArray) o;
-    if (!Arrays.equals(value, byteArray.value)) return false;
-    return true;
+    return helper.equal(value, byteArray.value);
   }
 
   @Override
   public int hashCode() {
-    return value != null ? Arrays.hashCode(value) : 0;
+    return helper.hashCode(value);
   }
 
   @Override
   public int compareTo(ByteArray other) {
-    return UnsignedBytes.lexicographicalComparator().compare(value, other.value);
+    return helper.compare(value, other.value);
   }
 }

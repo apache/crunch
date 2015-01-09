@@ -18,6 +18,8 @@
 package org.apache.crunch.impl.spark.serde;
 
 import com.google.common.base.Function;
+import org.apache.crunch.impl.spark.ByteArray;
+import org.apache.crunch.impl.spark.ByteArrayHelper;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
 
@@ -37,12 +39,12 @@ public class WritableSerDe implements SerDe<Writable> {
   }
 
   @Override
-  public byte[] toBytes(Writable obj) throws Exception {
+  public ByteArray toBytes(Writable obj) throws Exception {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(baos);
     obj.write(dos);
     dos.close();
-    return baos.toByteArray();
+    return new ByteArray(baos.toByteArray(), ByteArrayHelper.WRITABLES);
   }
 
   @Override

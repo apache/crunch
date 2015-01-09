@@ -17,13 +17,11 @@
  */
 package org.apache.crunch.impl.spark;
 
-import java.io.Serializable;
-
-public class IntByteArray extends ByteArray implements Serializable {
+public class IntByteArray extends ByteArray {
   public final int partition;
 
-  public IntByteArray(int partition, byte[] bytes) {
-    super(bytes);
+  public IntByteArray(int partition, ByteArray delegate) {
+    super(delegate.value, delegate.helper);
     this.partition = partition;
   }
 

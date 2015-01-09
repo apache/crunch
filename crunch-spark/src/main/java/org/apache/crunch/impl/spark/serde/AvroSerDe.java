@@ -30,6 +30,8 @@ import org.apache.avro.reflect.ReflectDatumReader;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.specific.SpecificDatumReader;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.crunch.impl.spark.ByteArray;
+import org.apache.crunch.impl.spark.ByteArrayHelper;
 import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.avro.AvroType;
 import org.apache.crunch.types.avro.Avros;
@@ -44,6 +46,7 @@ public class AvroSerDe<T> implements SerDe<T> {
 
   private AvroType<T> avroType;
   private Map<String, String> modeProperties;
+  private ByteArrayHelper helper;
   private transient AvroMode mode;
   private transient DatumWriter<T> writer;
   private transient DatumReader<T> reader;
@@ -54,6 +57,7 @@ public class AvroSerDe<T> implements SerDe<T> {
     if (avroType.hasReflect() && avroType.hasSpecific()) {
       Avros.checkCombiningSpecificAndReflectionSchemas();
     }
+    this.helper = ByteArrayHelper.forAvroSchema(avroType.getSchema());
   }
 
   private AvroMode getMode() {
@@ -85,13 +89,13 @@ public class AvroSerDe<T> implements SerDe<T> {
   }
 
   @Override
-  public byte[] toBytes(T obj) throws Exception {
+  public ByteArray toBytes(T obj) throws Exception {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     Encoder encoder = EncoderFactory.get().binaryEncoder(out, null);
     getWriter().write(obj, encoder);
     encoder.flush();
     out.close();
-    return out.toByteArray();
+    return new ByteArray(out.toByteArray(), helper);
   }
 
   @Override

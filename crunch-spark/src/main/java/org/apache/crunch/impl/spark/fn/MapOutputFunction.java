@@ -36,7 +36,7 @@ public class MapOutputFunction<K, V> implements PairFunction<Pair<K, V>, ByteArr
   @Override
   public Tuple2<ByteArray, byte[]> call(Pair<K, V> p) throws Exception {
     return new Tuple2<ByteArray, byte[]>(
-        new ByteArray(keySerde.toBytes(p.first())),
-        valueSerde.toBytes(p.second()));
+        keySerde.toBytes(p.first()),
+        valueSerde.toBytes(p.second()).value);
   }
 }
