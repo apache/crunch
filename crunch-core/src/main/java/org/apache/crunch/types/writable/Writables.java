@@ -119,8 +119,11 @@ public class Writables {
    * @param code  The unique registration code for the class, which must be greater than or equal to 8
    */
   public static void registerComparable(Class<? extends WritableComparable> clazz, int code) {
-    if (WRITABLE_CODES.containsKey(code)) {
-      throw new IllegalArgumentException("Already have writable class assigned to code = " + code);
+    if (WRITABLE_CODES.containsKey(code) && !clazz.equals(WRITABLE_CODES.get(code))) {
+      throw new IllegalArgumentException(String.format(
+          "Already have writable class %s assigned to code = %d",
+          clazz,
+          code));
     }
     WRITABLE_CODES.put(code, clazz);
   }

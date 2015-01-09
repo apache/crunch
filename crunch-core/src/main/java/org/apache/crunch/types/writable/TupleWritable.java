@@ -25,6 +25,7 @@ import java.util.Arrays;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.CrunchRuntimeException;
+import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -255,7 +256,7 @@ public class TupleWritable extends Configured implements WritableComparable<Tupl
     return this.size() - that.size();
   }
 
-  public static class Comparator extends WritableComparator {
+  public static class Comparator extends WritableComparator implements Configurable {
 
     private static final Comparator INSTANCE = new Comparator();
 
@@ -263,8 +264,23 @@ public class TupleWritable extends Configured implements WritableComparable<Tupl
       return INSTANCE;
     }
 
-    private Comparator() {
+    public Comparator() {
       super(TupleWritable.class);
+    }
+
+    @Override
+    public void setConf(Configuration conf) {
+      if (conf == null) return;
+      try {
+        Writables.reloadWritableComparableCodes(conf);
+      } catch (Exception e) {
+        throw new CrunchRuntimeException("Error reloading writable comparable codes", e);
+      }
+    }
+
+    @Override
+    public Configuration getConf() {
+      return null;
     }
 
     @Override
