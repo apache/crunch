@@ -213,4 +213,21 @@ public class PTables {
     return Pair.of(tableType.getKeyType().getDetachedValue(value.first()),
         (Iterable<V>) detachedIterable);
   }
+
+  /**
+   * Swap the key and value part of a table. The original PTypes are used in the opposite order
+   * @param table PTable to process
+   * @param <K> Key type (will become value type)
+   * @param <V> Value type (will become key type)
+   * @return PType&lt;V, K&gt; containing the same data as the original
+   */
+  public static <K, V> PTable<V, K> swapKeyValue(PTable<K, V> table) {
+    PTypeFamily ptf = table.getTypeFamily();
+    return table.parallelDo(new MapFn<Pair<K, V>, Pair<V, K>>() {
+      @Override
+      public Pair<V, K> map(Pair<K, V> input) {
+        return Pair.of(input.second(), input.first());
+      }
+    }, ptf.tableOf(table.getValueType(), table.getKeyType()));
+  }
 }
