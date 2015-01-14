@@ -89,10 +89,9 @@ under the License.
     <pkg>org.apache.crunch</pkg>
 
     <!-- Can be overridden by hadoop-2 profile, but these are the default values -->
-    <hadoop.version>2.2.0</hadoop.version>
-    <hbase.version>0.98.1-hadoop2</hbase.version>
+    <hadoop.version>2.5.2</hadoop.version>
+    <hbase.version>1.0.0</hbase.version>
     <commons-lang.version>2.5</commons-lang.version>
-    <hbase.midfix>hadoop2</hbase.midfix>
     <avro.classifier>hadoop2</avro.classifier>
 
     <scala.base.version>2.10</scala.base.version>
@@ -320,12 +319,6 @@ under the License.
       <dependency>
         <groupId>org.apache.hbase</groupId>
         <artifactId>hbase-server</artifactId>
-        <version>${hbase.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.hbase</groupId>
-        <artifactId>hbase-${hbase.midfix}-compat</artifactId>
         <version>${hbase.version}</version>
       </dependency>
 

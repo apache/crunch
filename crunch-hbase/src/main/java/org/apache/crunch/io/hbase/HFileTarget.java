@@ -26,9 +26,9 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.KeyValueSerialization;
 import org.apache.hadoop.io.WritableUtils;
@@ -68,13 +68,13 @@ public class HFileTarget extends FileTargetImpl {
     if (ptype instanceof PTableType) {
       valueType = ((PTableType) ptype).getValueType();
     }
-    if (!KeyValue.class.equals(valueType.getTypeClass())) {
-      throw new IllegalArgumentException("HFileTarget only supports KeyValue outputs");
+    if (!Cell.class.isAssignableFrom(valueType.getTypeClass())) {
+      throw new IllegalArgumentException("HFileTarget only supports Cell outputs");
     }
     if (ptype instanceof PTableType) {
-      return new HBasePairConverter<ImmutableBytesWritable, KeyValue>(ImmutableBytesWritable.class, KeyValue.class);
+      return new HBasePairConverter<ImmutableBytesWritable, Cell>(ImmutableBytesWritable.class, Cell.class);
     }
-    return new HBaseValueConverter<KeyValue>(KeyValue.class);
+    return new HBaseValueConverter<Cell>(Cell.class);
   }
 
   @Override

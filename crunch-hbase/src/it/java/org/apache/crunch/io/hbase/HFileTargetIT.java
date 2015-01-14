@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -41,11 +42,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -316,7 +320,8 @@ public class HFileTargetIT implements Serializable {
           w = "__EMPTY__";
         }
         long c = input.second();
-        return Pair.of(new KeyValue(Bytes.toBytes(w), TEST_FAMILY, TEST_QUALIFIER, Bytes.toBytes(c)), null);
+        Cell cell = CellUtil.createCell(Bytes.toBytes(w), Bytes.toBytes(c));
+        return Pair.of(KeyValue.cloneAndAddTags(cell, ImmutableList.<Tag>of()), null);
       }
     }, tableOf(HBaseTypes.keyValues(), nulls()))
         .groupByKey(GroupingOptions.builder()
@@ -359,9 +364,9 @@ public class HFileTargetIT implements Serializable {
     KeyValueScanner kvh = new KeyValueHeap(scanners, KeyValue.COMPARATOR);
     boolean seekOk = kvh.seek(fakeKV);
     assertTrue(seekOk);
-    KeyValue kv = kvh.next();
+    Cell kv = kvh.next();
     kvh.close();
-    return kv;
+    return KeyValue.cloneAndAddTags(kv, ImmutableList.<Tag>of());
   }
 
   private static Path copyResourceFileToHDFS(String resourceName) throws IOException {
@@ -390,11 +395,11 @@ public class HFileTargetIT implements Serializable {
 
   private static long getWordCountFromTable(HTable table, String word) throws IOException {
     Get get = new Get(Bytes.toBytes(word));
-    KeyValue keyValue = table.get(get).getColumnLatest(TEST_FAMILY, TEST_QUALIFIER);
-    if (keyValue == null) {
+    byte[] value = table.get(get).value();
+    if (value == null) {
       fail("no such row: " +  word);
     }
-    return Bytes.toLong(keyValue.getValue());
+    return Bytes.toLong(value);
   }
 }
 

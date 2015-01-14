@@ -19,14 +19,17 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
@@ -44,7 +47,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 /**
- * This is a thin wrapper of {@link HFile.Writer}. It only calls {@link HFile.Writer#append(byte[], byte[])}
+ * This is a thin wrapper of {@link HFile.Writer}. It only calls {@link HFile.Writer#append}
  * when records are emitted. It only supports writing data into a single column family. Records MUST be sorted
  * by their column qualifier, then timestamp reversely. All data are written into a single HFile.
  *
@@ -53,7 +56,7 @@ import java.io.IOException;
  * As crunch supports more complex and flexible MapReduce pipeline, we would prefer thin and pure
  * {@code OutputFormat} here.
  */
-public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValue> {
+public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
 
   public static final String HCOLUMN_DESCRIPTOR_KEY = "hbase.hfileoutputformat.column.descriptor";
   private static final String COMPACTION_EXCLUDE_CONF_KEY = "hbase.mapreduce.hfileoutputformat.compaction.exclude";
@@ -63,7 +66,7 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
   private final TimeRangeTracker trt = new TimeRangeTracker();
 
   @Override
-  public RecordWriter<Object, KeyValue> getRecordWriter(final TaskAttemptContext context)
+  public RecordWriter<Object, Cell> getRecordWriter(final TaskAttemptContext context)
       throws IOException, InterruptedException {
     Path outputPath = getDefaultWorkFile(context, "");
     Configuration conf = context.getConfiguration();
@@ -92,15 +95,16 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, KeyValu
         .withFileContext(getContext(hcol))
         .create();
 
-    return new RecordWriter<Object, KeyValue>() {
+    return new RecordWriter<Object, Cell>() {
       @Override
-      public void write(Object row, KeyValue kv)
+      public void write(Object row, Cell cell)
           throws IOException {
-        if (kv.getTimestamp() == HConstants.LATEST_TIMESTAMP) {
-          kv.updateLatestStamp(now);
+        KeyValue copy = KeyValue.cloneAndAddTags(cell, ImmutableList.<Tag>of());
+        if (copy.getTimestamp() == HConstants.LATEST_TIMESTAMP) {
+          copy.updateLatestStamp(now);
         }
-        writer.append(kv);
-        trt.includeTimestamp(kv);
+        writer.append(copy);
+        trt.includeTimestamp(copy);
       }
 
       @Override

@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
@@ -24,7 +25,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFile.Reader;
@@ -140,10 +143,8 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       if (!hasNext) {
         return false;
       }
-      value = scanner.getKeyValue();
-      if (stopRow != null && Bytes.compareTo(
-          value.getBuffer(), value.getRowOffset(), value.getRowLength(),
-          stopRow, 0, stopRow.length) >= 0) {
+      value = KeyValue.cloneAndAddTags(scanner.getKeyValue(), ImmutableList.<Tag>of());
+      if (stopRow != null && Bytes.compareTo(CellUtil.cloneRow(value), stopRow) >= 0) {
         if(LOG.isInfoEnabled()) {
           LOG.info("Reached stop row {}", Bytes.toStringBinary(stopRow));
         }
