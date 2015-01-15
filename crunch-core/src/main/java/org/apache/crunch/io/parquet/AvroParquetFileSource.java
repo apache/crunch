@@ -200,7 +200,7 @@ public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceIm
     }
 
     public AvroParquetFileSource<T> build(List<Path> paths) {
-      AvroType<T> at = clazz == null ? Avros.generics(baseSchema) : Avros.specifics((Class) clazz);
+      AvroType at = clazz == null ? Avros.generics(baseSchema) : Avros.specifics((Class) clazz);
       if (fields.isEmpty()) {
         return new AvroParquetFileSource<T>(paths, at, filterClass);
       } else {
