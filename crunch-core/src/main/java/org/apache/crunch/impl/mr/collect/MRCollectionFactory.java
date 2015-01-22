@@ -52,17 +52,19 @@ public class MRCollectionFactory implements PCollectionFactory {
   @Override
   public <S> BaseInputCollection<S> createInputCollection(
       Source<S> source,
+      String name,
       DistributedPipeline pipeline,
       ParallelDoOptions doOpts) {
-    return new InputCollection<S>(source, (MRPipeline) pipeline, doOpts);
+    return new InputCollection<S>(source, name, (MRPipeline) pipeline, doOpts);
   }
 
   @Override
   public <K, V> BaseInputTable<K, V> createInputTable(
       TableSource<K, V> source,
+      String name,
       DistributedPipeline pipeline,
       ParallelDoOptions doOpts) {
-    return new InputTable<K, V>(source, (MRPipeline) pipeline, doOpts);
+    return new InputTable<K, V>(source, name, (MRPipeline) pipeline, doOpts);
   }
 
   @Override

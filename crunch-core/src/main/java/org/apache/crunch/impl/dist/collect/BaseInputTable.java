@@ -37,13 +37,13 @@ public class BaseInputTable<K, V> extends PTableBase<K, V> {
     super(source.toString(), pipeline);
     this.source = source;
     this.asCollection = pipeline.getFactory().createInputCollection(
-        source, pipeline, ParallelDoOptions.builder().build());
+        source, source.toString(), pipeline, ParallelDoOptions.builder().build());
   }
 
-  public BaseInputTable(TableSource<K, V> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+  public BaseInputTable(TableSource<K, V> source, String name, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
     super(source.toString(), pipeline, doOpts);
     this.source = source;
-    this.asCollection = pipeline.getFactory().createInputCollection(source, pipeline, doOpts);
+    this.asCollection = pipeline.getFactory().createInputCollection(source, name, pipeline, doOpts);
   }
 
   public TableSource<K, V> getSource() {

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,14 +30,15 @@ import com.google.common.base.Charsets;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.crunch.CachingOptions;
+import org.apache.crunch.CreateOptions;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
+import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
-import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
@@ -151,32 +151,44 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public <T> PCollection<T> read(Source<T> source) {
+    return read(source, null);
+  }
+
+  @Override
+  public <T> PCollection<T> read(Source<T> source, String named) {
+    String name = named == null ? source.toString() : named;
     if (source instanceof ReadableSource) {
       try {
         Iterable<T> iterable = ((ReadableSource<T>) source).read(conf);
-        return new MemCollection<T>(iterable, source.getType(), source.toString());
+        return new MemCollection<T>(iterable, source.getType(), name);
       } catch (IOException e) {
-        LOG.error("Exception reading source: " + source.toString(), e);
+        LOG.error("Exception reading source: " + name, e);
         throw new IllegalStateException(e);
       }
     }
-    LOG.error("Source {} is not readable", source);
-    throw new IllegalStateException("Source " + source + " is not readable");
+    LOG.error("Source {} is not readable", name);
+    throw new IllegalStateException("Source " + name + " is not readable");
   }
 
   @Override
   public <K, V> PTable<K, V> read(TableSource<K, V> source) {
+    return read(source, null);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> read(TableSource<K, V> source, String named) {
+    String name = named == null ? source.toString() : named;
     if (source instanceof ReadableSource) {
       try {
         Iterable<Pair<K, V>> iterable = ((ReadableSource<Pair<K, V>>) source).read(conf);
-        return new MemTable<K, V>(iterable, source.getTableType(), source.toString());
+        return new MemTable<K, V>(iterable, source.getTableType(), name);
       } catch (IOException e) {
-        LOG.error("Exception reading source: " + source, e);
+        LOG.error("Exception reading source: " + name, e);
         throw new IllegalStateException(e);
       }
     }
-    LOG.error("Source {} is not readable", source);
-    throw new IllegalStateException("Source " + source + " is not readable");
+    LOG.error("Source {} is not readable", name);
+    throw new IllegalStateException("Source " + name + " is not readable");
   }
 
   @Override
@@ -329,6 +341,26 @@ public class MemPipeline implements Pipeline {
   @Override
   public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
     return typedTableOf(ptype, ImmutableList.<Pair<K, V>>of());
+  }
+
+  @Override
+  public <T> PCollection<T> create(Iterable<T> contents, PType<T> ptype) {
+    return create(contents, ptype, CreateOptions.none());
+  }
+
+  @Override
+  public <T> PCollection<T> create(Iterable<T> iterable, PType<T> ptype, CreateOptions options) {
+    return typedCollectionOf(ptype, iterable);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype) {
+    return create(contents, ptype, CreateOptions.none());
+  }
+
+  @Override
+  public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options) {
+    return typedTableOf(ptype, contents);
   }
 
   @Override

@@ -17,22 +17,32 @@
  */
 package org.apache.crunch.types.avro;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.io.DatumWriter;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.fn.IdentityFn;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.avro.AvroFileSource;
 import org.apache.crunch.io.avro.AvroFileSourceTarget;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -50,6 +60,7 @@ public class AvroType<T> implements PType<T> {
     GENERIC
   }
 
+  private static final Logger LOG = LoggerFactory.getLogger(AvroType.class);
   private static final Converter AVRO_CONVERTER = new AvroKeyConverter();
 
   private final Class<T> typeClass;
@@ -194,6 +205,41 @@ public class AvroType<T> implements PType<T> {
   @Override
   public ReadableSourceTarget<T> getDefaultFileSource(Path path) {
     return new AvroFileSourceTarget<T>(path, this);
+  }
+
+  @Override
+  public ReadableSource<T> createSourceTarget(Configuration conf, Path path, Iterable<T> contents, int parallelism)
+    throws IOException {
+    FileSystem fs = FileSystem.get(conf);
+    baseOutputMapFn.setConfiguration(conf);
+    baseOutputMapFn.initialize();
+    fs.mkdirs(path);
+    List<FSDataOutputStream> streams = Lists.newArrayListWithExpectedSize(parallelism);
+    List<DataFileWriter> writers = Lists.newArrayListWithExpectedSize(parallelism);
+    for (int i = 0; i < parallelism; i++) {
+      Path out = new Path(path, "out" + i);
+      FSDataOutputStream stream = fs.create(out);
+      DatumWriter datumWriter = Avros.newWriter(this);
+      DataFileWriter writer = new DataFileWriter(datumWriter);
+      writer.create(getSchema(), stream);
+
+      streams.add(stream);
+      writers.add(writer);
+    }
+    int target = 0;
+    for (T value : contents) {
+      writers.get(target).append(baseOutputMapFn.map(value));
+      target = (target + 1) % parallelism;
+    }
+    for (DataFileWriter writer : writers) {
+      writer.close();
+    }
+    for (FSDataOutputStream stream : streams) {
+      stream.close();
+    }
+    ReadableSource<T> ret = new AvroFileSource<T>(path, this);
+    ret.inputConf(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
+    return ret;
   }
 
   @Override

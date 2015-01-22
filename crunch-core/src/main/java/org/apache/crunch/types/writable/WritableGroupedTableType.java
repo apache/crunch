@@ -20,11 +20,15 @@ package org.apache.crunch.types.writable;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PGroupedTableType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+
+import java.io.IOException;
 
 class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
 
@@ -70,6 +74,15 @@ class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
   @Override
   public Pair<K, Iterable<V>> getDetachedValue(Pair<K, Iterable<V>> value) {
     return PTables.getGroupedDetachedValue(this, value);
+  }
+
+  @Override
+  public ReadableSource<Pair<K, Iterable<V>>> createSourceTarget(
+      Configuration conf,
+      Path path,
+      Iterable<Pair<K, Iterable<V>>> contents,
+      int parallelism) throws IOException {
+    throw new UnsupportedOperationException("GroupedTableTypes do not support creating ReadableSources");
   }
 
   @Override

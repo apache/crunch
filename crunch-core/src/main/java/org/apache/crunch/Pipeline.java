@@ -55,6 +55,16 @@ public interface Pipeline {
   <T> PCollection<T> read(Source<T> source);
 
   /**
+   * Converts the given {@code Source} into a {@code PCollection} that is
+   * available to jobs run using this {@code Pipeline} instance.
+   *
+   * @param source The source of data
+   * @param named A name for the returned PCollection
+   * @return A PCollection that references the given source
+   */
+  <T> PCollection<T> read(Source<T> source, String named);
+
+  /**
    * A version of the read method for {@code TableSource} instances that map to
    * {@code PTable}s.
    * 
@@ -63,6 +73,16 @@ public interface Pipeline {
    * @return A PTable that references the given source
    */
   <K, V> PTable<K, V> read(TableSource<K, V> tableSource);
+
+ /**
+   * A version of the read method for {@code TableSource} instances that map to
+   * {@code PTable}s.
+   *
+   * @param tableSource The source of the data
+   * @param named A name for the returned PTable
+   * @return A PTable that references the given source
+   */
+  <K, V> PTable<K, V> read(TableSource<K, V> tableSource, String named);
 
   /**
    * Write the given collection to the given target on the next pipeline run. The
@@ -126,6 +146,48 @@ public interface Pipeline {
    * @return A valid PTable with no contents
    */
   <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype);
+
+  /**
+   * Creates a {@code PCollection} containing the values found in the given {@code Iterable}
+   * using an implementation-specific distribution mechanism.
+   *
+   * @param contents The values the new PCollection will contain
+   * @param ptype The PType of the PCollection
+   * @return A PCollection that contains the given values
+   */
+  <T> PCollection<T> create(Iterable<T> contents, PType<T> ptype);
+
+  /**
+   * Creates a {@code PCollection} containing the values found in the given {@code Iterable}
+   * using an implementation-specific distribution mechanism.
+   *
+   * @param contents The values the new PCollection will contain
+   * @param ptype The PType of the PCollection
+   * @param options Additional options, such as the name or desired parallelism of the PCollection
+   * @return A PCollection that contains the given values
+   */
+  <T> PCollection<T> create(Iterable<T> contents, PType<T> ptype, CreateOptions options);
+
+  /**
+   * Creates a {@code PTable} containing the values found in the given {@code Iterable}
+   * using an implementation-specific distribution mechanism.
+   *
+   * @param contents The values the new PTable will contain
+   * @param ptype The PTableType of the PTable
+   * @return A PTable that contains the given values
+   */
+  <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype);
+
+  /**
+   * Creates a {@code PTable} containing the values found in the given {@code Iterable}
+   * using an implementation-specific distribution mechanism.
+   *
+   * @param contents The values the new PTable will contain
+   * @param ptype The PTableType of the PTable
+   * @param options Additional options, such as the name or desired parallelism of the PTable
+   * @return A PTable that contains the given values
+   */
+  <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options);
 
   /**
    * Executes the given {@code PipelineCallable} on the client after the {@code Targets}

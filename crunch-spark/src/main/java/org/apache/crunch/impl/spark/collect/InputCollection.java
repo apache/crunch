@@ -38,8 +38,8 @@ import java.io.IOException;
 
 public class InputCollection<S> extends BaseInputCollection<S> implements SparkCollection {
 
-  InputCollection(Source<S> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
-    super(source, pipeline, doOpts);
+  InputCollection(Source<S> source, String named, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, named, pipeline, doOpts);
   }
 
   public JavaRDDLike<?, ?> getJavaRDDLike(SparkRuntime runtime) {
@@ -53,7 +53,7 @@ public class InputCollection<S> extends BaseInputCollection<S> implements SparkC
           CrunchInputFormat.class,
           converter.getKeyClass(),
           converter.getValueClass());
-      input.rdd().setName(source.toString());
+      input.rdd().setName(getName());
       MapFn mapFn = converter.applyPTypeTransforms() ? source.getType().getInputMapFn() : IdentityFn.getInstance();
       return input
           .map(new InputConverterFunction(source.getConverter()))

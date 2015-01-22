@@ -17,22 +17,39 @@
  */
 package org.apache.crunch.types.writable;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.seq.SeqFileSource;
 import org.apache.crunch.io.seq.SeqFileSourceTarget;
+import org.apache.crunch.io.text.NLineFileSource;
+import org.apache.crunch.io.text.TextFileSource;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.DeepCopier;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WritableType<T, W extends Writable> implements PType<T> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(WritableType.class);
 
   private final Class<T> typeClass;
   private final Class<W> writableClass;
@@ -109,6 +126,45 @@ public class WritableType<T, W extends Writable> implements PType<T> {
   @Override
   public ReadableSourceTarget<T> getDefaultFileSource(Path path) {
     return new SeqFileSourceTarget<T>(path, this);
+  }
+
+  @Override
+  public ReadableSource<T> createSourceTarget(Configuration conf, Path path, Iterable<T> contents, int parallelism)
+    throws IOException {
+    FileSystem fs = FileSystem.get(conf);
+    outputFn.setConfiguration(conf);
+    outputFn.initialize();
+    if (Text.class.equals(writableClass) && parallelism > 1) {
+      FSDataOutputStream out = fs.create(path);
+      byte[] newLine = "\r\n".getBytes(Charsets.UTF_8);
+      double contentSize = 0;
+      for (T value : contents) {
+        Text txt = (Text) outputFn.map(value);
+        out.write(txt.toString().getBytes(Charsets.UTF_8));
+        out.write(newLine);
+        contentSize++;
+      }
+      out.close();
+      return new NLineFileSource<T>(path, this, (int) Math.ceil(contentSize / parallelism));
+    } else { // Use sequence files
+      fs.mkdirs(path);
+      List<SequenceFile.Writer> writers = Lists.newArrayListWithExpectedSize(parallelism);
+      for (int i = 0; i < parallelism; i++) {
+        Path out = new Path(path, "out" + i);
+        writers.add(SequenceFile.createWriter(fs, conf, out, NullWritable.class, writableClass));
+      }
+      int target = 0;
+      for (T value : contents) {
+        writers.get(target).append(NullWritable.get(), outputFn.map(value));
+        target = (target + 1) % parallelism;
+      }
+      for (SequenceFile.Writer writer : writers) {
+        writer.close();
+      }
+      ReadableSource<T> ret = new SeqFileSource<T>(path, this);
+      ret.inputConf(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
+      return ret;
+    }
   }
 
   @Override

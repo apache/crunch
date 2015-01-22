@@ -17,13 +17,19 @@
  */
 package org.apache.crunch.types.writable;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.fn.PairMapFn;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
+import org.apache.crunch.io.seq.SeqFileSource;
+import org.apache.crunch.io.seq.SeqFileTableSource;
 import org.apache.crunch.io.seq.SeqFileTableSourceTarget;
 import org.apache.crunch.lib.PTables;
 import org.apache.crunch.types.Converter;
@@ -32,7 +38,10 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 
 import com.google.common.collect.ImmutableList;
@@ -100,6 +109,33 @@ class WritableTableType<K, V> implements PTableType<K, V> {
   @Override
   public ReadableSourceTarget<Pair<K, V>> getDefaultFileSource(Path path) {
     return new SeqFileTableSourceTarget<K, V>(path, this);
+  }
+
+  @Override
+  public ReadableSource<Pair<K, V>> createSourceTarget(
+          Configuration conf, Path path, Iterable<Pair<K, V>> contents, int parallelism) throws IOException {
+    FileSystem fs = FileSystem.get(conf);
+    outputFn.setConfiguration(conf);
+    outputFn.initialize();
+    fs.mkdirs(path);
+    List<SequenceFile.Writer> writers = Lists.newArrayListWithExpectedSize(parallelism);
+    for (int i = 0; i < parallelism; i++) {
+      Path out = new Path(path, "out" + i);
+      writers.add(SequenceFile.createWriter(fs, conf, out, keyType.getSerializationClass(),
+              valueType.getSerializationClass()));
+    }
+    int target = 0;
+    for (Pair<K, V> value : contents) {
+      Pair writablePair = (Pair) outputFn.map(value);
+      writers.get(target).append(writablePair.first(), writablePair.second());
+      target = (target + 1) % parallelism;
+    }
+    for (SequenceFile.Writer writer : writers) {
+      writer.close();
+    }
+    ReadableSource<Pair<K, V>> ret = new SeqFileTableSource<K, V>(path, this);
+    ret.inputConf(RuntimeParameters.DISABLE_COMBINE_FILE, "true");
+    return ret;
   }
 
   @Override

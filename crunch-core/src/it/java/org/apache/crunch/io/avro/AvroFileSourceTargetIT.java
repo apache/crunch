@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData;
@@ -184,6 +185,24 @@ public class AvroFileSourceTargetIT implements Serializable {
     Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
     PCollection<Record> genericCollection = pipeline.read(At.avroFile(avroFile.getAbsolutePath(),
         Avros.generics(genericPersonSchema)));
+
+    List<Record> recordList = Lists.newArrayList(genericCollection.materialize());
+
+    assertEquals(Lists.newArrayList(savedRecord), Lists.newArrayList(recordList));
+  }
+
+  @Test
+  public void testGenericCreate() throws IOException {
+    String genericSchemaJson = Person.SCHEMA$.toString().replace("Person", "GenericPerson");
+    Schema genericPersonSchema = new Schema.Parser().parse(genericSchemaJson);
+    GenericData.Record savedRecord = new GenericData.Record(genericPersonSchema);
+    savedRecord.put("name", "John Doe");
+    savedRecord.put("age", 42);
+    savedRecord.put("siblingnames", Lists.newArrayList("Jimmy", "Jane"));
+
+    Pipeline pipeline = new MRPipeline(AvroFileSourceTargetIT.class, tmpDir.getDefaultConfiguration());
+    PCollection<Record> genericCollection = pipeline.create(ImmutableList.of(savedRecord),
+            Avros.generics(genericPersonSchema));
 
     List<Record> recordList = Lists.newArrayList(genericCollection.materialize());
 

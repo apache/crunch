@@ -92,7 +92,7 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> imple
   public PTable<K, V> write(Target target) {
     if (getMaterializedAt() != null) {
       getPipeline().write(pipeline.getFactory().createInputTable(
-          (TableSource<K, V>) getMaterializedAt(), pipeline, doOptions), target);
+          (TableSource<K, V>) getMaterializedAt(), getName(), pipeline, doOptions), target);
     } else {
       getPipeline().write(this, target);
     }
@@ -103,7 +103,7 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> imple
   public PTable<K, V> write(Target target, Target.WriteMode writeMode) {
     if (getMaterializedAt() != null) {
       getPipeline().write(pipeline.getFactory().createInputTable(
-          (TableSource<K, V>) getMaterializedAt(), pipeline, doOptions), target, writeMode);
+          (TableSource<K, V>) getMaterializedAt(), getName(), pipeline, doOptions), target, writeMode);
     } else {
       getPipeline().write(this, target, writeMode);
     }

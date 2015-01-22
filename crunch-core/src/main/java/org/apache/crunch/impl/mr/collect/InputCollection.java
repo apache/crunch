@@ -28,8 +28,8 @@ import org.apache.crunch.io.ReadableSource;
 
 public class InputCollection<S> extends BaseInputCollection<S> implements MRCollection {
 
-  public InputCollection(Source<S> source, MRPipeline pipeline, ParallelDoOptions doOpts) {
-    super(source, pipeline, doOpts);
+  public InputCollection(Source<S> source, String name, MRPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, name, pipeline, doOpts);
   }
 
   @Override

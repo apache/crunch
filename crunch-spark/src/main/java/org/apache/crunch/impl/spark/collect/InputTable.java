@@ -37,8 +37,8 @@ import java.io.IOException;
 
 public class InputTable<K, V> extends BaseInputTable<K, V> implements SparkCollection {
 
-  public InputTable(TableSource<K, V> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
-    super(source, pipeline, doOpts);
+  public InputTable(TableSource<K, V> source, String named, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(source, named, pipeline, doOpts);
   }
 
   @Override
@@ -52,7 +52,7 @@ public class InputTable<K, V> extends BaseInputTable<K, V> implements SparkColle
           CrunchInputFormat.class,
           converter.getKeyClass(),
           converter.getValueClass());
-      input.rdd().setName(source.toString());
+      input.rdd().setName(getName());
       MapFn mapFn = converter.applyPTypeTransforms() ? source.getType().getInputMapFn() : IdentityFn.getInstance();
       return input
           .map(new InputConverterFunction(source.getConverter()))

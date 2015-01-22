@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.lib.Aggregate;
@@ -40,6 +41,19 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 public class PageRankIT {
+
+  private static List<String> URLS = ImmutableList.of(
+          "www.A.com       www.B.com",
+          "www.A.com       www.C.com",
+          "www.A.com       www.D.com",
+          "www.A.com       www.E.com",
+          "www.B.com       www.D.com",
+          "www.B.com       www.E.com",
+          "www.C.com       www.D.com",
+          "www.D.com       www.B.com",
+          "www.E.com       www.A.com",
+          "www.F.com       www.B.com",
+          "www.F.com       www.C.com");
 
   public static class PageRankData {
     public float score;
@@ -76,35 +90,31 @@ public class PageRankIT {
   public void testAvroReflect() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = Avros.reflects(PageRankData.class);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
     run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
-        urlInput, prType, tf);
+        prType, tf);
   }
 
   @Test
   public void testAvroMReflectInMemory() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = Avros.reflects(PageRankData.class);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
-    run(MemPipeline.getInstance(), urlInput, prType, tf);
+    run(MemPipeline.getInstance(), prType, tf);
   }
 
   @Test
   public void testAvroJSON() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
     run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
-        urlInput, prType, tf);
+        prType, tf);
   }
 
   @Test
   public void testWritablesJSON() throws Exception {
     PTypeFamily tf = WritableTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
     run(new MRPipeline(PageRankIT.class, tmpDir.getDefaultConfiguration()),
-        urlInput, prType, tf);
+        prType, tf);
   }
 
   public static PTable<String, PageRankData> pageRank(PTable<String, PageRankData> input, final float d) {
@@ -134,13 +144,13 @@ public class PageRankIT {
         }, input.getValueType());
   }
 
-  public static void run(Pipeline pipeline, String urlInput,
+  public static void run(Pipeline pipeline,
       PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
-    PTable<String, PageRankData> scores = pipeline.readTextFile(urlInput)
+    PTable<String, PageRankData> scores = pipeline.create(URLS, ptf.strings())
         .parallelDo(new MapFn<String, Pair<String, String>>() {
           @Override
           public Pair<String, String> map(String input) {
-            String[] urls = input.split("\\t");
+            String[] urls = input.split("\\s+");
             return Pair.of(urls[0], urls[1]);
           }
         }, ptf.tableOf(ptf.strings(), ptf.strings())).groupByKey()

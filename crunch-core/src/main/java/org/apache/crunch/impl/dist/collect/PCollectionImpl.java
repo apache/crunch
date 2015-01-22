@@ -169,7 +169,9 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   public PCollection<S> write(Target target) {
     if (materializedAt != null) {
-      getPipeline().write(pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions), target);
+      getPipeline().write(
+          pipeline.getFactory().createInputCollection(materializedAt, getName(), pipeline, doOptions),
+          target);
     } else {
       getPipeline().write(this, target);
     }
@@ -180,7 +182,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   public PCollection<S> write(Target target, Target.WriteMode writeMode) {
     if (materializedAt != null) {
       getPipeline().write(
-          pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions),
+          pipeline.getFactory().createInputCollection(materializedAt, getName(), pipeline, doOptions),
           target,
           writeMode);
     } else {
@@ -203,7 +205,8 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
 
   public void accept(Visitor visitor) {
     if (materializedAt != null) {
-      visitor.visitInputCollection(pipeline.getFactory().createInputCollection(materializedAt, pipeline, doOptions));
+      visitor.visitInputCollection(
+              pipeline.getFactory().createInputCollection(materializedAt, getName(), pipeline, doOptions));
     } else {
       acceptInternal(visitor);
     }

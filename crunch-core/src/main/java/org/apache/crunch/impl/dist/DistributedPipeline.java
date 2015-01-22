@@ -17,16 +17,19 @@
  */
 package org.apache.crunch.impl.dist;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.crunch.CreateOptions;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.Pipeline;
-import org.apache.crunch.PipelineResult;
 import org.apache.crunch.PipelineCallable;
+import org.apache.crunch.PipelineResult;
 import org.apache.crunch.Source;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.TableSource;
@@ -133,11 +136,19 @@ public abstract class DistributedPipeline implements Pipeline {
   }
 
   public <S> PCollection<S> read(Source<S> source) {
-    return factory.createInputCollection(source, this, getCurrentPDoOptions());
+    return read(source, null);
+  }
+
+  public <S> PCollection<S> read(Source<S> source, String named) {
+    return factory.createInputCollection(source, named, this, getCurrentPDoOptions());
   }
 
   public <K, V> PTable<K, V> read(TableSource<K, V> source) {
-    return factory.createInputTable(source, this, getCurrentPDoOptions());
+    return read(source, null);
+  }
+
+  public <K, V> PTable<K, V> read(TableSource<K, V> source, String named) {
+    return factory.createInputTable(source, named, this, getCurrentPDoOptions());
   }
 
   private ParallelDoOptions getCurrentPDoOptions() {
@@ -226,6 +237,44 @@ public abstract class DistributedPipeline implements Pipeline {
   @Override
   public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
     return new EmptyPTable<K, V>(this, ptype);
+  }
+
+  @Override
+  public <S> PCollection<S> create(Iterable<S> contents, PType<S> ptype) {
+    return create(contents, ptype, CreateOptions.none());
+  }
+
+  @Override
+  public <S> PCollection<S> create(Iterable<S> contents, PType<S> ptype, CreateOptions options) {
+    if (Iterables.isEmpty(contents)) {
+      return emptyPCollection(ptype);
+    }
+    ReadableSource<S> src = null;
+    try {
+      src = ptype.createSourceTarget(getConfiguration(), createTempPath(), contents, options.getParallelism());
+    } catch (IOException e) {
+      throw new CrunchRuntimeException("Error creating PCollection: " + contents, e);
+    }
+    return read(src);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype) {
+    return create(contents, ptype, CreateOptions.none());
+  }
+
+  @Override
+  public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options) {
+    if (Iterables.isEmpty(contents)) {
+      return emptyPTable(ptype);
+    }
+    ReadableSource<Pair<K, V>> src = null;
+    try {
+      src = ptype.createSourceTarget(getConfiguration(), createTempPath(), contents, options.getParallelism());
+    } catch (IOException e) {
+      throw new CrunchRuntimeException("Error creating PTable: " + contents, e);
+    }
+    return read(src).parallelDo(IdentityFn.<Pair<K, V>>getInstance(), ptype);
   }
 
   /**

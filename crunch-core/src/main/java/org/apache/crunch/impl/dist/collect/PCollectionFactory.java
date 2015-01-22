@@ -35,11 +35,13 @@ public interface PCollectionFactory {
 
   <S> BaseInputCollection<S> createInputCollection(
       Source<S> source,
+      String named,
       DistributedPipeline distributedPipeline,
       ParallelDoOptions doOpts);
 
   <K, V> BaseInputTable<K, V> createInputTable(
       TableSource<K,V> source,
+      String named,
       DistributedPipeline distributedPipeline,
       ParallelDoOptions doOpts);
 

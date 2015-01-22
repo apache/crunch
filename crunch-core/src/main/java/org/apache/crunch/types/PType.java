@@ -17,12 +17,14 @@
  */
 package org.apache.crunch.types;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -78,6 +80,18 @@ public interface PType<T> extends Serializable {
    * specified by this {@code PType}.
    */
   ReadableSourceTarget<T> getDefaultFileSource(Path path);
+
+  /**
+   * Returns a {@code ReadableSource} that contains the data in the given {@code Iterable}.
+   *
+   * @param conf The Configuration to use
+   * @param path The path to write the data to
+   * @param contents The contents to write
+   * @param parallelism The desired parallelism
+   * @return A new instance of ReadableSource
+   */
+  ReadableSource<T> createSourceTarget(Configuration conf, Path path, Iterable<T> contents, int parallelism)
+    throws IOException;
 
   /**
    * Returns the sub-types that make up this PType if it is a composite instance, such as a tuple.

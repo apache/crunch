@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.avro.generic.GenericData;
@@ -63,9 +64,8 @@ public class AvroMemPipelineIT implements Serializable {
 
     Person writeRecord = createSpecificRecord();
 
-    final PCollection<Person> writeCollection = MemPipeline.typedCollectionOf(
-                                                  Avros.specifics(Person.class),
-                                                  writeRecord);
+    final PCollection<Person> writeCollection = MemPipeline.getInstance().create(
+            ImmutableList.of(writeRecord), Avros.specifics(Person.class));
 
     writeCollection.write(To.avroFile(avroFile.getAbsolutePath()));
 

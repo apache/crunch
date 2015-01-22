@@ -15,23 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.impl.mr.collect;
+package org.apache.crunch.impl.spark.serde;
 
-import org.apache.crunch.ParallelDoOptions;
-import org.apache.crunch.TableSource;
-import org.apache.crunch.impl.dist.collect.BaseInputTable;
-import org.apache.crunch.impl.dist.collect.MRCollection;
-import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.impl.mr.plan.DoNode;
+import org.apache.crunch.types.PType;
+import org.apache.crunch.types.avro.AvroMode;
+import org.apache.crunch.types.avro.AvroType;
+import org.apache.crunch.types.writable.WritableType;
+import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 
-public class InputTable<K, V> extends BaseInputTable<K, V> implements MRCollection {
+import java.util.Map;
 
-  public InputTable(TableSource<K, V> source, String name, MRPipeline pipeline, ParallelDoOptions doOpts) {
-    super(source, name, pipeline, doOpts);
-  }
-
-  @Override
-  public DoNode createDoNode() {
-    return DoNode.createInputNode(source);
+public class SerDeFactory {
+  public static SerDe create(PType<?> ptype, Configuration conf) {
+    if (WritableTypeFamily.getInstance().equals(ptype.getFamily())) {
+      return new WritableSerDe(((WritableType) ptype).getSerializationClass());
+    } else {
+      AvroType at = (AvroType) ptype;
+      Map<String, String> props = AvroMode.fromType(at).withFactoryFromConfiguration(conf).getModeProperties();
+      return new AvroSerDe(at, props);
+    }
   }
 }

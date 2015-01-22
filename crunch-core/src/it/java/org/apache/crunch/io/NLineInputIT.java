@@ -19,12 +19,13 @@ package org.apache.crunch.io;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableList;
+import org.apache.crunch.CreateOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
-import org.apache.crunch.io.text.NLineFileSource;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
@@ -33,19 +34,33 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
+
 public class NLineInputIT {
+
+  private static List<String> URLS = ImmutableList.of(
+  "www.A.com       www.B.com",
+  "www.A.com       www.C.com",
+  "www.A.com       www.D.com",
+  "www.A.com       www.E.com",
+  "www.B.com       www.D.com",
+  "www.B.com       www.E.com",
+  "www.C.com       www.D.com",
+  "www.D.com       www.B.com",
+  "www.E.com       www.A.com",
+  "www.F.com       www.B.com",
+  "www.F.com       www.C.com");
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();
-  
+
   @Test
   public void testNLine() throws Exception {
-    String urlsInputPath = tmpDir.copyResourceFileName("urls.txt");
     Configuration conf = new Configuration(tmpDir.getDefaultConfiguration());
     conf.setInt("io.sort.mb", 10);
     Pipeline pipeline = new MRPipeline(NLineInputIT.class, conf);
-    PCollection<String> urls = pipeline.read(new NLineFileSource<String>(urlsInputPath,
-        Writables.strings(), 2));
+    PCollection<String> urls = pipeline.create(URLS, Writables.strings(),
+        CreateOptions.parallelism(6));
     assertEquals(new Integer(2),
         urls.parallelDo(new LineCountFn(), Avros.ints()).max().getValue());
   }

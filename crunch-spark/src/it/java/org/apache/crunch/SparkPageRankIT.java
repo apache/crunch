@@ -17,6 +17,7 @@
  */
 package org.apache.crunch;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.crunch.impl.spark.SparkPipeline;
@@ -38,6 +39,19 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class SparkPageRankIT {
+
+  private static List<String> URLS = ImmutableList.of(
+          "www.A.com       www.B.com",
+          "www.A.com       www.C.com",
+          "www.A.com       www.D.com",
+          "www.A.com       www.E.com",
+          "www.B.com       www.D.com",
+          "www.B.com       www.E.com",
+          "www.C.com       www.D.com",
+          "www.D.com       www.B.com",
+          "www.E.com       www.A.com",
+          "www.F.com       www.B.com",
+          "www.F.com       www.C.com");
 
   public static class PageRankData {
     public float score;
@@ -80,8 +94,7 @@ public class SparkPageRankIT {
   public void testAvroReflects() throws Exception {
     PTypeFamily tf = AvroTypeFamily.getInstance();
     PType<PageRankData> prType = Avros.reflects(PageRankData.class);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
-    run(pipeline, urlInput, prType, tf);
+    run(pipeline, prType, tf);
     pipeline.done();
   }
 
@@ -89,8 +102,7 @@ public class SparkPageRankIT {
   public void testWritablesJSON() throws Exception {
     PTypeFamily tf = WritableTypeFamily.getInstance();
     PType<PageRankData> prType = PTypes.jsonString(PageRankData.class, tf);
-    String urlInput = tmpDir.copyResourceFileName("urls.txt");
-    run(pipeline, urlInput, prType, tf);
+    run(pipeline, prType, tf);
     pipeline.done();
   }
 
@@ -121,13 +133,13 @@ public class SparkPageRankIT {
         }, input.getValueType());
   }
 
-  public static void run(Pipeline pipeline, String urlInput,
+  public static void run(Pipeline pipeline,
                          PType<PageRankData> prType, PTypeFamily ptf) throws Exception {
-    PTable<String, PageRankData> scores = pipeline.readTextFile(urlInput)
+    PTable<String, PageRankData> scores = pipeline.create(URLS, ptf.strings())
         .parallelDo(new MapFn<String, Pair<String, String>>() {
           @Override
           public Pair<String, String> map(String input) {
-            String[] urls = input.split("\\t");
+            String[] urls = input.split("\\s+");
             return Pair.of(urls[0], urls[1]);
           }
         }, ptf.tableOf(ptf.strings(), ptf.strings())).groupByKey()
@@ -150,5 +162,6 @@ public class SparkPageRankIT {
       }, ptf.floats())).getValue();
     }
     assertEquals(0.0048, delta, 0.001);
+    pipeline.done();
   }
 }

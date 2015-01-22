@@ -20,12 +20,16 @@ package org.apache.crunch.impl.spark;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.apache.crunch.CachingOptions;
+import org.apache.crunch.CreateOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
+import org.apache.crunch.Pair;
 import org.apache.crunch.PipelineExecution;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
+import org.apache.crunch.impl.spark.collect.CreatedCollection;
+import org.apache.crunch.impl.spark.collect.CreatedTable;
 import org.apache.crunch.impl.spark.collect.EmptyPCollection;
 import org.apache.crunch.impl.spark.collect.EmptyPTable;
 import org.apache.crunch.impl.spark.collect.SparkCollectFactory;
@@ -89,6 +93,16 @@ public class SparkPipeline extends DistributedPipeline {
   @Override
   public <K, V> PTable<K, V> emptyPTable(PTableType<K, V> ptype) {
     return new EmptyPTable<K, V>(this, ptype);
+  }
+
+  @Override
+  public <S> PCollection<S> create(Iterable<S> contents, PType<S> ptype, CreateOptions options) {
+    return new CreatedCollection<S>(this, contents, ptype, options);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options) {
+    return new CreatedTable<K, V>(this, contents, ptype, options);
   }
 
   @Override

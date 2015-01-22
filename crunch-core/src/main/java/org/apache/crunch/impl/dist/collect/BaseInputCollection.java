@@ -37,8 +37,8 @@ public class BaseInputCollection<S> extends PCollectionImpl<S> {
     this.source = source;
   }
 
-  public BaseInputCollection(Source<S> source, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
-    super(source.toString(), pipeline, doOpts);
+  public BaseInputCollection(Source<S> source, String name, DistributedPipeline pipeline, ParallelDoOptions doOpts) {
+    super(name == null ? source.toString() : name, pipeline, doOpts);
     this.source = source;
   }
 
