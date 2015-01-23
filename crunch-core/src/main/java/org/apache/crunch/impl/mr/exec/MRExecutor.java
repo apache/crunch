@@ -257,10 +257,13 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
 
   private static boolean isLocalMode() {
     Configuration conf = new Configuration();
-    // Try to handle MapReduce version 0.20 or 0.22
-    String jobTrackerAddress = conf.get("mapreduce.jobtracker.address",
-        conf.get("mapred.job.tracker", "local"));
-    return "local".equals(jobTrackerAddress);
+    String frameworkName = conf.get("mapreduce.framework.name", "");
+    if (frameworkName.isEmpty()) {
+      // Fallback to older jobtracker-based checks
+      frameworkName = conf.get("mapreduce.jobtracker.address",
+          conf.get("mapred.job.tracker", "local"));
+    }
+    return "local".equals(frameworkName);
   }
 
   @Override
