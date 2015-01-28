@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.List;
 
 import com.google.common.collect.Iterables;
-import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.materialize.MaterializableIterable;
@@ -36,6 +35,7 @@ import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,27 +70,27 @@ public class MaterializeIT {
   }
 
   @Test
-  public void testMaterializeEmptyIntermediate_Writables() throws IOException {
+  public void testMaterializeEmptyIntermediate() throws IOException {
     runMaterializeEmptyIntermediate(
-        new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
-        WritableTypeFamily.getInstance());
+        new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()));
   }
 
   @Test
-  public void testMaterializeEmptyIntermediate_Avro() throws IOException {
-    runMaterializeEmptyIntermediate(
-        new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()),
-        AvroTypeFamily.getInstance());
+  public void testMaterializeEmptyIntermediate_InMemory() throws IOException {
+    runMaterializeEmptyIntermediate(MemPipeline.getInstance());
+  }
+
+  @Test(expected = CrunchRuntimeException.class)
+  public void testMaterializeFailure() throws IOException {
+    runMaterializeWithFailure(
+            new MRPipeline(MaterializeIT.class, tmpDir.getDefaultConfiguration()));
   }
 
   @Test
-  public void testMaterializeEmptyIntermediate_InMemoryWritables() throws IOException {
-    runMaterializeEmptyIntermediate(MemPipeline.getInstance(), WritableTypeFamily.getInstance());
-  }
-
-  @Test
-  public void testMaterializeEmptyIntermediate_InMemoryAvro() throws IOException {
-    runMaterializeEmptyIntermediate(MemPipeline.getInstance(), AvroTypeFamily.getInstance());
+  public void testMaterializeNoFailure() throws IOException {
+    Configuration conf = tmpDir.getDefaultConfiguration();
+    conf.setBoolean("crunch.empty.materialize.on.failure", true);
+    runMaterializeWithFailure(new MRPipeline(MaterializeIT.class, conf));
   }
 
   public void runMaterializeInput(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
@@ -102,12 +102,36 @@ public class MaterializeIT {
     pipeline.done();
   }
 
-  public void runMaterializeEmptyIntermediate(Pipeline pipeline, PTypeFamily typeFamily)
+  public void runMaterializeEmptyIntermediate(Pipeline pipeline)
       throws IOException {
     String inputPath = tmpDir.copyResourceFileName("set1.txt");
-    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(FilterFns.<String>REJECT_ALL());
+    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FilterAll<String>(false));
     assertTrue(Iterables.isEmpty(empty.materialize()));
     pipeline.done();
+  }
+
+  public void runMaterializeWithFailure(Pipeline pipeline) throws IOException {
+    String inputPath = tmpDir.copyResourceFileName("set1.txt");
+    PCollection<String> empty = pipeline.readTextFile(inputPath).filter(new FilterAll<String>(true));
+    empty.materialize().iterator();
+    pipeline.done();
+  }
+
+  static class FilterAll<T> extends FilterFn<T> {
+
+    private final boolean throwException;
+
+    public FilterAll(boolean throwException) {
+      this.throwException = throwException;
+    }
+
+    @Override
+    public boolean accept(T input) {
+      if (throwException) {
+        throw new RuntimeException("This is an exception");
+      }
+      return false;
+    }
   }
 
   static class StringToStringWrapperPersonPairMapFn extends MapFn<String, Pair<StringWrapper, Person>> {

@@ -92,7 +92,7 @@ public class MaterializableIterable<E> implements Iterable<E> {
   public Iterator<E> iterator() {
     if (materialized == null) {
       this.result = pipeline.run();
-      if (result.succeeded()) {
+      if (result.succeeded() || !pipeline.getConfiguration().getBoolean("crunch.empty.materialize.on.failure", false)) {
         materialize();
       } else {
         LOG.error("Pipeline run failed, returning empty iterator");
