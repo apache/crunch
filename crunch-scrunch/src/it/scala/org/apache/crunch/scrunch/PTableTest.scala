@@ -17,8 +17,6 @@
  */
 package org.apache.crunch.scrunch
 
-import org.apache.crunch.io.{From => from, To => to}
-
 import _root_.org.junit.Assert._
 import _root_.org.junit.Test
 
@@ -34,10 +32,7 @@ class PTableTest extends CrunchSuite {
    */
   private def tensCollection: PCollection[Int] = {
     val pipeline = Pipeline.mapReduce[PTableTest](tempDir.getDefaultConfiguration)
-    val input = tempDir.copyResourceFileName("tens.txt")
-    pipeline.read(from.textFile(input)).map { line =>
-      Integer.parseInt(line)
-    }
+    pipeline.create(List.fill(100)(10), Avros.ints)
   }
 
   /**

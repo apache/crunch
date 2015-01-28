@@ -23,6 +23,8 @@ import org.apache.crunch.{Pipeline => JPipeline, _}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 import org.apache.crunch.types.{PTableType, PType}
 
+import scala.collection.JavaConversions.asJavaCollection
+
 trait PipelineLike {
   def jpipeline: JPipeline
 
@@ -56,6 +58,16 @@ trait PipelineLike {
   def read[T](source: Source[T]): PCollection[T] = new PCollection(jpipeline.read(source))
 
   /**
+   * Reads a source into a [[org.apache.crunch.scrunch.PCollection]]
+   *
+   * @param source The source to read from.
+   * @param named A short name to use for the returned PCollection.
+   * @tparam T The type of the values being read.
+   * @return A PCollection containing data read from the specified source.
+   */
+  def read[T](source: Source[T], named: String): PCollection[T] = new PCollection(jpipeline.read(source, named))
+
+  /**
    * Reads a source into a [[org.apache.crunch.scrunch.PTable]]
    *
    * @param source The source to read from.
@@ -64,6 +76,17 @@ trait PipelineLike {
    * @return A PCollection containing data read from the specified source.
    */
   def read[K, V](source: TableSource[K, V]): PTable[K, V] = new PTable(jpipeline.read(source))
+
+  /**
+   * Reads a source into a [[org.apache.crunch.scrunch.PTable]]
+   *
+   * @param source The source to read from.
+   * @param named A short name to use for the return PTable.
+   * @tparam K The type of the keys being read.
+   * @tparam V The type of the values being read.
+   * @return A PTable containing data read from the specified source.
+   */
+  def read[K, V](source: TableSource[K, V], named: String): PTable[K, V] = new PTable(jpipeline.read(source, named))
 
   /**
    * Writes a parallel collection to a target.
@@ -112,6 +135,34 @@ trait PipelineLike {
    * Creates an empty PTable of the given PTableType.
    */
   def emptyPTable[K, V](pt: PTableType[K, V]) = new PTable[K, V](jpipeline.emptyPTable(pt))
+
+  /**
+   * Creates a new PCollection from the given elements.
+   */
+  def create[T](elements: Iterable[T], pt: PType[T]) = {
+    new PCollection[T](jpipeline.create(asJavaCollection(elements), pt))
+  }
+
+  /**
+   * Creates a new PCollection from the given elements.
+   */
+  def create[T](elements: Iterable[T], pt: PType[T], options: CreateOptions) = {
+    new PCollection[T](jpipeline.create(asJavaCollection(elements), pt, options))
+  }
+
+  /**
+   *  Creates a new PTable from the given elements.
+   */
+  def create[K, V](elements: Iterable[(K, V)], pt: PTableType[K, V]) = {
+    new PTable[K, V](jpipeline.create(asJavaCollection(elements.map(t => Pair.of(t._1, t._2))), pt))
+  }
+
+  /**
+   *  Creates a new PTable from the given elements.
+   */
+  def create[K, V](elements: Iterable[(K, V)], pt: PTableType[K, V], options: CreateOptions) = {
+    new PTable[K, V](jpipeline.create(asJavaCollection(elements.map(t => Pair.of(t._1, t._2))), pt, options))
+  }
 
   /**
    * Adds the given {@code SeqDoFn} to the pipeline execution and returns its output.

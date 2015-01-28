@@ -57,11 +57,9 @@ class DeepCopyTest extends CrunchSuite {
 
     val ones = Seq(BBRec(bb1, Array(bb4, bb2)), BBRec(bb2, Array(bb1, bb3)))
     val twos = Seq(BBRec(bb3, Array(bb1, bb2)), BBRec(bb4, Array(bb3, bb4)))
-    writeCollection(new Path(prefix + "/ones"), ones)
-    writeCollection(new Path(prefix + "/twos"), twos)
 
-    val oneF = pipe.read(from.avroFile(prefix + "/ones", Avros.reflects[BBRec]))
-    val twoF = pipe.read(from.avroFile(prefix + "/twos", Avros.reflects[BBRec]))
+    val oneF = pipe.create(ones, Avros.reflects[BBRec])
+    val twoF = pipe.create(twos, Avros.reflects[BBRec])
 
     val m = oneF.flatMap(getIterator(_)).leftJoin(twoF.flatMap(getIterator(_)))
       .keys
@@ -77,13 +75,9 @@ class DeepCopyTest extends CrunchSuite {
     val twos = Seq(Rec2(1, "a", 0.4), Rec2(1, "a", 0.5), Rec2(1, "b", 0.6), Rec2(1, "b", 0.7), Rec2(2, "c", 9.9))
     val threes = Seq(Rec3("a", 4), Rec3("b", 5), Rec3("c", 6))
 
-    writeCollection(new Path(prefix + "/ones"), ones)
-    writeCollection(new Path(prefix + "/twos"), twos)
-    writeCollection(new Path(prefix + "/threes"), threes)
-
-    val oneF = pipe.read(from.avroFile(prefix + "/ones", A.reflects(classOf[Rec1])))
-    val twoF = pipe.read(from.avroFile(prefix + "/twos", A.reflects(classOf[Rec2])))
-    val threeF = pipe.read(from.avroFile(prefix + "/threes", A.reflects(classOf[Rec3])))
+    val oneF = pipe.create(ones, A.reflects(classOf[Rec1]))
+    val twoF = pipe.create(twos, A.reflects(classOf[Rec2]))
+    val threeF = pipe.create(threes, A.reflects(classOf[Rec3]))
     val res = (oneF.by(_.k)
       cogroup
       (twoF.by(_.k2)
@@ -101,25 +95,5 @@ class DeepCopyTest extends CrunchSuite {
     assertEquals(2, res.size)
     assertEquals(res.map(_._2.toSet), Seq(e12, e22))
     pipe.done()
-  }
-
-  private def writeCollection(path: Path, records: Iterable[_ <: AnyRef]) {
-    writeAvroFile(path.getFileSystem(new Configuration()).create(path, true), records)
-  }
-
-  @SuppressWarnings(Array("rawtypes", "unchecked"))
-  private def writeAvroFile[T <: AnyRef](outputStream: FSDataOutputStream, records: Iterable[T]) {
-    val r: AnyRef = records.iterator.next()
-    val factory = new ScalaReflectDataFactory()
-    val schema = factory.getData().getSchema(r.getClass)
-    val writer = factory.getWriter[T](schema)
-    val dataFileWriter = new DataFileWriter(writer)
-    dataFileWriter.create(schema, outputStream)
-
-    for (record <- records) {
-      dataFileWriter.append(record)
-    }
-    dataFileWriter.close()
-    outputStream.close()
   }
 }
