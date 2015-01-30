@@ -17,10 +17,12 @@
  */
 package org.apache.crunch.scrunch
 
+import com.google.common.collect.ImmutableList
 import org.apache.crunch.io.{From => from, To => to}
-
+import org.apache.crunch.test.Person
 import _root_.org.junit.Test
-import org.apache.crunch.lib.join.JoinType
+
+case class Foo(val bar: Int, val baz: String)
 
 class JoinTest extends CrunchSuite {
   lazy val pipeline = Pipeline.mapReduce[JoinTest](tempDir.getDefaultConfiguration)
@@ -52,5 +54,18 @@ class JoinTest extends CrunchSuite {
       .filter((k, d) => d > 0).materialize
     assert(filtered.exists(_ == ("macbeth", 66)))
     pipeline.done
+  }
+
+  @Test def joinCaseWithSpecific: Unit = {
+    val foos = pipeline.create(List(Foo(1, "a"), Foo(2, "b")), Avros.caseClasses[Foo])
+    val p1 = new Person()
+    p1.setName("Josh")
+    p1.setAge(35)
+    p1.setSiblingnames(ImmutableList.of("Kate", "Mike"))
+    val people = pipeline.create(List(p1), Avros.specifics[Person])
+
+    val res = foos.by(_ => "key").join(people.by(_ => "key"))
+    println(res.materialize())
+    pipeline.done()
   }
 }
