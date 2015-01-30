@@ -93,14 +93,8 @@ public class MemCollection<S> implements PCollection<S> {
   
   @Override
   public PCollection<S> union(PCollection<S>... collections) {
-    Collection<S> output = Lists.newArrayList();
-    for (PCollection<S> pcollect : collections) {
-      for (S s : pcollect.materialize()) {
-        output.add(s);
-      }
-    }
-    output.addAll(collect);
-    return new MemCollection<S>(output, collections[0].getPType());
+    return getPipeline().union(
+        ImmutableList.<PCollection<S>>builder().add(this).add(collections).build());
   }
 
   private <S, T> DoFn<S, T> verifySerializable(String name, DoFn<S, T> doFn) {

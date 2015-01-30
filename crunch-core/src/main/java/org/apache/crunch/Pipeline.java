@@ -21,6 +21,8 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 
+import java.util.List;
+
 /**
  * Manages the state of a pipeline execution.
  * 
@@ -188,6 +190,10 @@ public interface Pipeline {
    * @return A PTable that contains the given values
    */
   <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options);
+
+  <S> PCollection<S> union(List<PCollection<S>> collections);
+
+  <K, V> PTable<K, V> unionTables(List<PTable<K, V>> tables);
 
   /**
    * Executes the given {@code PipelineCallable} on the client after the {@code Targets}

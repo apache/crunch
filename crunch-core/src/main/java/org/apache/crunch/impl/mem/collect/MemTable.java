@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
@@ -62,14 +63,8 @@ public class MemTable<K, V> extends MemCollection<Pair<K, V>> implements PTable<
   
   @Override
   public PTable<K, V> union(PTable<K, V>... others) {
-    List<Pair<K, V>> values = Lists.newArrayList();
-    values.addAll(getCollection());
-    for (PTable<K, V> ptable : others) {
-      for (Pair<K, V> p : ptable.materialize()) {
-        values.add(p);
-      }
-    }
-    return new MemTable<K, V>(values, others[0].getPTableType(), null);
+    return getPipeline().unionTables(
+        ImmutableList.<PTable<K, V>>builder().add(this).add(others).build());
   }
 
   @Override

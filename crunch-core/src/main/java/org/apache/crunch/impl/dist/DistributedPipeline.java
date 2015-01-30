@@ -17,7 +17,9 @@
  */
 package org.apache.crunch.impl.dist;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.crunch.CreateOptions;
@@ -44,6 +46,7 @@ import org.apache.crunch.impl.dist.collect.EmptyPCollection;
 import org.apache.crunch.impl.dist.collect.EmptyPTable;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.dist.collect.PCollectionFactory;
+import org.apache.crunch.impl.dist.collect.PTableBase;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
@@ -59,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -123,6 +127,28 @@ public abstract class DistributedPipeline implements Pipeline {
     }
     cleanup();
     return res;
+  }
+
+  @Override
+  public <S> PCollection<S> union(List<PCollection<S>> collections) {
+    return factory.createUnionCollection(
+        Lists.transform(collections, new Function<PCollection<S>, PCollectionImpl<S>>() {
+          @Override
+          public PCollectionImpl<S> apply(PCollection<S> in) {
+            return (PCollectionImpl<S>) in;
+          }
+        }));
+  }
+
+  @Override
+  public <K, V> PTable<K, V> unionTables(List<PTable<K, V>> tables) {
+    return factory.createUnionTable(
+        Lists.transform(tables, new Function<PTable<K, V>, PTableBase<K, V>>() {
+          @Override
+          public PTableBase<K, V> apply(PTable<K, V> in) {
+            return (PTableBase<K, V>) in;
+          }
+        }));
   }
 
   @Override

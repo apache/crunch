@@ -18,6 +18,7 @@
 package org.apache.crunch.impl.mem;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Charsets;
 
+import com.google.common.collect.Iterables;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.crunch.CachingOptions;
@@ -361,6 +363,24 @@ public class MemPipeline implements Pipeline {
   @Override
   public <K, V> PTable<K, V> create(Iterable<Pair<K, V>> contents, PTableType<K, V> ptype, CreateOptions options) {
     return typedTableOf(ptype, contents);
+  }
+
+  @Override
+  public <S> PCollection<S> union(List<PCollection<S>> collections) {
+    List<S> output = Lists.newArrayList();
+    for (PCollection<S> pcollect : collections) {
+      Iterables.addAll(output, pcollect.materialize());
+    }
+    return new MemCollection<S>(output, collections.get(0).getPType());
+  }
+
+  @Override
+  public <K, V> PTable<K, V> unionTables(List<PTable<K, V>> tables) {
+    List<Pair<K, V>> values = Lists.newArrayList();
+    for (PTable<K, V> table : tables) {
+      Iterables.addAll(values, table.materialize());
+    }
+    return new MemTable<K, V>(values, tables.get(0).getPTableType(), null);
   }
 
   @Override
