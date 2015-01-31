@@ -45,7 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 /**
@@ -85,7 +84,7 @@ public class AvroType<T> implements PType<T> {
     this.baseInputMapFn = inputMapFn;
     this.baseOutputMapFn = outputMapFn;
     this.deepCopier = deepCopier;
-    this.subTypes = ImmutableList.<PType> builder().add(ptypes).build();
+    this.subTypes = Lists.newArrayList(ptypes);
     this.recordType = recordType;
   }
 
