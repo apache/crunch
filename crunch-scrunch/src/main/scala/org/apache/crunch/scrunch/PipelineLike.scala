@@ -23,6 +23,7 @@ import org.apache.crunch.{Pipeline => JPipeline, _}
 import org.apache.crunch.scrunch.interpreter.InterpreterRunner
 import org.apache.crunch.types.{PTableType, PType}
 
+import scala.collection.JavaConversions
 import scala.collection.JavaConversions.asJavaCollection
 
 trait PipelineLike {
@@ -162,6 +163,24 @@ trait PipelineLike {
    */
   def create[K, V](elements: Iterable[(K, V)], pt: PTableType[K, V], options: CreateOptions) = {
     new PTable[K, V](jpipeline.create(asJavaCollection(elements.map(t => Pair.of(t._1, t._2))), pt, options))
+  }
+
+  /**
+   * Creates a new PCollection as the union of the given elements.
+   */
+  def union[S](elements: Seq[PCollection[S]]) = {
+    val natives = elements.map(pc => pc.native)
+    val jpc = jpipeline.union(JavaConversions.seqAsJavaList(natives))
+    new PCollection[S](jpc)
+  }
+
+  /**
+   * Creates a new PTable as the union of the given elements.
+   */
+  def unionTables[K, V](elements: Seq[PTable[K, V]]) = {
+    val natives = elements.map(pc => pc.native)
+    val jpt = jpipeline.unionTables(JavaConversions.seqAsJavaList(natives))
+    new PTable[K, V](jpt)
   }
 
   /**
