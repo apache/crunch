@@ -26,7 +26,7 @@ import com.google.common.base.Charsets;
 
 /**
  * Large XML documents composed of repetitive XML elements can be broken into chunks delimited by element's start and
- * end tag. The {@link XmlSource2} process XML files and extract out the XML between the pre-configured start / end
+ * end tag. The {@link XmlSource} process XML files and extract out the XML between the pre-configured start / end
  * tags. Developer should process the content between the tags.
  * 
  * The {@link XmlSource} does not parse the input XML files and is not aware of the XML semantics. It just splits the

@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -40,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
-import com.google.common.primitives.Chars;
 
 /**
  * Reads records that are delimited by a specific begin/end tag.
@@ -67,7 +69,7 @@ public class XmlInputFormat extends TextInputFormat {
 
   /**
    * XMLRecordReader class to read through a given xml document to output xml blocks as records as specified by the
-   * start tag and end tag
+   * start tag and end tag.
    */
   public static class XmlRecordReader extends RecordReader<LongWritable, Text> {
 
@@ -84,7 +86,9 @@ public class XmlInputFormat extends TextInputFormat {
     private final BufferedReader inReader;
     private final OutputStreamWriter outWriter;
     private final String inputEncoding;
-    private int readByteCounter = 0;
+    private long readByteCounter;
+
+    private CharsetEncoder charsetEncoder;
 
     public XmlRecordReader(FileSplit split, Configuration conf) throws IOException {
       inputEncoding = conf.get(ENCODING, DEFAULT_ENCODING);
@@ -98,9 +102,12 @@ public class XmlInputFormat extends TextInputFormat {
       FileSystem fs = file.getFileSystem(conf);
       FSDataInputStream fsin = fs.open(split.getPath());
       fsin.seek(start);
+      readByteCounter =  start;
       inReader = new BufferedReader(new InputStreamReader(fsin, Charset.forName(inputEncoding)));
       outBuffer = new DataOutputBuffer();
       outWriter = new OutputStreamWriter(outBuffer, inputEncoding);
+      
+      charsetEncoder = Charset.forName(inputEncoding).newEncoder();
     }
 
     private boolean next(LongWritable key, Text value) throws IOException {
@@ -142,7 +149,7 @@ public class XmlInputFormat extends TextInputFormat {
       while (true) {
         int nextInCharacter = inReader.read();
 
-        readByteCounter = +Chars.toByteArray((char) nextInCharacter).length;
+        readByteCounter = readByteCounter + calculateCharacterByteLength((char) nextInCharacter);
 
         // end of file:
         if (nextInCharacter == -1) {
@@ -188,6 +195,15 @@ public class XmlInputFormat extends TextInputFormat {
       currentKey = new LongWritable();
       currentValue = new Text();
       return next(currentKey, currentValue);
+    }
+    
+    private int calculateCharacterByteLength(final char character) {
+      try {
+        return charsetEncoder.encode(CharBuffer.wrap(new char[] { character })).limit();
+      } catch (final CharacterCodingException e) {
+        throw new RuntimeException("The character attempting to be read (" + character + ") could not be encoded with "
+            + inputEncoding);
+      }
     }
   }
 }
