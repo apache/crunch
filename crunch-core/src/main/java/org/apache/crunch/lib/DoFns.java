@@ -24,6 +24,7 @@ import org.apache.crunch.Emitter;
 import org.apache.crunch.Pair;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import java.io.Serializable;
 
@@ -75,6 +76,12 @@ public class DoFns {
     public DetachingDoFn(DoFn<Pair<K, Iterable<V>>, T> reduceFn, PType<V> valueType) {
       this.reduceFn = reduceFn;
       this.valueType = valueType;
+    }
+
+    @Override
+    public void setContext(TaskInputOutputContext<?, ?, ?, ?> context) {
+      super.setContext(context);
+      reduceFn.setContext(context);
     }
 
     @Override
