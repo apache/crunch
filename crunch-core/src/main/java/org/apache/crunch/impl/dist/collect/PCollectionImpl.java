@@ -318,7 +318,7 @@ public abstract class PCollectionImpl<S> implements PCollection<S> {
   public Set<Target> getTargetDependencies() {
     Set<Target> targetDeps = Sets.<Target>newHashSet(doOptions.getTargets());
     for (PCollectionImpl<?> parent : getParents()) {
-      targetDeps = Sets.union(targetDeps, parent.getTargetDependencies());
+      targetDeps.addAll(parent.getTargetDependencies());
     }
     return targetDeps;
   }
