@@ -32,6 +32,7 @@ import org.apache.crunch.Tuple;
 import org.apache.crunch.Tuple3;
 import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.util.Tuples;
 import org.apache.hadoop.conf.Configuration;
 
@@ -439,9 +440,23 @@ public final class Aggregators {
    *
    * @param aggregator The instance to wrap
    * @return A {@link CombineFn} delegating to {@code aggregator}
+   *
+   * @deprecated use the safer {@link #toCombineFn(Aggregator, PType)} instead.
    */
+  @Deprecated
   public static final <K, V> CombineFn<K, V> toCombineFn(Aggregator<V> aggregator) {
-    return new AggregatorCombineFn<K, V>(aggregator);
+    return toCombineFn(aggregator, null);
+  }
+
+  /**
+   * Wrap a {@link CombineFn} adapter around the given aggregator.
+   *
+   * @param aggregator The instance to wrap
+   * @param ptype The PType of the aggregated value (for detaching complex objects)
+   * @return A {@link CombineFn} delegating to {@code aggregator}
+   */
+  public static final <K, V> CombineFn<K, V> toCombineFn(Aggregator<V> aggregator, PType<V> ptype) {
+    return new AggregatorCombineFn<K, V>(aggregator, ptype);
   }
 
   /**
@@ -460,22 +475,27 @@ public final class Aggregators {
    */
   private static class AggregatorCombineFn<K, V> extends CombineFn<K, V> {
     // TODO: Has to be fully qualified until CombineFn.Aggregator can be removed.
-    private final org.apache.crunch.Aggregator<V> aggregator;
+    private final Aggregator<V> aggregator;
+    private final PType<V> ptype;
 
-    public AggregatorCombineFn(org.apache.crunch.Aggregator<V> aggregator) {
+    public AggregatorCombineFn(Aggregator<V> aggregator, PType<V> ptype) {
       this.aggregator = aggregator;
+      this.ptype = ptype;
     }
 
     @Override
     public void initialize() {
       aggregator.initialize(getConfiguration());
+      if (ptype != null) {
+        ptype.initialize(getConfiguration());
+      }
     }
 
     @Override
     public void process(Pair<K, Iterable<V>> input, Emitter<Pair<K, V>> emitter) {
       aggregator.reset();
       for (V v : input.second()) {
-        aggregator.update(v);
+        aggregator.update(ptype == null ? v : ptype.getDetachedValue(v));
       }
       for (V v : aggregator.results()) {
         emitter.emit(Pair.of(input.first(), v));

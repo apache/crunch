@@ -90,12 +90,13 @@ public class BaseGroupedTable<K, V> extends PCollectionImpl<Pair<K, Iterable<V>>
 
   @Override
   public PTable<K, V> combineValues(Aggregator<V> agg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(agg));
+    return combineValues(Aggregators.<K, V>toCombineFn(agg, parent.getValueType()));
   }
 
   @Override
   public PTable<K, V> combineValues(Aggregator<V> combineAgg, Aggregator<V> reduceAgg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg), Aggregators.<K, V>toCombineFn(reduceAgg));
+    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg, parent.getValueType()),
+        Aggregators.<K, V>toCombineFn(reduceAgg, parent.getValueType()));
   }
 
   private static class Ungroup<K, V> extends DoFn<Pair<K, Iterable<V>>, Pair<K, V>> {

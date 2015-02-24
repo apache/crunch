@@ -57,12 +57,12 @@ public class AvroModeIT implements Serializable {
       "  ]\n" +
       "}");
 
-  static final class FloatArray {
+  public static final class FloatArray {
     private final float[] values;
-    FloatArray() {
+    public FloatArray() {
       this(null);
     }
-    FloatArray(float[] values) {
+    public FloatArray(float[] values) {
       this.values = values;
     }
     float[] getValues() {

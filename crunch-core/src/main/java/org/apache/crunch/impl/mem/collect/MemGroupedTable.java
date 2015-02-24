@@ -119,12 +119,13 @@ class MemGroupedTable<K, V> extends MemCollection<Pair<K, Iterable<V>>> implemen
 
   @Override
   public PTable<K, V> combineValues(Aggregator<V> agg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(agg));
+    return combineValues(Aggregators.<K, V>toCombineFn(agg, parent.getValueType()));
   }
 
   @Override
   public PTable<K, V> combineValues(Aggregator<V> combineAgg, Aggregator<V> reduceAgg) {
-    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg), Aggregators.<K, V>toCombineFn(reduceAgg));
+    return combineValues(Aggregators.<K, V>toCombineFn(combineAgg, parent.getValueType()),
+        Aggregators.<K, V>toCombineFn(reduceAgg, parent.getValueType()));
   }
 
   @Override
