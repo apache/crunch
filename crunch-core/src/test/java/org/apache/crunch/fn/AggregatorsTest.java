@@ -17,24 +17,7 @@
  */
 package org.apache.crunch.fn;
 
-import static org.apache.crunch.fn.Aggregators.MAX_BIGINTS;
-import static org.apache.crunch.fn.Aggregators.MAX_DOUBLES;
-import static org.apache.crunch.fn.Aggregators.MAX_FLOATS;
-import static org.apache.crunch.fn.Aggregators.MAX_INTS;
-import static org.apache.crunch.fn.Aggregators.MAX_LONGS;
-import static org.apache.crunch.fn.Aggregators.MAX_N;
-import static org.apache.crunch.fn.Aggregators.MIN_BIGINTS;
-import static org.apache.crunch.fn.Aggregators.MIN_DOUBLES;
-import static org.apache.crunch.fn.Aggregators.MIN_FLOATS;
-import static org.apache.crunch.fn.Aggregators.MIN_INTS;
-import static org.apache.crunch.fn.Aggregators.MIN_LONGS;
-import static org.apache.crunch.fn.Aggregators.MIN_N;
-import static org.apache.crunch.fn.Aggregators.STRING_CONCAT;
-import static org.apache.crunch.fn.Aggregators.SUM_BIGINTS;
-import static org.apache.crunch.fn.Aggregators.SUM_DOUBLES;
-import static org.apache.crunch.fn.Aggregators.SUM_FLOATS;
-import static org.apache.crunch.fn.Aggregators.SUM_INTS;
-import static org.apache.crunch.fn.Aggregators.SUM_LONGS;
+import static org.apache.crunch.fn.Aggregators.*;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
@@ -105,6 +88,12 @@ public class AggregatorsTest {
     assertThat(apply(MAX_INTS(2), 17, 34, 98, 29, 1009), is(ImmutableList.of(98, 1009)));
     assertThat(apply(MAX_N(1, String.class), "b", "a"), is(ImmutableList.of("b")));
     assertThat(apply(MAX_N(3, String.class), "b", "a", "d", "c"), is(ImmutableList.of("b", "c", "d")));
+    assertThat(apply(MAX_N(2, Integer.class), 1, 2, 3, 3), is(ImmutableList.of(3, 3)));
+  }
+
+  @Test
+  public void testMaxUniqueN() {
+    assertThat(apply(MAX_UNIQUE_N(2, Integer.class), 1, 2, 3, 3), is(ImmutableList.of(2, 3)));
   }
 
   @Test
@@ -112,6 +101,12 @@ public class AggregatorsTest {
     assertThat(apply(MIN_INTS(2), 17, 34, 98, 29, 1009), is(ImmutableList.of(17, 29)));
     assertThat(apply(MIN_N(1, String.class), "b", "a"), is(ImmutableList.of("a")));
     assertThat(apply(MIN_N(3, String.class), "b", "a", "d", "c"), is(ImmutableList.of("a", "b", "c")));
+    assertThat(apply(MIN_N(2, Integer.class), 1, 1, 2, 3), is(ImmutableList.of(1, 1)));
+  }
+
+  @Test
+  public void testMinUniqueN() {
+    assertThat(apply(MIN_UNIQUE_N(2, Integer.class), 3, 2, 1, 1), is(ImmutableList.of(1, 2)));
   }
 
   @Test

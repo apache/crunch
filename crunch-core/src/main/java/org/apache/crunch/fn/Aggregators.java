@@ -22,7 +22,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
+import com.google.common.collect.SortedMultiset;
+import com.google.common.collect.TreeMultiset;
 import org.apache.crunch.Aggregator;
 import org.apache.crunch.CombineFn;
 import org.apache.crunch.Emitter;
@@ -209,6 +212,17 @@ public final class Aggregators {
   }
 
   /**
+   * Return the {@code n} largest unique values (or fewer if there are fewer
+   * values than {@code n}).
+   * @param n The number of values to return
+   * @param cls The type of the values to aggregate (must implement {@link Comparable}!)
+   * @return The newly constructed instance
+   */
+  public static <V extends Comparable<V>> Aggregator<V> MAX_UNIQUE_N(int n, Class<V> cls) {
+    return new MaxUniqueNAggregator<V>(n);
+  }
+
+  /**
    * Return the minimum of all given {@code long} values.
    * @return The newly constructed instance
    */
@@ -307,6 +321,16 @@ public final class Aggregators {
    */
   public static <V extends Comparable<V>> Aggregator<V> MIN_N(int n, Class<V> cls) {
     return new MinNAggregator<V>(n);
+  }
+
+  /**
+   * Returns the {@code n} smallest unique values (or fewer if there are fewer unique values than {@code n}).
+   * @param n The number of values to return
+   * @param cls The type of the values to aggregate (must implement {@link Comparable}!)
+   * @return The newly constructed instance
+   */
+  public static <V extends Comparable<V>> Aggregator<V> MIN_UNIQUE_N(int n, Class<V> cls) {
+    return new MinUniqueNAggregator<V>(n);
   }
 
   /**
@@ -810,7 +834,7 @@ public final class Aggregators {
 
   private static class MaxNAggregator<V extends Comparable<V>> extends SimpleAggregator<V> {
     private final int arity;
-    private transient SortedSet<V> elements;
+    private transient SortedMultiset<V> elements;
 
     public MaxNAggregator(int arity) {
       this.arity = arity;
@@ -819,7 +843,7 @@ public final class Aggregators {
     @Override
     public void reset() {
       if (elements == null) {
-        elements = Sets.newTreeSet();
+        elements = TreeMultiset.create();
       } else {
         elements.clear();
       }
@@ -829,7 +853,40 @@ public final class Aggregators {
     public void update(V value) {
       if (elements.size() < arity) {
         elements.add(value);
-      } else if (value.compareTo(elements.first()) > 0) {
+      } else if (value.compareTo(elements.firstEntry().getElement()) > 0) {
+        elements.remove(elements.firstEntry().getElement());
+        elements.add(value);
+      }
+    }
+
+    @Override
+    public Iterable<V> results() {
+      return ImmutableList.copyOf(elements);
+    }
+  }
+
+  private static class MaxUniqueNAggregator<V extends Comparable<V>> extends SimpleAggregator<V> {
+    private final int arity;
+    private transient SortedSet<V> elements;
+
+    public MaxUniqueNAggregator(int arity) {
+      this.arity = arity;
+    }
+
+    @Override
+    public void reset() {
+      if (elements == null) {
+        elements = new TreeSet<V>();
+      } else {
+        elements.clear();
+      }
+    }
+
+    @Override
+    public void update(V value) {
+      if (elements.size() < arity) {
+        elements.add(value);
+      } else if (!elements.contains(value) && value.compareTo(elements.first()) > 0) {
         elements.remove(elements.first());
         elements.add(value);
       }
@@ -843,7 +900,7 @@ public final class Aggregators {
 
   private static class MinNAggregator<V extends Comparable<V>> extends SimpleAggregator<V> {
     private final int arity;
-    private transient SortedSet<V> elements;
+    private transient SortedMultiset<V> elements;
 
     public MinNAggregator(int arity) {
       this.arity = arity;
@@ -852,7 +909,7 @@ public final class Aggregators {
     @Override
     public void reset() {
       if (elements == null) {
-        elements = Sets.newTreeSet();
+        elements = TreeMultiset.create();
       } else {
         elements.clear();
       }
@@ -862,7 +919,40 @@ public final class Aggregators {
     public void update(V value) {
       if (elements.size() < arity) {
         elements.add(value);
-      } else if (value.compareTo(elements.last()) < 0) {
+      } else if (value.compareTo(elements.lastEntry().getElement()) < 0) {
+        elements.remove(elements.lastEntry().getElement());
+        elements.add(value);
+      }
+    }
+
+    @Override
+    public Iterable<V> results() {
+      return ImmutableList.copyOf(elements);
+    }
+  }
+
+  private static class MinUniqueNAggregator<V extends Comparable<V>> extends SimpleAggregator<V> {
+    private final int arity;
+    private transient SortedSet<V> elements;
+
+    public MinUniqueNAggregator(int arity) {
+      this.arity = arity;
+    }
+
+    @Override
+    public void reset() {
+      if (elements == null) {
+        elements = new TreeSet<V>();
+      } else {
+        elements.clear();
+      }
+    }
+
+    @Override
+    public void update(V value) {
+      if (elements.size() < arity) {
+        elements.add(value);
+      } else if (!elements.contains(value) && value.compareTo(elements.last()) < 0) {
         elements.remove(elements.last());
         elements.add(value);
       }
