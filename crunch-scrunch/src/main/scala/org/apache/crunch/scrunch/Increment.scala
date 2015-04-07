@@ -29,6 +29,9 @@ import org.apache.crunch.{FilterFn, Pair => CPair}
  * {@code Incrementable} trait.
  */
 trait Incrementable[T] {
+
+  private val enumCache = new java.util.HashMap[Enumeration, String]()
+
   def increment(counter: Enum[_]): T = {
     increment(counter, 1)
   }
@@ -42,7 +45,12 @@ trait Incrementable[T] {
   }
 
   def increment(groupEnum: Enumeration, value: Enumeration#Value, count: Long): T = {
-    increment(groupEnum.toString, value.toString, count)
+    var groupName = enumCache.get(groupEnum)
+    if (groupName == null) {
+      groupName = groupEnum.toString
+      enumCache.put(groupEnum, groupName)
+    }
+    increment(groupName, value.toString, count)
   }
 
   def increment(groupName: String, counterName: String): T = {
@@ -61,6 +69,8 @@ trait Incrementable[T] {
  */
 trait Increment[T] {
 
+  private val enumCache = new java.util.HashMap[Enumeration, String]()
+
   def apply(counter: Enum[_]): T = {
     apply(counter, 1)
   }
@@ -74,7 +84,12 @@ trait Increment[T] {
   }
 
   def apply(groupEnum: Enumeration, value: Enumeration#Value, count: Long): T = {
-    apply(groupEnum.toString, value.toString, count)
+    var groupName = enumCache.get(groupEnum)
+    if (groupName == null) {
+      groupName = groupEnum.toString
+      enumCache.put(groupEnum, groupName)
+    }
+    apply(groupName, value.toString, count)
   }
 
   def apply(groupName: String, counterName: String): T = {

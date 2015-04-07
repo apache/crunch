@@ -22,7 +22,14 @@ import org.apache.crunch.io.{From => from, To => to}
 import _root_.org.junit.Test
 import _root_.org.junit.Assert.assertEquals
 
+
 class IncrementTest extends CrunchSuite {
+
+  object Inc extends Enumeration {
+    type Inc = Value
+    val A, B, C, D = Value
+  }
+  import Inc._
 
   @Test def testIncrement {
     val pipeline = Pipeline.mapReduce[IncrementTest](tempDir.getDefaultConfiguration)
@@ -34,6 +41,7 @@ class IncrementTest extends CrunchSuite {
         .filter(!_.isEmpty())
         .increment("TOP", "NONEMPTY")
         .incrementIf(_ startsWith "a")("TOP", "AWORDS_2x", 2)
+        .increment(Inc, Inc.A)
         .write(to.avroFile(tempDir.getFileName("somewords")))
 
     val res = pipeline.done()
@@ -41,5 +49,6 @@ class IncrementTest extends CrunchSuite {
     assertEquals(21836, sr0.getCounterValue("TOP", "ALLWORDS"))
     assertEquals(20366, sr0.getCounterValue("TOP", "NONEMPTY"))
     assertEquals(3604, sr0.getCounterValue("TOP", "AWORDS_2x"))
+    assertEquals(20366, sr0.getCounterValue("Inc", "A"))
   }
 }
