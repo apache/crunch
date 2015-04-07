@@ -70,9 +70,14 @@ public class SparkPipeline extends DistributedPipeline {
   }
 
   public SparkPipeline(JavaSparkContext sparkContext, String appName) {
-    super(appName, sparkContext.hadoopConfiguration(), new SparkCollectFactory());
+    this(sparkContext, appName, null, sparkContext != null? sparkContext.hadoopConfiguration(): new Configuration());
+  }
+
+  public SparkPipeline(JavaSparkContext sparkContext, String appName, Class<?> jarClass, Configuration conf) {
+    super(appName, conf, new SparkCollectFactory());
     this.sparkContext = Preconditions.checkNotNull(sparkContext);
     this.sparkConnect = sparkContext.getSparkHome().orNull();
+    this.jarClass = jarClass;
   }
 
   @Override
