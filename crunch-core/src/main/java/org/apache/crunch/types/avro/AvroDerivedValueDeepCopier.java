@@ -39,6 +39,10 @@ public class AvroDerivedValueDeepCopier<T, S> implements DeepCopier {
 
   @Override
   public void initialize(Configuration conf) {
+    derivedToAvroFn.setConfiguration(conf);
+    derivedToAvroFn.initialize();
+    avroToDerivedFn.setConfiguration(conf);
+    avroToDerivedFn.initialize();
     avroBaseType.initialize(conf);
   }
 
