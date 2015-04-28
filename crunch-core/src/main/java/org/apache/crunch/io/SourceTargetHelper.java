@@ -43,7 +43,7 @@ public class SourceTargetHelper {
     for (FileStatus status : stati) {
       if (status.isDir()) {
         for (FileStatus st : fs.listStatus(status.getPath())) {
-          size += st.getLen();
+          size += getPathSize(fs, st.getPath());
         }
       } else {
         size += status.getLen();

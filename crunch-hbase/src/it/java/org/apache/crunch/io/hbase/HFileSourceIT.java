@@ -26,11 +26,13 @@ import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
+import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.KeyValue;
@@ -264,6 +266,26 @@ public class HFileSourceIT implements Serializable {
     assertNull(results.get(0).getValue(FAMILY1, QUALIFIER1));
     assertNull(results.get(0).getValue(FAMILY1, QUALIFIER2));
     assertArrayEquals(VALUE3, results.get(0).getValue(FAMILY1, QUALIFIER3));
+  }
+
+  @Test
+  public void testHFileSize() throws IOException {
+    Path inputPath = tmpDir.getPath("in");
+    List<KeyValue> kvs = ImmutableList.of(
+        new KeyValue(ROW1, FAMILY1, QUALIFIER1, 1, VALUE1),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER2, 2, VALUE2),
+        new KeyValue(ROW1, FAMILY1, QUALIFIER2, 3, VALUE3));
+    writeKeyValuesToHFile(inputPath, kvs);
+
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] fileStatuses = fs.listStatus(inputPath.getParent());
+    long size = 0;
+    for(FileStatus s: fileStatuses){
+      size += s.getLen();
+    }
+
+    Source<KeyValue> hfile = FromHBase.hfile(inputPath);
+    assertTrue(hfile.getSize(conf) >= size);
   }
 
   private List<Result> doTestScanHFiles(List<KeyValue> kvs, Scan scan) throws IOException {
