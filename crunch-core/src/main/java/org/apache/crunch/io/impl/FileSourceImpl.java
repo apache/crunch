@@ -24,12 +24,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
 import org.apache.crunch.impl.mr.run.CrunchInputFormat;
 import org.apache.crunch.io.CompositePathIterable;
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.FormatBundle;
+import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
@@ -41,7 +43,7 @@ import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileSourceImpl<T> implements Source<T> {
+public class FileSourceImpl<T> implements ReadableSource<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileSourceImpl.class);
 
@@ -176,5 +178,15 @@ public class FileSourceImpl<T> implements Source<T> {
   @Override
   public String toString() {
     return new StringBuilder().append(inputBundle.getName()).append("(").append(pathsAsString()).append(")").toString();
+  }
+
+  @Override
+  public Iterable<T> read(Configuration conf) throws IOException {
+    return read(conf, new DefaultFileReaderFactory<T>(inputBundle, ptype));
+  }
+
+  @Override
+  public ReadableData<T> asReadable() {
+    return new FileReadableData<T>(paths, inputBundle, ptype);
   }
 }
