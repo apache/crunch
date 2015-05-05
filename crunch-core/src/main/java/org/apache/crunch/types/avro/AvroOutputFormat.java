@@ -37,14 +37,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class AvroOutputFormat<T> extends FileOutputFormat<AvroWrapper<T>, NullWritable> {
 
   public static <S>  DataFileWriter<S> getDataFileWriter(Path path, Configuration conf) throws IOException {
-    Schema schema = null;
-    String outputName = conf.get("crunch.namedoutput");
-    if (outputName != null && !outputName.isEmpty()) {
-      schema = (new Schema.Parser()).parse(conf.get("avro.output.schema." + outputName));
-    } else {
-      schema = AvroJob.getOutputSchema(conf);
-    }
-
+    Schema schema = AvroJob.getOutputSchema(conf);
     DataFileWriter<S> writer = new DataFileWriter<S>(AvroMode.fromConfiguration(conf).<S>getWriter(schema));
 
     JobConf jc = new JobConf(conf);

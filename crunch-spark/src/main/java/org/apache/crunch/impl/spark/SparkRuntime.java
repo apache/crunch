@@ -38,6 +38,7 @@ import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.spark.fn.MapFunction;
 import org.apache.crunch.impl.spark.fn.OutputConverterFunction;
 import org.apache.crunch.impl.spark.fn.PairMapFunction;
+import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.MapReduceTarget;
 import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.materialize.MaterializableIterable;
@@ -323,7 +324,13 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
               Job job = new Job(conf);
               if (t instanceof PathTarget) {
                 PathTarget pt = (PathTarget) t;
-                pt.configureForMapReduce(job, ptype, pt.getPath(), null);
+                pt.configureForMapReduce(job, ptype, pt.getPath(), "out0");
+                CrunchOutputs.OutputConfig outConfig =
+                        CrunchOutputs.getNamedOutputs(job.getConfiguration()).get("out0");
+                job.setOutputFormatClass(outConfig.bundle.getFormatClass());
+                job.setOutputKeyClass(outConfig.keyClass);
+                job.setOutputValueClass(outConfig.valueClass);
+                outConfig.bundle.configure(job.getConfiguration());
                 Path tmpPath = pipeline.createTempPath();
                 outRDD.saveAsNewAPIHadoopFile(
                     tmpPath.toString(),
@@ -334,7 +341,12 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                 pt.handleOutputs(job.getConfiguration(), tmpPath, -1);
               } else if (t instanceof MapReduceTarget) {
                 MapReduceTarget mrt = (MapReduceTarget) t;
-                mrt.configureForMapReduce(job, ptype, new Path("/tmp"), null);
+                mrt.configureForMapReduce(job, ptype, new Path("/tmp"), "out0");
+                CrunchOutputs.OutputConfig outConfig =
+                        CrunchOutputs.getNamedOutputs(job.getConfiguration()).get("out0");
+                job.setOutputFormatClass(outConfig.bundle.getFormatClass());
+                job.setOutputKeyClass(outConfig.keyClass);
+                job.setOutputValueClass(outConfig.valueClass);
                 outRDD.saveAsHadoopDataset(new JobConf(job.getConfiguration()));
               } else {
                 throw new IllegalArgumentException("Spark execution cannot handle non-MapReduceTarget: " + t);

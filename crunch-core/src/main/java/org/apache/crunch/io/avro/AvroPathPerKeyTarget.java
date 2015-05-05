@@ -78,13 +78,7 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     AvroType<?> atype = (AvroType) ((PTableType) ptype).getValueType();
     FormatBundle bundle = FormatBundle.forOutput(AvroPathPerKeyOutputFormat.class);
-    String schemaParam;
-    if (name == null) {
-      schemaParam = "avro.output.schema";
-    } else {
-      schemaParam = "avro.output.schema." + name;
-    }
-    bundle.set(schemaParam, atype.getSchema().toString());
+    bundle.set("avro.output.schema", atype.getSchema().toString());
     AvroMode.fromType(atype).configure(bundle);
     configureForMapReduce(job, AvroWrapper.class, NullWritable.class, bundle, outputPath, name);
   }
