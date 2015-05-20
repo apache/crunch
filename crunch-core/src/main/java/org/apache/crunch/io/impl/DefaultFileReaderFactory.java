@@ -22,7 +22,6 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.UnmodifiableIterator;
 import org.apache.crunch.CrunchRuntimeException;
-import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
 import org.apache.crunch.io.FileReaderFactory;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.types.PType;
@@ -36,11 +35,11 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 class DefaultFileReaderFactory<T> implements FileReaderFactory<T> {
@@ -62,7 +61,7 @@ class DefaultFileReaderFactory<T> implements FileReaderFactory<T> {
     ptype.initialize(conf);
 
     final InputFormat fmt = ReflectionUtils.newInstance(bundle.getFormatClass(), conf);
-    final TaskAttemptContext ctxt = TaskAttemptContextFactory.create(conf, new TaskAttemptID());
+    final TaskAttemptContext ctxt = new TaskAttemptContextImpl(conf, new TaskAttemptID());
     try {
       Job job = new Job(conf);
       FileInputFormat.addInputPath(job, path);

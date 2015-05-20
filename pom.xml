@@ -89,10 +89,11 @@ under the License.
     <pkg>org.apache.crunch</pkg>
 
     <!-- Can be overridden by hadoop-2 profile, but these are the default values -->
-    <hadoop.version>1.1.2</hadoop.version>
-    <hbase.version>0.98.1-hadoop1</hbase.version>
-    <hbase.midfix>hadoop1</hbase.midfix>
-    <avro.classifier>hadoop1</avro.classifier>
+    <hadoop.version>2.2.0</hadoop.version>
+    <hbase.version>0.98.1-hadoop2</hbase.version>
+    <commons-lang.version>2.5</commons-lang.version>
+    <hbase.midfix>hadoop2</hbase.midfix>
+    <avro.classifier>hadoop2</avro.classifier>
 
     <scala.base.version>2.10</scala.base.version>
     <scala.version>2.10.4</scala.version>
@@ -218,26 +219,6 @@ under the License.
         <version>${avro.version}</version>
         <classifier>${avro.classifier}</classifier>
         <exclusions>
-          <exclusion>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro-ipc</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>trevni-core</artifactId>
-        <version>${avro.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.avro</groupId>
-        <artifactId>trevni-avro</artifactId>
-        <version>${avro.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
-          </exclusion>
           <exclusion>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro-ipc</artifactId>
@@ -469,63 +450,40 @@ under the License.
         <artifactId>jsr305</artifactId>
         <version>${jsr305.version}</version>
      </dependency>
-    </dependencies>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-common</artifactId>
+       <version>${hadoop.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-auth</artifactId>
+       <version>${hadoop.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-hdfs</artifactId>
+       <version>${hadoop.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-mapreduce-client-core</artifactId>
+       <version>${hadoop.version}</version>
+     </dependency>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
+       <version>${hadoop.version}</version>
+       <type>test-jar</type>
+       <scope>test</scope>
+     </dependency>
+     <dependency>
+       <groupId>org.apache.hadoop</groupId>
+       <artifactId>hadoop-annotations</artifactId>
+       <version>${hadoop.version}</version>
+     </dependency>
+   </dependencies>
   </dependencyManagement>
-
-  <profiles>
-    <profile>
-      <id>hadoop-2</id>
-      <activation>
-        <property>
-          <name>crunch.platform</name>
-          <value>2</value>
-        </property>
-      </activation>
-      <properties>
-        <hadoop.version>2.2.0</hadoop.version>
-        <hbase.version>0.98.1-hadoop2</hbase.version>
-        <commons-lang.version>2.5</commons-lang.version>
-        <hbase.midfix>hadoop2</hbase.midfix>
-        <avro.classifier>hadoop2</avro.classifier>
-      </properties>
-      <dependencyManagement>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-auth</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-            <version>${hadoop.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-annotations</artifactId>
-            <version>${hadoop.version}</version>
-          </dependency>
-        </dependencies>
-      </dependencyManagement>
-    </profile>
-  </profiles>
 
   <build>
     <plugins>

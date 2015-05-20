@@ -19,7 +19,6 @@ package org.apache.crunch.impl.mr.run;
 
 import java.io.IOException;
 
-import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -27,6 +26,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.CombineFileSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.ReflectionUtils;
 
 class CrunchRecordReader<K, V> extends RecordReader<K, V> {
@@ -44,12 +44,12 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     if (crunchSplit.get() instanceof CombineFileSplit) {
       combineFileSplit = (CombineFileSplit) crunchSplit.get();
     }
-    this.context = context;
     Configuration conf = crunchSplit.getConf();
     if (conf == null) {
       conf = context.getConfiguration();
       crunchSplit.setConf(conf);
     }
+    this.context = new TaskAttemptContextImpl(conf, context.getTaskAttemptID());
     initNextRecordReader();
   }
 
@@ -75,8 +75,7 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     InputFormat<K, V> inputFormat = (InputFormat<K, V>) ReflectionUtils.newInstance(
         crunchSplit.getInputFormatClass(),
         conf);
-    this.curReader = inputFormat.createRecordReader(getDelegateSplit(),
-        TaskAttemptContextFactory.create(conf, context.getTaskAttemptID()));
+    this.curReader = inputFormat.createRecordReader(getDelegateSplit(), context);
     return true;
   }
 
@@ -137,18 +136,17 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
     this.crunchSplit = (CrunchInputSplit) inputSplit;
-    this.context = context;
     Configuration conf = crunchSplit.getConf();
     if (conf == null) {
       conf = context.getConfiguration();
       crunchSplit.setConf(conf);
     }
+    this.context = new TaskAttemptContextImpl(conf, context.getTaskAttemptID());
     if (crunchSplit.get() instanceof CombineFileSplit) {
       combineFileSplit = (CombineFileSplit) crunchSplit.get();
     }
     if (curReader != null) {
-      curReader.initialize(getDelegateSplit(),
-          TaskAttemptContextFactory.create(conf, context.getTaskAttemptID()));
+      curReader.initialize(getDelegateSplit(), this.context);
     }
   }
 
@@ -159,8 +157,7 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
         return false;
       }
       if (curReader != null) {
-        curReader.initialize(getDelegateSplit(),
-            TaskAttemptContextFactory.create(crunchSplit.getConf(), context.getTaskAttemptID()));
+        curReader.initialize(getDelegateSplit(), context);
       }
     }
     return true;

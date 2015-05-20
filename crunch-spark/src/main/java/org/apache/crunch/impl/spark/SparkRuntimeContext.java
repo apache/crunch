@@ -24,7 +24,6 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
-import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.TaskInputOutputContextFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.mapred.SparkCounter;
@@ -34,6 +33,7 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.spark.Accumulator;
 import org.apache.spark.SparkFiles;
 import org.apache.spark.broadcast.Broadcast;
@@ -80,7 +80,7 @@ public class SparkRuntimeContext implements Serializable {
         lastTID = null;
       }
       configureLocalFiles();
-      context = TaskInputOutputContextFactory.create(getConfiguration(), attemptID, new SparkReporter(counters));
+      context = new MapContextImpl(getConfiguration(), attemptID, null, null, null, new SparkReporter(counters), null);
     }
     fn.setContext(context);
     fn.initialize();

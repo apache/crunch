@@ -18,9 +18,7 @@
 package org.apache.crunch.io;
 
 import com.google.common.collect.Sets;
-import java.lang.reflect.Method;
 import org.apache.crunch.CrunchRuntimeException;
-import org.apache.crunch.hadoop.mapreduce.TaskAttemptContextFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -33,6 +31,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.google.common.base.Joiner;
@@ -211,9 +210,7 @@ public class CrunchOutputs<K, V> {
   }
 
   private static TaskAttemptContext getTaskContext(TaskAttemptContext baseContext, Job job) {
-
     org.apache.hadoop.mapreduce.TaskAttemptID baseTaskId = baseContext.getTaskAttemptID();
-
     // Create a task ID context with our specialized job ID.
     org.apache.hadoop.mapreduce.TaskAttemptID  taskId;
     taskId = new org.apache.hadoop.mapreduce.TaskAttemptID(job.getJobID().getJtIdentifier(),
@@ -221,36 +218,14 @@ public class CrunchOutputs<K, V> {
             baseTaskId.isMap(),
             baseTaskId.getTaskID().getId(),
             baseTaskId.getId());
-
-    return TaskAttemptContextFactory.create(
-            job.getConfiguration(), taskId);
+    return new TaskAttemptContextImpl(job.getConfiguration(), taskId);
   }
 
   private static void setJobID(Job job, JobID jobID, String namedOutput) {
-    Method setJobIDMethod;
-    JobID newJobID = jobID;
-    try {
-      // Hadoop 2
-      setJobIDMethod = Job.class.getMethod("setJobID", JobID.class);
-      // Add the named output to the job ID, since that is used by some output formats
-      // to create temporary outputs.
-      newJobID = jobID == null || jobID.getJtIdentifier().contains(namedOutput) ?
+    JobID newJobID = jobID == null || jobID.getJtIdentifier().contains(namedOutput) ?
           jobID :
           new JobID(jobID.getJtIdentifier() + "_" + namedOutput, jobID.getId());
-    } catch (NoSuchMethodException e) {
-      // Hadoop 1's setJobID method is package private and declared by JobContext
-      try {
-        setJobIDMethod = JobContext.class.getDeclaredMethod("setJobID", JobID.class);
-      } catch (NoSuchMethodException e1) {
-        throw new CrunchRuntimeException(e);
-      }
-      setJobIDMethod.setAccessible(true);
-    }
-    try {
-      setJobIDMethod.invoke(job, newJobID);
-    } catch (Exception e) {
-      throw new CrunchRuntimeException("Could not set job ID to " + jobID, e);
-    }
+    job.setJobID(newJobID);
   }
 
   private static void configureJob(

@@ -46,15 +46,6 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>trevni-avro</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.avro</groupId>
-      <artifactId>trevni-core</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>parquet-avro</artifactId>
     </dependency>
