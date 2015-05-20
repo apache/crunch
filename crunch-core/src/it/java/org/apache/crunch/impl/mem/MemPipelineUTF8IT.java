@@ -18,15 +18,10 @@
 package org.apache.crunch.impl.mem;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import junit.framework.Assert;
 
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pipeline;
@@ -36,6 +31,7 @@ import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.text.TextFileTarget;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 

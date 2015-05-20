@@ -17,8 +17,6 @@
  */
 package org.apache.crunch;
 
-import java.util.Iterator;
-
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
@@ -35,7 +33,7 @@ public class SingleUseIterableExceptionIT {
   static class ReduceFn extends MapFn<Iterable<String>, String> {
     @Override
     public String map(Iterable<String> input) {
-      Iterator<String> iter = input.iterator();
+      input.iterator();
       throw new CrunchRuntimeException("Exception");
     }
   }

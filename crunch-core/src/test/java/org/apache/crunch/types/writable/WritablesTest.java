@@ -208,6 +208,11 @@ public class WritablesTest {
     }
 
     @Override
+    public int hashCode() {
+      return (left == null ? 0 : left.hashCode()) ^ right;
+    }
+
+    @Override
     public int compareTo(TestWritable o) {
       int cmp = left.compareTo(o.left);
       if (cmp != 0)

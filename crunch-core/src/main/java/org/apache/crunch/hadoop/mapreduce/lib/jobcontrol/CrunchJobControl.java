@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -156,17 +155,26 @@ public class CrunchJobControl {
   }
 
   private Map<Integer, CrunchControlledJob> getQueue(State state) {
-    Map<Integer, CrunchControlledJob> retv = null;
-    if (state == State.WAITING) {
-      retv = this.waitingJobs;
-    } else if (state == State.READY) {
-      retv = this.readyJobs;
-    } else if (state == State.RUNNING) {
-      retv = this.runningJobs;
-    } else if (state == State.SUCCESS) {
-      retv = this.successfulJobs;
-    } else if (state == State.FAILED || state == State.DEPENDENT_FAILED) {
-      retv = this.failedJobs;
+    Map<Integer, CrunchControlledJob> retv;
+    switch (state) {
+      case WAITING:
+        retv = this.waitingJobs;
+        break;
+      case READY:
+        retv = this.readyJobs;
+        break;
+      case RUNNING:
+        retv = this.runningJobs;
+        break;
+      case SUCCESS:
+        retv = this.successfulJobs;
+        break;
+      case FAILED:
+      case DEPENDENT_FAILED:
+        retv = this.failedJobs;
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown state " + state);
     }
     return retv;
   }

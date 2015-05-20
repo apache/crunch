@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Random;
 
@@ -40,7 +41,6 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
-import org.apache.hadoop.hbase.MiniHBaseCluster;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -65,7 +65,8 @@ public class WordCountHBaseIT {
       byte[] firstStrBytes = input.second().first().getValue(WORD_COLFAM, null);
       byte[] secondStrBytes = input.second().second().getValue(WORD_COLFAM, null);
       if (firstStrBytes != null && secondStrBytes != null) {
-        return Joiner.on(',').join(new String(firstStrBytes), new String(secondStrBytes));
+        return Joiner.on(',').join(new String(firstStrBytes, Charset.forName("UTF-8")),
+                                   new String(secondStrBytes, Charset.forName("UTF-8")));
       }
       return "";
     }
@@ -137,7 +138,7 @@ public class WordCountHBaseIT {
   public void run(Pipeline pipeline) throws Exception {
 
     Random rand = new Random();
-    int postFix = Math.abs(rand.nextInt());
+    int postFix = rand.nextInt() & 0x7FFFFFFF;
     String inputTableName = "crunch_words_" + postFix;
     String outputTableName = "crunch_counts_" + postFix;
     String otherTableName = "crunch_other_" + postFix;
@@ -180,13 +181,16 @@ public class WordCountHBaseIT {
 
     // verify we can do joins.
     HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);
-
-    key = 0;
-    key = put(joinTable, key, "zebra");
-    key = put(joinTable, key, "donkey");
-    key = put(joinTable, key, "bird");
-    key = put(joinTable, key, "horse");
-    joinTable.flushCommits();
+    try {
+      key = 0;
+      key = put(joinTable, key, "zebra");
+      key = put(joinTable, key, "donkey");
+      key = put(joinTable, key, "bird");
+      key = put(joinTable, key, "horse");
+      joinTable.flushCommits();
+    } finally {
+      joinTable.close();
+    }
 
     Scan joinScan = new Scan();
     joinScan.addFamily(WORD_COLFAM);

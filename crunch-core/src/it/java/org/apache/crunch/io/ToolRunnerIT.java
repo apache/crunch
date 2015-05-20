@@ -17,6 +17,8 @@
  */
 package org.apache.crunch.io;
 
+import java.nio.charset.Charset;
+
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pair;
@@ -205,7 +207,7 @@ public class ToolRunnerIT {
 
     @Override
     public Pair<BytesWritable, BytesWritable> map(String input) {
-      BytesWritable bw = new BytesWritable(input.getBytes());
+      BytesWritable bw = new BytesWritable(input.getBytes(Charset.forName("UTF-8")));
       return Pair.of(bw, bw);
     }
   }

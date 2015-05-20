@@ -195,13 +195,8 @@ public class CrunchOutputs<K, V> {
     job = getJob(job.getJobID(), namedOutput,baseConf);
 
     OutputFormat<K, V> fmt = getOutputFormat(namedOutput, job, namedOutputs.get(namedOutput));
-    TaskAttemptContext taskContext = null;
-    RecordWriter<K, V> recordWriter = null;
-
-    if (baseContext != null) {
-      taskContext = getTaskContext(baseContext, job);
-      recordWriter = fmt.getRecordWriter(taskContext);
-    }
+    TaskAttemptContext taskContext = getTaskContext(baseContext, job);
+    RecordWriter<K, V> recordWriter = fmt.getRecordWriter(taskContext);
     OutputState<K, V> outputState = new OutputState(taskContext, recordWriter);
     this.outputStates.put(namedOutput, outputState);
     return outputState;

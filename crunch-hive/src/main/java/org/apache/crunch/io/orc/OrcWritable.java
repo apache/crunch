@@ -87,6 +87,11 @@ public class OrcWritable implements WritableComparable<OrcWritable> {
     return compareTo((OrcWritable) obj) == 0;
   }
 
+  @Override
+  public int hashCode() {
+    return blob == null ? 0 : blob.hashCode();
+  }
+
   public void setSerde(BinarySortableSerDe serde) {
     this.serde = serde;
   }

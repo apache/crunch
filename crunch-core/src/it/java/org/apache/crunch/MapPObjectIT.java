@@ -17,7 +17,7 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Map;
@@ -39,8 +39,8 @@ public class MapPObjectIT {
       Pair.of(2, "c"), Pair.of(3, "e"));
 
   public void assertMatches(Map<Integer, String> m) {
-    for (Integer k : m.keySet()) {
-      assertEquals(kvPairs.get(k).second(), m.get(k));
+    for (Map.Entry<Integer, String> e : m.entrySet()) {
+      assertEquals(kvPairs.get(e.getKey()).second(), e.getValue());
     }
   }
 

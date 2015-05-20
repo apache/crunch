@@ -168,13 +168,17 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
   private static void createTable(Configuration conf, String htableName, String... families) throws MasterNotRunningException, ZooKeeperConnectionException,
       IOException {
     HBaseAdmin hbase = new HBaseAdmin(conf);
-    if (!hbase.tableExists(htableName)) {
-      HTableDescriptor desc = new HTableDescriptor(htableName);
-      for (String s : families) {
-        HColumnDescriptor meta = new HColumnDescriptor(s);
-        desc.addFamily(meta);
+    try {
+      if (!hbase.tableExists(htableName)) {
+        HTableDescriptor desc = new HTableDescriptor(htableName);
+        for (String s : families) {
+          HColumnDescriptor meta = new HColumnDescriptor(s);
+          desc.addFamily(meta);
+        }
+        hbase.createTable(desc);
       }
-      hbase.createTable(desc);
+    } finally {
+      hbase.close();
     }
   }
 

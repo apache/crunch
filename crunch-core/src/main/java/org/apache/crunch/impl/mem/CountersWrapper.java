@@ -26,7 +26,6 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 
-import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -87,7 +86,7 @@ class CountersWrapper extends Counters {
   public Iterator<CounterGroup> iterator() {
     return Iterators.concat(Iterables.transform(allCounters, new Function<Counters, Iterator<CounterGroup>>() {
       @Override
-      public Iterator<CounterGroup> apply(@Nullable Counters input) {
+      public Iterator<CounterGroup> apply(Counters input) {
         return input.iterator();
       }
     }).iterator());

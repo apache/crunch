@@ -72,7 +72,7 @@ public class CrunchJobControlTest {
     verify(job3).submit();
   }
 
-  private class IncrementingPipelineCallable extends PipelineCallable<Void> {
+  private static class IncrementingPipelineCallable extends PipelineCallable<Void> {
 
     private String name;
     private boolean executed;

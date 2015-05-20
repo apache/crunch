@@ -23,12 +23,11 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 import org.apache.crunch.test.Tests;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.junit.Test;
 
 
@@ -47,27 +46,33 @@ public class GenericArrayWritableTest {
   @Test
   public void testNonEmpty() {
     GenericArrayWritable src = new GenericArrayWritable();
-    src.set(new BytesWritable[] { new BytesWritable("foo".getBytes()), new BytesWritable("bar".getBytes()) });
+    src.set(new BytesWritable[] {
+        new BytesWritable("foo".getBytes(Charset.forName("UTF-8"))),
+        new BytesWritable("bar".getBytes(Charset.forName("UTF-8"))) });
 
     GenericArrayWritable dest = Tests.roundtrip(src, new GenericArrayWritable());
 
     assertThat(src.get(), not(sameInstance(dest.get())));
     assertThat(dest.get().length, is(2));
     assertThat(Arrays.asList(dest.get()),
-        hasItems(new BytesWritable("foo".getBytes()), new BytesWritable("bar".getBytes())));
+        hasItems(new BytesWritable("foo".getBytes(Charset.forName("UTF-8"))),
+                 new BytesWritable("bar".getBytes(Charset.forName("UTF-8")))));
   }
 
   @Test
   public void testNulls() {
     GenericArrayWritable src = new GenericArrayWritable();
-    src.set(new BytesWritable[] { new BytesWritable("a".getBytes()), null, new BytesWritable("b".getBytes()) });
+    src.set(new BytesWritable[] {
+        new BytesWritable("a".getBytes(Charset.forName("UTF-8"))), null,
+        new BytesWritable("b".getBytes(Charset.forName("UTF-8"))) });
 
     GenericArrayWritable dest = Tests.roundtrip(src, new GenericArrayWritable());
 
     assertThat(src.get(), not(sameInstance(dest.get())));
     assertThat(dest.get().length, is(3));
     assertThat(Arrays.asList(dest.get()),
-        hasItems(new BytesWritable("a".getBytes()), new BytesWritable("b".getBytes()), null));
+        hasItems(new BytesWritable("a".getBytes(Charset.forName("UTF-8"))),
+                 new BytesWritable("b".getBytes(Charset.forName("UTF-8"))), null));
   }
 
 }

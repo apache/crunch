@@ -17,9 +17,6 @@
  */
 package org.apache.crunch;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -41,6 +38,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MaterializeIT {
 

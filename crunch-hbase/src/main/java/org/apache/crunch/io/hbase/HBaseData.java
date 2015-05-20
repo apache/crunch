@@ -66,8 +66,9 @@ public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Resu
     HTable htable = new HTable(hconf, table);
 
     String[] scanStrings = StringUtils.getStrings(scansAsString);
-    Scan[] scans = new Scan[scanStrings.length];
-    for(int i = 0; i < scanStrings.length; i++){
+    int length = scanStrings == null ? 0 : scanStrings.length;
+    Scan[] scans = new Scan[length];
+    for(int i = 0; i < length; i++){
       scans[i] = HBaseSourceTarget.convertStringToScan(scanStrings[i]);
     }
 

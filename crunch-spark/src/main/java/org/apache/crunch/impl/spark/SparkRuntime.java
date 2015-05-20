@@ -339,7 +339,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                     job.getOutputFormatClass(),
                     job.getConfiguration());
                 pt.handleOutputs(job.getConfiguration(), tmpPath, -1);
-              } else if (t instanceof MapReduceTarget) {
+              } else { //if (t instanceof MapReduceTarget) {
                 MapReduceTarget mrt = (MapReduceTarget) t;
                 mrt.configureForMapReduce(job, ptype, new Path("/tmp"), "out0");
                 CrunchOutputs.OutputConfig outConfig =
@@ -348,8 +348,6 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                 job.setOutputKeyClass(outConfig.keyClass);
                 job.setOutputValueClass(outConfig.valueClass);
                 outRDD.saveAsHadoopDataset(new JobConf(job.getConfiguration()));
-              } else {
-                throw new IllegalArgumentException("Spark execution cannot handle non-MapReduceTarget: " + t);
               }
             } catch (Exception et) {
               LOG.error("Spark Exception", et);

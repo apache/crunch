@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -46,7 +47,7 @@ public class BloomFiltersIT extends CrunchTestSupport implements Serializable {
         List<String> parts = Arrays.asList(StringUtils.split(input, " "));
         Collection<Key> keys = new HashSet<Key>();
         for (String stringpart : parts) {
-          keys.add(new Key(stringpart.getBytes()));
+          keys.add(new Key(stringpart.getBytes(Charset.forName("UTF-8"))));
         }
         return keys;
       }
@@ -54,8 +55,8 @@ public class BloomFiltersIT extends CrunchTestSupport implements Serializable {
     Map<String, BloomFilter> filterValues = BloomFilterFactory.createFilter(new Path(inputPath), filterFn).getValue();
     assertEquals(1, filterValues.size());
     BloomFilter filter = filterValues.get("shakes.txt");
-    assertTrue(filter.membershipTest(new Key("Mcbeth".getBytes())));
-    assertTrue(filter.membershipTest(new Key("apples".getBytes())));
+    assertTrue(filter.membershipTest(new Key("Mcbeth".getBytes(Charset.forName("UTF-8")))));
+    assertTrue(filter.membershipTest(new Key("apples".getBytes(Charset.forName("UTF-8")))));
   }
 
 }

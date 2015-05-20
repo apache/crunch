@@ -30,8 +30,6 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 
-import javax.annotation.Nullable;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -173,7 +171,7 @@ public class Quantiles {
 
       Iterator<V> valueIterator = Iterators.transform(iterator, new Function<Pair<V, Long>, V>() {
         @Override
-        public V apply(@Nullable Pair<V, Long> input) {
+        public V apply(Pair<V, Long> input) {
           return input.first();
         }
       });

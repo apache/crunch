@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -159,7 +160,7 @@ public class MapsideJoinStrategyIT {
   public void testLegacyMapsideJoin_LeftSideIsEmpty() throws IOException {
     MRPipeline pipeline = new MRPipeline(MapsideJoinStrategyIT.class, tmpDir.getDefaultConfiguration());
     PTable<Integer, String> customerTable = readTable(pipeline, "customers.txt");
-    PTable<Integer, String> orderTable = readTable(pipeline, "orders.txt");
+    readTable(pipeline, "orders.txt");
 
     PTable<Integer, String> filteredCustomerTable = customerTable
         .parallelDo(FilterFns.<Pair<Integer, String>>REJECT_ALL(), customerTable.getPTableType());
@@ -235,7 +236,7 @@ public class MapsideJoinStrategyIT {
     OutputStream out2 = fs.create(path2, true);
 
     for(int i = 0; i < 4; i++){
-      byte[] value = ("value" + i + "\n").getBytes();
+      byte[] value = ("value" + i + "\n").getBytes(Charset.forName("UTF-8"));
       out1.write(value);
       out2.write(value);
     }

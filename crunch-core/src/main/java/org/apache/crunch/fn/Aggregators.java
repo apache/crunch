@@ -1056,7 +1056,8 @@ public final class Aggregators {
     @Override
     public void update(final String next) {
       long length = (next == null) ? 0 : next.length() + separator.length();
-      if (maxOutputLength > 0 && currentLength + length > maxOutputLength || maxInputLength > 0 && next.length() > maxInputLength) {
+      if ((maxOutputLength > 0 && currentLength + length > maxOutputLength) ||
+          (maxInputLength > 0 && next != null && next.length() > maxInputLength)) {
         return;
       }
       if (maxOutputLength > 0) {

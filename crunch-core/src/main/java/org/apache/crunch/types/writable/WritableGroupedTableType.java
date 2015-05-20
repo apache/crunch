@@ -94,7 +94,7 @@ class WritableGroupedTableType<K, V> extends PGroupedTableType<K, V> {
     WritableType valueType = (WritableType) tableType.getValueType();
     job.setMapOutputKeyClass(keyType.getSerializationClass());
     job.setMapOutputValueClass(valueType.getSerializationClass());
-    if (options.getSortComparatorClass() == null &&
+    if ((options == null || options.getSortComparatorClass() == null) &&
         TupleWritable.class.equals(keyType.getSerializationClass())) {
       job.setSortComparatorClass(TupleWritable.Comparator.class);
     }

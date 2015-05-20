@@ -44,11 +44,9 @@ public class SingleUseIterableTest {
     
     SingleUseIterable<Integer> iterable = new SingleUseIterable<Integer>(values);
 
-    List<Integer> retrievedValues = Lists.newArrayList(iterable);
-
-    for (Integer n : iterable) {
-      
-    }
+    // Consume twice
+    Lists.newArrayList(iterable);
+    Lists.newArrayList(iterable);
   }
 
 }

@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.util;
 
+import com.google.common.base.Preconditions;
 import org.apache.crunch.PCollection;
 import org.apache.hadoop.conf.Configuration;
 
@@ -42,6 +43,7 @@ public class PartitionUtils {
 
   public static <T> int getRecommendedPartitions(PCollection<T> pcollection, Configuration conf) {
     long bytesPerTask = conf.getLong(BYTES_PER_REDUCE_TASK, DEFAULT_BYTES_PER_REDUCE_TASK);
+    Preconditions.checkArgument(bytesPerTask > 0);
     int recommended = 1 + (int) (pcollection.getSize() / bytesPerTask);
     int maxRecommended = conf.getInt(MAX_REDUCERS, DEFAULT_MAX_REDUCERS);
     if (maxRecommended > 0 && recommended > maxRecommended) {

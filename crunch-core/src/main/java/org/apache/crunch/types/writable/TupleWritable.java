@@ -334,8 +334,10 @@ public class TupleWritable extends Configured implements WritableComparable<Tupl
         int cmp = WritableComparator.get(clazz.asSubclass(WritableComparable.class)).compare(
             buffer1.getData(), buffer1.getPosition(), bodySize1,
             buffer2.getData(), buffer2.getPosition(), bodySize2);
-        buffer1.skip(bodySize1);
-        buffer2.skip(bodySize2);
+        long skipped1 = buffer1.skip(bodySize1);
+        long skipped2 = buffer2.skip(bodySize2);
+        Preconditions.checkState(skipped1 == bodySize1);
+        Preconditions.checkState(skipped2 == bodySize2);
         return cmp;
       } else {
         // fallback to deserialization
