@@ -19,6 +19,7 @@ package org.apache.crunch.io.hbase;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -39,6 +40,8 @@ import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.client.Delete;
@@ -119,6 +122,18 @@ public class WordCountHBaseIT {
   @Before
   public void setUp() throws Exception {
     Configuration conf = HBaseConfiguration.create(tmpDir.getDefaultConfiguration());
+
+    // HBase 0.98 HBaseTestingUtility hard-codes ~/hbase as its temp directory and leaves
+    // it lying around after this test. It's easy to delete, but to be sure it's safe to
+    // delete, we need to be sure that it doesn't exist already. The test probably won't
+    // work anyway if it does. If it doesn't exist, then deleting it later doesn't matter
+    // even if a future HBase is used (which doesn't have this problem) and this test
+    // isn't updated.
+    FileSystem fs = FileSystem.get(conf);
+    Path hbaseTestPath = new Path(fs.makeQualified(fs.getHomeDirectory()),"hbase");
+    assertFalse("The hbase directory in your home directory already exists. This test deletes this directory " +
+            "on exit, so it will not run unless you delete the directory yourself", fs.exists(hbaseTestPath));
+
     hbaseTestUtil = new HBaseTestingUtility(conf);
     hbaseTestUtil.startMiniZKCluster();
     hbaseTestUtil.startMiniHBaseCluster(1, 1);
@@ -133,6 +148,9 @@ public class WordCountHBaseIT {
   public void tearDown() throws Exception {
     hbaseTestUtil.shutdownMiniHBaseCluster();
     hbaseTestUtil.shutdownMiniZKCluster();
+    FileSystem fs = FileSystem.get(hbaseTestUtil.getConfiguration());
+    Path hbaseTestPath = new Path(fs.makeQualified(fs.getHomeDirectory()),"hbase");
+    fs.delete(hbaseTestPath, true);
   }
 
   public void run(Pipeline pipeline) throws Exception {

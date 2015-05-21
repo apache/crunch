@@ -396,7 +396,9 @@ public abstract class DistributedPipeline implements Pipeline {
   private static Path createTempDirectory(Configuration conf) {
     Path dir = createTemporaryPath(conf);
     try {
-      dir.getFileSystem(conf).mkdirs(dir);
+      FileSystem fs = dir.getFileSystem(conf);
+      fs.mkdirs(dir);
+      fs.deleteOnExit(dir);
     } catch (IOException e) {
       throw new RuntimeException("Cannot create job output directory " + dir, e);
     }

@@ -46,12 +46,13 @@ public class DataBaseSourceIT extends CrunchTestSupport implements Serializable 
   public void start() throws Exception {
     File file = tempDir.copyResourceFile("data.script");
     server = Server.createTcpServer().start();
-    RunScript.execute("jdbc:h2:tcp://localhost/~/test", "sa", "", file.getAbsolutePath(), "utf-8", false);
+    RunScript.execute("jdbc:h2:file:/tmp/test", "sa", "", file.getAbsolutePath(), "utf-8", false);
   }
 
   @After
   public void stop() throws Exception {
     server.stop();
+    new File("/tmp/test.h2.db").delete();
   }
 
   @Test
@@ -59,7 +60,7 @@ public class DataBaseSourceIT extends CrunchTestSupport implements Serializable 
     Pipeline pipeline = new MRPipeline(DataBaseSourceIT.class);
     DataBaseSource<IdentifiableName> dbsrc = new DataBaseSource.Builder<IdentifiableName>(IdentifiableName.class)
         .setDriverClass(org.h2.Driver.class)
-        .setUrl("jdbc:h2:tcp://localhost/~/test").setUsername("sa").setPassword("")
+        .setUrl("jdbc:h2:file:/tmp/test").setUsername("sa").setPassword("")
         .selectSQLQuery("SELECT ID, NAME FROM TEST").countSQLQuery("select count(*) from Test").build();
 
     PCollection<IdentifiableName> cdidata = pipeline.read(dbsrc);
