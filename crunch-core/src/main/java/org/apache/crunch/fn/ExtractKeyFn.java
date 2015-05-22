@@ -55,6 +55,11 @@ public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
   }
 
   @Override
+  public float scaleFactor() {
+    return 1.0f + mapFn.scaleFactor();
+  }
+
+  @Override
   public Pair<K, V> map(V input) {
     return Pair.of(mapFn.map(input), input);
   }

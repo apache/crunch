@@ -56,7 +56,12 @@ public class PairMapFn<K, V, S, T> extends MapFn<Pair<K, V>, Pair<S, T>> {
     keys.initialize();
     values.initialize();
   }
-  
+
+  @Override
+  public float scaleFactor() {
+    return (keys.scaleFactor() + values.scaleFactor()) / 2.0f;
+  }
+
   @Override
   public Pair<S, T> map(Pair<K, V> input) {
     return Pair.of(keys.map(input.first()), values.map(input.second()));

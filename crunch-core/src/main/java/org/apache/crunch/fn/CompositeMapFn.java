@@ -74,4 +74,9 @@ public class CompositeMapFn<R, S, T> extends MapFn<R, T> {
     first.configure(conf);
     second.configure(conf);
   }
+
+  @Override
+  public float scaleFactor() {
+    return first.scaleFactor() * second.scaleFactor();
+  }
 }
