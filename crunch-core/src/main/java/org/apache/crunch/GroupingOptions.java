@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.crunch.impl.mr.run.UniformHashPartitioner;
 import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -127,7 +128,7 @@ public class GroupingOptions implements Serializable {
    * 
    */
   public static class Builder {
-    private Class<? extends Partitioner> partitionerClass;
+    private Class<? extends Partitioner> partitionerClass = UniformHashPartitioner.class;
     private Class<? extends RawComparator> groupingComparatorClass;
     private Class<? extends RawComparator> sortComparatorClass;
     private boolean requireSortedKeys;

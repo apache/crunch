@@ -50,7 +50,7 @@ public class AvroIndexedRecordPartitionerTest {
     IndexedRecord indexedRecord = new MockIndexedRecord(-3);
     AvroKey<IndexedRecord> avroKey = new AvroKey<IndexedRecord>(indexedRecord);
 
-    assertEquals(0, avroPartitioner.getPartition(avroKey, new AvroValue<Object>(), 5));
+    assertEquals(1, avroPartitioner.getPartition(avroKey, new AvroValue<Object>(), 5));
     assertEquals(1, avroPartitioner.getPartition(avroKey, new AvroValue<Object>(), 2));
   }
 
@@ -59,7 +59,7 @@ public class AvroIndexedRecordPartitionerTest {
     IndexedRecord indexedRecord = new MockIndexedRecord(Integer.MIN_VALUE);
     AvroKey<IndexedRecord> avroKey = new AvroKey<IndexedRecord>(indexedRecord);
 
-    assertEquals(0, avroPartitioner.getPartition(avroKey, new AvroValue<Object>(), Integer.MAX_VALUE));
+    assertEquals(151558288, avroPartitioner.getPartition(avroKey, new AvroValue<Object>(), Integer.MAX_VALUE));
   }
 
   /**

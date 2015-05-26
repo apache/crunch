@@ -21,14 +21,12 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.avro.io.BinaryData;
 import org.apache.avro.mapred.AvroJob;
-import org.apache.avro.mapred.AvroKey;
-import org.apache.avro.mapred.AvroValue;
 import org.apache.avro.mapred.AvroWrapper;
-import org.apache.avro.reflect.ReflectData;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroMode;
 import org.apache.crunch.types.writable.TupleWritable;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.crunch.util.HashUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.io.DataInputBuffer;
@@ -61,7 +59,7 @@ public class JoinUtils {
   public static class TupleWritablePartitioner extends Partitioner<TupleWritable, Writable> {
     @Override
     public int getPartition(TupleWritable key, Writable value, int numPartitions) {
-      return (key.get(0).hashCode() & Integer.MAX_VALUE) % numPartitions;
+      return (HashUtil.smearHash(key.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }
   }
 
@@ -103,7 +101,7 @@ public class JoinUtils {
       } else {
         throw new UnsupportedOperationException("Unknown avro key type: " + key);
       }
-      return (record.get(0).hashCode() & Integer.MAX_VALUE) % numPartitions;
+      return (HashUtil.smearHash(record.get(0).hashCode()) & Integer.MAX_VALUE) % numPartitions;
     }
   }
 
