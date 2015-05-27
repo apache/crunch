@@ -17,9 +17,11 @@
  */
 package org.apache.crunch;
 
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import java.io.Serializable;
+
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 /**
  * A convenience class for two-element {@link Tuple}s.
@@ -91,9 +93,24 @@ public class Pair<K, V> implements Tuple, Comparable<Pair<K, V>>, Serializable {
     if (lhs == rhs) {
       return 0;
     } else if (lhs != null && Comparable.class.isAssignableFrom(lhs.getClass())) {
-      return ((Comparable) lhs).compareTo(rhs);
+      return Ordering.natural().nullsLast().compare((Comparable) lhs, (Comparable) rhs);//(Comparable) lhs).compareTo(rhs);
     }
-    return (lhs == null ? 0 : lhs.hashCode()) - (rhs == null ? 0 : rhs.hashCode());
+    if (lhs == null) {
+      return 1; // nulls last
+    }
+    if (rhs == null) {
+      return -1; // nulls last
+    }
+    if (lhs.equals(rhs)) {
+      return 0;
+    }
+
+    // Now we compare based on hash code. We already know that the two sides are not equal, so
+    // if the hash codes are equal, we just use arbitrary (but consistent) ordering
+    return ComparisonChain.start()
+        .compare(lhs.hashCode(), rhs.hashCode())
+        .compare(lhs, rhs, Ordering.arbitrary())
+        .result();
   }
 
   @Override
