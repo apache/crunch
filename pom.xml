@@ -59,8 +59,8 @@ under the License.
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.source.version>1.6</java.source.version>
-    <java.target.version>1.6</java.target.version>
+    <java.source.version>1.7</java.source.version>
+    <java.target.version>1.7</java.target.version>
     <!--
         NOTE: Please don't change any dependency versions here without
               checking first that they match those on Hadoop's runtime
@@ -82,7 +82,7 @@ under the License.
     <libthrift.version>0.8.0</libthrift.version>
     <slf4j.version>1.6.1</slf4j.version>
     <log4j.version>1.2.15</log4j.version>
-    <algebird.version>0.6.0</algebird.version>
+    <algebird.version>0.9.0</algebird.version>
     <junit.version>4.10</junit.version>
     <hamcrest.version>1.1</hamcrest.version>
     <mockito.version>1.9.0</mockito.version>
@@ -95,8 +95,9 @@ under the License.
 
     <scala.base.version>2.10</scala.base.version>
     <scala.version>2.10.4</scala.version>
-    <scalatest.version>1.9.1</scalatest.version>
-    <spark.version>1.2.0</spark.version>
+    <scalatest.version>2.2.4</scalatest.version>
+    <spark.version>1.3.1</spark.version>
+    <jline.version>2.10.4</jline.version>
     <jsr305.version>1.3.9</jsr305.version>
   </properties>
 
@@ -427,7 +428,7 @@ under the License.
       <dependency>
         <groupId>org.scala-lang</groupId>
         <artifactId>jline</artifactId>
-        <version>${scala.version}</version>
+        <version>${jline.version}</version>
       </dependency>
 
       <dependency>

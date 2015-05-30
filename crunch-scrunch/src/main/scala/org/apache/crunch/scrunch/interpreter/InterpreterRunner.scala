@@ -31,7 +31,6 @@ import scala.tools.nsc.ScriptRunner
 import scala.tools.nsc.interpreter.ILoop
 import scala.tools.nsc.io.Jar
 import scala.tools.nsc.io.VirtualDirectory
-
 import com.google.common.io.Files
 import org.apache.hadoop.conf.Configuration
 
@@ -127,7 +126,7 @@ object InterpreterRunner extends MainGenericRunner {
       ScriptRunner.runCommand(settings, combinedCode, thingToRun +: command.arguments)
     }
     else runTarget() match {
-      case Left(ex) => errorFn(ex)
+      case Left(ex) => errorFn(ex.toString())
       case Right(b) => b
     }
   }
@@ -146,7 +145,7 @@ object InterpreterRunner extends MainGenericRunner {
   def createReplCodeJar(): File = {
     var jarStream: JarOutputStream = null
     try {
-      val virtualDirectory = repl.virtualDirectory
+      val virtualDirectory = repl.intp.virtualDirectory.asInstanceOf[VirtualDirectory]
       val tempDir = Files.createTempDir()
       val tempJar = new File(tempDir, "replJar.jar")
       jarStream = new JarOutputStream(new FileOutputStream(tempJar))
