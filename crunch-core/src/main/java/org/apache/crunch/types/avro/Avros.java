@@ -491,8 +491,6 @@ public class Avros {
     private final TupleFactory<?> tupleFactory;
     private final List<MapFn> fns;
 
-    private transient Object[] values;
-
     public GenericRecordToTuple(TupleFactory<?> tupleFactory, PType<?>... ptypes) {
       this.tupleFactory = tupleFactory;
       this.fns = Lists.newArrayList();
@@ -521,12 +519,12 @@ public class Avros {
       for (MapFn fn : fns) {
         fn.initialize();
       }
-      this.values = new Object[fns.size()];
       tupleFactory.initialize();
     }
 
     @Override
     public Tuple map(GenericRecord input) {
+      Object[] values = new Object[fns.size()];
       for (int i = 0; i < values.length; i++) {
         Object v = input.get(i);
         if (v == null) {
