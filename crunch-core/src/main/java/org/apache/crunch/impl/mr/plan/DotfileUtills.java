@@ -58,7 +58,6 @@ public class DotfileUtills {
    * Builds a lineage dotfile only if the dotfile-debug mode is enabled.
    */
   void buildLineageDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs) {
-
     if (isDebugDotfilesEnabled(conf)) {
       try {
         pcollectionLineageDotfile = new DotfileWriterPCollectionLineage(outputs)
@@ -73,7 +72,6 @@ public class DotfileUtills {
    * Builds the base graph dotfile only if the dotfile-debug mode is enabled.
    */
   void buildBaseGraphDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph) {
-
     if (isDebugDotfilesEnabled(conf)) {
       try {
         basePlanGraphDotfile = new DotfileWriterGraph(graph, outputs, null).buildDiagram("Base Graph ("
@@ -85,15 +83,13 @@ public class DotfileUtills {
   }
 
   /**
-   * Builds a splitted graph dotfile only if the dotfile-debug mode is enabled.
+   * Builds a split graph dotfile only if the dotfile-debug mode is enabled.
    */
   void buildSplitGraphDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph, List<List<Vertex>> components) {
-
     if (isDebugDotfilesEnabled(conf)) {
       try {
-        splitGraphPlanDotfile = new DotfileWriterGraph(graph, outputs, null).buildDiagram("Graph With Components ("
-            + jarClass.getSimpleName() + ")");
-
+        splitGraphPlanDotfile = new DotfileWriterGraph(graph, outputs, components)
+            .buildDiagram("Graph With Components (" + jarClass.getSimpleName() + ")");
       } catch (Exception ex) {
         LOG.error("Problem creating debug dotfile:", ex);
       }
