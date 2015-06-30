@@ -41,6 +41,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
+import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormatBase;
 import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
@@ -65,7 +66,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   protected Scan[] scans;
   protected String scansAsString;
-  private FormatBundle<MultiTableInputFormat> inputBundle;
+  private FormatBundle<? extends MultiTableInputFormatBase> inputBundle;
   
   public HBaseSourceTarget(String table, Scan scan) {
     this(table, new Scan[] { scan });
@@ -76,6 +77,10 @@ public class HBaseSourceTarget extends HBaseTarget implements
   }
   
   public HBaseSourceTarget(String table, Scan[] scans) {
+    this(table, MultiTableInputFormat.class, scans);
+  }
+
+  public HBaseSourceTarget(String table, Class<? extends MultiTableInputFormatBase> clazz,  Scan[] scans) {
     super(table);
     this.scans = scans;
 
@@ -94,7 +99,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
       }
       this.scans = tableScans;
       this.scansAsString = StringUtils.arrayToString(scanStrings);
-      this.inputBundle = FormatBundle.forInput(MultiTableInputFormat.class)
+      this.inputBundle = FormatBundle.forInput(clazz)
           .set(MultiTableInputFormat.SCANS, scansAsString);
     } catch (IOException e) {
       throw new RuntimeException(e);

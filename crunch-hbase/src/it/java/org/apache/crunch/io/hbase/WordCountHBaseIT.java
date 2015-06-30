@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
@@ -48,6 +49,8 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
+import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
+import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormatBase;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.After;
 import org.junit.Before;
@@ -129,6 +132,12 @@ public class WordCountHBaseIT {
     run(new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration()));
   }
 
+  @Test
+  public void testWordCountCustomFormat() throws Exception {
+    run(new MRPipeline(WordCountHBaseIT.class, hbaseTestUtil.getConfiguration()), MyTableInputFormat.class);
+    assertTrue(MyTableInputFormat.CONSTRUCTED.get());
+  }
+
   @After
   public void tearDown() throws Exception {
     hbaseTestUtil.shutdownMiniHBaseCluster();
@@ -136,6 +145,10 @@ public class WordCountHBaseIT {
   }
 
   public void run(Pipeline pipeline) throws Exception {
+    run(pipeline, null);
+  }
+
+  public void run(Pipeline pipeline, Class<? extends MultiTableInputFormatBase> clazz) throws Exception {
 
     Random rand = new Random();
     int postFix = rand.nextInt() & 0x7FFFFFFF;
@@ -163,7 +176,13 @@ public class WordCountHBaseIT {
     scan.addFamily(WORD_COLFAM);
     scan2.setStartRow(cutoffPoint);
 
-    HBaseSourceTarget source = new HBaseSourceTarget(inputTableName, scan, scan2);
+    HBaseSourceTarget source = null;
+    if(clazz == null){
+      source = new HBaseSourceTarget(inputTableName, scan, scan2);
+    }else{
+      source = new HBaseSourceTarget(inputTableName, clazz, new Scan[]{scan, scan2});
+    }
+
     PTable<ImmutableBytesWritable, Result> words = pipeline.read(source);
 
     Map<ImmutableBytesWritable, Result> materialized = words.materializeToMap();
@@ -235,6 +254,15 @@ public class WordCountHBaseIT {
     get.addFamily(COUNTS_COLFAM);
     Result result = table.get(get);
     assertTrue(result.isEmpty());
+  }
+
+  public static class MyTableInputFormat extends MultiTableInputFormat{
+
+    public static final AtomicBoolean CONSTRUCTED = new AtomicBoolean();
+
+    public MyTableInputFormat(){
+      CONSTRUCTED.set(true);
+    }
   }
 
 }
