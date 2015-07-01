@@ -60,7 +60,7 @@ public class MultiStagePlanningIT implements Serializable {
 
         PTable<String, String> addressesTable = pipeline.readTextFile(addressesFile)
                 .parallelDo("Split addresses", new StringToPairMapFn(), tableOf(strings(), strings()))
-                .filter(new FilterFn<Pair<String, String>>() {
+                .filter(new IFilterFn<Pair<String, String>>() {
                     @Override
                     public boolean accept(Pair<String, String> input) {
                         // This is odd but it is the simpler way of simulating this would take longer than

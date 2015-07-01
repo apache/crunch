@@ -31,6 +31,10 @@ import org.apache.crunch.Aggregator;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.FilterFn;
+import org.apache.crunch.IFilterFn;
+import org.apache.crunch.IFlatMapFn;
+import org.apache.crunch.IDoFn;
+import org.apache.crunch.IMapFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
@@ -42,6 +46,7 @@ import org.apache.crunch.ReadableData;
 import org.apache.crunch.PipelineCallable;
 import org.apache.crunch.Target;
 import org.apache.crunch.fn.ExtractKeyFn;
+import org.apache.crunch.fn.IFnHelpers;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mem.emit.InMemoryEmitter;
 import org.apache.crunch.lib.Aggregate;
@@ -59,7 +64,6 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 
 public class MemCollection<S> implements PCollection<S> {
 
@@ -156,6 +160,84 @@ public class MemCollection<S> implements PCollection<S> {
     }
     doFn.cleanup(emitter);
     return new MemTable<K, V>(emitter.getOutput(), type, name);
+  }
+
+  @Override
+  public <T> PCollection<T> parallelDo(IDoFn<S, T> fn, PType<T> type) {
+    return parallelDo(null, fn, type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> parallelDo(IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(null, fn, type);
+  }
+
+  @Override
+  public <T> PCollection<T> parallelDo(String name, IDoFn<S, T> fn, PType<T> type) {
+    return parallelDo(name, fn, type, null);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> parallelDo(String name, IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(name, fn, type, null);
+  }
+
+  @Override
+  public <T> PCollection<T> parallelDo(String name, IDoFn<S, T> fn, PType<T> type, ParallelDoOptions options) {
+    return parallelDo(name, IFnHelpers.wrap(fn), type, options);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> parallelDo(String name, IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type, ParallelDoOptions options) {
+    return parallelDo(name, IFnHelpers.wrap(fn), type, options);
+  }
+
+  @Override
+  public <T> PCollection<T> flatMap(IFlatMapFn<S, T> fn, PType<T> type) {
+    return parallelDo(IFnHelpers.wrapFlatMap(fn), type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> flatMap(IFlatMapFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(IFnHelpers.wrapFlatMap(fn), type);
+  }
+
+  @Override
+  public <T> PCollection<T> flatMap(String name, IFlatMapFn<S, T> fn, PType<T> type) {
+    return parallelDo(name, IFnHelpers.wrapFlatMap(fn), type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> flatMap(String name, IFlatMapFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(name, IFnHelpers.wrapFlatMap(fn), type);
+  }
+
+  @Override
+  public <T> PCollection<T> map(IMapFn<S, T> fn, PType<T> type) {
+    return parallelDo(IFnHelpers.wrapMap(fn), type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> map(IMapFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(IFnHelpers.wrapMap(fn), type);
+  }
+
+  @Override
+  public <T> PCollection<T> map(String name, IMapFn<S, T> fn, PType<T> type) {
+    return parallelDo(name, IFnHelpers.wrapMap(fn), type);
+  }
+
+  @Override
+  public <K, V> PTable<K, V> map(String name, IMapFn<S, Pair<K, V>> fn, PTableType<K, V> type) {
+    return parallelDo(name, IFnHelpers.wrapMap(fn), type);
+  }
+
+  public PCollection<S> filter(IFilterFn<S> fn) {
+    return filter(IFnHelpers.wrapFilter(fn));
+  }
+
+  public PCollection<S> filter(String name, IFilterFn<S> fn) {
+    return filter(name, IFnHelpers.wrapFilter(fn));
   }
 
   @Override
@@ -277,6 +359,11 @@ public class MemCollection<S> implements PCollection<S> {
   @Override
   public <K> PTable<K, S> by(MapFn<S, K> mapFn, PType<K> keyType) {
     return parallelDo(new ExtractKeyFn<K, S>(mapFn), getTypeFamily().tableOf(keyType, getPType()));
+  }
+
+  @Override
+  public <K> PTable<K, S> by(IMapFn<S, K> mapFn, PType<K> keyType) {
+    return parallelDo(new ExtractKeyFn<K, S>(IFnHelpers.wrapMap(mapFn)), getTypeFamily().tableOf(keyType, getPType()));
   }
 
   @Override

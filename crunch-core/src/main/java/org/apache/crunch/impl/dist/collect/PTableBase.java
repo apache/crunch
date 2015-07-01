@@ -21,6 +21,8 @@ import com.google.common.collect.Lists;
 import org.apache.crunch.CachingOptions;
 import org.apache.crunch.FilterFn;
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.IFilterFn;
+import org.apache.crunch.IMapFn;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PObject;
@@ -29,6 +31,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.Target;
+import org.apache.crunch.fn.IFnHelpers;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.lib.Cogroup;
@@ -130,12 +133,27 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> imple
   public PTable<K, V> filter(String name, FilterFn<Pair<K, V>> filterFn) {
     return parallelDo(name, filterFn, getPTableType());
   }
-  
+
+  @Override
+  public PTable<K, V> filter(IFilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(IFnHelpers.wrapFilter(filterFn), getPTableType());
+  }
+
+  @Override
+  public PTable<K, V> filter(String name, IFilterFn<Pair<K, V>> filterFn) {
+    return parallelDo(name, IFnHelpers.wrapFilter(filterFn), getPTableType());
+  }
+
   @Override
   public <U> PTable<K, U> mapValues(MapFn<V, U> mapFn, PType<U> ptype) {
     return PTables.mapValues(this, mapFn, ptype);
   }
-  
+
+  @Override
+  public <U> PTable<K, U> mapValues(IMapFn<V, U> mapFn, PType<U> ptype) {
+    return PTables.mapValues(this, IFnHelpers.wrapMap(mapFn), ptype);
+  }
+
   @Override
   public <U> PTable<K, U> mapValues(String name, MapFn<V, U> mapFn, PType<U> ptype) {
     return PTables.mapValues(name, this, mapFn, ptype);
@@ -145,7 +163,12 @@ public abstract class PTableBase<K, V> extends PCollectionImpl<Pair<K, V>> imple
   public <K2> PTable<K2, V> mapKeys(MapFn<K, K2> mapFn, PType<K2> ptype) {
     return PTables.mapKeys(this, mapFn, ptype);
   }
-  
+
+  @Override
+  public <K2> PTable<K2, V> mapKeys(IMapFn<K, K2> mapFn, PType<K2> ptype) {
+    return PTables.mapKeys(this, IFnHelpers.wrapMap(mapFn), ptype);
+  }
+
   @Override
   public <K2> PTable<K2, V> mapKeys(String name, MapFn<K, K2> mapFn, PType<K2> ptype) {
     return PTables.mapKeys(name, this, mapFn, ptype);

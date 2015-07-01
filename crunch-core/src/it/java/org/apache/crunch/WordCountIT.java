@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.crunch.fn.Aggregators;
@@ -51,15 +52,15 @@ public class WordCountIT {
   }
 
   public static PTable<String, Long> wordCount(PCollection<String> words, PTypeFamily typeFamily) {
-    return Aggregate.count(words.parallelDo(new DoFn<String, String>() {
-
+    return Aggregate.count(words.parallelDo(new IDoFn<String, String>() {
       @Override
-      public void process(String line, Emitter<String> emitter) {
-        for (String word : line.split("\\s+")) {
-          emitter.emit(word);
+      public void process(Context<String, String> context) {
+        List<String> words = Arrays.asList(context.element().split("\\s+"));
+        for (String word : words) {
           if ("and".equals(word)) {
-            increment(WordCountStats.ANDS);
+            context.increment(WordCountStats.ANDS);
           }
+          context.emit(word);
         }
       }
     }, typeFamily.strings()));
