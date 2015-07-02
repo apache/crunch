@@ -87,10 +87,10 @@ public class MSCRPlanner {
 
   public MRExecutor plan(Class<?> jarClass, Configuration conf) throws IOException {
 
-    DotfileUtills dotfileUtills = new DotfileUtills(jarClass, conf);
+    DotfileUtil dotfileUtil = new DotfileUtil(jarClass, conf);
 
     // Generate the debug lineage dotfiles (if configuration is enabled)
-    dotfileUtills.buildLineageDotfile(outputs);
+    dotfileUtil.buildLineageDotfile(outputs);
 
     Map<PCollectionImpl<?>, Set<Target>> targetDeps = Maps.newTreeMap(DEPTH_COMPARATOR);
     for (PCollectionImpl<?> pcollect : outputs.keySet()) {
@@ -137,8 +137,8 @@ public class MSCRPlanner {
       List<List<Vertex>> components = graph.connectedComponents();
 
       // Generate the debug graph dotfiles (if configuration is enabled)
-      dotfileUtills.buildBaseGraphDotfile(outputs, graph);
-      dotfileUtills.buildSplitGraphDotfile(outputs, graph, components);
+      dotfileUtil.buildBaseGraphDotfile(outputs, graph);
+      dotfileUtil.buildSplitGraphDotfile(outputs, graph, components);
 
       // For each component, we will create one or more job prototypes,
       // depending on its profile.
@@ -207,17 +207,17 @@ public class MSCRPlanner {
     MRExecutor exec = new MRExecutor(conf, jarClass, outputs, toMaterialize, appendedTargets, pipelineCallables);
 
     // Generate the debug Plan dotfiles
-    dotfileUtills.buildPlanDotfile(exec, assignments, pipeline, lastJobID);
+    dotfileUtil.buildPlanDotfile(exec, assignments, pipeline, lastJobID);
 
     for (JobPrototype proto : Sets.newHashSet(assignments.values())) {
       exec.addJob(proto.getCrunchJob(jarClass, conf, pipeline, lastJobID));
     }
 
     // Generate the debug RTNode dotfiles (if configuration is enabled)
-    dotfileUtills.buildRTNodesDotfile(exec);
+    dotfileUtil.buildRTNodesDotfile(exec);
 
     // Attach the dotfiles to the MRExcutor context
-    dotfileUtills.addDotfilesToContext(exec);
+    dotfileUtil.addDotfilesToContext(exec);
 
     return exec;
   }

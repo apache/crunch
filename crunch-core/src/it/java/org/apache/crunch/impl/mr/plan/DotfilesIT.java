@@ -76,7 +76,7 @@ public class DotfilesIT {
 
     Configuration conf = tmpDir.getDefaultConfiguration();
 
-    DotfileUtills.setPipelineDotfileOutputDir(conf, dotfileDir.getRootFileName());
+    DotfileUtil.setPipelineDotfileOutputDir(conf, dotfileDir.getRootFileName());
 
     run(new MRPipeline(DotfilesIT.class, conf), WritableTypeFamily.getInstance());
 
@@ -109,8 +109,8 @@ public class DotfilesIT {
 
     Configuration conf = tmpDir.getDefaultConfiguration();
 
-    DotfileUtills.setPipelineDotfileOutputDir(conf, dotfileDir.getRootFileName());
-    DotfileUtills.enableDebugDotfiles(conf);
+    DotfileUtil.setPipelineDotfileOutputDir(conf, dotfileDir.getRootFileName());
+    DotfileUtil.enableDebugDotfiles(conf);
 
     run(new MRPipeline(DotfilesIT.class, conf), WritableTypeFamily.getInstance());
 
@@ -133,7 +133,7 @@ public class DotfilesIT {
 
     Configuration conf = tmpDir.getDefaultConfiguration();
 
-    DotfileUtills.enableDebugDotfiles(conf);
+    DotfileUtil.enableDebugDotfiles(conf);
 
     run(new MRPipeline(DotfilesIT.class, conf), WritableTypeFamily.getInstance());
 
