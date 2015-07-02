@@ -98,6 +98,7 @@ public class HBaseTarget implements MapReduceTarget {
     
     try {
       TableMapReduceUtil.addDependencyJars(job);
+      TableMapReduceUtil.initCredentials(job);
       FileOutputFormat.setOutputPath(job, outputPath);
     } catch (IOException e) {
       throw new CrunchRuntimeException(e);
