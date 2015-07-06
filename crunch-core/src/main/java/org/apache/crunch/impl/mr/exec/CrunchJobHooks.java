@@ -18,9 +18,11 @@
 package org.apache.crunch.impl.mr.exec;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
+import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.PathTarget;
 import org.apache.hadoop.conf.Configuration;
@@ -33,19 +35,29 @@ public final class CrunchJobHooks {
 
   private CrunchJobHooks() {}
 
-  /** Creates missing input directories before job is submitted. */
-  public static final class PrepareHook implements CrunchControlledJob.Hook {
-    private final Job job;
+  public static final class CompositeHook implements CrunchControlledJob.Hook {
 
-    public PrepareHook(Job job) {
-      this.job = job;
+    private List<CrunchControlledJob.Hook> hooks;
+
+    public CompositeHook(List<CrunchControlledJob.Hook> hooks) {
+      this.hooks = hooks;
     }
 
     @Override
-    public void run() throws IOException {
-      Configuration conf = job.getConfiguration();
+    public void run(MRJob job) throws IOException {
+      for (CrunchControlledJob.Hook hook : hooks) {
+        hook.run(job);
+      }
+    }
+  }
+
+  /** Creates missing input directories before job is submitted. */
+  public static final class PrepareHook implements CrunchControlledJob.Hook {
+    @Override
+    public void run(MRJob job) throws IOException {
+      Configuration conf = job.getJob().getConfiguration();
       if (conf.getBoolean(RuntimeParameters.CREATE_DIR, false)) {
-        Path[] inputPaths = FileInputFormat.getInputPaths(job);
+        Path[] inputPaths = FileInputFormat.getInputPaths(job.getJob());
         for (Path inputPath : inputPaths) {
           FileSystem fs = inputPath.getFileSystem(conf);
           if (!fs.exists(inputPath)) {
@@ -61,25 +73,20 @@ public final class CrunchJobHooks {
 
   /** Moving output files produced by the MapReduce job to specified directories. */
   public static final class CompletionHook implements CrunchControlledJob.Hook {
-    private final Job job;
     private final Path workingPath;
     private final Map<Integer, PathTarget> multiPaths;
-    private final boolean mapOnlyJob;
 
-    public CompletionHook(Job job, Path workingPath, Map<Integer, PathTarget> multiPaths,
-        boolean mapOnlyJob) {
-      this.job = job;
+    public CompletionHook(Path workingPath, Map<Integer, PathTarget> multiPaths) {
       this.workingPath = workingPath;
       this.multiPaths = multiPaths;
-      this.mapOnlyJob = mapOnlyJob;
     }
 
     @Override
-    public void run() throws IOException {
-      handleMultiPaths();
+    public void run(MRJob job) throws IOException {
+      handleMultiPaths(job.getJob());
     }
 
-    private synchronized void handleMultiPaths() throws IOException {
+    private synchronized void handleMultiPaths(Job job) throws IOException {
       try {
         if (job.isSuccessful()) {
           if (!multiPaths.isEmpty()) {

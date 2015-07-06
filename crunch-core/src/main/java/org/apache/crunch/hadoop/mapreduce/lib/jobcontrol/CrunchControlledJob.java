@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
 public class CrunchControlledJob implements MRJob {
 
   public static interface Hook {
-    public void run() throws IOException;
+    public void run(MRJob job) throws IOException;
   }
 
   private static final Logger LOG = LoggerFactory.getLogger(CrunchControlledJob.class);
@@ -285,7 +285,7 @@ public class CrunchControlledJob implements MRJob {
       }
     }
     if (isCompleted()) {
-      completionHook.run();
+      completionHook.run(this);
       this.postHookEndTimeMsec = System.currentTimeMillis();
     }
   }
@@ -335,7 +335,7 @@ public class CrunchControlledJob implements MRJob {
   protected synchronized void submit() {
     try {
       this.preHookStartTimeMsec = System.currentTimeMillis();
-      prepareHook.run();
+      prepareHook.run(this);
       this.jobStartTimeMsec = System.currentTimeMillis();
       job.submit();
       this.state = State.RUNNING;

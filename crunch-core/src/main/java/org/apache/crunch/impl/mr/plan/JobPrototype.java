@@ -27,6 +27,7 @@ import org.apache.crunch.Pipeline;
 import org.apache.crunch.Target;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
+import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.collect.DoTable;
 import org.apache.crunch.impl.dist.collect.MRCollection;
 import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
@@ -130,7 +131,7 @@ class JobPrototype {
   }
 
   public CrunchControlledJob getCrunchJob(
-      Class<?> jarClass, Configuration conf, Pipeline pipeline, int numOfJobs) throws IOException {
+      Class<?> jarClass, Configuration conf, MRPipeline pipeline, int numOfJobs) throws IOException {
     if (job == null) {
       job = build(jarClass, conf, pipeline, numOfJobs);
       for (JobPrototype proto : dependencies) {
@@ -141,7 +142,7 @@ class JobPrototype {
   }
 
   private CrunchControlledJob build(
-      Class<?> jarClass, Configuration conf, Pipeline pipeline, int numOfJobs) throws IOException {
+      Class<?> jarClass, Configuration conf, MRPipeline pipeline, int numOfJobs) throws IOException {
     Job job = new Job(conf);
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
@@ -229,13 +230,29 @@ class JobPrototype {
     }
     JobNameBuilder jobNameBuilder = createJobNameBuilder(conf, pipeline.getName(), inputNodes, reduceNode, numOfJobs);
 
+    CrunchControlledJob.Hook prepareHook = getHook(new CrunchJobHooks.PrepareHook(), pipeline.getPrepareHooks());
+    CrunchControlledJob.Hook completionHook = getHook(
+        new CrunchJobHooks.CompletionHook(outputPath, outputHandler.getMultiPaths()),
+        pipeline.getCompletionHooks());
     return new CrunchControlledJob(
         jobID,
         job,
         jobNameBuilder,
         allTargets,
-        new CrunchJobHooks.PrepareHook(job),
-        new CrunchJobHooks.CompletionHook(job, outputPath, outputHandler.getMultiPaths(), group == null));
+        prepareHook,
+        completionHook);
+  }
+
+  private static CrunchControlledJob.Hook getHook(
+      CrunchControlledJob.Hook base,
+      List<CrunchControlledJob.Hook> optional) {
+    if (optional.isEmpty()) {
+      return base;
+    }
+    List<CrunchControlledJob.Hook> hooks = Lists.newArrayList();
+    hooks.add(base);
+    hooks.addAll(optional);
+    return new CrunchJobHooks.CompositeHook(hooks);
   }
 
   private void serialize(List<DoNode> nodes, Configuration conf, Path workingPath, NodeContext context)

@@ -20,9 +20,12 @@ package org.apache.crunch;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
+import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.To;
 import org.apache.crunch.test.TemporaryPath;
@@ -63,7 +66,11 @@ public class CleanTextIT {
   
   @Test
   public void testMapSideOutputs() throws Exception {
-    Pipeline pipeline = new MRPipeline(CleanTextIT.class, tmpDir.getDefaultConfiguration());
+    MRPipeline pipeline = new MRPipeline(CleanTextIT.class, tmpDir.getDefaultConfiguration());
+    JobHook prepareOne = new JobHook();
+    JobHook prepareTwo = new JobHook();
+    JobHook completed = new JobHook();
+    pipeline.addPrepareHook(prepareOne).addPrepareHook(prepareTwo).addCompletionHook(completed);
     String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
     
@@ -78,5 +85,18 @@ public class CleanTextIT {
     File cleanFile = new File(cso, "part-m-00000");
     List<String> lines = Files.readLines(cleanFile, Charset.defaultCharset());
     assertEquals(LINES_IN_SHAKES, lines.size());
+    assertEquals(1, prepareOne.called);
+    assertEquals(1, prepareTwo.called);
+    assertEquals(1, completed.called);
+  }
+
+  static class JobHook implements CrunchControlledJob.Hook {
+
+    int called = 0;
+
+    @Override
+    public void run(MRJob job) throws IOException {
+      called++;
+    }
   }
 }
