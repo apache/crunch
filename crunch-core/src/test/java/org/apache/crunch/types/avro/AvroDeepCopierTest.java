@@ -22,11 +22,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 
 import com.google.common.collect.Lists;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.test.Person;
+import org.apache.crunch.types.PType;
 import org.apache.crunch.types.avro.AvroDeepCopier.AvroSpecificDeepCopier;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
@@ -85,6 +90,31 @@ public class AvroDeepCopierTest {
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);
 
+  }
+
+  @Test
+  public void testSerializableReflectPType() throws Exception {
+    ReflectedPerson person = new ReflectedPerson();
+    person.setName("John Doe");
+    person.setAge(42);
+    person.setSiblingnames(Lists.<String>newArrayList());
+
+    PType<ReflectedPerson> rptype = Avros.reflects(ReflectedPerson.class);
+    rptype.initialize(new Configuration());
+    ReflectedPerson copy1 = rptype.getDetachedValue(person);
+    assertEquals(copy1, person);
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = new ObjectOutputStream(baos);
+    oos.writeObject(rptype);
+    oos.close();
+
+    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+    rptype = (PType<ReflectedPerson>) ois.readObject();
+
+    rptype.initialize(new Configuration());
+    ReflectedPerson copy2 = rptype.getDetachedValue(person);
+    assertEquals(person, copy2);
   }
 
   @Test

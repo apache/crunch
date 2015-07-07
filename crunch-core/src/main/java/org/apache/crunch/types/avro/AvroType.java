@@ -70,7 +70,7 @@ public class AvroType<T> implements PType<T> {
   private final List<PType> subTypes;
   private AvroRecordType recordType;
   private DeepCopier<T> deepCopier;
-  private boolean initialized = false;
+  private transient boolean initialized = false;
 
   public AvroType(Class<T> typeClass, Schema schema, DeepCopier<T> deepCopier, PType... ptypes) {
     this(typeClass, schema, IdentityFn.getInstance(), IdentityFn.getInstance(), deepCopier, null, ptypes);

@@ -99,10 +99,10 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
    */
   public static class AvroReflectDeepCopier<T> extends AvroDeepCopier<T> {
 
-    private DatumReader<T> datumReader;
-    private DatumWriter<T> datumWriter;
-    private BinaryEncoder binaryEncoder;
-    private BinaryDecoder binaryDecoder;
+    private transient DatumReader<T> datumReader;
+    private transient DatumWriter<T> datumWriter;
+    private transient BinaryEncoder binaryEncoder;
+    private transient BinaryDecoder binaryDecoder;
     private final Class<T> valueClass;
 
     public AvroReflectDeepCopier(Class<T> valueClass, Schema schema) {
