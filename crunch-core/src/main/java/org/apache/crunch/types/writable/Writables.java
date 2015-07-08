@@ -18,21 +18,20 @@
 package org.apache.crunch.types.writable;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.Pair;
@@ -130,22 +129,25 @@ public class Writables {
 
   private static final String WRITABLE_COMPARABLE_CODES = "crunch.writable.comparable.codes";
 
-  private static void serializeWritableComparableCodes(Configuration conf) throws IOException {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = new ObjectOutputStream(baos);
-    oos.writeObject(WRITABLE_CODES);
-    oos.close();
-    conf.set(WRITABLE_COMPARABLE_CODES, Base64.encodeBase64String(baos.toByteArray()));
+  static void serializeWritableComparableCodes(Configuration conf) throws IOException {
+    Map<Integer, String> codeToClassNameMap = Maps.transformValues(WRITABLE_CODES,
+        new Function<Class<? extends Writable>, String>() {
+          @Override
+          public String apply(Class<? extends Writable> input) {
+            return input.getName();
+          }
+        });
+    conf.set(WRITABLE_COMPARABLE_CODES, Joiner.on(';').withKeyValueSeparator(":").join(codeToClassNameMap));
   }
 
   static void reloadWritableComparableCodes(Configuration conf) throws Exception {
     if (conf.get(WRITABLE_COMPARABLE_CODES) != null) {
-      ByteArrayInputStream bais = new ByteArrayInputStream(Base64.decodeBase64(conf.get(WRITABLE_COMPARABLE_CODES)));
-      ObjectInputStream ois = new ObjectInputStream(bais);
-      BiMap<Integer, Class<? extends Writable>> codes = (BiMap<Integer, Class<? extends Writable>>) ois.readObject();
-      ois.close();
-      for (Map.Entry<Integer, Class<? extends Writable>> e : codes.entrySet()) {
-        WRITABLE_CODES.put(e.getKey(), e.getValue());
+      Map<String, String> codeToClassName = Splitter.on(';')
+          .withKeyValueSeparator(":").split(conf.get(WRITABLE_COMPARABLE_CODES));
+      for (Map.Entry<String, String> codeToClassNameEntry : codeToClassName.entrySet()) {
+        WRITABLE_CODES.put(
+            Integer.parseInt(codeToClassNameEntry.getKey()),
+            (Class<? extends Writable>) Class.forName(codeToClassNameEntry.getValue()));
       }
     }
   }

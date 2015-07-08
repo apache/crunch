@@ -34,6 +34,7 @@ import org.apache.crunch.Tuple4;
 import org.apache.crunch.TupleN;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -251,6 +252,13 @@ public class WritablesTest {
   @Test
   public void testRegisterComparable() throws Exception {
     Writables.registerComparable(TestWritable.class);
+    assertNotNull(Writables.WRITABLE_CODES.inverse().get(TestWritable.class));
+
+    // Also try serializing/deserializing from a configuration, just to make sure this works
+    Configuration conf = new Configuration();
+    Writables.serializeWritableComparableCodes(conf);
+    Writables.WRITABLE_CODES.clear();
+    Writables.reloadWritableComparableCodes(conf);
     assertNotNull(Writables.WRITABLE_CODES.inverse().get(TestWritable.class));
   }
 
