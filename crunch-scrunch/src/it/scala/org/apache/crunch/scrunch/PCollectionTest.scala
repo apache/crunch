@@ -71,22 +71,6 @@ class PCollectionTest extends CrunchSuite {
   }
 
   /**
-   * Tests sampling elements from a PCollection using some acceptance probability.
-   */
-  @Test def testSampling {
-    // Get the collection and sample ten percent.
-    val shakespeare = shakespeareCollection
-    val sampledCollection = shakespeare.sample(0.10)
-    val length = sampledCollection.length().value()
-    // The number of lines in the sampled collection should be about ten percent of the lines in
-    // the original collection. We use a tolerance of +- 50.
-    val lower = linesInShakespeare * 0.10 - 50
-    val upper = linesInShakespeare * 0.10 + 50
-    assertTrue("Sampled collection contains too few elements.", lower <= length)
-    assertTrue("Sampled collection contains too many elements.", length <= upper)
-  }
-
-  /**
    * Tests sampling elements from a PCollection using some acceptance probability and a seed.
    */
   @Test def testSamplingWithSeed {
