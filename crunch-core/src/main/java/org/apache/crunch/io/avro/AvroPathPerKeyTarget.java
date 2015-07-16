@@ -91,26 +91,41 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
       LOG.warn("Nothing to copy from {}", base);
       return;
     }
-    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base));
     FileSystem dstFs = path.getFileSystem(conf);
+    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(base));
     if (!dstFs.exists(path)) {
       dstFs.mkdirs(path);
     }
     boolean sameFs = isCompatible(srcFs, path);
+    move(conf, base, srcFs, path, dstFs, sameFs);
+    dstFs.create(getSuccessIndicator(), true).close();
+  }
+
+  private void move(Configuration conf, Path srcBase, FileSystem srcFs, Path dstBase, FileSystem dstFs, boolean sameFs)
+      throws IOException {
+    Path[] keys = FileUtil.stat2Paths(srcFs.listStatus(srcBase));
+    if (!dstFs.exists(dstBase)) {
+      dstFs.mkdirs(dstBase);
+    }
     for (Path key : keys) {
       Path[] srcs = FileUtil.stat2Paths(srcFs.listStatus(key), key);
-      Path targetPath = new Path(path, key.getName());
+      Path targetPath = new Path(dstBase, key.getName());
       dstFs.mkdirs(targetPath);
       for (Path s : srcs) {
-        Path d = getDestFile(conf, s, targetPath, s.getName().contains("-m-"));
-        if (sameFs) {
-          srcFs.rename(s, d);
+        if (srcFs.isDirectory(s)) {
+          Path nextBase = new Path(targetPath, s.getName());
+          dstFs.mkdirs(nextBase);
+          move(conf, s, srcFs, nextBase, dstFs, sameFs);
         } else {
-          FileUtil.copy(srcFs, s, dstFs, d, true, true, conf);
+          Path d = getDestFile(conf, s, targetPath, s.getName().contains("-m-"));
+          if (sameFs) {
+            srcFs.rename(s, d);
+          } else {
+            FileUtil.copy(srcFs, s, dstFs, d, true, true, conf);
+          }
         }
       }
     }
-    dstFs.create(getSuccessIndicator(), true).close();
   }
 
   @Override

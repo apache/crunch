@@ -93,4 +93,43 @@ public class AvroPathPerKeyIT extends CrunchTestSupport implements Serializable 
     assertFalse(fs.exists(outDir));
   }
 
+  @Test
+  public void testOutputFilePerKey_Directories() throws Exception {
+    Pipeline p = new MRPipeline(AvroPathPerKeyIT.class, tempDir.getDefaultConfiguration());
+    Path outDir = tempDir.getPath("out");
+    p.read(From.textFile(tempDir.copyResourceFileName("docs.txt")))
+            .parallelDo(new MapFn<String, Pair<String, String>>() {
+              @Override
+              public Pair<String, String> map(String input) {
+                String[] p = input.split("\t");
+                return Pair.of(p[0] + "/child", p[1]);
+              }
+            }, Avros.tableOf(Avros.strings(), Avros.strings()))
+            .groupByKey()
+            .write(new AvroPathPerKeyTarget(outDir));
+    p.done();
+
+    Set<String> names = Sets.newHashSet();
+    FileSystem fs = outDir.getFileSystem(tempDir.getDefaultConfiguration());
+    for (FileStatus fstat : fs.listStatus(outDir)) {
+      names.add(fstat.getPath().getName());
+    }
+    assertEquals(ImmutableSet.of("A", "B", "_SUCCESS"), names);
+
+    Path aParent = new Path(outDir, "A");
+    FileStatus[] aParentStat = fs.listStatus(aParent);
+    assertEquals(1, aParentStat.length);
+    assertEquals("child", aParentStat[0].getPath().getName());
+    FileStatus[] aChildStat = fs.listStatus(new Path(aParent, "child"));
+    assertEquals(1, aChildStat.length);
+    assertEquals("part-r-00000.avro", aChildStat[0].getPath().getName());
+
+    Path bParent = new Path(outDir, "B");
+    FileStatus[] bParentStat = fs.listStatus(bParent);
+    assertEquals(1, bParentStat.length);
+    assertEquals("child", bParentStat[0].getPath().getName());
+    FileStatus[] bChildStat = fs.listStatus(new Path(bParent, "child"));
+    assertEquals(1, bChildStat.length);
+    assertEquals("part-r-00000.avro", bChildStat[0].getPath().getName());
+  }
 }
