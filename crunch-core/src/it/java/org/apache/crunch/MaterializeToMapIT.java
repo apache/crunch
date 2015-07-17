@@ -20,8 +20,10 @@ package org.apache.crunch;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.crunch.impl.mem.MemPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
@@ -77,6 +79,8 @@ public class MaterializeToMapIT {
     PTable<Integer, String> t = c.parallelDo(new Set1Mapper(), tf.tableOf(tf.ints(), tf.strings()));
     Map<Integer, String> m = t.materializeToMap();
     assertMatches(m);
+    Map<Integer, String> mclone = (Map<Integer, String>) SerializationUtils.clone((Serializable) m);
+    assertMatches(mclone);
   }
 
 }

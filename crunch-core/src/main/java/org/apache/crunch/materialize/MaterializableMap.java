@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.materialize;
 
+import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,27 +25,47 @@ import java.util.Set;
 
 import org.apache.crunch.Pair;
 
-public class MaterializableMap<K, V> extends AbstractMap<K, V> {
+public class MaterializableMap<K, V> extends AbstractMap<K, V> implements Serializable {
 
-  private Iterable<Pair<K, V>> iterable;
-  private Set<Map.Entry<K, V>> entrySet;
+  private transient Iterable<Pair<K, V>> iterable;
+  private Map<K, V> delegate;
 
   public MaterializableMap(Iterable<Pair<K, V>> iterable) {
     this.iterable = iterable;
   }
 
-  private Set<Map.Entry<K, V>> toMapEntries(Iterable<Pair<K, V>> xs) {
-    HashMap<K, V> m = new HashMap<K, V>();
-    for (Pair<K, V> x : xs)
-      m.put(x.first(), x.second());
-    return m.entrySet();
+  private Map<K, V> delegate() {
+    if (delegate == null) {
+      delegate = new HashMap<K, V>();
+      for (Pair<K, V> x : iterable) {
+        delegate.put(x.first(), x.second());
+      }
+    }
+    return delegate;
   }
 
   @Override
   public Set<Map.Entry<K, V>> entrySet() {
-    if (entrySet == null)
-      entrySet = toMapEntries(iterable);
-    return entrySet;
+    return delegate().entrySet();
   }
 
+  @Override
+  public V get(Object key) {
+    return delegate().get(key);
+  }
+
+  @Override
+  public boolean containsKey(Object key) {
+    return delegate().containsKey(key);
+  }
+
+  @Override
+  public int hashCode() {
+    return delegate().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return delegate().equals(other);
+  }
 }
