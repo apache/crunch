@@ -144,7 +144,10 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
         return false;
       }
       value = KeyValue.cloneAndAddTags(scanner.getKeyValue(), ImmutableList.<Tag>of());
-      if (stopRow != null && Bytes.compareTo(CellUtil.cloneRow(value), stopRow) >= 0) {
+      if (stopRow != null &&
+          Bytes.compareTo(
+              value.getRowArray(), value.getRowOffset(), value.getRowLength(),
+              stopRow, 0, stopRow.length) >= 0) {
         if(LOG.isInfoEnabled()) {
           LOG.info("Reached stop row {}", Bytes.toStringBinary(stopRow));
         }

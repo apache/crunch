@@ -126,7 +126,9 @@ public final class HFileUtils {
 
     @Override
     public boolean accept(C input) {
-      return Bytes.equals(CellUtil.cloneFamily(input), family);
+      return Bytes.equals(
+          input.getFamilyArray(), input.getFamilyOffset(), input.getFamilyLength(),
+          family, 0, family.length);
     }
 
     @Override
@@ -145,7 +147,9 @@ public final class HFileUtils {
 
     @Override
     public boolean accept(C input) {
-      return Bytes.compareTo(CellUtil.cloneRow(input), startRow) >= 0;
+      return Bytes.compareTo(
+          input.getRowArray(), input.getRowOffset(), input.getRowLength(),
+          startRow, 0, startRow.length) >= 0;
     }
   }
 
@@ -159,7 +163,9 @@ public final class HFileUtils {
 
     @Override
     public boolean accept(C input) {
-      return Bytes.compareTo(CellUtil.cloneRow(input), stopRow) < 0;
+      return Bytes.compareTo(
+          input.getRowArray(), input.getRowOffset(), input.getRowLength(),
+          stopRow, 0, stopRow.length) < 0;
     }
   }
 
@@ -223,8 +229,8 @@ public final class HFileUtils {
 
     @Override
     public boolean accept(C input) {
-      ByteBuffer f = ByteBuffer.wrap(CellUtil.cloneFamily(input));
-      ByteBuffer q = ByteBuffer.wrap(CellUtil.cloneQualifier(input));
+      ByteBuffer f = ByteBuffer.wrap(input.getFamilyArray(), input.getFamilyOffset(), input.getFamilyLength());
+      ByteBuffer q = ByteBuffer.wrap(input.getQualifierArray(), input.getQualifierOffset(), input.getQualifierLength());
       return familySet.contains(f) || qualifierSet.contains(Pair.of(f, q));
     }
   }
