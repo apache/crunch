@@ -128,6 +128,11 @@ public final class HFileUtils {
     public boolean accept(C input) {
       return Bytes.equals(CellUtil.cloneFamily(input), family);
     }
+
+    @Override
+    public boolean disableDeepCopy() {
+      return true;
+    }
   }
 
   private static class StartRowFilterFn<C extends Cell> extends FilterFn<C> {
@@ -367,10 +372,12 @@ public final class HFileUtils {
       LOG.warn("{} has no column families", table);
       return;
     }
+    PCollection<C> partitioned = sortAndPartition(cells, table);
     for (HColumnDescriptor f : families) {
       byte[] family = f.getName();
-      PCollection<C> sorted = sortAndPartition(cells.filter(new FilterByFamilyFn<C>(family)), table);
-      sorted.write(new HFileTarget(new Path(outputPath, Bytes.toString(family)), f));
+      partitioned
+          .filter(new FilterByFamilyFn<C>(family))
+          .write(new HFileTarget(new Path(outputPath, Bytes.toString(family)), f));
     }
   }
 
@@ -391,12 +398,14 @@ public final class HFileUtils {
 
   public static <C extends Cell> PCollection<C> sortAndPartition(PCollection<C> cells, HTable table) throws IOException {
     Configuration conf = cells.getPipeline().getConfiguration();
-    PTable<C, Void> t = cells.parallelDo(new MapFn<C, Pair<C, Void>>() {
-      @Override
-      public Pair<C, Void> map(C input) {
-        return Pair.of(input, (Void) null);
-      }
-    }, tableOf(cells.getPType(), nulls()));
+    PTable<C, Void> t = cells.parallelDo(
+        "Pre-partition",
+        new MapFn<C, Pair<C, Void>>() {
+          @Override
+          public Pair<C, Void> map(C input) {
+            return Pair.of(input, (Void) null);
+          }
+        }, tableOf(cells.getPType(), nulls()));
     List<KeyValue> splitPoints = getSplitPoints(table);
     Path partitionFile = new Path(((DistributedPipeline) cells.getPipeline()).createTempPath(), "partition");
     writePartitionInfo(conf, partitionFile, splitPoints);

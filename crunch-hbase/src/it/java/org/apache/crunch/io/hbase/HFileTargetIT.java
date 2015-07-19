@@ -137,11 +137,13 @@ public class HFileTargetIT implements Serializable {
     return createTable(splits, hcol);
   }
 
-  private static HTable createTable(int splits, HColumnDescriptor hcol) throws Exception {
+  private static HTable createTable(int splits, HColumnDescriptor... hcols) throws Exception {
     byte[] tableName = Bytes.toBytes("test_table_" + RANDOM.nextInt(1000000000));
     HBaseAdmin admin = HBASE_TEST_UTILITY.getHBaseAdmin();
     HTableDescriptor htable = new HTableDescriptor(tableName);
-    htable.addFamily(hcol);
+    for (HColumnDescriptor hcol : hcols) {
+      htable.addFamily(hcol);
+    }
     admin.createTable(htable, Bytes.split(Bytes.toBytes("a"), Bytes.toBytes("z"), splits));
     HBASE_TEST_UTILITY.waitTableAvailable(tableName, 30000);
     return new HTable(HBASE_TEST_UTILITY.getConfiguration(), tableName);
@@ -182,12 +184,13 @@ public class HFileTargetIT implements Serializable {
     Pipeline pipeline = new MRPipeline(HFileTargetIT.class, HBASE_TEST_UTILITY.getConfiguration());
     Path inputPath = copyResourceFileToHDFS("shakes.txt");
     Path outputPath = getTempPathOnHDFS("out");
-    HTable testTable = createTable(26);
-
+    byte[] columnFamilyA = Bytes.toBytes("colfamA");
+    byte[] columnFamilyB = Bytes.toBytes("colfamB");
+    HTable testTable = createTable(26, new HColumnDescriptor(columnFamilyA), new HColumnDescriptor(columnFamilyB));
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
     PCollection<String> words = split(shakespeare, "\\s+");
     PTable<String,Long> wordCounts = words.count();
-    PCollection<Put> wordCountPuts = convertToPuts(wordCounts);
+    PCollection<Put> wordCountPuts = convertToPuts(wordCounts, columnFamilyA, columnFamilyB);
     HFileUtils.writePutsToHFilesForIncrementalLoad(
         wordCountPuts,
         testTable,
@@ -208,8 +211,8 @@ public class HFileTargetIT implements Serializable {
         .build();
 
     for (Map.Entry<String, Long> e : EXPECTED.entrySet()) {
-      long actual = getWordCountFromTable(testTable, e.getKey());
-      assertEquals((long) e.getValue(), actual);
+      assertEquals((long) e.getValue(), getWordCountFromTable(testTable, columnFamilyA, e.getKey()));
+      assertEquals((long) e.getValue(), getWordCountFromTable(testTable, columnFamilyB, e.getKey()));
     }
   }
 
@@ -296,6 +299,10 @@ public class HFileTargetIT implements Serializable {
   }
 
   private static PCollection<Put> convertToPuts(PTable<String, Long> in) {
+    return convertToPuts(in, TEST_FAMILY);
+  }
+
+  private static PCollection<Put> convertToPuts(PTable<String, Long> in, final byte[]...columnFamilies) {
     return in.parallelDo(new MapFn<Pair<String, Long>, Put>() {
       @Override
       public Put map(Pair<String, Long> input) {
@@ -305,7 +312,9 @@ public class HFileTargetIT implements Serializable {
         }
         long c = input.second();
         Put p = new Put(Bytes.toBytes(w));
-        p.add(TEST_FAMILY, TEST_QUALIFIER, Bytes.toBytes(c));
+        for (byte[] columnFamily : columnFamilies) {
+          p.add(columnFamily, TEST_QUALIFIER, Bytes.toBytes(c));
+        }
         return p;
       }
     }, HBaseTypes.puts());
@@ -394,7 +403,12 @@ public class HFileTargetIT implements Serializable {
   }
 
   private static long getWordCountFromTable(HTable table, String word) throws IOException {
+    return getWordCountFromTable(table, TEST_FAMILY, word);
+  }
+
+  private static long getWordCountFromTable(HTable table, byte[] columnFamily, String word) throws IOException {
     Get get = new Get(Bytes.toBytes(word));
+    get.addFamily(columnFamily);
     byte[] value = table.get(get).value();
     if (value == null) {
       fail("no such row: " +  word);
