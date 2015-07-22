@@ -82,7 +82,7 @@ public class AvroDeepCopierTest {
     person.setSiblingnames(Lists.<String>newArrayList());
 
     AvroDeepCopier<ReflectedPerson> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
-        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema());
+        Avros.reflects(ReflectedPerson.class).getSchema());
     avroDeepCopier.initialize(new Configuration());
 
     ReflectedPerson deepCopyPerson = avroDeepCopier.deepCopy(person);
@@ -120,7 +120,7 @@ public class AvroDeepCopierTest {
   @Test
   public void testDeepCopyReflect_Null() {
     AvroDeepCopier<ReflectedPerson> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<ReflectedPerson>(
-        ReflectedPerson.class, Avros.reflects(ReflectedPerson.class).getSchema());
+        Avros.reflects(ReflectedPerson.class).getSchema());
     avroDeepCopier.initialize(new Configuration());
 
     assertNull(avroDeepCopier.deepCopy(null));

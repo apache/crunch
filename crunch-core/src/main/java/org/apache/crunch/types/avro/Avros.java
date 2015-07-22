@@ -278,7 +278,7 @@ public class Avros {
 
   public static final <T> AvroType<T> reflects(Class<T> clazz, Schema schema) {
     AvroMode.registerSpecificClassLoaderInternal(clazz.getClassLoader());
-    return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(clazz, schema));
+    return new AvroType<T>(clazz, schema, new AvroDeepCopier.AvroReflectDeepCopier<T>(schema));
   }
 
   private static class BytesToWritableMapFn<T extends Writable> extends MapFn<Object, T> {
