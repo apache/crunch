@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.types.avro;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.IndexedRecord;
 import org.apache.crunch.MapFn;
@@ -70,7 +69,7 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
       valueMapFn.initialize();
       pairSchemaJson = org.apache.avro.mapred.Pair.getPairSchema(
           new Schema.Parser().parse(firstJson),
-          nullable(new Schema.Parser().parse(secondJson))).toString();
+          Avros.allowNulls(new Schema.Parser().parse(secondJson))).toString();
     }
 
     @Override
@@ -124,7 +123,7 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
 
   public AvroTableType(AvroType<K> keyType, AvroType<V> valueType, Class<Pair<K, V>> pairClass) {
     super(pairClass, org.apache.avro.mapred.Pair.getPairSchema(keyType.getSchema(),
-            nullable(valueType.getSchema())),
+            Avros.allowNulls(valueType.getSchema())),
         new IndexedRecordToPair(keyType.getInputMapFn(),
         valueType.getInputMapFn()), new PairToAvroPair(keyType, valueType),
         new TupleDeepCopier(Pair.class, keyType, valueType), null, keyType, valueType);
@@ -150,12 +149,5 @@ class AvroTableType<K, V> extends BaseAvroTableType<K, V> implements PTableType<
   @Override
   public Pair<K, V> getDetachedValue(Pair<K, V> value) {
     return PTables.getDetachedValue(this, value);
-  }
-
-  private static Schema nullable(Schema schema) {
-    if (schema.getType() == Schema.Type.NULL) {
-      return schema;
-    }
-    return Schema.createUnion(ImmutableList.of(schema, Schema.create(Schema.Type.NULL)));
   }
 }

@@ -919,11 +919,27 @@ public class Avros {
 
   private static final Schema NULL_SCHEMA = Schema.create(Type.NULL);
 
-  private static Schema allowNulls(Schema base) {
+  static Schema allowNulls(Schema base) {
     if (NULL_SCHEMA.equals(base)) {
       return base;
+    } else if (base.getType() == Type.UNION) {
+      List<Schema> types = Lists.newArrayList();
+      boolean hasNull = false;
+      for (Schema s : base.getTypes()) {
+        if (s.getType() == Schema.Type.NULL) {
+          hasNull = true;
+        }
+        types.add(s);
+      }
+      if (hasNull) {
+        return base;
+      } else {
+        types.add(Schema.create(Schema.Type.NULL));
+        return Schema.createUnion(types);
+      }
+    } else {
+      return Schema.createUnion(ImmutableList.of(base, NULL_SCHEMA));
     }
-    return Schema.createUnion(ImmutableList.of(base, NULL_SCHEMA));
   }
 
   private static class ReflectGenericRecord extends GenericData.Record {

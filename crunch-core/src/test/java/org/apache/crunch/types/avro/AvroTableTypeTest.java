@@ -23,6 +23,9 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.ImmutableList;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
 import org.apache.crunch.Pair;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.test.StringWrapper;
@@ -30,6 +33,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+
+import java.util.List;
 
 public class AvroTableTypeTest {
 
@@ -52,6 +57,21 @@ public class AvroTableTypeTest {
     assertSame(integerValue, detachedPair.first());
     assertEquals(person, detachedPair.second());
     assertNotSame(person, detachedPair.second());
+  }
+
+  @Test
+  public void testUnionValueType() {
+    List<Schema> schemas = Lists.newArrayList();
+    schemas.add(Schema.create(Schema.Type.BOOLEAN));
+    schemas.add(Schema.create(Schema.Type.INT));
+    Schema union = Schema.createUnion(schemas);
+    boolean success = false;
+    try {
+      Avros.tableOf(Avros.longs(), Avros.generics(union));
+      success = true;
+    } catch (Exception shouldNotBeThrown) {
+    }
+    assertTrue("Union type was properly made nullable", success);
   }
 
   @Test
