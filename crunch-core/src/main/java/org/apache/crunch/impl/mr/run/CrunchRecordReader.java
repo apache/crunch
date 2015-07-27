@@ -44,12 +44,8 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     if (crunchSplit.get() instanceof CombineFileSplit) {
       combineFileSplit = (CombineFileSplit) crunchSplit.get();
     }
-    Configuration conf = crunchSplit.getConf();
-    if (conf == null) {
-      conf = context.getConfiguration();
-      crunchSplit.setConf(conf);
-    }
-    this.context = new TaskAttemptContextImpl(conf, context.getTaskAttemptID());
+    crunchSplit.setConf(context.getConfiguration());
+    this.context = new TaskAttemptContextImpl(crunchSplit.getConf(), context.getTaskAttemptID());
     initNextRecordReader();
   }
 
@@ -71,10 +67,9 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     }
 
     idx++;
-    Configuration conf = crunchSplit.getConf();
     InputFormat<K, V> inputFormat = (InputFormat<K, V>) ReflectionUtils.newInstance(
         crunchSplit.getInputFormatClass(),
-        conf);
+        crunchSplit.getConf());
     this.curReader = inputFormat.createRecordReader(getDelegateSplit(), context);
     return true;
   }
@@ -136,12 +131,8 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
     this.crunchSplit = (CrunchInputSplit) inputSplit;
-    Configuration conf = crunchSplit.getConf();
-    if (conf == null) {
-      conf = context.getConfiguration();
-      crunchSplit.setConf(conf);
-    }
-    this.context = new TaskAttemptContextImpl(conf, context.getTaskAttemptID());
+    crunchSplit.setConf(context.getConfiguration());
+    this.context = new TaskAttemptContextImpl(crunchSplit.getConf(), context.getTaskAttemptID());
     if (crunchSplit.get() instanceof CombineFileSplit) {
       combineFileSplit = (CombineFileSplit) crunchSplit.get();
     }
