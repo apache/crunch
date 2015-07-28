@@ -98,6 +98,9 @@ public class BaseInputTable<K, V> extends PTableBase<K, V> {
 
   @Override
   public boolean equals(Object other) {
+    if (other == null || !(other instanceof BaseInputTable)) {
+      return false;
+    }
     return asCollection.equals(other);
   }
 }
