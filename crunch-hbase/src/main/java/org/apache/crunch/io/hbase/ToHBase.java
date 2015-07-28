@@ -19,6 +19,7 @@ package org.apache.crunch.io.hbase;
 
 import org.apache.crunch.Target;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.TableName;
 
 /**
  * Static factory methods for creating HBase {@link Target} types.
@@ -26,6 +27,10 @@ import org.apache.hadoop.fs.Path;
 public class ToHBase {
 
   public static Target table(String table) {
+    return table(TableName.valueOf(table));
+  }
+
+  public static Target table(TableName table) {
     return new HBaseTarget(table);
   }
 

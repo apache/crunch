@@ -21,6 +21,7 @@ import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -35,6 +36,14 @@ public class FromHBase {
   }
 
   public static TableSource<ImmutableBytesWritable, Result> table(String table, Scan scan) {
+    return table(TableName.valueOf(table), scan);
+  }
+
+  public static TableSource<ImmutableBytesWritable, Result> table(TableName table) {
+    return table(table, new Scan());
+  }
+
+  public static TableSource<ImmutableBytesWritable, Result> table(TableName table, Scan scan) {
     return new HBaseSourceTarget(table, scan);
   }
 

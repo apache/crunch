@@ -34,6 +34,7 @@ import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
@@ -50,10 +51,18 @@ public class HBaseTarget implements MapReduceTarget {
   private static final Logger LOG = LoggerFactory.getLogger(HBaseTarget.class);
   
   protected String table;
+
+  private transient TableName tableName;
+
   private Map<String, String> extraConf = Maps.newHashMap();
 
   public HBaseTarget(String table) {
-    this.table = table;
+    this(TableName.valueOf(table));
+  }
+
+  public HBaseTarget(TableName tableName){
+    this.tableName = tableName;
+    this.table = tableName.getNameAsString();
   }
 
   @Override
@@ -152,5 +161,12 @@ public class HBaseTarget implements MapReduceTarget {
       throw new IllegalArgumentException("HBaseTarget only supports Put and Delete, not: " +
           ptype.getTypeClass());
     }
+  }
+
+  protected TableName getTableName(){
+    if(tableName == null){
+      tableName = TableName.valueOf(table);
+    }
+    return tableName;
   }
 }

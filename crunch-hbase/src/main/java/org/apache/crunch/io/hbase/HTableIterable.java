@@ -20,9 +20,11 @@
 package org.apache.crunch.io.hbase;
 
 import org.apache.crunch.Pair;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 
 import java.io.IOException;
@@ -30,16 +32,18 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 class HTableIterable implements Iterable<Pair<ImmutableBytesWritable, Result>> {
-  private final HTable table;
+  private final Table table;
   private final Scan[] scans;
+  private final Connection connection;
 
-  public HTableIterable(HTable table, Scan... scans) {
+  public HTableIterable(Connection connection, Table table, Scan... scans) {
     this.table = table;
+    this.connection = connection;
     this.scans = scans;
   }
 
   @Override
   public Iterator<Pair<ImmutableBytesWritable, Result>> iterator() {
-      return new HTableIterator(table, Arrays.asList(scans));
+      return new HTableIterator(connection, table, Arrays.asList(scans));
   }
 }

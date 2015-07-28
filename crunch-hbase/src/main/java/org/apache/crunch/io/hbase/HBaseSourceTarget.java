@@ -36,9 +36,12 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormatBase;
@@ -66,6 +69,7 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   protected Scan[] scans;
   protected String scansAsString;
+
   private FormatBundle<? extends MultiTableInputFormatBase> inputBundle;
   
   public HBaseSourceTarget(String table, Scan scan) {
@@ -75,25 +79,37 @@ public class HBaseSourceTarget extends HBaseTarget implements
   public HBaseSourceTarget(String table, Scan scan, Scan... additionalScans) {
     this(table, ObjectArrays.concat(scan, additionalScans));
   }
+
+  public HBaseSourceTarget(TableName table, Scan scan, Scan... additionalScans) {
+    this(table, ObjectArrays.concat(scan, additionalScans));
+  }
   
   public HBaseSourceTarget(String table, Scan[] scans) {
     this(table, MultiTableInputFormat.class, scans);
   }
 
+  public HBaseSourceTarget(TableName table, Scan[] scans) {
+    this(table, MultiTableInputFormat.class, scans);
+  }
+
   public HBaseSourceTarget(String table, Class<? extends MultiTableInputFormatBase> clazz,  Scan[] scans) {
-    super(table);
+    this(TableName.valueOf(table), clazz, scans);
+  }
+
+  public HBaseSourceTarget(TableName tableName, Class<? extends MultiTableInputFormatBase> clazz,  Scan[] scans) {
+    super(tableName);
     this.scans = scans;
 
     try {
 
-      byte[] tableName = Bytes.toBytes(table);
+      byte[] tableNameAsBytes = Bytes.toBytes(table);
       //Copy scans and enforce that they are for the table specified
       Scan[] tableScans = new Scan[scans.length];
       String[] scanStrings = new String[scans.length];
       for(int i = 0; i < scans.length; i++){
         tableScans[i] =  new Scan(scans[i]);
         //enforce Scan is for same table
-        tableScans[i].setAttribute(Scan.SCAN_ATTRIBUTES_TABLE_NAME, tableName);
+        tableScans[i].setAttribute(Scan.SCAN_ATTRIBUTES_TABLE_NAME, tableNameAsBytes);
         //Convert the Scan into a String
         scanStrings[i] = convertScanToString(tableScans[i]);
       }
@@ -190,8 +206,9 @@ public class HBaseSourceTarget extends HBaseTarget implements
   @Override
   public Iterable<Pair<ImmutableBytesWritable, Result>> read(Configuration conf) throws IOException {
     Configuration hconf = HBaseConfiguration.create(conf);
-    HTable htable = new HTable(hconf, table);
-    return new HTableIterable(htable, scans);
+    Connection connection = ConnectionFactory.createConnection(hconf);
+    Table htable = connection.getTable(getTableName());
+    return new HTableIterable(connection, htable, scans);
   }
 
   @Override
@@ -205,5 +222,4 @@ public class HBaseSourceTarget extends HBaseTarget implements
     outputConf(key, value);
     return this;
   }
-
 }

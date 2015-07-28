@@ -42,6 +42,7 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
@@ -178,7 +179,7 @@ public class WordCountHBaseIT {
 
     HBaseSourceTarget source = null;
     if(clazz == null){
-      source = new HBaseSourceTarget(inputTableName, scan, scan2);
+      source = new HBaseSourceTarget(TableName.valueOf(inputTableName), scan, scan2);
     }else{
       source = new HBaseSourceTarget(inputTableName, clazz, new Scan[]{scan, scan2});
     }

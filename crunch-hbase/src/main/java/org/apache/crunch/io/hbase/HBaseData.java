@@ -23,9 +23,13 @@ import org.apache.crunch.ReadableData;
 import org.apache.crunch.SourceTarget;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.StringUtils;
@@ -36,11 +40,13 @@ import java.util.Set;
 public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Result>> {
 
   private final String table;
+  private transient TableName tableName;
   private final String scansAsString;
   private transient SourceTarget parent;
 
   public HBaseData(String table, String scansAsString, SourceTarget<?> parent) {
     this.table = table;
+    this.tableName = TableName.valueOf(table);
     this.scansAsString = scansAsString;
     this.parent = parent;
   }
@@ -63,7 +69,8 @@ public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Resu
   public Iterable<Pair<ImmutableBytesWritable, Result>> read(
       TaskInputOutputContext<?, ?, ?, ?> ctxt) throws IOException {
     Configuration hconf = HBaseConfiguration.create(ctxt.getConfiguration());
-    HTable htable = new HTable(hconf, table);
+    Connection connection = ConnectionFactory.createConnection(hconf);
+    Table htable = connection.getTable(getTableName());
 
     String[] scanStrings = StringUtils.getStrings(scansAsString);
     int length = scanStrings == null ? 0 : scanStrings.length;
@@ -72,6 +79,13 @@ public class HBaseData implements ReadableData<Pair<ImmutableBytesWritable, Resu
       scans[i] = HBaseSourceTarget.convertStringToScan(scanStrings[i]);
     }
 
-    return new HTableIterable(htable, scans);
+    return new HTableIterable(connection, htable, scans);
+  }
+
+  private TableName getTableName(){
+    if(tableName == null){
+      tableName = TableName.valueOf(table);
+    }
+    return tableName;
   }
 }

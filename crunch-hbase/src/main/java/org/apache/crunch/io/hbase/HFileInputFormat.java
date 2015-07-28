@@ -25,7 +25,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
@@ -185,7 +184,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
     // to depend on it.
     private static boolean seekAtOrAfter(HFileScanner s, KeyValue k)
         throws IOException {
-      int result = s.seekTo(k.getBuffer(), k.getKeyOffset(), k.getKeyLength());
+      int result = s.seekTo(k);
       if(result < 0) {
         // Passed KV is smaller than first KV in file, work from start of file
         return s.seekTo();
@@ -206,7 +205,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
     // Explode out directories that match the original FileInputFormat filters since HFiles are written to directories where the
     // directory name is the column name
     for (FileStatus status : super.listStatus(job)) {
-      if (status.isDir()) {
+      if (status.isDirectory()) {
         FileSystem fs = status.getPath().getFileSystem(job.getConfiguration());
         for (FileStatus match : fs.listStatus(status.getPath(), HIDDEN_FILE_FILTER)) {
           result.add(match);

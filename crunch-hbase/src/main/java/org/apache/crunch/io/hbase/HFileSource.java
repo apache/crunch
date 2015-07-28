@@ -137,7 +137,7 @@ public class HFileSource extends FileSourceImpl<KeyValue> implements ReadableSou
     }
     long sum = 0;
     for (FileStatus status : statuses) {
-      if (status.isDir()) {
+      if (status.isDirectory()) {
         sum += SourceTargetHelper.getPathSize(fs, status.getPath());
       } else {
         sum += status.getLen();
