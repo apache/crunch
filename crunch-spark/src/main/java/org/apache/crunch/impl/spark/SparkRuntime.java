@@ -331,6 +331,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                 job.setOutputKeyClass(outConfig.keyClass);
                 job.setOutputValueClass(outConfig.valueClass);
                 outConfig.bundle.configure(job.getConfiguration());
+                job.getConfiguration().set("crunch.namedoutput", "out0");
                 Path tmpPath = pipeline.createTempPath();
                 outRDD.saveAsNewAPIHadoopFile(
                     tmpPath.toString(),

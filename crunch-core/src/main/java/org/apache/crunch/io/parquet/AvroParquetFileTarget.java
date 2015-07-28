@@ -107,7 +107,7 @@ public class AvroParquetFileTarget extends FileTargetImpl {
     return null;
   }
 
-  static class CrunchAvroWriteSupport extends AvroWriteSupport {
+  public static class CrunchAvroWriteSupport extends AvroWriteSupport {
     @Override
     public WriteContext init(Configuration conf) {
       String outputName = conf.get("crunch.namedoutput");
@@ -119,8 +119,7 @@ public class AvroParquetFileTarget extends FileTargetImpl {
     }
   }
 
-  static class CrunchAvroParquetOutputFormat extends ParquetOutputFormat<IndexedRecord> {
-
+  public static class CrunchAvroParquetOutputFormat extends ParquetOutputFormat<IndexedRecord> {
     public CrunchAvroParquetOutputFormat() {
       super(new CrunchAvroWriteSupport());
     }
