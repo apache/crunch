@@ -111,11 +111,19 @@ public final class Aggregators {
   }
 
   /**
+   * Return the maximum of all given {@link Comparable} values.
+   * @return The newly constructed instance
+   */
+  public static <C extends Comparable<C>> Aggregator<C> MAX_COMPARABLES() {
+    return new MaxComparables<C>();
+  }
+
+  /**
    * Return the maximum of all given {@code long} values.
    * @return The newly constructed instance
    */
   public static Aggregator<Long> MAX_LONGS() {
-    return new MaxLongs();
+    return new MaxComparables<Long>();
   }
 
   /**
@@ -133,7 +141,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Integer> MAX_INTS() {
-    return new MaxInts();
+    return new MaxComparables<Integer>();
   }
 
   /**
@@ -151,7 +159,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Float> MAX_FLOATS() {
-    return new MaxFloats();
+    return new MaxComparables<Float>();
   }
 
   /**
@@ -169,7 +177,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Double> MAX_DOUBLES() {
-    return new MaxDoubles();
+    return new MaxComparables<Double>();
   }
 
   /**
@@ -187,7 +195,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<BigInteger> MAX_BIGINTS() {
-    return new MaxBigInts();
+    return new MaxComparables<BigInteger>();
   }
 
   /**
@@ -223,11 +231,19 @@ public final class Aggregators {
   }
 
   /**
+   * Return the minimum of all given {@link Comparable} values.
+   * @return The newly constructed instance
+   */
+  public static <C extends Comparable<C>> Aggregator<C> MIN_COMPARABLES() {
+    return new MinComparables<C>();
+  }
+
+  /**
    * Return the minimum of all given {@code long} values.
    * @return The newly constructed instance
    */
   public static Aggregator<Long> MIN_LONGS() {
-    return new MinLongs();
+    return new MinComparables<Long>();
   }
 
   /**
@@ -245,7 +261,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Integer> MIN_INTS() {
-    return new MinInts();
+    return new MinComparables<Integer>();
   }
 
   /**
@@ -263,7 +279,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Float> MIN_FLOATS() {
-    return new MinFloats();
+    return new MinComparables<Float>();
   }
 
   /**
@@ -281,7 +297,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<Double> MIN_DOUBLES() {
-    return new MinDoubles();
+    return new MinComparables<Double>();
   }
 
   /**
@@ -299,7 +315,7 @@ public final class Aggregators {
    * @return The newly constructed instance
    */
   public static Aggregator<BigInteger> MIN_BIGINTS() {
-    return new MinBigInts();
+    return new MinComparables<BigInteger>();
   }
 
   /**
@@ -622,8 +638,9 @@ public final class Aggregators {
     }
   }
 
-  private static class MaxLongs extends SimpleAggregator<Long> {
-    private Long max = null;
+  private static class MaxComparables<C extends Comparable<C>> extends SimpleAggregator<C> {
+
+    private C max = null;
 
     @Override
     public void reset() {
@@ -631,104 +648,21 @@ public final class Aggregators {
     }
 
     @Override
-    public void update(Long next) {
-      if (max == null || max < next) {
-        max = next;
-      }
-    }
-
-    @Override
-    public Iterable<Long> results() {
-      return ImmutableList.of(max);
-    }
-  }
-
-  private static class MaxInts extends SimpleAggregator<Integer> {
-    private Integer max = null;
-
-    @Override
-    public void reset() {
-      max = null;
-    }
-
-    @Override
-    public void update(Integer next) {
-      if (max == null || max < next) {
-        max = next;
-      }
-    }
-
-    @Override
-    public Iterable<Integer> results() {
-      return ImmutableList.of(max);
-    }
-  }
-
-  private static class MaxFloats extends SimpleAggregator<Float> {
-    private Float max = null;
-
-    @Override
-    public void reset() {
-      max = null;
-    }
-
-    @Override
-    public void update(Float next) {
-      if (max == null || max < next) {
-        max = next;
-      }
-    }
-
-    @Override
-    public Iterable<Float> results() {
-      return ImmutableList.of(max);
-    }
-  }
-
-  private static class MaxDoubles extends SimpleAggregator<Double> {
-    private Double max = null;
-
-    @Override
-    public void reset() {
-      max = null;
-    }
-
-    @Override
-    public void update(Double next) {
-      if (max == null || max < next) {
-        max = next;
-      }
-    }
-
-    @Override
-    public Iterable<Double> results() {
-      return ImmutableList.of(max);
-    }
-  }
-
-  private static class MaxBigInts extends SimpleAggregator<BigInteger> {
-    private BigInteger max = null;
-
-    @Override
-    public void reset() {
-      max = null;
-    }
-
-    @Override
-    public void update(BigInteger next) {
+    public void update(C next) {
       if (max == null || max.compareTo(next) < 0) {
         max = next;
       }
     }
 
     @Override
-    public Iterable<BigInteger> results() {
+    public Iterable<C> results() {
       return ImmutableList.of(max);
     }
   }
 
-  private static class MinLongs extends SimpleAggregator<Long> {
-    private Long min = null;
+  private static class MinComparables<C extends Comparable<C>> extends SimpleAggregator<C> {
+
+    private C min = null;
 
     @Override
     public void reset() {
@@ -736,98 +670,14 @@ public final class Aggregators {
     }
 
     @Override
-    public void update(Long next) {
-      if (min == null || min > next) {
-        min = next;
-      }
-    }
-
-    @Override
-    public Iterable<Long> results() {
-      return ImmutableList.of(min);
-    }
-  }
-
-  private static class MinInts extends SimpleAggregator<Integer> {
-    private Integer min = null;
-
-    @Override
-    public void reset() {
-      min = null;
-    }
-
-    @Override
-    public void update(Integer next) {
-      if (min == null || min > next) {
-        min = next;
-      }
-    }
-
-    @Override
-    public Iterable<Integer> results() {
-      return ImmutableList.of(min);
-    }
-  }
-
-  private static class MinFloats extends SimpleAggregator<Float> {
-    private Float min = null;
-
-    @Override
-    public void reset() {
-      min = null;
-    }
-
-    @Override
-    public void update(Float next) {
-      if (min == null || min > next) {
-        min = next;
-      }
-    }
-
-    @Override
-    public Iterable<Float> results() {
-      return ImmutableList.of(min);
-    }
-  }
-
-  private static class MinDoubles extends SimpleAggregator<Double> {
-    private Double min = null;
-
-    @Override
-    public void reset() {
-      min = null;
-    }
-
-    @Override
-    public void update(Double next) {
-      if (min == null || min > next) {
-        min = next;
-      }
-    }
-
-    @Override
-    public Iterable<Double> results() {
-      return ImmutableList.of(min);
-    }
-  }
-
-  private static class MinBigInts extends SimpleAggregator<BigInteger> {
-    private BigInteger min = null;
-
-    @Override
-    public void reset() {
-      min = null;
-    }
-
-    @Override
-    public void update(BigInteger next) {
+    public void update(C next) {
       if (min == null || min.compareTo(next) > 0) {
         min = next;
       }
     }
 
     @Override
-    public Iterable<BigInteger> results() {
+    public Iterable<C> results() {
       return ImmutableList.of(min);
     }
   }

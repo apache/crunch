@@ -71,6 +71,7 @@ public class AggregatorsTest {
     assertThat(sapply(MAX_DOUBLES(), 29.0, 17.0, 1729.0), is(1729.0));
     assertThat(sapply(MAX_FLOATS(), 29f, 1745f, 17f, 1729f), is(1745.0f));
     assertThat(sapply(MAX_BIGINTS(), bigInt("29"), bigInt("17"), bigInt("1729")), is(bigInt("1729")));
+    assertThat(sapply(Aggregators.<String>MAX_COMPARABLES(), "b", "a", "d", "c"), is("d"));
   }
 
   @Test
@@ -81,6 +82,7 @@ public class AggregatorsTest {
     assertThat(sapply(MIN_DOUBLES(), 29.0, 17.0, 1729.0), is(17.0));
     assertThat(sapply(MIN_INTS(), 29, 170, 1729), is(29));
     assertThat(sapply(MIN_BIGINTS(), bigInt("29"), bigInt("17"), bigInt("1729")), is(bigInt("17")));
+    assertThat(sapply(Aggregators.<String>MIN_COMPARABLES(), "b", "a", "d", "c"), is("a"));
   }
 
   @Test
