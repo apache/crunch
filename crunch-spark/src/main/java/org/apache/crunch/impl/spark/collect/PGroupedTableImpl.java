@@ -108,8 +108,8 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements S
       groupedRDD = parentRDD
           .map(new PairMapFunction(ptype.getOutputMapFn(), runtime.getRuntimeContext()))
           .mapToPair(
-              new PartitionedMapOutputFunction(keySerde, valueSerde, ptype, groupingOptions.getPartitionerClass(),
-              numPartitions, runtime.getRuntimeContext()))
+              new PartitionedMapOutputFunction(keySerde, valueSerde, ptype, numPartitions, groupingOptions,
+              runtime.getRuntimeContext()))
           .groupByKey(new SparkPartitioner(numPartitions));
     } else {
       groupedRDD = parentRDD

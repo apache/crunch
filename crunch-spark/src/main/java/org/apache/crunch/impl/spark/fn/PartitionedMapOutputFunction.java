@@ -20,7 +20,6 @@ package org.apache.crunch.impl.spark.fn;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.Pair;
-import org.apache.crunch.impl.spark.ByteArray;
 import org.apache.crunch.impl.spark.IntByteArray;
 import org.apache.crunch.impl.spark.SparkRuntimeContext;
 import org.apache.crunch.impl.spark.serde.SerDe;
@@ -28,7 +27,6 @@ import org.apache.crunch.types.PGroupedTableType;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
@@ -39,23 +37,23 @@ public class PartitionedMapOutputFunction<K, V> implements PairFunction<Pair<K, 
   private final SerDe<K> keySerde;
   private final SerDe<V> valueSerde;
   private final PGroupedTableType<K, V> ptype;
-  private final Class<? extends Partitioner> partitionerClass;
   private final int numPartitions;
   private final SparkRuntimeContext runtimeContext;
+  private final GroupingOptions options;
   private transient Partitioner partitioner;
 
   public PartitionedMapOutputFunction(
     SerDe<K> keySerde,
     SerDe<V> valueSerde,
     PGroupedTableType<K, V> ptype,
-    Class<? extends Partitioner> partitionerClass,
     int numPartitions,
+    GroupingOptions options,
     SparkRuntimeContext runtimeContext) {
     this.keySerde = keySerde;
     this.valueSerde = valueSerde;
     this.ptype = ptype;
-    this.partitionerClass = partitionerClass;
     this.numPartitions = numPartitions;
+    this.options = options;
     this.runtimeContext = runtimeContext;
   }
 
@@ -72,8 +70,9 @@ public class PartitionedMapOutputFunction<K, V> implements PairFunction<Pair<K, 
       try {
         ptype.initialize(runtimeContext.getConfiguration());
         Job job = new Job(runtimeContext.getConfiguration());
-        ptype.configureShuffle(job, GroupingOptions.builder().partitionerClass(partitionerClass).build());
-        partitioner = ReflectionUtils.newInstance(partitionerClass, job.getConfiguration());
+        options.configure(job);
+        ptype.configureShuffle(job, options);
+        partitioner = ReflectionUtils.newInstance(options.getPartitionerClass(), job.getConfiguration());
       } catch (IOException e) {
         throw new CrunchRuntimeException("Error configuring partitioner", e);
       }
