@@ -122,7 +122,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
     this.pipeline = pipeline;
     this.sparkContext = sparkContext;
     this.conf = conf;
-    this.counters = sparkContext.accumulator(Maps.<String, Map<String, Long>>newHashMap(),
+    this.counters = sparkContext.accumulator(Maps.<String, Map<String, Long>>newHashMap(), pipeline.getName(),
         new CounterAccumulatorParam());
     this.ctxt = new SparkRuntimeContext(sparkContext.appName(), counters,
         sparkContext.broadcast(WritableUtils.toByteArray(conf)));
