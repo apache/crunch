@@ -192,6 +192,7 @@ under the License.
           <includes>
             <include>**/*Test.*</include>
             <include>**/*Suite.*</include>
+            <include>**/*IT.*</include>
           </includes>
         </configuration>
         <executions>
