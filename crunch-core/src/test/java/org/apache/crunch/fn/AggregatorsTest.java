@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +52,7 @@ public class AggregatorsTest {
     assertThat(sapply(SUM_FLOATS(), 1f, 2f, 3f, -4f), is(2f));
     assertThat(sapply(SUM_DOUBLES(), 0.1, 0.2, 0.3), is(closeTo(0.6, 0.00001)));
     assertThat(sapply(SUM_BIGINTS(), bigInt("7"), bigInt("3")), is(bigInt("10")));
+    assertThat(sapply(SUM_BIGDECIMALS(), bigDecimal("1.122"), bigDecimal("0.654")), is(bigDecimal("1.776")));
   }
 
   @Test
@@ -61,6 +63,7 @@ public class AggregatorsTest {
     assertThat(sapply(SUM_FLOATS(), 29f, 17f, 1729f), is(1775.0f));
     assertThat(sapply(SUM_DOUBLES(), 29.0, 17.0, 1729.0), is(1775.0));
     assertThat(sapply(SUM_BIGINTS(), bigInt("29"), bigInt("17"), bigInt("1729")), is(bigInt("1775")));
+    assertThat(sapply(SUM_BIGDECIMALS(), bigDecimal("29.987"), bigDecimal("17.876"), bigDecimal("1729.876")), is(bigDecimal("1777.739")));
   }
 
   @Test
@@ -71,6 +74,7 @@ public class AggregatorsTest {
     assertThat(sapply(MAX_DOUBLES(), 29.0, 17.0, 1729.0), is(1729.0));
     assertThat(sapply(MAX_FLOATS(), 29f, 1745f, 17f, 1729f), is(1745.0f));
     assertThat(sapply(MAX_BIGINTS(), bigInt("29"), bigInt("17"), bigInt("1729")), is(bigInt("1729")));
+    assertThat(sapply(MAX_BIGDECIMALS(), bigDecimal("29.987"), bigDecimal("17.876"), bigDecimal("1729.876")), is(bigDecimal("1729.876")));
     assertThat(sapply(Aggregators.<String>MAX_COMPARABLES(), "b", "a", "d", "c"), is("d"));
   }
 
@@ -82,6 +86,7 @@ public class AggregatorsTest {
     assertThat(sapply(MIN_DOUBLES(), 29.0, 17.0, 1729.0), is(17.0));
     assertThat(sapply(MIN_INTS(), 29, 170, 1729), is(29));
     assertThat(sapply(MIN_BIGINTS(), bigInt("29"), bigInt("17"), bigInt("1729")), is(bigInt("17")));
+    assertThat(sapply(MIN_BIGDECIMALS(), bigDecimal("29.987"), bigDecimal("17.876"), bigDecimal("1729.876")), is(bigDecimal("17.876")));
     assertThat(sapply(Aggregators.<String>MIN_COMPARABLES(), "b", "a", "d", "c"), is("a"));
   }
 
@@ -153,8 +158,14 @@ public class AggregatorsTest {
         Tuple3.of(3.0f, 1.2, 3.14), Tuple3.of(-1.0f, 14.5, -0.98));
     Aggregator<Tuple3<Float, Double, Double>> a = Aggregators.tripAggregator(
         MAX_FLOATS(), MAX_DOUBLES(), MIN_DOUBLES());
+    
+    List<Tuple3<Float, BigDecimal, BigDecimal>> input1 = ImmutableList.of(Tuple3.of(17.29f, bigDecimal("12.2"), bigDecimal("0.1")),
+        Tuple3.of(3.0f, bigDecimal("1.2"), bigDecimal("3.14")), Tuple3.of(-1.0f, bigDecimal("14.5"), bigDecimal("-0.98")));
+    Aggregator<Tuple3<Float, BigDecimal, BigDecimal>> b = Aggregators.tripAggregator(
+        MAX_FLOATS(), MAX_BIGDECIMALS(), MIN_BIGDECIMALS());
 
     assertThat(sapply(a, input), is(Tuple3.of(17.29f, 14.5, -0.98)));
+    assertThat(sapply(b, input1), is(Tuple3.of(17.29f, bigDecimal("14.5"), bigDecimal("-0.98"))));
   }
 
   @Test
@@ -163,8 +174,14 @@ public class AggregatorsTest {
         Tuple4.of(3.0f, 1.2, 3.14, 2), Tuple4.of(-1.0f, 14.5, -0.98, 3));
     Aggregator<Tuple4<Float, Double, Double, Integer>> a = Aggregators.quadAggregator(
         MAX_FLOATS(), MAX_DOUBLES(), MIN_DOUBLES(), SUM_INTS());
+    
+    List<Tuple4<BigDecimal, Double, Double, Integer>> input1 = ImmutableList.of(Tuple4.of(bigDecimal("17.29"), 12.2, 0.1, 1),
+        Tuple4.of(bigDecimal("3.0"), 1.2, 3.14, 2), Tuple4.of(bigDecimal("-1.0"), 14.5, -0.98, 3));
+    Aggregator<Tuple4<BigDecimal, Double, Double, Integer>> b = Aggregators.quadAggregator(
+        MAX_BIGDECIMALS(), MAX_DOUBLES(), MIN_DOUBLES(), SUM_INTS());
 
     assertThat(sapply(a, input), is(Tuple4.of(17.29f, 14.5, -0.98, 6)));
+    assertThat(sapply(b, input1), is(Tuple4.of(bigDecimal("17.29"), 14.5, -0.98, 6)));
   }
 
   @Test
@@ -232,5 +249,9 @@ public class AggregatorsTest {
 
   private static BigInteger bigInt(String value) {
     return new BigInteger(value);
+  }
+  
+  private static BigDecimal bigDecimal(String value) {
+    return new BigDecimal(value);
   }
 }

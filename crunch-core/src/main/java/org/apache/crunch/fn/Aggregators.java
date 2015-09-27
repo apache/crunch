@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.fn;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.LinkedList;
 import java.util.List;
@@ -108,6 +109,14 @@ public final class Aggregators {
    */
   public static Aggregator<BigInteger> SUM_BIGINTS() {
     return new SumBigInts();
+  }
+  
+  /**
+   * Sum up all {@link BigDecimal} values.
+   * @return The newly constructed instance
+   */
+  public static Aggregator<BigDecimal> SUM_BIGDECIMALS() {
+    return new SumBigDecimals();
   }
 
   /**
@@ -206,6 +215,24 @@ public final class Aggregators {
    */
   public static Aggregator<BigInteger> MAX_BIGINTS(int n) {
     return new MaxNAggregator<BigInteger>(n);
+  }
+  
+  /**
+   * Return the maximum of all given {@link BigDecimal} values.
+   * @return The newly constructed instance
+   */
+  public static Aggregator<BigDecimal> MAX_BIGDECIMALS() {
+    return new MaxComparables<BigDecimal>();
+  }
+
+  /**
+   * Return the {@code n} largest {@link BigDecimal} values (or fewer if there are fewer
+   * values than {@code n}).
+   * @param n The number of values to return
+   * @return The newly constructed instance
+   */
+  public static Aggregator<BigDecimal> MAX_BIGDECIMALS(int n) {
+    return new MaxNAggregator<BigDecimal>(n);
   }
 
   /**
@@ -326,6 +353,24 @@ public final class Aggregators {
    */
   public static Aggregator<BigInteger> MIN_BIGINTS(int n) {
     return new MinNAggregator<BigInteger>(n);
+  }
+  
+  /**
+   * Return the minimum of all given {@link BigDecimal} values.
+   * @return The newly constructed instance
+   */
+  public static Aggregator<BigDecimal> MIN_BIGDECIMALS() {
+    return new MinComparables<BigDecimal>();
+  }
+
+  /**
+   * Return the {@code n} smallest {@link BigDecimal} values (or fewer if there are fewer
+   * values than {@code n}).
+   * @param n The number of values to return
+   * @return The newly constructed instance
+   */
+  public static Aggregator<BigDecimal> MIN_BIGDECIMALS(int n) {
+    return new MinNAggregator<BigDecimal>(n);
   }
 
   /**
@@ -634,6 +679,25 @@ public final class Aggregators {
 
     @Override
     public Iterable<BigInteger> results() {
+      return ImmutableList.of(sum);
+    }
+  }
+  
+  private static class SumBigDecimals extends SimpleAggregator<BigDecimal> {
+    private BigDecimal sum = BigDecimal.ZERO;
+
+    @Override
+    public void reset() {
+      sum = BigDecimal.ZERO;
+    }
+
+    @Override
+    public void update(BigDecimal next) {
+      sum = sum.add(next);
+    }
+
+    @Override
+    public Iterable<BigDecimal> results() {
       return ImmutableList.of(sum);
     }
   }

@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.types;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -48,6 +49,13 @@ public class PTypes {
    */
   public static PType<BigInteger> bigInt(PTypeFamily typeFamily) {
     return typeFamily.derivedImmutable(BigInteger.class, BYTE_TO_BIGINT, BIGINT_TO_BYTE, typeFamily.bytes());
+  }
+  
+  /**
+   * A PType for Java's {@link BigDecimal} type.
+   */
+  public static PType<BigDecimal> bigDecimal(PTypeFamily typeFamily) {
+    return typeFamily.derivedImmutable(BigDecimal.class, BYTE_TO_BIGDECIMAL, BIGDECIMAL_TO_BYTE, typeFamily.bytes());
   }
 
   /**
@@ -112,6 +120,20 @@ public class PTypes {
     @Override
     public ByteBuffer map(BigInteger input) {
       return input == null ? null : ByteBuffer.wrap(input.toByteArray());
+    }
+  };
+
+  public static final MapFn<ByteBuffer, BigDecimal> BYTE_TO_BIGDECIMAL = new MapFn<ByteBuffer, BigDecimal>() {
+    @Override
+    public BigDecimal map(ByteBuffer input) {
+      return input == null ? null : byteBufferToBigDecimal(input);
+    }
+  };
+
+  public static final MapFn<BigDecimal, ByteBuffer> BIGDECIMAL_TO_BYTE = new MapFn<BigDecimal, ByteBuffer>() {
+    @Override
+    public ByteBuffer map(BigDecimal input) {
+      return input == null ? null : bigDecimalToByteBuffer(input);
     }
   };
 
@@ -298,4 +320,22 @@ public class PTypes {
       return bb;
     }
   };
+
+  private static BigDecimal byteBufferToBigDecimal(ByteBuffer input) {
+    int scale = input.getInt();
+    byte[] bytes = new byte[input.remaining()];
+    input.get(bytes, 0, input.remaining());
+    BigInteger bi = new BigInteger(bytes);
+    BigDecimal bigDecValue = new BigDecimal(bi, scale);
+    return bigDecValue;
+  }
+
+  private static ByteBuffer bigDecimalToByteBuffer(BigDecimal input) {
+    byte[] unScaledBytes = input.unscaledValue().toByteArray();
+    byte[] scaleBytes = ByteBuffer.allocate(4).putInt(input.scale()).array();
+    byte[] bytes = new byte[scaleBytes.length + unScaledBytes.length];
+    System.arraycopy(scaleBytes, 0, bytes, 0, scaleBytes.length);
+    System.arraycopy(unScaledBytes, 0, bytes, scaleBytes.length, unScaledBytes.length);
+    return ByteBuffer.wrap(bytes);
+  }
 }

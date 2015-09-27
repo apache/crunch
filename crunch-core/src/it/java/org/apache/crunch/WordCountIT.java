@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +35,10 @@ import org.apache.crunch.lib.Aggregate;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
+import org.apache.crunch.types.writable.Writables;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -68,7 +71,6 @@ public class WordCountIT {
 
   public static PTable<String, Long> substr(PTable<String, Long> ptable) {
     return ptable.parallelDo(new DoFn<Pair<String, Long>, Pair<String, Long>>() {
-
       @Override
       public void process(Pair<String, Long> input, Emitter<Pair<String, Long>> emitter) {
         if (!input.first().isEmpty()) {
@@ -77,9 +79,19 @@ public class WordCountIT {
       }
     }, ptable.getPTableType());
   }
+  
+  public static PTable<String, BigDecimal> convDecimal(PCollection<String> ptable) {
+    return ptable.parallelDo(new DoFn<String, Pair<String, BigDecimal>>() {
+      @Override
+      public void process(String input, Emitter<Pair<String, BigDecimal>> emitter) {
+        emitter.emit(Pair.of(input.split("~")[0], new BigDecimal(input.split("~")[1])));
+      }
+    }, Writables.tableOf(Writables.strings(), PTypes.bigDecimal(WritableTypeFamily.getInstance())));
+  }
 
   private boolean runSecond = false;
   private boolean useToOutput = false;
+  private boolean testBigDecimal = false;
 
   @Test
   public void testWritables() throws IOException {
@@ -96,6 +108,14 @@ public class WordCountIT {
   public void testWritablesWithSecondUseToOutput() throws IOException {
     runSecond = true;
     useToOutput = true;
+    run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
+  }
+  
+  @Test
+  public void testWritablesForBigDecimal() throws IOException {
+    runSecond = false;
+    useToOutput = true;
+    testBigDecimal = true;
     run(new MRPipeline(WordCountIT.class, tmpDir.getDefaultConfiguration()), WritableTypeFamily.getInstance());
   }
 
@@ -149,10 +169,23 @@ public class WordCountIT {
       PTable<String, Long> we = substr(wordCount).groupByKey().combineValues(Aggregators.SUM_LONGS());
       pipeline.writeTextFile(we, substrPath);
     }
+    
+    PTable<String, BigDecimal> bd = null;
+    if (testBigDecimal) {
+      String decimalInputPath = tmpDir.copyResourceFileName("bigdecimal.txt");
+	  PCollection<String> testBd = pipeline.read(At.textFile(decimalInputPath, typeFamily.strings()));
+      bd = convDecimal(testBd).groupByKey().combineValues(Aggregators.SUM_BIGDECIMALS());
+    }
+    
     PipelineResult res = pipeline.done();
     assertTrue(res.succeeded());
     List<PipelineResult.StageResult> stageResults = res.getStageResults();
-    if (runSecond) {
+    if (testBigDecimal) {
+      assertEquals(1, stageResults.size());
+      assertEquals(
+          ImmutableList.of(Pair.of("A", bigDecimal("3.579")), Pair.of("B", bigDecimal("11.579")),
+          Pair.of("C", bigDecimal("15.642"))), Lists.newArrayList(bd.materialize()));
+    } else if (runSecond) {
       assertEquals(2, stageResults.size());
     } else {
       assertEquals(1, stageResults.size());
@@ -169,5 +202,9 @@ public class WordCountIT {
       }
     }
     assertTrue(passed);
+  }
+  
+  private static BigDecimal bigDecimal(String value) {
+    return new BigDecimal(value);
   }
 }
