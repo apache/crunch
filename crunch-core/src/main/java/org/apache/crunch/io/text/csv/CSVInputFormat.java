@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -193,46 +192,14 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
    * {@link CSVFileSource}'s private getBundle() method
    */
   public void configure() {
-
-    bufferSize = this.configuration.getInt(CSVFileSource.CSV_BUFFER_SIZE, -1);
-    if (bufferSize <= 0) {
-      bufferSize = CSVLineReader.DEFAULT_BUFFER_SIZE;
-    }
-
+    inputFileEncoding = this.configuration.get(CSVFileSource.CSV_INPUT_FILE_ENCODING, CSVLineReader.DEFAULT_INPUT_FILE_ENCODING);
+    closeQuoteChar = this.configuration.get(CSVFileSource.CSV_CLOSE_QUOTE_CHAR, String.valueOf(CSVLineReader.DEFAULT_QUOTE_CHARACTER)).charAt(0);
+    openQuoteChar = this.configuration.get(CSVFileSource.CSV_OPEN_QUOTE_CHAR, String.valueOf(CSVLineReader.DEFAULT_QUOTE_CHARACTER)).charAt(0);
+    escapeChar = this.configuration.get(CSVFileSource.CSV_ESCAPE_CHAR, String.valueOf(CSVLineReader.DEFAULT_ESCAPE_CHARACTER)).charAt(0);
+    bufferSize = this.configuration.getInt(CSVFileSource.CSV_BUFFER_SIZE, CSVLineReader.DEFAULT_BUFFER_SIZE);
     maximumRecordSize = this.configuration.getInt(CSVFileSource.MAXIMUM_RECORD_SIZE, -1);
-    if (maximumRecordSize <= 0) {
-      maximumRecordSize = this.configuration.getInt(CSVFileSource.INPUT_SPLIT_SIZE, -1);
-      if (maximumRecordSize <= 0) {
-        maximumRecordSize = CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE ;
-      }
-    }
-
-    final String inputFileEncodingValue = this.configuration.get(CSVFileSource.CSV_INPUT_FILE_ENCODING);
-    if (StringUtils.isEmpty(inputFileEncodingValue)) {
-      inputFileEncoding = CSVLineReader.DEFAULT_INPUT_FILE_ENCODING;
-    } else {
-      inputFileEncoding = inputFileEncodingValue;
-    }
-
-    final String openQuoteCharValue = this.configuration.get(CSVFileSource.CSV_OPEN_QUOTE_CHAR);
-    if (StringUtils.isEmpty(openQuoteCharValue)) {
-      openQuoteChar = CSVLineReader.DEFAULT_QUOTE_CHARACTER;
-    } else {
-      openQuoteChar = openQuoteCharValue.charAt(0);
-    }
-
-    final String closeQuoteCharValue = this.configuration.get(CSVFileSource.CSV_CLOSE_QUOTE_CHAR);
-    if (StringUtils.isEmpty(closeQuoteCharValue)) {
-      closeQuoteChar = CSVLineReader.DEFAULT_QUOTE_CHARACTER;
-    } else {
-      closeQuoteChar = closeQuoteCharValue.charAt(0);
-    }
-
-    final String escapeCharValue = this.configuration.get(CSVFileSource.CSV_ESCAPE_CHAR);
-    if (StringUtils.isEmpty(escapeCharValue)) {
-      escapeChar = CSVLineReader.DEFAULT_ESCAPE_CHARACTER;
-    } else {
-      escapeChar = escapeCharValue.charAt(0);
+    if (maximumRecordSize < 0) {
+      maximumRecordSize = this.configuration.getInt(CSVFileSource.INPUT_SPLIT_SIZE, CSVLineReader.DEFAULT_MAXIMUM_RECORD_SIZE);
     }
   }
 }
