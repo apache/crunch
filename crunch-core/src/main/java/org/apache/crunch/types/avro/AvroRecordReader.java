@@ -103,6 +103,9 @@ class AvroRecordReader<T> extends RecordReader<AvroWrapper<T>, NullWritable> {
 
   @Override
   public void close() throws IOException {
-    reader.close();
+    if (reader != null) {
+      reader.close();
+      reader = null;
+    }
   }
 }

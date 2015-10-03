@@ -177,7 +177,10 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
 
     @Override
     public void close() throws IOException {
-      in.close();
+      if (in != null) {
+        in.close();
+        in = null;
+      }
     }
 
     // This method is copied from o.a.h.hbase.regionserver.StoreFileScanner, as we don't want
