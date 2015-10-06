@@ -308,11 +308,11 @@ public class Aggregate {
   
   public static <S> PCollection<S> aggregate(PCollection<S> collect, Aggregator<S> aggregator) {
     PTypeFamily tf = collect.getTypeFamily();
-    return collect.parallelDo("Aggregate.aggregator", new MapFn<S, Pair<Void, S>>() {
-      public Pair<Void, S> map(S input) {
-        return Pair.of(null, input);
+    return collect.parallelDo("Aggregate.aggregator", new MapFn<S, Pair<Boolean, S>>() {
+      public Pair<Boolean, S> map(S input) {
+        return Pair.of(false, input);
       }
-    }, tf.tableOf(tf.nulls(), collect.getPType()))
+    }, tf.tableOf(tf.booleans(), collect.getPType()))
     .groupByKey(1)
     .combineValues(aggregator)
     .values();

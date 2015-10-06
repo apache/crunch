@@ -19,12 +19,15 @@ package org.apache.crunch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import org.apache.crunch.fn.Aggregators;
 import org.apache.crunch.impl.spark.SparkPipeline;
 import org.apache.crunch.io.From;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,6 +45,17 @@ public class SparkAggregatorIT {
         .count().materialize();
     assertEquals(ImmutableList.of(Pair.of(1, 7L)), Lists.newArrayList(cnts));
     pipeline.done();
+  }
+
+  @Test
+  public void testAvroFirstN() throws Exception {
+    SparkPipeline pipeline = new SparkPipeline("local", "aggregator");
+    PCollection<String> set1 = pipeline.read(From.textFile(tempDir.copyResourceFileName("set1.txt"), Avros.strings()));
+    PCollection<String> set2 = pipeline.read(From.textFile(tempDir.copyResourceFileName("set2.txt"), Avros.strings()));
+    Aggregator<String> first5 = Aggregators.FIRST_N(5);
+    Collection<String> aggregate = set1.union(set2).aggregate(first5).asCollection().getValue();
+    pipeline.done();
+    assertEquals(5, aggregate.size());
   }
 
   private static class CntFn extends MapFn<String, Integer> {
