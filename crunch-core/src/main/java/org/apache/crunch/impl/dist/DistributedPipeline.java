@@ -99,7 +99,6 @@ public abstract class DistributedPipeline implements Pipeline {
     this.allPipelineCallables = Maps.newHashMap();
     this.appendedTargets = Sets.newHashSet();
     this.conf = conf;
-    this.tempDirectory = createTempDirectory(conf);
     this.tempFileIndex = 0;
     this.nextAnonymousStageId = 0;
   }
@@ -115,8 +114,9 @@ public abstract class DistributedPipeline implements Pipeline {
 
   @Override
   public void setConfiguration(Configuration conf) {
+    // Clear any existing temp dir
+    deleteTempDirectory();
     this.conf = conf;
-    this.tempDirectory = createTempDirectory(conf);
   }
 
   @Override
@@ -390,19 +390,22 @@ public abstract class DistributedPipeline implements Pipeline {
 
   public Path createTempPath() {
     tempFileIndex++;
-    return new Path(tempDirectory, "p" + tempFileIndex);
+    return new Path(getTempDirectory(), "p" + tempFileIndex);
   }
 
-  private static Path createTempDirectory(Configuration conf) {
-    Path dir = createTemporaryPath(conf);
-    try {
-      FileSystem fs = dir.getFileSystem(conf);
-      fs.mkdirs(dir);
-      fs.deleteOnExit(dir);
-    } catch (IOException e) {
-      throw new RuntimeException("Cannot create job output directory " + dir, e);
+  private synchronized Path getTempDirectory() {
+    if (tempDirectory == null) {
+      Path dir = createTemporaryPath(conf);
+      try {
+        FileSystem fs = dir.getFileSystem(conf);
+        fs.mkdirs(dir);
+        fs.deleteOnExit(dir);
+      } catch (IOException e) {
+        throw new RuntimeException("Cannot create job output directory " + dir, e);
+      }
+      tempDirectory = dir;
     }
-    return dir;
+    return tempDirectory;
   }
 
   private static Path createTemporaryPath(Configuration conf) {
@@ -427,14 +430,7 @@ public abstract class DistributedPipeline implements Pipeline {
   @Override
   public void cleanup(boolean force) {
     if (force || outputTargets.isEmpty()) {
-      try {
-        FileSystem fs = tempDirectory.getFileSystem(conf);
-        if (fs.exists(tempDirectory)) {
-          fs.delete(tempDirectory, true);
-        }
-      } catch (IOException e) {
-        LOG.info("Exception during cleanup", e);
-      }
+      deleteTempDirectory();
     } else {
       LOG.warn("Not running cleanup while output targets remain.");
     }
@@ -442,6 +438,30 @@ public abstract class DistributedPipeline implements Pipeline {
 
   private void cleanup() {
     cleanup(false);
+  }
+
+  private synchronized void deleteTempDirectory() {
+    Path toDelete = tempDirectory;
+    tempDirectory = null;
+    if (toDelete != null) {
+      try {
+        FileSystem fs = toDelete.getFileSystem(conf);
+        if (fs.exists(toDelete)) {
+          fs.delete(toDelete, true);
+        }
+      } catch (IOException e) {
+        LOG.info("Exception during cleanup", e);
+      }
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    if (tempDirectory != null) {
+      LOG.warn("Temp directory {} still exists; was Pipeline.done() called?", tempDirectory);
+      deleteTempDirectory();
+    }
+    super.finalize();
   }
 
   public int getNextAnonymousStageId() {
