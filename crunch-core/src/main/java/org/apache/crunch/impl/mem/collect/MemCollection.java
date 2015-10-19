@@ -17,6 +17,11 @@
  */
 package org.apache.crunch.impl.mem.collect;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Set;
@@ -103,12 +108,59 @@ public class MemCollection<S> implements PCollection<S> {
 
   private <S, T> DoFn<S, T> verifySerializable(String name, DoFn<S, T> doFn) {
     try {
-      return (DoFn<S, T>) SerializationUtils.deserialize(SerializationUtils.serialize(doFn));
+      return (DoFn<S, T>) deserialize(SerializationUtils.serialize(doFn));
     } catch (SerializationException e) {
       throw new IllegalStateException(
           doFn.getClass().getSimpleName() + " named '" + name + "' cannot be serialized",
           e);
     }
+  }
+
+  // Use a custom deserialize implementation (not SerializationUtils) so we can fall back
+  // to using the thread context classloader, which is needed when running Scrunch in
+  // the Scala REPL
+  private static Object deserialize(InputStream inputStream) {
+    if (inputStream == null) {
+      throw new IllegalArgumentException("The InputStream must not be null");
+    }
+    ObjectInputStream in = null;
+    try {
+      // stream closed in the finally
+      in = new ObjectInputStream(inputStream) {
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException,
+            ClassNotFoundException {
+          try {
+            return super.resolveClass(desc);
+          } catch (ClassNotFoundException e) {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            return Class.forName(desc.getName(), false, cl);
+          }
+        }
+      };
+      return in.readObject();
+
+    } catch (ClassNotFoundException ex) {
+      throw new SerializationException(ex);
+    } catch (IOException ex) {
+      throw new SerializationException(ex);
+    } finally {
+      try {
+        if (in != null) {
+          in.close();
+        }
+      } catch (IOException ex) {
+        // ignore close exception
+      }
+    }
+  }
+
+  private static Object deserialize(byte[] objectData) {
+    if (objectData == null) {
+      throw new IllegalArgumentException("The byte[] must not be null");
+    }
+    ByteArrayInputStream bais = new ByteArrayInputStream(objectData);
+    return deserialize(bais);
   }
 
   @Override
