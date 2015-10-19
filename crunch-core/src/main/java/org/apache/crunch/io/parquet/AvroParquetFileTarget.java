@@ -40,7 +40,7 @@ import java.util.Map;
 
 public class AvroParquetFileTarget extends FileTargetImpl {
 
-  private static final String PARQUET_AVRO_SCHEMA_PARAMETER = "parquet.avro.schema";
+  static final String PARQUET_AVRO_SCHEMA_PARAMETER = "parquet.avro.schema";
 
   private Map<String, String> extraConf = Maps.newHashMap();
 
