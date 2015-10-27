@@ -237,15 +237,28 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
 
   def namedTuples(tupleName: String, fields: List[(String, PType[_])]): PType[TupleN]
 
-  def caseClasses[T <: Product : TypeTag]: PType[T] = products(implicitly[TypeTag[T]].tpe)
+  def caseClasses[T <: Product : TypeTag]: PType[T] = products[T](implicitly[TypeTag[T]])
 
-  private def products[T <: Product](tpe: Type): PType[T] = {
+  private def products[T <: Product](typeTag: TypeTag[T]): PType[T] = {
+    products(typeTag.tpe, typeTag.mirror)
+  }
+
+  private def products[T <: Product](tpe: Type, mirror: Mirror): PType[T] = {
     val ctor = tpe.member(nme.CONSTRUCTOR).asMethod
-    val args = ctor.paramss.head.map(x => (x.name.toString, typeToPType(x.typeSignature)))
+    val args = ctor.paramss.head.map(x => (x.name.toString,
+      typeToPType(x.typeSignature, mirror)))
     val out = (x: Product) => TupleN.of(x.productIterator.toArray.asInstanceOf[Array[Object]] : _*)
-    val rtc = currentMirror.runtimeClass(tpe)
-    val base = namedTuples(rtc.getCanonicalName + "_", args) // See CRUNCH-495
+    val rtc = mirror.runtimeClass(tpe)
+    val base = namedTuples(getName(rtc) + "_", args) // See CRUNCH-495
     ptf.derived(rtc.asInstanceOf[Class[T]], new TypeMapFn[T](rtc), new TMapFn[T, TupleN](out), base)
+  }
+
+  private def getName(rtc: RuntimeClass): String = {
+    try {
+      rtc.getCanonicalName
+    } catch {
+      case e: InternalError => rtc.getName.replaceAllLiterally("$", "") // see CRUNCH-561
+    }
   }
 
   private val classToPrimitivePType = Map(
@@ -270,20 +283,20 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     pt.asInstanceOf[PType[T]]
   }
 
-  private def typeToPType[T](tpe: Type): PType[T] = {
+  private def typeToPType[T](tpe: Type, mirror: Mirror): PType[T] = {
     val cpt = typeToPTypeCache.get(tpe)
     if (cpt.isDefined) {
       return cpt.get.asInstanceOf[PType[T]]
     }
 
-    val rtc = currentMirror.runtimeClass(tpe)
+    val rtc = mirror.runtimeClass(tpe)
     val ret = classToPrimitivePType.get(rtc)
     if (ret != null) {
       return ret.asInstanceOf[PType[T]]
     } else if (classOf[Writable].isAssignableFrom(rtc)) {
       return writables(rtc.asInstanceOf[Class[Writable]]).asInstanceOf[PType[T]]
     } else if (tpe.typeSymbol.asClass.isCaseClass) {
-      return encache(tpe, products(tpe))
+      return encache(tpe, products(tpe, mirror))
     } else {
       val targs = if (tpe.isInstanceOf[TypeRefApi]) {
         tpe.asInstanceOf[TypeRefApi].args
@@ -295,21 +308,21 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
         return encache(tpe, records(rtc))
       } else if (targs.size == 1) {
         if (rtc.isArray) {
-          return encache(tpe, arrays(typeToPType(targs(0))))
+          return encache(tpe, arrays(typeToPType(targs(0), mirror)))
         } else if (classOf[List[_]].isAssignableFrom(rtc)) {
-          return encache(tpe, lists(typeToPType(targs(0))))
+          return encache(tpe, lists(typeToPType(targs(0), mirror)))
         } else if (classOf[Set[_]].isAssignableFrom(rtc)) {
-          return encache(tpe, sets(typeToPType(targs(0))))
+          return encache(tpe, sets(typeToPType(targs(0), mirror)))
         } else if (classOf[Option[_]].isAssignableFrom(rtc)) {
-          return encache(tpe, options(typeToPType(targs(0))))
+          return encache(tpe, options(typeToPType(targs(0), mirror)))
         } else if (classOf[Iterable[_]].isAssignableFrom(rtc)) {
-          return encache(tpe, collections(typeToPType(targs(0))))
+          return encache(tpe, collections(typeToPType(targs(0), mirror)))
         }
       } else if (targs.size == 2) {
         if (classOf[Either[_, _]].isAssignableFrom(rtc)) {
-          return encache(tpe, eithers(typeToPType(targs(0)), typeToPType(targs(1))))
+          return encache(tpe, eithers(typeToPType(targs(0), mirror), typeToPType(targs(1), mirror)))
         } else if (classOf[Map[_, _]].isAssignableFrom(rtc)) {
-          return encache(tpe, maps(typeToPType(targs(0)), typeToPType(targs(1))))
+          return encache(tpe, maps(typeToPType(targs(0), mirror), typeToPType(targs(1), mirror)))
         }
       }
     }
