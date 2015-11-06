@@ -17,6 +17,9 @@
  */
 package org.apache.crunch.io.hbase;
 
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 import org.apache.crunch.Source;
 import org.apache.crunch.TableSource;
 import org.apache.hadoop.fs.Path;
@@ -39,12 +42,23 @@ public class FromHBase {
     return table(TableName.valueOf(table), scan);
   }
 
+  public static TableSource<ImmutableBytesWritable, Result> table(String table, List<Scan> scans) {
+    return table(TableName.valueOf(table), scans);
+  }
+
   public static TableSource<ImmutableBytesWritable, Result> table(TableName table) {
     return table(table, new Scan());
   }
 
   public static TableSource<ImmutableBytesWritable, Result> table(TableName table, Scan scan) {
-    return new HBaseSourceTarget(table, scan);
+    return table(table, ImmutableList.of(scan));
+  }
+
+  public static TableSource<ImmutableBytesWritable, Result> table(TableName table, List<Scan> scans) {
+    if (scans.isEmpty()) {
+      throw new IllegalArgumentException("Must supply at least one scan");
+    }
+    return new HBaseSourceTarget(table, scans.toArray(new Scan[scans.size()]));
   }
 
   public static Source<KeyValue> hfile(String path) {
