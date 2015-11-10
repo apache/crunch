@@ -35,7 +35,7 @@ public class CrunchCombineFileInputFormat<K, V> extends CombineFileInputFormat<K
       if (conf.get(RuntimeParameters.COMBINE_FILE_BLOCK_SIZE) != null) {
         setMaxSplitSize(conf.getLong(RuntimeParameters.COMBINE_FILE_BLOCK_SIZE, 0));
       } else {
-        setMaxSplitSize(jobContext.getConfiguration().getLong("dfs.block.size", 134217728L));
+        setMaxSplitSize(jobContext.getConfiguration().getLongBytes("dfs.blocksize", 134217728L));
       }
     }
   }
