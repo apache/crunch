@@ -25,6 +25,7 @@ import java.lang.{Long => JLong, Double => JDouble, Integer => JInt, Float => JF
 import java.lang.reflect.{Array => RArray}
 import java.util.{Collection => JCollection}
 import scala.collection.JavaConversions._
+import scala.collection.mutable.{ListBuffer, Set => MSet, Map => MMap}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.reflect.runtime.currentMirror
@@ -187,6 +188,13 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     }
   }
 
+  def mutableMaps[K, V](keyType: PType[K], valueType: PType[V]): PType[MMap[K, V]] = {
+    derived(classOf[MMap[K, V]],
+        {x: JCollection[CPair[K, V]] => MMap[K, V](x.map(y => (y.first(), y.second())).toArray : _*)},
+        {x: MMap[K, V] => asJavaCollection(x.toIterable.map(y => CPair.of(y._1, y._2)))},
+        ptf.collections(ptf.pairs(keyType, valueType)))
+  }
+
   def arrays[T](ptype: PType[T]): PType[Array[T]] = {
     val in = (x: JCollection[_]) => {
       val ret = RArray.newInstance(ptype.getTypeClass, x.size())
@@ -211,10 +219,22 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
     derived(classOf[List[T]], in, out, ptf.collections(ptype))
   }
 
+  def listbuffers[T](ptype: PType[T]) = {
+    val in = (x: JCollection[T]) => collectionAsScalaIterable[T](x).to[ListBuffer]
+    val out = (x: ListBuffer[T]) => asJavaCollection[T](x)
+    derived(classOf[ListBuffer[T]], in, out, ptf.collections(ptype))
+  }
+
   def sets[T](ptype: PType[T]) = {
     val in = (x: JCollection[T]) => collectionAsScalaIterable[T](x).toSet
     val out = (x: Set[T]) => asJavaCollection[T](x)
     derived(classOf[Set[T]], in, out, ptf.collections(ptype))
+  }
+
+  def mutableSets[T](ptype: PType[T]) = {
+    val in = (x: JCollection[T]) => collectionAsScalaIterable[T](x).to[MSet]
+    val out = (x: MSet[T]) => asJavaCollection[T](x)
+    derived(classOf[MSet[T]], in, out, ptf.collections(ptype))
   }
 
   def tuple2[T1, T2](p1: PType[T1], p2: PType[T2]) = {

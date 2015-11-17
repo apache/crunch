@@ -22,6 +22,7 @@ import org.apache.crunch.{Pair => CPair}
 import org.apache.crunch.types.{PTypes, PType}
 import java.nio.ByteBuffer
 import scala.collection.Iterable
+import scala.collection.mutable.{ListBuffer, Set => MSet, Map => MMap}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 import org.apache.hadoop.io.Writable
@@ -178,6 +179,14 @@ object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
     }
   }
 
+  implicit def listbuffers[T: PTypeH] = {
+    new PTypeH[ListBuffer[T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.listbuffers(implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+  }
+
   implicit def sets[T: PTypeH] = {
     new PTypeH[Set[T]] {
       def get(ptf: PTypeFamily) = {
@@ -186,10 +195,26 @@ object PTypeH extends GeneratedTupleConversions with LowPriorityPTypeH {
     }
   }
 
+  implicit def msets[T: PTypeH] = {
+    new PTypeH[MSet[T]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.mutableSets(implicitly[PTypeH[T]].get(ptf))
+      }
+    }
+  }
+
   implicit def maps[K: PTypeH, V: PTypeH] = {
     new PTypeH[Map[K, V]] {
       def get(ptf: PTypeFamily) = {
         ptf.maps(implicitly[PTypeH[K]].get(ptf), implicitly[PTypeH[V]].get(ptf))
+      }
+    }
+  }
+
+  implicit def mmaps[K: PTypeH, V: PTypeH] = {
+    new PTypeH[MMap[K, V]] {
+      def get(ptf: PTypeFamily) = {
+        ptf.mutableMaps(implicitly[PTypeH[K]].get(ptf), implicitly[PTypeH[V]].get(ptf))
       }
     }
   }

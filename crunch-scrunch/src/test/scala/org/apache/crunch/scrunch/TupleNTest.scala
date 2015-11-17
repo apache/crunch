@@ -25,6 +25,8 @@ import org.apache.crunch.types.avro.AvroMode
 import org.scalatest.junit.JUnitSuite
 import org.junit.Test
 
+import scala.collection.mutable.{ListBuffer, Set => MSet, Map => MMap}
+
 /** Case classes for testing purposes */
 case class One(a: Int, b: String, c: List[java.lang.Long], d: Array[Long])
 case class Two(a: One, b: Set[Option[Boolean]], c: Map[String, Double], d: Map[Int, String])
@@ -41,6 +43,12 @@ class TupleNTest extends JUnitSuite{
     val pc = Mem.collectionOf((1, AvroMode.GENERIC), (2, AvroMode.SPECIFIC), (3, AvroMode.REFLECT))
     val res = pc.map(x => (x._2, x._1)).filter((k, v) => k == AvroMode.SPECIFIC).materialize
     org.junit.Assert.assertEquals(List((AvroMode.SPECIFIC, 2)), res.toList)
+  }
+
+  @Test def testMutablePTypes {
+    val lb = Mem.collectionOf(ListBuffer[Int](1, 2, 3), ListBuffer[Int](4, 5, 6))
+    val ms = Mem.collectionOf(MSet[String]("a", "b", "b"), MSet[String]("x", "y", "x"))
+    val mm = Mem.collectionOf(MMap[Int, String](1 -> "a", 2 -> "b", 3 -> "c"), MMap[Int, String]())
   }
 
   /**
