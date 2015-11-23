@@ -22,6 +22,7 @@ import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.JobID;
@@ -30,6 +31,7 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
@@ -219,7 +221,7 @@ public class CrunchOutputs<K, V> {
             baseTaskId.isMap(),
             baseTaskId.getTaskID().getId(),
             baseTaskId.getId());
-    return new TaskAttemptContextImpl(job.getConfiguration(), taskId);
+    return new TaskAttemptContextWrapper(baseContext, job.getConfiguration(), taskId);
   }
 
   private static void setJobID(Job job, JobID jobID, String namedOutput) {
@@ -359,6 +361,26 @@ public class CrunchOutputs<K, V> {
         configureJob(e.getKey(), job, outputs.get(e.getKey()));
         e.getValue().abortJob(job, state);
       }
+    }
+  }
+
+  private static class TaskAttemptContextWrapper extends TaskAttemptContextImpl {
+
+    private final TaskAttemptContext baseContext;
+
+    public TaskAttemptContextWrapper(TaskAttemptContext baseContext, Configuration config, TaskAttemptID taskId){
+      super(config, taskId);
+      this.baseContext = baseContext;
+    }
+
+    @Override
+    public Counter getCounter(Enum<?> counterName) {
+      return baseContext.getCounter(counterName);
+    }
+
+    @Override
+    public Counter getCounter(String groupName, String counterName) {
+      return baseContext.getCounter(groupName, counterName);
     }
   }
 }
