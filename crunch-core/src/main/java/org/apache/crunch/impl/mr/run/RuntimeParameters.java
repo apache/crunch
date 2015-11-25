@@ -43,6 +43,8 @@ public final class RuntimeParameters {
 
   public static final String MAX_RUNNING_JOBS = "crunch.max.running.jobs";
 
+  public static final String FILE_TARGET_MAX_THREADS = "crunch.file.target.max.threads";
+
   // Not instantiated
   private RuntimeParameters() {
   }

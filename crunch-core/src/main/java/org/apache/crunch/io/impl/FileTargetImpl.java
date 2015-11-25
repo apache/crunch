@@ -18,16 +18,28 @@
 package org.apache.crunch.io.impl;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.mr.plan.PlanningParameters;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.io.CrunchOutputs;
 import org.apache.crunch.io.FileNamingScheme;
 import org.apache.crunch.io.FormatBundle;
@@ -118,6 +130,35 @@ public class FileTargetImpl implements PathTarget {
     return ptype.getConverter();
   }
 
+  private class WorkingPathFileMover implements Callable<Boolean> {
+    private Configuration conf;
+    private Path src;
+    private Path dst;
+    private FileSystem srcFs;
+    private FileSystem dstFs;
+    private boolean sameFs;
+
+
+    public WorkingPathFileMover(Configuration conf, Path src, Path dst,
+                                FileSystem srcFs, FileSystem dstFs, boolean sameFs) {
+      this.conf = conf;
+      this.src = src;
+      this.dst = dst;
+      this.srcFs = srcFs;
+      this.dstFs = dstFs;
+      this.sameFs = sameFs;
+    }
+
+    @Override
+    public Boolean call() throws IOException {
+      if (sameFs) {
+        return srcFs.rename(src, dst);
+      } else {
+        return FileUtil.copy(srcFs, src, dstFs, dst, true, true, conf);
+      }
+    }
+  }
+
   @Override
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
@@ -128,15 +169,33 @@ public class FileTargetImpl implements PathTarget {
       dstFs.mkdirs(path);
     }
     boolean sameFs = isCompatible(srcFs, path);
+    List<ListenableFuture<Boolean>> renameFutures = Lists.newArrayList();
+    ListeningExecutorService executorService =
+        MoreExecutors.listeningDecorator(
+            Executors.newFixedThreadPool(
+                conf.getInt(RuntimeParameters.FILE_TARGET_MAX_THREADS, 1)));
     for (Path s : srcs) {
       Path d = getDestFile(conf, s, path, s.getName().contains("-m-"));
-      if (sameFs) {
-        srcFs.rename(s, d);
-      } else {
-        FileUtil.copy(srcFs, s, dstFs, d, true, true, conf);
-      }
+      renameFutures.add(
+          executorService.submit(
+              new WorkingPathFileMover(conf, s, d, srcFs, dstFs, sameFs)));
     }
-    dstFs.create(getSuccessIndicator(), true).close();
+    LOG.debug("Renaming " + renameFutures.size() + " files.");
+
+    ListenableFuture<List<Boolean>> future =
+        Futures.successfulAsList(renameFutures);
+    List<Boolean> renameResults = null;
+    try {
+      renameResults = future.get();
+    } catch (InterruptedException | ExecutionException e) {
+      Throwables.propagate(e);
+    } finally {
+      executorService.shutdownNow();
+    }
+    if (renameResults != null && !renameResults.contains(false)) {
+      dstFs.create(getSuccessIndicator(), true).close();
+      LOG.debug("Renamed " + renameFutures.size() + " files.");
+    }
   }
   
   protected Path getSuccessIndicator() {
