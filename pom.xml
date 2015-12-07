@@ -78,7 +78,7 @@ under the License.
               classpath. Additionally, please keep licensing information
               in NOTICE and LICENSE files up to date.
     -->
-    <guava.version>11.0.2</guava.version>
+    <guava.version>14.0.1</guava.version>
     <commons-io.version>2.1</commons-io.version>
     <commons-lang.version>2.6</commons-lang.version>
     <commons-codec.version>1.4</commons-codec.version>

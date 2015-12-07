@@ -17,20 +17,23 @@
  */
 package org.apache.crunch.io.text.csv;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.Text;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
-import org.apache.hadoop.io.Text;
-
-import com.google.common.io.Closeables;
-
 /**
  * An {@code Iterator} for an internally created {@code CSVLineReader}
  */
 public class CSVRecordIterator implements Iterator<String>, Closeable {
+
+  private static final Log LOG = LogFactory.getLog(CSVRecordIterator.class);
+
   private final CSVLineReader csvLineReader;
   private InputStream inputStream;
   private String currentLine;
@@ -83,7 +86,11 @@ public class CSVRecordIterator implements Iterator<String>, Closeable {
     if (!(currentLine == null)) {
       return true;
     }
-    Closeables.closeQuietly(this);
+    try {
+      this.close();
+    } catch (IOException e) {
+      LOG.error("Failed to close CSVRecordIterator", e);
+    }
     return false;
   }
 
