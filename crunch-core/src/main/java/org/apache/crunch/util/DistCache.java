@@ -69,7 +69,8 @@ public class DistCache {
     Object value = null;
     if (target != null) {
       Path targetPath = new Path(target.toString());
-      ObjectInputStream ois = new ObjectInputStream(targetPath.getFileSystem(conf).open(targetPath));
+      ObjectInputStream ois = new ClassloaderFallbackObjectInputStream(
+          targetPath.getFileSystem(conf).open(targetPath));
       try {
         value = ois.readObject();
       } catch (ClassNotFoundException e) {

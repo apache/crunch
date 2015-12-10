@@ -60,6 +60,7 @@ import org.apache.crunch.materialize.pobject.FirstElementPObject;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
+import org.apache.crunch.util.ClassloaderFallbackObjectInputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -126,18 +127,7 @@ public class MemCollection<S> implements PCollection<S> {
     ObjectInputStream in = null;
     try {
       // stream closed in the finally
-      in = new ObjectInputStream(inputStream) {
-        @Override
-        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException,
-            ClassNotFoundException {
-          try {
-            return super.resolveClass(desc);
-          } catch (ClassNotFoundException e) {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            return Class.forName(desc.getName(), false, cl);
-          }
-        }
-      };
+      in = new ClassloaderFallbackObjectInputStream(inputStream);
       return in.readObject();
 
     } catch (ClassNotFoundException ex) {
