@@ -63,6 +63,16 @@ public class ShardedJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   public ShardedJoinStrategy(int numShards) {
     this(new ConstantShardingStrategy<K>(numShards));
   }
+
+  /**
+   * Instantiate with a constant number of shards to use for all keys.
+   *
+   * @param numShards number of shards to use
+   * @param numReducers the amount of reducers to run the join with
+   */
+  public ShardedJoinStrategy(int numShards, int numReducers) {
+    this(new ConstantShardingStrategy<K>(numShards), numReducers);
+  }
   
   /**
    * Instantiate with a custom sharding strategy.
@@ -71,6 +81,20 @@ public class ShardedJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
    */
   public ShardedJoinStrategy(ShardingStrategy<K> shardingStrategy) {
     this.wrappedJoinStrategy = new DefaultJoinStrategy<Pair<K, Integer>, U, V>();
+    this.shardingStrategy = shardingStrategy;
+  }
+
+  /**
+   * Instantiate with a custom sharding strategy and a specified number of reducers.
+   *
+   * @param shardingStrategy strategy to be used for sharding
+   * @param numReducers the amount of reducers to run the join with
+   */
+  public ShardedJoinStrategy(ShardingStrategy<K> shardingStrategy, int numReducers) {
+    if (numReducers < 1) {
+      throw new IllegalArgumentException("Num reducers must be > 0, got " + numReducers);
+    }
+    this.wrappedJoinStrategy = new DefaultJoinStrategy<Pair<K, Integer>, U, V>(numReducers);
     this.shardingStrategy = shardingStrategy;
   }
 
