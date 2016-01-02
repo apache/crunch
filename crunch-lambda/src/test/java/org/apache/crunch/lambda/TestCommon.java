@@ -15,13 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.lambda;
 
-import java.io.Serializable;
+import com.google.common.collect.Sets;
 
-/**
- * A Java lambdas friendly version of the {@link org.apache.crunch.MapFn} class.
- */
-public interface IMapFn<S, T> extends Serializable {
-  public T map(S input);
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+
+public class TestCommon {
+    @SafeVarargs
+    public static <T> void assertCollectionOf(LCollection<T> actual, T... expected) {
+        Set<T> actualSet = actual.materialize().collect(Collectors.toSet());
+        Set<T> expectedSet = Sets.newHashSet(expected);
+        assertEquals(expectedSet, actualSet);
+    }
 }

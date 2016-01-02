@@ -15,14 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.lambda;
+
+import org.apache.crunch.DoFn;
 
 import java.io.Serializable;
 
 /**
- * A Java lambdas friendly interface for writing business logic against {@code PCollection}s
- * that take in a single input record and return 0 to N output records via an {@code Iterable}.
+ * A Java lambdas friendly version of the {@link DoFn} class.
  */
-public interface IFlatMapFn<S, T> extends Serializable {
-  Iterable<T> process(S input);
+public interface LDoFn<S, T> extends Serializable {
+
+  void process(LDoFnContext<S, T> context);
+
 }

@@ -55,6 +55,17 @@ under the License.
     <module>crunch-hive</module>
     <module>crunch-dist</module>
   </modules>
+  <profiles>
+    <profile>
+      <id>java-8</id>
+      <activation>
+        <jdk>[1.8,]</jdk>
+      </activation>
+      <modules>
+        <module>crunch-lambda</module>
+      </modules>
+    </profile>
+  </profiles>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -159,6 +170,12 @@ under the License.
       <dependency>
         <groupId>org.apache.crunch</groupId>
         <artifactId>crunch-contrib</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.crunch</groupId>
+        <artifactId>crunch-lambda</artifactId>
         <version>${project.version}</version>
       </dependency>
 

@@ -79,17 +79,6 @@ public interface PGroupedTable<K, V> extends PCollection<Pair<K, Iterable<V>>> {
    */
   <U> PTable<K, U> mapValues(MapFn<Iterable<V>, U> mapFn, PType<U> ptype);
 
-
-  /**
-   * Maps the {@code Iterable<V>} elements of each record to a new type. Just like
-   * any {@code parallelDo} operation on a {@code PGroupedTable}, this may only be
-   * called once. Designed for Java lambdas
-   * @param mapFn The mapping function (can be lambda/method ref)
-   * @param ptype The serialization infromation for the returned data
-   * @return A new {@code PTable} instance
-   */
-  <U> PTable<K, U> mapValues(IMapFn<Iterable<V>, U> mapFn, PType<U> ptype);
-  
   /**
    * Maps the {@code Iterable<V>} elements of each record to a new type. Just like
    * any {@code parallelDo} operation on a {@code PGroupedTable}, this may only be

@@ -130,7 +130,7 @@ public class PageRankIT {
     }, ptf.tableOf(ptf.strings(), ptf.floats()));
 
     return input.cogroup(outbound).mapValues(
-        new IMapFn<Pair<Collection<PageRankData>, Collection<Float>>, PageRankData>() {
+        new MapFn<Pair<Collection<PageRankData>, Collection<Float>>, PageRankData>() {
           @Override
           public PageRankData map(Pair<Collection<PageRankData>, Collection<Float>> input) {
             PageRankData prd = Iterables.getOnlyElement(input.first());

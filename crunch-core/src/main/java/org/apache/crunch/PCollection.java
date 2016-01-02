@@ -132,95 +132,6 @@ public interface PCollection<S> {
   <K, V> PTable<K, V> parallelDo(String name, DoFn<S, Pair<K, V>> doFn, PTableType<K, V> type,
       ParallelDoOptions options);
 
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <T> PCollection<T> parallelDo(IDoFn<S, T> fn, PType<T> type);
-
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> parallelDo(IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <T> PCollection<T> parallelDo(String name, IDoFn<S, T> fn, PType<T> type);
-
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> parallelDo(String name, IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <T> PCollection<T> parallelDo(String name, IDoFn<S, T> fn, PType<T> type, ParallelDoOptions options);
-
-  /**
-   * Similar to other instances of {@code parallelDo}, but designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> parallelDo(String name, IDoFn<S, Pair<K, V>> fn, PTableType<K, V> type, ParallelDoOptions options);
-
-  /**
-   * For each element of this {@code PCollection}, generate 0 to N output values using the
-   * given {@code IFlatMapFn}. Designed for Java lambdas.
-   */
-  <T> PCollection<T> flatMap(IFlatMapFn<S, T> fn, PType<T> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate 0 to N output values using the
-   * given {@code IFlatMapFn}. Designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> flatMap(IFlatMapFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate 0 to N output values using the
-   * given {@code IFlatMapFn}. Designed for Java lambdas.
-   */
-  <T> PCollection<T> flatMap(String name, IFlatMapFn<S, T> fn, PType<T> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate 0 to N output values using the
-   * given {@code IFlatMapFn}. Designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> flatMap(String name, IFlatMapFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate one output value using the
-   * given {@code IMapFn}. Designed for Java lambdas.
-   */
-  <T> PCollection<T> map(IMapFn<S, T> fn, PType<T> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate one output value using the
-   * given {@code IMapFn}. Designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> map(IMapFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate one output value using the
-   * given {@code IMapFn}. Designed for Java lambdas.
-   */
-  <T> PCollection<T> map(String name, IMapFn<S, T> fn, PType<T> type);
-
-  /**
-   * For each element of this {@code PCollection}, generate one output value using the
-   * given {@code IMapFn}. Designed for Java lambdas.
-   */
-  <K, V> PTable<K, V> map(String name, IMapFn<S, Pair<K, V>> fn, PTableType<K, V> type);
-
-  /**
-   * Filter elements of this {@code PCollection} using the given {@code IFilterFn}.
-   * Designed for Java lambdas.
-   */
-  PCollection<S> filter(IFilterFn<S> fn);
-
-  /**
-   * Filter elements of this {@code PCollection} using the given {@code IFilterFn}.
-   * Designed for Java lambdas.
-   */
-  PCollection<S> filter(String name, IFilterFn<S> fn);
 
   /**
    * Write the contents of this {@code PCollection} to the given {@code Target},
@@ -349,12 +260,6 @@ public interface PCollection<S> {
   <K> PTable<K, S> by(MapFn<S, K> extractKeyFn, PType<K> keyType);
 
   /**
-   * Apply the given {@code IMapFn} to each element of this instance in order to
-   * create a {@code PTable}. Designed for use with Java 8 lambdas.
-   */
-  <K> PTable<K, S> by(IMapFn<S, K> extractKeyFn, PType<K> keyType);
-
-  /**
    * Apply the given map function to each element of this instance in order to
    * create a {@code PTable}.
    *
@@ -385,4 +290,5 @@ public interface PCollection<S> {
    * Returns a {@code PCollection} that contains the result of aggregating all values in this instance.
    */
   PCollection<S> aggregate(Aggregator<S> aggregator);
+  
 }

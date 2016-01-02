@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch;
+package org.apache.crunch.lambda.fn;
 
 import java.io.Serializable;
+import java.util.function.BiFunction;
 
 /**
- * A Java lambdas friendly version of the {@link org.apache.crunch.FilterFn} class.
+ * Serializable version of the Java BiFunction functional interface.
  */
-public interface IFilterFn<S> extends Serializable {
-  boolean accept(S input);
+@FunctionalInterface
+public interface SBiFunction<K, V, T> extends BiFunction<K, V, T>, Serializable {
 }

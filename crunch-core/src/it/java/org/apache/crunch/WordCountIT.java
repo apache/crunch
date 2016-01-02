@@ -39,6 +39,7 @@ import org.apache.crunch.types.PTypes;
 import org.apache.crunch.types.avro.AvroTypeFamily;
 import org.apache.crunch.types.writable.WritableTypeFamily;
 import org.apache.crunch.types.writable.Writables;
+import org.apache.hadoop.mapred.ShuffleConsumerPlugin;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -55,17 +56,18 @@ public class WordCountIT {
   }
 
   public static PTable<String, Long> wordCount(PCollection<String> words, PTypeFamily typeFamily) {
-    return Aggregate.count(words.parallelDo(new IDoFn<String, String>() {
+    return Aggregate.count(words.parallelDo(new DoFn<String, String>() {
       @Override
-      public void process(Context<String, String> context) {
-        List<String> words = Arrays.asList(context.element().split("\\s+"));
+      public void process(String input, Emitter<String> emitter) {
+        List<String> words = Arrays.asList(input.split("\\s+"));
         for (String word : words) {
           if ("and".equals(word)) {
-            context.increment(WordCountStats.ANDS);
+            increment(WordCountStats.ANDS);
           }
-          context.emit(word);
+          emitter.emit(word);
         }
       }
+
     }, typeFamily.strings()));
   }
 

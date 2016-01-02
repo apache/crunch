@@ -107,12 +107,6 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
 
   /**
    * Returns a {@code PTable} that has the same keys as this instance, but
-   * uses the given function to map the values. Designed for Java lambdas.
-   */
-  <U> PTable<K, U> mapValues(IMapFn<V, U> mapFn, PType<U> ptype);
-
-  /**
-   * Returns a {@code PTable} that has the same keys as this instance, but
    * uses the given function to map the values.
    */
   <U> PTable<K, U> mapValues(String name, MapFn<V, U> mapFn, PType<U> ptype);
@@ -122,12 +116,6 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    * uses the given function to map the keys.
    */
   <K2> PTable<K2, V> mapKeys(MapFn<K, K2> mapFn, PType<K2> ptype);
-
-  /**
-   * Returns a {@code PTable} that has the same values as this instance, but
-   * uses the given function to map the keys. Designed for Java lambdas.
-   */
-  <K2> PTable<K2, V> mapKeys(IMapFn<K, K2> mapFn, PType<K2> ptype);
 
   /**
    * Returns a {@code PTable} that has the same values as this instance, but
@@ -149,12 +137,6 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
 
   /**
    * Apply the given filter function to this instance and return the resulting
-   * {@code PTable}. Designed for Java lambdas.
-   */
-  PTable<K, V> filter(IFilterFn<Pair<K, V>> fn);
-
-  /**
-   * Apply the given filter function to this instance and return the resulting
    * {@code PTable}.
    *
    * @param name
@@ -163,12 +145,6 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
    *          The {@code FilterFn} to apply
    */
   PTable<K, V> filter(String name, FilterFn<Pair<K, V>> filterFn);
-
-  /**
-   * Apply the given filter function to this instance and return the resulting
-   * {@code PTable}. Designed for Java lambdas.
-   */
-  PTable<K, V> filter(String name, IFilterFn<Pair<K, V>> fn);
 
   /**
    * Returns a PTable made up of the pairs in this PTable with the largest value
