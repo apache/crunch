@@ -97,6 +97,27 @@ public interface LTable<K, V> extends LCollection<Pair<K, V>> {
     }
 
     /**
+     * Filter the rows of the table using the supplied predicate.
+     */
+    default LTable<K, V> filter(SPredicate<Pair<K, V>> predicate) {
+        return parallelDo(ctx -> { if (predicate.test(ctx.element())) ctx.emit(ctx.element());}, pType());
+    }
+
+    /**
+     * Filter the rows of the table using the supplied predicate applied to the key part of each record.
+     */
+    default LTable<K, V> filterByKey(SPredicate<K> predicate) {
+        return parallelDo(ctx -> { if (predicate.test(ctx.element().first())) ctx.emit(ctx.element());}, pType());
+    }
+
+    /**
+     * Filter the rows of the table using the supplied predicate applied to the value part of each record.
+     */
+    default LTable<K, V> filterByValue(SPredicate<V> predicate) {
+        return parallelDo(ctx -> { if (predicate.test(ctx.element().second())) ctx.emit(ctx.element());}, pType());
+    }
+
+    /**
      * Join this table to another {@link LTable} which has the same key type using the provided {@link JoinType} and
      * {@link JoinStrategy}
      */
