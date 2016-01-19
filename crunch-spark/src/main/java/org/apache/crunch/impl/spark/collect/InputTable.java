@@ -45,7 +45,7 @@ public class InputTable<K, V> extends BaseInputTable<K, V> implements SparkColle
   public JavaRDDLike<?, ?> getJavaRDDLike(SparkRuntime runtime) {
     try {
       Job job = new Job(runtime.getConfiguration());
-      source.configureSource(job, -1); // TODO: a custom input format for crunch-spark
+      source.configureSource(job, 0); // TODO: a custom input format for crunch-spark
       Converter converter = source.getConverter();
       JavaPairRDD<?, ?> input = runtime.getSparkContext().newAPIHadoopRDD(
           job.getConfiguration(),

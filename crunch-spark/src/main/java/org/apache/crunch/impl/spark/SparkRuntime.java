@@ -342,7 +342,7 @@ public class SparkRuntime extends AbstractFuture<PipelineResult> implements Pipe
                 pt.handleOutputs(job.getConfiguration(), tmpPath, -1);
               } else { //if (t instanceof MapReduceTarget) {
                 MapReduceTarget mrt = (MapReduceTarget) t;
-                mrt.configureForMapReduce(job, ptype, new Path("/tmp"), "out0");
+                mrt.configureForMapReduce(job, ptype, pipeline.createTempPath(), "out0");
                 CrunchOutputs.OutputConfig outConfig =
                         CrunchOutputs.getNamedOutputs(job.getConfiguration()).get("out0");
                 job.setOutputFormatClass(outConfig.bundle.getFormatClass());

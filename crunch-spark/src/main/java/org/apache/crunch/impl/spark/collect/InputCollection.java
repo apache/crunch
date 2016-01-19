@@ -46,7 +46,7 @@ public class InputCollection<S> extends BaseInputCollection<S> implements SparkC
     try {
       Job job = new Job(runtime.getConfiguration());
       FileInputFormat.addInputPaths(job, "/tmp"); //placeholder
-      source.configureSource(job, -1);
+      source.configureSource(job, 0);
       Converter converter = source.getConverter();
       JavaPairRDD<?, ?> input = runtime.getSparkContext().newAPIHadoopRDD(
           job.getConfiguration(),
