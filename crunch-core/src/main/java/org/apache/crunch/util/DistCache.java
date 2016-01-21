@@ -46,12 +46,21 @@ import org.apache.hadoop.fs.Path;
  */
 public class DistCache {
 
+  /**
+   * Configuration key for setting the replication factor for files distributed using the Crunch
+   * DistCache helper class. This can be used to scale read access for files used by the Crunch
+   * framework.
+   */
+  public static final String DIST_CACHE_REPLICATION = "crunch.distcache.replication";
+
   // Configuration key holding the paths of jars to export to the distributed
   // cache.
   private static final String TMPJARS_KEY = "tmpjars";
 
   public static void write(Configuration conf, Path path, Object value) throws IOException {
-    ObjectOutputStream oos = new ObjectOutputStream(path.getFileSystem(conf).create(path));
+    FileSystem fs = path.getFileSystem(conf);
+    short replication = (short) conf.getInt(DIST_CACHE_REPLICATION, fs.getDefaultReplication(path));
+    ObjectOutputStream oos = new ObjectOutputStream(fs.create(path, replication));
     oos.writeObject(value);
     oos.close();
 
