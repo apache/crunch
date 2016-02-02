@@ -92,10 +92,10 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
     final long splitSize = job.getConfiguration().getLong(CSVFileSource.INPUT_SPLIT_SIZE, 67108864);
     final List<InputSplit> splits = new ArrayList<InputSplit>();
     final Path[] paths = FileUtil.stat2Paths(listStatus(job).toArray(new FileStatus[0]));
-    final FileSystem fileSystem = FileSystem.get(job.getConfiguration());
     FSDataInputStream inputStream = null;
     try {
       for (final Path path : paths) {
+        FileSystem fileSystem = path.getFileSystem(job.getConfiguration());
         inputStream = fileSystem.open(path);
         splits.addAll(getSplitsForFile(splitSize, fileSystem.getFileStatus(path).getLen(), path, inputStream));
       }
