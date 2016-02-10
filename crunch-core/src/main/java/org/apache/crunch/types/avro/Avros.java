@@ -155,6 +155,9 @@ public class Avros {
   public static MapFn<CharSequence, String> UTF8_TO_STRING = new MapFn<CharSequence, String>() {
     @Override
     public String map(CharSequence input) {
+      if (input == null) {
+        return null;
+      }
       return input.toString();
     }
   };
@@ -162,6 +165,9 @@ public class Avros {
   public static MapFn<String, Utf8> STRING_TO_UTF8 = new MapFn<String, Utf8>() {
     @Override
     public Utf8 map(String input) {
+      if (input == null) {
+        return null;
+      }
       return new Utf8(input);
     }
   };
@@ -169,6 +175,9 @@ public class Avros {
   public static MapFn<Object, ByteBuffer> BYTES_IN = new MapFn<Object, ByteBuffer>() {
     @Override
     public ByteBuffer map(Object input) {
+      if (input == null) {
+        return null;
+      }
       if (input instanceof ByteBuffer) {
         return (ByteBuffer) input;
       }

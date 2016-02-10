@@ -68,6 +68,7 @@ public class AvrosTest {
     String s = "abc";
     Utf8 w = new Utf8(s);
     testInputOutputFn(Avros.strings(), s, w);
+    testInputOutputFn(Avros.strings(), null, null);
   }
 
   @Test
@@ -105,6 +106,7 @@ public class AvrosTest {
     byte[] bytes = new byte[] { 17, 26, -98 };
     ByteBuffer bb = ByteBuffer.wrap(bytes);
     testInputOutputFn(Avros.bytes(), bb, bb);
+    testInputOutputFn(Avros.bytes(), null, null);
   }
 
   @Test
