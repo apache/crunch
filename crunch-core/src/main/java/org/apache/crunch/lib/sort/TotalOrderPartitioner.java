@@ -122,18 +122,18 @@ public class TotalOrderPartitioner<K, V> extends Partitioner<K, V> implements Co
   /**
    * Interface to the partitioner to locate a key in the partition keyset.
    */
-  interface Node<T> {
+  public interface Node<T> {
     /**
      * Locate partition in keyset K, st [Ki..Ki+1) defines a partition,
      * with implicit K0 = -inf, Kn = +inf, and |K| = #partitions - 1.
      */
     int findPartition(T key);
   }
-  
-  class BinarySearchNode implements Node<K> {
+
+  public static class BinarySearchNode<K> implements Node<K> {
     private final K[] splitPoints;
     private final RawComparator<K> comparator;
-    BinarySearchNode(K[] splitPoints, RawComparator<K> comparator) {
+    public BinarySearchNode(K[] splitPoints, RawComparator<K> comparator) {
       this.splitPoints = splitPoints;
       this.comparator = comparator;
     }

@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -36,6 +37,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Longs;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
 import org.apache.crunch.FilterFn;
@@ -47,6 +49,7 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.lib.sort.TotalOrderPartitioner;
+import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
@@ -54,6 +57,7 @@ import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -370,15 +374,32 @@ public final class HFileUtils {
   }
 
   public static <C extends Cell> void writeToHFilesForIncrementalLoad(
+          PCollection<C> cells,
+          HTable table,
+          Path outputPath) throws IOException {
+    writeToHFilesForIncrementalLoad(cells, table, outputPath, false);
+  }
+
+  /**
+   * Writes out HFiles from the provided <code>cells</code> and <code>table</code>. <code>limitToAffectedRegions</code>
+   * is used to indicate that the regions the <code>cells</code> will be loaded into should be identified prior to writing
+   * HFiles. Identifying the regions ahead of time will reduce the number of reducers needed when writing. This is
+   * beneficial if the data to be loaded only touches a small enough subset of the total regions in the table. If set to
+   * false, the number of reducers will equal the number of regions in the table.
+   *
+   * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
+   */
+  public static <C extends Cell> void writeToHFilesForIncrementalLoad(
       PCollection<C> cells,
       HTable table,
-      Path outputPath) throws IOException {
+      Path outputPath,
+      boolean limitToAffectedRegions) throws IOException {
     HColumnDescriptor[] families = table.getTableDescriptor().getColumnFamilies();
     if (families.length == 0) {
       LOG.warn("{} has no column families", table);
       return;
     }
-    PCollection<C> partitioned = sortAndPartition(cells, table);
+    PCollection<C> partitioned = sortAndPartition(cells, table, limitToAffectedRegions);
     for (HColumnDescriptor f : families) {
       byte[] family = f.getName();
       partitioned
@@ -388,9 +409,26 @@ public final class HFileUtils {
   }
 
   public static void writePutsToHFilesForIncrementalLoad(
+          PCollection<Put> puts,
+          HTable table,
+          Path outputPath) throws IOException {
+    writePutsToHFilesForIncrementalLoad(puts, table, outputPath, false);
+  }
+
+  /**
+   * Writes out HFiles from the provided <code>puts</code> and <code>table</code>. <code>limitToAffectedRegions</code>
+   * is used to indicate that the regions the <code>puts</code> will be loaded into should be identified prior to writing
+   * HFiles. Identifying the regions ahead of time will reduce the number of reducers needed when writing. This is
+   * beneficial if the data to be loaded only touches a small enough subset of the total regions in the table. If set to
+   * false, the number of reducers will equal the number of regions in the table.
+   *
+   * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
+   */
+  public static void writePutsToHFilesForIncrementalLoad(
       PCollection<Put> puts,
       HTable table,
-      Path outputPath) throws IOException {
+      Path outputPath,
+      boolean limitToAffectedRegions) throws IOException {
     PCollection<Cell> cells = puts.parallelDo("ConvertPutToCells", new DoFn<Put, Cell>() {
       @Override
       public void process(Put input, Emitter<Cell> emitter) {
@@ -399,10 +437,21 @@ public final class HFileUtils {
         }
       }
     }, HBaseTypes.cells());
-    writeToHFilesForIncrementalLoad(cells, table, outputPath);
+    writeToHFilesForIncrementalLoad(cells, table, outputPath, limitToAffectedRegions);
   }
 
   public static <C extends Cell> PCollection<C> sortAndPartition(PCollection<C> cells, HTable table) throws IOException {
+    return sortAndPartition(cells, table, false);
+  }
+
+  /**
+   * Sorts and partitions the provided <code>cells</code> for the given <code>table</code> to ensure all elements that belong
+   * in the same region end up in the same reducer. The flag <code>limitToAffectedRegions</code>, when set to true, will identify
+   * the regions the data in <code>cells</code> belongs to and will set the number of reducers equal to the number of identified
+   * affected regions. If set to false, then all regions will be used, and the number of reducers will be set to the number
+   * of regions in the table.
+   */
+  public static <C extends Cell> PCollection<C> sortAndPartition(PCollection<C> cells, HTable table, boolean limitToAffectedRegions) throws IOException {
     Configuration conf = cells.getPipeline().getConfiguration();
     PTable<C, Void> t = cells.parallelDo(
         "Pre-partition",
@@ -412,7 +461,13 @@ public final class HFileUtils {
             return Pair.of(input, (Void) null);
           }
         }, tableOf(cells.getPType(), nulls()));
-    List<KeyValue> splitPoints = getSplitPoints(table);
+
+    List<KeyValue> splitPoints;
+    if(limitToAffectedRegions) {
+      splitPoints = getSplitPoints(table, t);
+    } else {
+      splitPoints = getSplitPoints(table);
+    }
     Path partitionFile = new Path(((DistributedPipeline) cells.getPipeline()).createTempPath(), "partition");
     writePartitionInfo(conf, partitionFile, splitPoints);
     GroupingOptions options = GroupingOptions.builder()
@@ -431,11 +486,82 @@ public final class HFileUtils {
     }
     List<KeyValue> splitPoints = Lists.newArrayList();
     for (byte[] startKey : startKeys.subList(1, startKeys.size())) {
-      KeyValue kv = KeyValue.createFirstOnRow(startKey);
-      LOG.debug("split row: " + Bytes.toString(kv.getRow()));
+      KeyValue kv = KeyValueUtil.createFirstOnRow(startKey);
+      LOG.debug("split row: " + Bytes.toString(CellUtil.cloneRow(kv)));
       splitPoints.add(kv);
     }
     return splitPoints;
+  }
+
+  private static <C> List<KeyValue> getSplitPoints(HTable table, PTable<C, Void> affectedRows) throws IOException {
+    List<byte[]> startKeys;
+    try {
+      startKeys = Lists.newArrayList(table.getStartKeys());
+      if (startKeys.isEmpty()) {
+        throw new AssertionError(table + " has no regions!");
+      }
+    } catch (IOException e) {
+      throw new CrunchRuntimeException(e);
+    }
+
+    Collections.sort(startKeys, Bytes.BYTES_COMPARATOR);
+
+    Iterable<ByteBuffer> bufferedStartKeys = affectedRows
+            .parallelDo(new DetermineAffectedRegionsFn(startKeys), Writables.bytes()).materialize();
+
+    // set to get rid of the potential duplicate start keys emitted
+    ImmutableSet.Builder<KeyValue> startKeyBldr = ImmutableSet.builder();
+    for (final ByteBuffer bufferedStartKey : bufferedStartKeys) {
+      startKeyBldr.add(KeyValueUtil.createFirstOnRow(bufferedStartKey.array()));
+    }
+
+    return ImmutableList.copyOf(startKeyBldr.build());
+  }
+
+  /**
+   * Spins through the {@link Cell}s and determines which regions the data
+   * will be loaded into. Searching the regions is done via a binary search. The
+   * region start key should be provided by the caller to cut down on calls to
+   * HMaster to get those start keys.
+   */
+  public static class DetermineAffectedRegionsFn<C extends Cell> extends DoFn<Pair<C, Void>, ByteBuffer> {
+
+    private final Set<Cell> startKeysToEmit = new HashSet<>();
+    List<byte[]> startKeys;
+    TotalOrderPartitioner.Node partitions;
+    List<Cell> regionStartKeys = Lists.newArrayList();
+
+    public DetermineAffectedRegionsFn(List<byte[]> startKeys) {
+      this.startKeys = startKeys;
+    }
+
+    @Override
+    public void initialize() {
+      for (byte[] startKey : startKeys.subList(1, startKeys.size())) {
+        Cell cell = KeyValueUtil.createFirstOnRow(startKey);
+        regionStartKeys.add(cell);
+      }
+
+      partitions = new TotalOrderPartitioner.BinarySearchNode<>(regionStartKeys.toArray(new Cell[regionStartKeys.size()]),
+              new KeyValue.KVComparator());
+    }
+
+    @Override
+    public void process(Pair<C, Void> input, Emitter<ByteBuffer> emitter) {
+      int position = partitions.findPartition(new KeyValue(input.first().getFamilyArray()));
+      // if the position is after the last key, use the last start key
+      // as the split for this key, since it should fall into that region
+      if (position >= regionStartKeys.size() && regionStartKeys.size() > 1) {
+        position = regionStartKeys.size() - 1;
+      }
+
+      Cell foundCell = regionStartKeys.get(position);
+
+      if (!startKeysToEmit.contains(foundCell)) {
+        startKeysToEmit.add(foundCell);
+        emitter.emit(ByteBuffer.wrap(CellUtil.cloneRow(foundCell)));
+      }
+    }
   }
 
   private static void writePartitionInfo(

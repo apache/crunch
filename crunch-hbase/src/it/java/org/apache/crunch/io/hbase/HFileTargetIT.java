@@ -19,6 +19,7 @@ package org.apache.crunch.io.hbase;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import org.apache.commons.io.IOUtils;
@@ -33,15 +34,21 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.PipelineResult;
 import org.apache.crunch.fn.FilterFns;
+import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.io.At;
+import org.apache.crunch.io.CompositePathIterable;
+import org.apache.crunch.io.seq.SeqFileReaderFactory;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
+import org.apache.crunch.types.writable.WritableDeepCopier;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -49,6 +56,7 @@ import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
@@ -63,6 +71,9 @@ import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.StoreFileScanner;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -76,6 +87,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -226,6 +239,7 @@ public class HFileTargetIT implements Serializable {
     HTable table1 = createTable(26);
     HTable table2 = createTable(26);
     LoadIncrementalHFiles loader = new LoadIncrementalHFiles(HBASE_TEST_UTILITY.getConfiguration());
+    boolean onlyAffectedRegions = true;
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
     PCollection<String> words = split(shakespeare, "\\s+");
@@ -240,7 +254,8 @@ public class HFileTargetIT implements Serializable {
     HFileUtils.writePutsToHFilesForIncrementalLoad(
         convertToPuts(longWordCounts),
         table2,
-        outputPath2);
+        outputPath2,
+        onlyAffectedRegions);
 
     PipelineResult result = pipeline.run();
     assertTrue(result.succeeded());
@@ -296,6 +311,124 @@ public class HFileTargetIT implements Serializable {
       hfilesCount++;
     }
     assertTrue(hfilesCount > 0);
+  }
+
+  /**
+   * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
+     */
+  @Test
+  public void testOnlyAffectedRegionsWhenWritingHFiles() throws Exception {
+    Pipeline pipeline = new MRPipeline(HFileTargetIT.class, HBASE_TEST_UTILITY.getConfiguration());
+    Path inputPath = copyResourceFileToHDFS("shakes.txt");
+    Path outputPath1 = getTempPathOnHDFS("out1");
+    HTable table1 = createTable(26);
+
+    PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
+    PCollection<String> words = split(shakespeare, "\\s+");
+    // take the top 5 here to reduce the number of affected regions in the table
+    PTable<String, Long> count = words.filter(SHORT_WORD_FILTER).count().top(5);
+    boolean onlyAffectedRegions = true;
+
+    PCollection<Put> wordPuts = convertToPuts(count);
+    HFileUtils.writePutsToHFilesForIncrementalLoad(
+            wordPuts,
+            table1,
+            outputPath1,
+            onlyAffectedRegions);
+
+    // locate partition file directory and read it in to verify
+    // the number of regions to be written to are less than the
+    // number of regions in the table
+    String tempPath = ((DistributedPipeline) pipeline).createTempPath().toString();
+    Path temp = new Path(tempPath.substring(0, tempPath.lastIndexOf("/")));
+    FileSystem fs = FileSystem.get(pipeline.getConfiguration());
+    Path partitionPath = null;
+
+    for (final FileStatus fileStatus : fs.listStatus(temp)) {
+      RemoteIterator<LocatedFileStatus> remoteFIles = fs.listFiles(fileStatus.getPath(), true);
+
+      while(remoteFIles.hasNext()) {
+        LocatedFileStatus file = remoteFIles.next();
+        if(file.getPath().toString().contains("partition")) {
+          partitionPath = file.getPath();
+          System.out.println("found written partitions in path: " + partitionPath.toString());
+          break;
+        }
+      }
+
+      if(partitionPath != null) {
+        break;
+      }
+    }
+
+    if(partitionPath == null) {
+      throw new AssertionError("Partition path was not found");
+    }
+
+    Class<BytesWritable> keyClass = BytesWritable.class;
+    List<BytesWritable> writtenPartitions = new ArrayList<>();
+    WritableDeepCopier wdc = new WritableDeepCopier(keyClass);
+    SeqFileReaderFactory<BytesWritable> s = new SeqFileReaderFactory<>(keyClass);
+
+    // read back in the partition file
+    Iterator<BytesWritable> iter = CompositePathIterable.create(fs, partitionPath, s).iterator();
+    while (iter.hasNext()) {
+      BytesWritable next = iter.next();
+      writtenPartitions.add((BytesWritable) wdc.deepCopy(next));
+    }
+
+    ImmutableList<byte[]> startKeys = ImmutableList.copyOf(table1.getStartKeys());
+    // assert that only affected regions were loaded into
+    assertTrue(startKeys.size() > writtenPartitions.size());
+
+    // write out and read back in the start keys for each region.
+    // do this to get proper byte alignment
+    Path regionStartKeys = tmpDir.getPath("regionStartKeys");
+    List<KeyValue> startKeysToWrite = Lists.newArrayList();
+    for (final byte[] startKey : startKeys.subList(1, startKeys.size())) {
+      startKeysToWrite.add(KeyValueUtil.createFirstOnRow(startKey));
+    }
+    writeToSeqFile(pipeline.getConfiguration(), regionStartKeys, startKeysToWrite);
+
+    List<BytesWritable> writtenStartKeys = new ArrayList<>();
+    iter = CompositePathIterable.create(fs, partitionPath, s).iterator();
+    while (iter.hasNext()) {
+      BytesWritable next = iter.next();
+      writtenStartKeys.add((BytesWritable) wdc.deepCopy(next));
+    }
+
+    // assert the keys read back in match start keys for a region on the table
+    for (final BytesWritable writtenPartition : writtenPartitions) {
+      boolean foundMatchingKv = false;
+      for (final BytesWritable writtenStartKey : writtenStartKeys) {
+        if (writtenStartKey.equals(writtenPartition)) {
+          foundMatchingKv = true;
+          break;
+        }
+      }
+
+      if(!foundMatchingKv) {
+        throw new AssertionError("Written KeyValue: " + writtenPartition + " did not match any known start keys of the table");
+      }
+    }
+
+    pipeline.done();
+  }
+
+  private static void writeToSeqFile(
+          Configuration conf,
+          Path path,
+          List<KeyValue> splitPoints) throws IOException {
+    SequenceFile.Writer writer = SequenceFile.createWriter(
+            path.getFileSystem(conf),
+            conf,
+            path,
+            NullWritable.class,
+            BytesWritable.class);
+    for (KeyValue key : splitPoints) {
+      writer.append(NullWritable.get(), HBaseTypes.keyValueToBytes(key));
+    }
+    writer.close();
   }
 
   private static PCollection<Put> convertToPuts(PTable<String, Long> in) {
