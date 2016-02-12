@@ -538,6 +538,7 @@ under the License.
             <exclude>.git/**</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.repository/</exclude>
+            <exclude>**/*.iml</exclude>
             <exclude>.idea/**</exclude>
             <exclude>**/resources/*.txt</exclude>
             <exclude>**/resources/**/*.txt</exclude>
@@ -545,7 +546,7 @@ under the License.
             <exclude>**/resources/*.csv</exclude>
             <exclude>**/resources/*.xml</exclude>
             <exclude>**/goal.txt</exclude>
-            <exclude>**/target/generated-test-sources/**</exclude>
+            <exclude>**/target/**</exclude>
             <exclude>**/scripts/scrunch</exclude>
             </excludes>
           </configuration>
