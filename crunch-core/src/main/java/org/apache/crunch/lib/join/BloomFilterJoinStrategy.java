@@ -33,6 +33,8 @@ import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
+import org.apache.crunch.fn.ExtractKeyFn;
+import org.apache.crunch.fn.FilterFns;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroMode;
@@ -57,6 +59,16 @@ import org.apache.hadoop.util.hash.Hash;
  * This strategy is useful in cases where the right-side table contains many keys that are not
  * present in the left-side table. In this case, the use of the Bloom filter avoids a
  * potentially costly shuffle phase for data that would never be joined to the left side.
+ * <p>
+ * Note that right and full outer join type are handled by splitting the right-side table
+ * (the bigger one) into two disjunctive streams: negatively filtered (outer part) and
+ * positively filtered (probable inner part). To prevent concurrent modification Crunch
+ * performs a deep copy of such a splitted stream by default (see {@link DoFn#disableDeepCopy()}),
+ * which introduces an extra overhead. Since Bloom Filter directs every record to exactly
+ * one of these streams, making concurrent modification impossible, one can safely disable
+ * this feature by setting {@link org.apache.crunch.impl.mr.run.RuntimeParameters#DISABLE_DEEP_COPY}
+ * to {@code true} (note, however, that this affects the global settings). It is especially
+ * worth doing in case of having large objects on the right side.
  */
 public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
@@ -120,30 +132,37 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
   @Override
   public PTable<K, Pair<U, V>> join(PTable<K, U> left, PTable<K, V> right, JoinType joinType) {
 
-    if (joinType != JoinType.INNER_JOIN && joinType != JoinType.LEFT_OUTER_JOIN) {
-      throw new IllegalStateException("JoinType " + joinType + " is not supported for BloomFilter joins");
-    }
-
-    PTable<K,V> filteredRightSide;
     PType<BloomFilter> bloomFilterType = getBloomFilterType(left.getTypeFamily());
     PCollection<BloomFilter> bloomFilters = left.keys().parallelDo(
         "Create bloom filters",
-        new CreateBloomFilterFn(vectorSize, nbHash, left.getKeyType()),
+        new CreateBloomFilterFn<>(vectorSize, nbHash, left.getKeyType()),
         bloomFilterType);
 
     ReadableData<BloomFilter> bloomData = bloomFilters.asReadable(true);
-    FilterKeysWithBloomFilterFn<K, V> filterKeysFn = new FilterKeysWithBloomFilterFn<K, V>(
-        bloomData,
-        vectorSize, nbHash,
-        left.getKeyType());
+    FilterKeysWithBloomFilterFn<K, V> filterKeysFn = new FilterKeysWithBloomFilterFn<>(
+        bloomData, vectorSize, nbHash, left.getKeyType());
 
-    ParallelDoOptions.Builder optionsBuilder = ParallelDoOptions.builder();
-    optionsBuilder.sourceTargets(bloomData.getSourceTargets());
+    ParallelDoOptions options = ParallelDoOptions.builder()
+        .sourceTargets(bloomData.getSourceTargets()).build();
 
-    filteredRightSide = right.parallelDo("Filter right side with BloomFilters",
-        filterKeysFn, right.getPTableType(), optionsBuilder.build());
+    PTable<K, V> filteredRightSide = right.parallelDo(
+        "Filter right-side with BloomFilters",
+        filterKeysFn, right.getPTableType(), options);
 
-    return delegateJoinStrategy.join(left, filteredRightSide, joinType);
+    PTable<K, Pair<U, V>> leftJoinedWithFilteredRight = delegateJoinStrategy
+        .join(left, filteredRightSide, joinType);
+
+    if (joinType == JoinType.INNER_JOIN || joinType == JoinType.LEFT_OUTER_JOIN) {
+      return leftJoinedWithFilteredRight;
+    }
+
+    return leftJoinedWithFilteredRight.union(right
+        .parallelDo(
+            "Negatively filter right-side with BloomFilters",
+            FilterFns.not(filterKeysFn), right.getPTableType(), options)
+        .mapValues(
+            "Right outer join: attach null as left-value",
+            new NullKeyFn<U, V>(), leftJoinedWithFilteredRight.getValueType()));
   }
   
   /**
@@ -324,4 +343,17 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     
   }
 
+  private static class NullKeyFn<U, V> extends ExtractKeyFn<U, V> {
+    public NullKeyFn() {
+      super(new MapFn<V, U>() {
+        @Override public U map(V input) {
+          return null;
+        }
+
+        @Override public float scaleFactor() {
+          return 0.0001f;
+        }
+      });
+    }
+  }
 }
