@@ -23,8 +23,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 /**
- * Wrapper function for converting a {@code MapFn} into a key-value pair that is
- * used to convert from a {@code PCollection<V>} to a {@code PTable<K, V>}.
+ * Wrapper function for converting a key-from-value extractor {@code MapFn<V, K>} into a
+ * key-value pair extractor that is used to convert from a {@code PCollection<V>} to a
+ * {@code PTable<K, V>}.
  */
 public class ExtractKeyFn<K, V> extends MapFn<V, Pair<K, V>> {
 
