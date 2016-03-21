@@ -28,8 +28,7 @@ public class IdentityFn<T> extends MapFn<T, T> {
     return (IdentityFn<T>) INSTANCE;
   }
 
-  // Non-instantiable
-  private IdentityFn() {
+  protected IdentityFn() {
   }
 
   @Override

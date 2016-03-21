@@ -35,6 +35,7 @@ import org.apache.crunch.ParallelDoOptions;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.fn.ExtractKeyFn;
 import org.apache.crunch.fn.FilterFns;
+import org.apache.crunch.fn.IdentityFn;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.PTypeFamily;
 import org.apache.crunch.types.avro.AvroMode;
@@ -60,15 +61,9 @@ import org.apache.hadoop.util.hash.Hash;
  * present in the left-side table. In this case, the use of the Bloom filter avoids a
  * potentially costly shuffle phase for data that would never be joined to the left side.
  * <p>
- * Note that right and full outer join type are handled by splitting the right-side table
- * (the bigger one) into two disjunctive streams: negatively filtered (outer part) and
- * positively filtered (probable inner part). To prevent concurrent modification Crunch
- * performs a deep copy of such a splitted stream by default (see {@link DoFn#disableDeepCopy()}),
- * which introduces an extra overhead. Since Bloom Filter directs every record to exactly
- * one of these streams, making concurrent modification impossible, one can safely disable
- * this feature by setting {@link org.apache.crunch.impl.mr.run.RuntimeParameters#DISABLE_DEEP_COPY}
- * to {@code true} (note, however, that this affects the global settings). It is especially
- * worth doing in case of having large objects on the right side.
+ * Implementation Note: right and full outer join type are handled by splitting the right-side
+ * table (the bigger one) into two disjunctive streams: negatively filtered (right outer part)
+ * and positively filtered (passed to delegate strategy).
  */
 public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
 
@@ -142,9 +137,13 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     FilterKeysWithBloomFilterFn<K, V> filterKeysFn = new FilterKeysWithBloomFilterFn<>(
         bloomData, vectorSize, nbHash, left.getKeyType());
 
+    if (joinType != JoinType.INNER_JOIN && joinType != JoinType.LEFT_OUTER_JOIN) {
+      right = right.parallelDo(
+          "disable deep copy", new DeepCopyDisablerFn<Pair<K, V>>(), right.getPTableType());
+    }
+
     ParallelDoOptions options = ParallelDoOptions.builder()
         .sourceTargets(bloomData.getSourceTargets()).build();
-
     PTable<K, V> filteredRightSide = right.parallelDo(
         "Filter right-side with BloomFilters",
         filterKeysFn, right.getPTableType(), options);
@@ -156,13 +155,14 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
       return leftJoinedWithFilteredRight;
     }
 
-    return leftJoinedWithFilteredRight.union(right
-        .parallelDo(
-            "Negatively filter right-side with BloomFilters",
-            FilterFns.not(filterKeysFn), right.getPTableType(), options)
-        .mapValues(
-            "Right outer join: attach null as left-value",
-            new NullKeyFn<U, V>(), leftJoinedWithFilteredRight.getValueType()));
+    return leftJoinedWithFilteredRight.union(
+        right
+            .parallelDo(
+                "Negatively filter right-side with BloomFilters",
+                FilterFns.not(filterKeysFn), right.getPTableType(), options)
+            .mapValues(
+                "Right outer join: attach null as left-value",
+                new NullKeyFn<U, V>(), leftJoinedWithFilteredRight.getValueType()));
   }
   
   /**
@@ -343,10 +343,14 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
     
   }
 
-  private static class NullKeyFn<U, V> extends ExtractKeyFn<U, V> {
+  /**
+   * Converts value into a null-value pair. It is used to convert negatively filtered
+   * right-side values into right outer join part.
+   */
+  private static class NullKeyFn<K, V> extends ExtractKeyFn<K, V> {
     public NullKeyFn() {
-      super(new MapFn<V, U>() {
-        @Override public U map(V input) {
+      super(new MapFn<V, K>() {
+        @Override public K map(V input) {
           return null;
         }
 
@@ -354,6 +358,21 @@ public class BloomFilterJoinStrategy<K, U, V> implements JoinStrategy<K, U, V> {
           return 0.0001f;
         }
       });
+    }
+  }
+
+  /**
+   * Right and full outer join types are handled by splitting the right-side table (the bigger one)
+   * into two disjunctive streams: negatively filtered (right outer part) and positively filtered.
+   * To prevent concurrent modification Crunch performs a deep copy of such a splitted stream by
+   * default (see {@link DoFn#disableDeepCopy()}), which introduces an extra overhead. Since Bloom
+   * Filter directs every record to exactly one of these streams, making concurrent modification
+   * impossible, we can safely disable this feature. To achieve this we put the {@code right} PTable
+   * through a {@code parallelDo} call with this {@code DoFn}.
+   */
+  private static class DeepCopyDisablerFn<T> extends IdentityFn<T> {
+    @Override public boolean disableDeepCopy() {
+      return true;
     }
   }
 }
