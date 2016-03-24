@@ -30,9 +30,9 @@ import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import parquet.avro.AvroReadSupport;
-import parquet.hadoop.ParquetReader;
-import parquet.schema.MessageType;
+import org.apache.parquet.avro.AvroReadSupport;
+import org.apache.parquet.hadoop.ParquetReader;
+import org.apache.parquet.schema.MessageType;
 
 class AvroParquetFileReaderFactory<T> implements FileReaderFactory<T> {
 

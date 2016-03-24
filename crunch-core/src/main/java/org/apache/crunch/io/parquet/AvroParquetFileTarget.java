@@ -33,8 +33,8 @@ import org.apache.crunch.types.avro.AvroType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
-import parquet.avro.AvroWriteSupport;
-import parquet.hadoop.ParquetOutputFormat;
+import org.apache.parquet.avro.AvroWriteSupport;
+import org.apache.parquet.hadoop.ParquetOutputFormat;
 
 import java.util.Map;
 

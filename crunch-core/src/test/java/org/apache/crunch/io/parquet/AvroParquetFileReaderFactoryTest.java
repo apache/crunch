@@ -41,7 +41,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import parquet.avro.AvroParquetWriter;
+import org.apache.parquet.avro.AvroParquetWriter;
 
 public class AvroParquetFileReaderFactoryTest {
 

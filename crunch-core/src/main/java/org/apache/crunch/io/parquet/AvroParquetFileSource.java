@@ -40,10 +40,10 @@ import org.apache.hadoop.fs.Path;
 
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.util.ReflectionUtils;
-import parquet.avro.AvroParquetInputFormat;
-import parquet.avro.AvroReadSupport;
-import parquet.filter.UnboundRecordFilter;
-import parquet.hadoop.ParquetInputSplit;
+import org.apache.parquet.avro.AvroParquetInputFormat;
+import org.apache.parquet.avro.AvroReadSupport;
+import org.apache.parquet.filter.UnboundRecordFilter;
+import org.apache.parquet.hadoop.ParquetInputSplit;
 
 public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceImpl<T> implements ReadableSource<T> {
 

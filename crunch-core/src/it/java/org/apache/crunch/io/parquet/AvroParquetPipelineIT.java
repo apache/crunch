@@ -43,8 +43,8 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import parquet.avro.AvroParquetReader;
-import parquet.avro.AvroParquetWriter;
+import org.apache.parquet.avro.AvroParquetReader;
+import org.apache.parquet.avro.AvroParquetWriter;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;

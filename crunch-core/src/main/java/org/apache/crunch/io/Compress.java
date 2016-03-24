@@ -53,7 +53,7 @@ public class Compress {
   public static <T extends Target> T snappy(T target) {
     Class<? extends CompressionCodec> snappyCodec = org.apache.hadoop.io.compress.SnappyCodec.class;
     if (target instanceof AvroParquetFileTarget || target instanceof AvroParquetFileSourceTarget) {
-      snappyCodec = parquet.hadoop.codec.SnappyCodec.class;
+      snappyCodec = org.apache.parquet.hadoop.codec.SnappyCodec.class;
     }
     return (T) compress(target, snappyCodec)
         .outputConf(AvroJob.OUTPUT_CODEC, DataFileConstants.SNAPPY_CODEC);

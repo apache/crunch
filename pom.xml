@@ -86,7 +86,7 @@ under the License.
     <commons-cli.version>1.2</commons-cli.version>
     <avro.version>1.7.7</avro.version>
     <hive.version>0.13.1</hive.version>
-    <parquet.version>1.4.3</parquet.version>
+    <parquet.version>1.8.1</parquet.version>
     <javassist.version>3.16.1-GA</javassist.version>
     <jackson.version>1.8.8</jackson.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
@@ -242,7 +242,7 @@ under the License.
       </dependency>
 
       <dependency>
-        <groupId>com.twitter</groupId>
+        <groupId>org.apache.parquet</groupId>
         <artifactId>parquet-avro</artifactId>
         <version>${parquet.version}</version>
         <exclusions>

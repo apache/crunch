@@ -51,12 +51,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import parquet.avro.AvroParquetWriter;
+import org.apache.parquet.avro.AvroParquetWriter;
 
 import com.google.common.collect.Lists;
-import parquet.column.ColumnReader;
-import parquet.filter.RecordFilter;
-import parquet.filter.UnboundRecordFilter;
+import org.apache.parquet.column.ColumnReader;
+import org.apache.parquet.filter.RecordFilter;
+import org.apache.parquet.filter.UnboundRecordFilter;
 
 @SuppressWarnings("serial")
 public class AvroParquetFileSourceTargetIT implements Serializable {

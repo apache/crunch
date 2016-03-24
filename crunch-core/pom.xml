@@ -46,7 +46,7 @@ under the License.
     </dependency>
 
     <dependency>
-      <groupId>com.twitter</groupId>
+      <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-avro</artifactId>
     </dependency>
 
