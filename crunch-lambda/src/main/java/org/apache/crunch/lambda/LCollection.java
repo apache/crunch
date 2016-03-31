@@ -141,14 +141,20 @@ public interface LCollection<S> {
      * Increment a counter for every element in the collection
      */
     default LCollection<S> increment(Enum<?> counter) {
-        return parallelDo(ctx -> ctx.increment(counter), pType());
+        return parallelDo(ctx -> {
+            ctx.increment(counter);
+            ctx.emit(ctx.element());
+        }, pType());
     }
 
     /**
      * Increment a counter for every element in the collection
      */
     default LCollection<S> increment(String counterGroup, String counterName) {
-        return parallelDo(ctx -> ctx.increment(counterGroup, counterName), pType());
+        return parallelDo(ctx -> {
+            ctx.increment(counterGroup, counterName);
+            ctx.emit(ctx.element());
+        }, pType());
     }
 
     /**
@@ -157,6 +163,7 @@ public interface LCollection<S> {
     default LCollection<S> incrementIf(Enum<?> counter, SPredicate<S> condition) {
         return parallelDo(ctx -> {
             if (condition.test(ctx.element())) ctx.increment(counter);
+            ctx.emit(ctx.element());
         }, pType());
     }
 
@@ -166,6 +173,7 @@ public interface LCollection<S> {
     default LCollection<S> incrementIf(String counterGroup, String counterName, SPredicate<S> condition) {
         return parallelDo(ctx -> {
             if (condition.test(ctx.element())) ctx.increment(counterGroup, counterName);
+            ctx.emit(ctx.element());
         }, pType());
     }
 

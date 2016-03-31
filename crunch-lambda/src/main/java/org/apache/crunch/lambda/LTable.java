@@ -185,18 +185,25 @@ public interface LTable<K, V> extends LCollection<Pair<K, V>> {
 
     /** {@inheritDoc} */
     default LTable<K, V> increment(Enum<?> counter) {
-        return parallelDo(ctx -> ctx.increment(counter), pType());
+        return parallelDo(ctx -> {
+            ctx.increment(counter);
+            ctx.emit(ctx.element());
+        }, pType());
     }
 
     /** {@inheritDoc} */
     default LTable<K, V> increment(String counterGroup, String counterName) {
-        return parallelDo(ctx -> ctx.increment(counterGroup, counterName), pType());
+        return parallelDo(ctx -> {
+            ctx.increment(counterGroup, counterName);
+            ctx.emit(ctx.element());
+        }, pType());
     }
 
     /** {@inheritDoc} */
     default LTable<K, V> incrementIf(Enum<?> counter, SPredicate<Pair<K, V>> condition) {
         return parallelDo(ctx -> {
             if (condition.test(ctx.element())) ctx.increment(counter);
+            ctx.emit(ctx.element());
         }, pType());
     }
 
@@ -204,6 +211,7 @@ public interface LTable<K, V> extends LCollection<Pair<K, V>> {
     default LTable<K, V> incrementIf(String counterGroup, String counterName, SPredicate<Pair<K, V>> condition) {
         return parallelDo(ctx -> {
             if (condition.test(ctx.element())) ctx.increment(counterGroup, counterName);
+            ctx.emit(ctx.element());
         }, pType());
     }
 }
