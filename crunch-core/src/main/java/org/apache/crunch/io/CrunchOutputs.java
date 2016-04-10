@@ -21,6 +21,7 @@ import com.google.common.collect.Sets;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.JobID;
@@ -203,7 +204,7 @@ public class CrunchOutputs<K, V> {
 
   private static Job getJob(JobID jobID, String namedOutput, Configuration baseConf)
       throws IOException {
-    Job job = new Job(new Configuration(baseConf));
+    Job job = new Job(new JobConf(baseConf));
     job.getConfiguration().set("crunch.namedoutput", namedOutput);
     setJobID(job, jobID, namedOutput);
     return job;
