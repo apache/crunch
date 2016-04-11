@@ -54,6 +54,7 @@ under the License.
     <module>crunch-spark</module>
     <module>crunch-hive</module>
     <module>crunch-dist</module>
+    <module>crunch-kafka</module>
   </modules>
   <profiles>
     <profile>
@@ -103,6 +104,7 @@ under the License.
     <hbase.version>1.0.0</hbase.version>
     <avro.classifier>hadoop2</avro.classifier>
 
+    <kafka.version>0.9.0.1</kafka.version>
     <scala.base.version>2.10</scala.base.version>
     <scala.version>2.10.4</scala.version>
     <scalatest.version>2.2.4</scalatest.version>
@@ -452,6 +454,17 @@ under the License.
         <artifactId>scalatest_${scala.base.version}</artifactId>
         <version>${scalatest.version}</version>
         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${kafka.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka_${scala.base.version}</artifactId>
+        <version>${kafka.version}</version>
       </dependency>
 
       <dependency>
