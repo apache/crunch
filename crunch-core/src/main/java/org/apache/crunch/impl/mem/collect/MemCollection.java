@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Set;
 
+import com.google.common.collect.Iterables;
 import javassist.util.proxy.MethodFilter;
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyFactory;
@@ -67,7 +68,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class MemCollection<S> implements PCollection<S> {
 
-  private final Collection<S> collect;
+  private final Iterable<S> collect;
   private final PType<S> ptype;
   private String name;
 
@@ -80,7 +81,7 @@ public class MemCollection<S> implements PCollection<S> {
   }
 
   public MemCollection(Iterable<S> collect, PType<S> ptype, String name) {
-    this.collect = ImmutableList.copyOf(collect);
+    this.collect = collect;
     this.ptype = ptype;
     this.name = name;
   }
@@ -244,11 +245,11 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public ReadableData<S> asReadable(boolean materialize) {
-    return new MemReadableData<S>(collect);
+    return new MemReadableData<S>(ImmutableList.copyOf(collect));
   }
 
   public Collection<S> getCollection() {
-    return collect;
+    return ImmutableList.copyOf(collect);
   }
 
   @Override
@@ -266,7 +267,7 @@ public class MemCollection<S> implements PCollection<S> {
 
   @Override
   public long getSize() {
-    return collect.isEmpty() ? 0 : 1; // getSize is only used for pipeline optimization in MR
+    return Iterables.isEmpty(collect) ? 0 : 1; // getSize is only used for pipeline optimization in MR
   }
 
   @Override

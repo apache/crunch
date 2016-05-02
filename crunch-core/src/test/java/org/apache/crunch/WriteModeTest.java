@@ -51,7 +51,7 @@ public class WriteModeTest {
   public void testOverwrite() throws Exception {
     Path p = run(WriteMode.OVERWRITE, true);
     PCollection<String> lines = MemPipeline.getInstance().readTextFile(p.toString());
-    assertEquals(ImmutableList.of("some", "string", "values"), lines.materialize());
+    assertEquals(ImmutableList.of("some", "string", "values"), ImmutableList.copyOf(lines.materialize()));
   }
   
   @Test(expected=CrunchRuntimeException.class)
@@ -64,7 +64,7 @@ public class WriteModeTest {
     Path p = run(WriteMode.APPEND, true);
     PCollection<String> lines = MemPipeline.getInstance().readTextFile(p.toString());
     assertEquals(ImmutableList.of("some", "string", "values", "some", "string", "values"),
-        lines.materialize());
+        ImmutableList.copyOf(lines.materialize()));
   }
   
   @Test
@@ -72,7 +72,7 @@ public class WriteModeTest {
     Path p = run(WriteMode.APPEND, false);
     PCollection<String> lines = MemPipeline.getInstance().readTextFile(p.toString());
     assertEquals(ImmutableList.of("some", "string", "values", "some", "string", "values"),
-        lines.materialize());
+        ImmutableList.copyOf(lines.materialize()));
   }
   
   Path run(WriteMode writeMode, boolean doRun) throws Exception {
