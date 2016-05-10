@@ -66,10 +66,14 @@ import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.mapreduce.LoadIncrementalHFiles;
+import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.regionserver.KeyValueHeap;
 import org.apache.hadoop.hbase.regionserver.KeyValueScanner;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.StoreFileScanner;
+import org.apache.hadoop.hbase.util.BloomFilter;
+import org.apache.hadoop.hbase.util.BloomFilterFactory;
+import org.apache.hadoop.hbase.util.ByteBloomFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -81,6 +85,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.BufferedReader;
+import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -96,7 +101,9 @@ import java.util.Random;
 import static org.apache.crunch.types.writable.Writables.nulls;
 import static org.apache.crunch.types.writable.Writables.tableOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -277,6 +284,7 @@ public class HFileTargetIT implements Serializable {
     Path outputPath = getTempPathOnHDFS("out");
     HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
     hcol.setDataBlockEncoding(newBlockEncoding);
+    hcol.setBloomFilterType(BloomType.ROWCOL);
     HTable testTable = createTable(26, hcol);
 
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
@@ -303,6 +311,14 @@ public class HFileTargetIT implements Serializable {
       try {
         reader = HFile.createReader(fs, f, new CacheConfig(conf), conf);
         assertEquals(DataBlockEncoding.PREFIX, reader.getDataBlockEncoding());
+
+        BloomType bloomFilterType = BloomType.valueOf(Bytes.toString(
+            reader.loadFileInfo().get(StoreFile.BLOOM_FILTER_TYPE_KEY)));
+        assertEquals(BloomType.ROWCOL, bloomFilterType);
+        DataInput bloomMeta = reader.getGeneralBloomFilterMetadata();
+        assertNotNull(bloomMeta);
+        BloomFilter bloomFilter = BloomFilterFactory.createFromMeta(bloomMeta, reader);
+        assertNotNull(bloomFilter);
       } finally {
         if (reader != null) {
           reader.close();

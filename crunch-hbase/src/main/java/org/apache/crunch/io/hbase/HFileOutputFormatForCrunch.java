@@ -30,8 +30,10 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.Tag;
+import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
+import org.apache.hadoop.hbase.regionserver.BloomType;
 import org.apache.hadoop.hbase.regionserver.StoreFile;
 import org.apache.hadoop.hbase.regionserver.TimeRangeTracker;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -89,11 +91,14 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
     hcol.readFields(new DataInputStream(new ByteArrayInputStream(hcolBytes)));
     LOG.info("Output path: {}", outputPath);
     LOG.info("HColumnDescriptor: {}", hcol.toString());
-    final HFile.Writer writer = HFile.getWriterFactoryNoCache(conf)
-        .withPath(fs, outputPath)
+    Configuration noCacheConf = new Configuration(conf);
+    noCacheConf.setFloat(HConstants.HFILE_BLOCK_CACHE_SIZE_KEY, 0.0f);
+    final StoreFile.Writer writer = new StoreFile.WriterBuilder(conf, new CacheConfig(noCacheConf), fs)
         .withComparator(KeyValue.COMPARATOR)
         .withFileContext(getContext(hcol))
-        .create();
+        .withFilePath(outputPath)
+        .withBloomType(hcol.getBloomFilterType())
+        .build();
 
     return new RecordWriter<Object, Cell>() {
       @Override
