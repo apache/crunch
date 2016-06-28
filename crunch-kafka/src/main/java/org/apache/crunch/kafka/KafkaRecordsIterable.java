@@ -18,7 +18,6 @@
 package org.apache.crunch.kafka;
 
 import org.apache.crunch.Pair;
-import org.apache.crunch.kafka.inputformat.KafkaRecordReader;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
