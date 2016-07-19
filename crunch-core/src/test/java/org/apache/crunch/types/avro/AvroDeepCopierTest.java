@@ -29,6 +29,8 @@ import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 
 import com.google.common.collect.Lists;
+
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData.Record;
 import org.apache.crunch.test.Person;
 import org.apache.crunch.types.PType;
@@ -89,7 +91,18 @@ public class AvroDeepCopierTest {
 
     assertEquals(person, deepCopyPerson);
     assertNotSame(person, deepCopyPerson);
+  }
 
+  @Test
+  public void testDeepCopyReflect_privateCtor() {
+    Schema schema = Avros.reflects(PojoWithPrivateCtor.class).getSchema();
+    AvroDeepCopier<PojoWithPrivateCtor> avroDeepCopier = new AvroDeepCopier.AvroReflectDeepCopier<>(schema);
+    avroDeepCopier.initialize(new Configuration());
+
+    PojoWithPrivateCtor orig = new PojoWithPrivateCtor("foo");
+    PojoWithPrivateCtor deepCopy = avroDeepCopier.deepCopy(orig);
+
+    assertEquals(orig.getField(), deepCopy.getField());
   }
 
   @Test

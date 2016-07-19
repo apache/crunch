@@ -19,6 +19,7 @@ package org.apache.crunch.types.avro;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 
 import org.apache.avro.Schema;
@@ -149,10 +150,10 @@ abstract class AvroDeepCopier<T> implements DeepCopier<T>, Serializable {
 
     protected T createNewInstance(Class<T> targetClass) {
       try {
-        return targetClass.newInstance();
-      } catch (InstantiationException e) {
-        throw new CrunchRuntimeException(e);
-      } catch (IllegalAccessException e) {
+        Constructor<T> ctor = targetClass.getDeclaredConstructor();
+        ctor.setAccessible(true);
+        return ctor.newInstance();
+      } catch (ReflectiveOperationException e) {
         throw new CrunchRuntimeException(e);
       }
     }
