@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io.impl;
 
+
 import org.apache.commons.io.FileUtils;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.hadoop.conf.Configuration;
@@ -27,8 +28,17 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.matchers.JUnitMatchers.hasItem;
 
 public class FileTargetImplTest {
 
@@ -44,19 +54,27 @@ public class FileTargetImplTest {
         SequenceFileOutputFormat.class,
         SequentialFileNamingScheme.getInstance());
 
-    File testPart1 = new File(testWorkingPath.toAbsolutePath().toString(), "part-m-00000");
-    File testPart2 = new File(testWorkingPath.toAbsolutePath().toString(), "part-m-00001");
-    FileUtils.writeStringToFile(testPart1, "test1");
-    FileUtils.writeStringToFile(testPart2, "test2");
+    Map<String, String> partToContent = new HashMap<>();
+    partToContent.put("part-m-00000", "test1");
+    partToContent.put("part-m-00001", "test2");
+    Collection<String> expectedContent = partToContent.values();
+
+    for(Map.Entry<String, String> entry: partToContent.entrySet()){
+      File part = new File(testWorkingPath.toAbsolutePath().toString(), entry.getKey());
+      FileUtils.writeStringToFile(part, entry.getValue());
+    }
     fileTarget.handleOutputs(new Configuration(),
         new Path(testWorkingPath.toAbsolutePath().toString()),
         -1);
 
-    assertEquals(FileUtils.readFileToString(
-            new File(testDestinationPath.toAbsolutePath().toString(), "part-m-00000")),
-        "test1");
-    assertEquals(FileUtils.readFileToString(
-            new File(testDestinationPath.toAbsolutePath().toString(), "part-m-00001")),
-        "test2");
+    Set<String> fileContents = new HashSet<>();
+    for (String fileName : partToContent.keySet()) {
+      fileContents.add(FileUtils.readFileToString(testDestinationPath.resolve(fileName).toFile()));
+    }
+
+    assertThat(expectedContent.size(), is(fileContents.size()));
+    for(String content: expectedContent){
+      assertThat(fileContents, hasItem(content));
+    }
   }
 }
