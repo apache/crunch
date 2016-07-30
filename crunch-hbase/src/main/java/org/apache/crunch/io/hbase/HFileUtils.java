@@ -260,16 +260,15 @@ public final class HFileUtils {
 
     @Override
     public int compare(byte[] left, int loffset, int llength, byte[] right, int roffset, int rlength) {
-      // BytesWritable serialize length in first 4 bytes.
-      // We simply ignore it here, because KeyValue has its own size serialized.
-      if (llength < 4) {
+      // BytesWritable and KeyValue each serialize 4 bytes to indicate length
+      if (llength < 8) {
         throw new AssertionError("Too small llength: " + llength);
       }
-      if (rlength < 4) {
+      if (rlength < 8) {
         throw new AssertionError("Too small rlength: " + rlength);
       }
-      Cell leftKey = HBaseTypes.bytesToKeyValue(left, loffset + 4, llength - 4);
-      Cell rightKey = HBaseTypes.bytesToKeyValue(right, roffset + 4, rlength - 4);
+      Cell leftKey = new KeyValue(left, loffset + 8, llength - 8);
+      Cell rightKey = new KeyValue(right, roffset + 8, rlength - 8);
 
       byte[] lRow = leftKey.getRow();
       byte[] rRow = rightKey.getRow();
@@ -284,8 +283,8 @@ public final class HFileUtils {
     @Override
     public int compare(BytesWritable left, BytesWritable right) {
       return KeyValue.COMPARATOR.compare(
-          HBaseTypes.bytesToKeyValue(left),
-          HBaseTypes.bytesToKeyValue(right));
+          new KeyValue(left.getBytes(), 4, left.getLength() - 4),
+	  new KeyValue(right.getBytes(), 4, right.getLength() - 4));
     }
   }
 
