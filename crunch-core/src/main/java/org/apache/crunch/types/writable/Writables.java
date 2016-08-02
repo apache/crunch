@@ -129,6 +129,8 @@ public class Writables {
 
   private static final String WRITABLE_COMPARABLE_CODES = "crunch.writable.comparable.codes";
 
+  private static int WRITABLE_CODES_LOADED = 0;
+
   static void serializeWritableComparableCodes(Configuration conf) throws IOException {
     Map<Integer, String> codeToClassNameMap = Maps.transformValues(WRITABLE_CODES,
         new Function<Class<? extends Writable>, String>() {
@@ -142,12 +144,15 @@ public class Writables {
 
   static void reloadWritableComparableCodes(Configuration conf) throws Exception {
     if (conf.get(WRITABLE_COMPARABLE_CODES) != null) {
-      Map<String, String> codeToClassName = Splitter.on(';')
-          .withKeyValueSeparator(":").split(conf.get(WRITABLE_COMPARABLE_CODES));
-      for (Map.Entry<String, String> codeToClassNameEntry : codeToClassName.entrySet()) {
-        WRITABLE_CODES.put(
-            Integer.parseInt(codeToClassNameEntry.getKey()),
-            (Class<? extends Writable>) Class.forName(codeToClassNameEntry.getValue()));
+      String writableCodes = conf.get(WRITABLE_COMPARABLE_CODES);
+      if (writableCodes != null && writableCodes.hashCode() != WRITABLE_CODES_LOADED) {
+        Map<String, String> codeToClassName = Splitter.on(';').withKeyValueSeparator(":").split(writableCodes);
+        for (Map.Entry<String, String> codeToClassNameEntry : codeToClassName.entrySet()) {
+          WRITABLE_CODES.put(
+                  Integer.parseInt(codeToClassNameEntry.getKey()),
+                  (Class<? extends Writable>) Class.forName(codeToClassNameEntry.getValue()));
+        }
+        WRITABLE_CODES_LOADED = writableCodes.hashCode();
       }
     }
   }

@@ -54,6 +54,8 @@ public class TupleWritable extends Configured implements WritableComparable<Tupl
   private int[] written;
   private Writable[] values;
 
+  private boolean comparablesLoaded = false;
+
   /**
    * Create an empty tuple with no allocated storage for writables.
    */
@@ -65,10 +67,18 @@ public class TupleWritable extends Configured implements WritableComparable<Tupl
     super.setConf(conf);
     if (conf == null) return;
 
-    try {
-      Writables.reloadWritableComparableCodes(conf);
-    } catch (Exception e) {
-      throw new CrunchRuntimeException("Error reloading writable comparable codes", e);
+    // only reload comparables if this particular writable hasn't already done so;
+    // While there's also some caching within the static `reloadWritableComparableCodes`,
+    // it has to hit the configuration, which runs some embarrassing regexes and stuff.
+    // As for why SequenceFile$Reader calls `setConf` every single time it reads a new value
+    // (thus trigering this expensive path), I don't know.
+    if (!comparablesLoaded) {
+      try {
+        Writables.reloadWritableComparableCodes(conf);
+      } catch (Exception e) {
+        throw new CrunchRuntimeException("Error reloading writable comparable codes", e);
+      }
+      comparablesLoaded = true;
     }
   }
 
