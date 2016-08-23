@@ -61,4 +61,18 @@ public class PGroupedTableImpl<K, V> extends BaseGroupedTable<K, V> implements M
   public DoNode getGroupingNode() {
     return DoNode.createGroupingNode("", ptype);
   }
+
+  public int getNumReduceTasks() {
+    int numReduceTasks;
+    if (groupingOptions == null || groupingOptions.getNumReducers() <= 0) {
+      numReduceTasks = PartitionUtils.getRecommendedPartitions(this, getPipeline().getConfiguration());
+    } else {
+      numReduceTasks = groupingOptions.getNumReducers();
+    }
+    return numReduceTasks;
+  }
+
+  public boolean isNumReduceTasksSetByUser() {
+    return (groupingOptions != null && groupingOptions.getNumReducers() > 0);
+  }
 }

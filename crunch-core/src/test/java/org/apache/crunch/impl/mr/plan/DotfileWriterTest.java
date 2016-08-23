@@ -34,6 +34,7 @@ import org.apache.crunch.SourceTarget;
 import org.apache.crunch.Target;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.collect.InputCollection;
+import org.apache.crunch.impl.mr.collect.PGroupedTableImpl;
 import org.apache.crunch.impl.mr.plan.DotfileWriter.MRTaskType;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,9 +54,10 @@ public class DotfileWriterTest {
     PCollectionImpl<?> pcollectionImpl = mock(PCollectionImpl.class);
     JobPrototype jobPrototype = mock(JobPrototype.class);
     when(pcollectionImpl.getName()).thenReturn("collection");
+    when(pcollectionImpl.getSize()).thenReturn(1024L * 500L);
 
     assertEquals("\"collection@" + pcollectionImpl.hashCode() + "@" + jobPrototype.hashCode()
-        + "\" [label=\"collection\" shape=box];",
+        + "\" [label=\"collection 0.49 Mb\" shape=box];",
         dotfileWriter.formatPCollectionNodeDeclaration(pcollectionImpl, jobPrototype));
   }
 
@@ -65,9 +67,39 @@ public class DotfileWriterTest {
     JobPrototype jobPrototype = mock(JobPrototype.class);
     when(inputCollection.getName()).thenReturn("input");
     when(inputCollection.getSource().toString()).thenReturn("source");
+    when(inputCollection.getSize()).thenReturn(1024L * 1024L * 1729L);
 
-    assertEquals("\"source\" [label=\"input\" shape=folder];",
+    assertEquals("\"source\" [label=\"input 1,729 Mb\" shape=folder];",
         dotfileWriter.formatPCollectionNodeDeclaration(inputCollection, jobPrototype));
+  }
+
+  @Test
+  public void testFormatPGroupedTableImplDeclarationAutomatic() {
+    PGroupedTableImpl<?,?> inputCollection = mock(PGroupedTableImpl.class, Mockito.RETURNS_DEEP_STUBS);
+    JobPrototype jobPrototype = mock(JobPrototype.class);
+    when(inputCollection.getName()).thenReturn("GBK");
+    when(inputCollection.getSize()).thenReturn(1024L * 1024L * 1729L);
+    when(inputCollection.getNumReduceTasks()).thenReturn(10);
+
+    String expected = "\"GBK@" + inputCollection.hashCode() + "@" + jobPrototype.hashCode() + "\" [label=\"GBK " +
+      "1,729 Mb (10 Automatic reducers)\" shape=box];";
+
+    assertEquals(expected, dotfileWriter.formatPCollectionNodeDeclaration(inputCollection, jobPrototype));
+  }
+
+  @Test
+  public void testFormatPGroupedTableImplDeclarationManual() {
+    PGroupedTableImpl<?,?> inputCollection = mock(PGroupedTableImpl.class, Mockito.RETURNS_DEEP_STUBS);
+    JobPrototype jobPrototype = mock(JobPrototype.class);
+    when(inputCollection.getName()).thenReturn("collection");
+    when(inputCollection.getSize()).thenReturn(1024L * 1024L * 1729L);
+    when(inputCollection.getNumReduceTasks()).thenReturn(50);
+    when(inputCollection.isNumReduceTasksSetByUser()).thenReturn(true);
+
+    String expected = "\"collection@" + inputCollection.hashCode() + "@" + jobPrototype.hashCode() + "\" [label=\"collection " +
+      "1,729 Mb (50 Manual reducers)\" shape=box];";
+
+    assertEquals(expected, dotfileWriter.formatPCollectionNodeDeclaration(inputCollection, jobPrototype));
   }
 
   @Test
