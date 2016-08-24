@@ -29,13 +29,26 @@ import org.apache.crunch.PCollection;
  */
 public class FirstElementPObject<T> extends PObjectImpl<T, T> {
 
+  private T defaultValue;
+
   /**
    * Constructs a new instance of this {@code PObject} implementation.
    *
    * @param collect The backing {@code PCollection} for this {@code PObject}.
    */
   public FirstElementPObject(PCollection<T> collect) {
+    this(collect, null);
+  }
+
+  /**
+   * Constructs a new instance of this {@code PObject} implementation.
+   *
+   * @param collect The backing {@code PCollection} for this {@code PObject}.
+   * @param defaultValue The value to return if the backing PCollection is empty.
+   */
+  public FirstElementPObject(PCollection<T> collect, T defaultValue) {
     super(collect);
+    this.defaultValue = defaultValue;
   }
 
   /** {@inheritDoc} */
@@ -45,6 +58,6 @@ public class FirstElementPObject<T> extends PObjectImpl<T, T> {
     if (itr.hasNext()) {
       return itr.next();
     }
-    return null;
+    return defaultValue;
   }
 }

@@ -92,7 +92,7 @@ public class Aggregate {
         .groupByKey(GroupingOptions.builder().numReducers(1).build())
         .combineValues(Aggregators.SUM_LONGS());
     PCollection<Long> count = countTable.values();
-    return new FirstElementPObject<Long>(count);
+    return new FirstElementPObject<Long>(count, 0L);
   }
 
   public static class PairValueComparator<K, V> implements Comparator<Pair<K, V>> {

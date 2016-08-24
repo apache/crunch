@@ -74,7 +74,11 @@ public class BaseDoTable<K, V> extends PTableBase<K, V> implements PTable<K, V> 
 
   @Override
   protected long getSizeInternal() {
-    return (long) (fn.scaleFactor() * parent.getSize());
+    long parentSize = parent.getSize();
+    if (parentSize == 0L) {
+      return parentSize;
+    }
+    return Math.max(1L, (long) (fn.scaleFactor() * parentSize));
   }
 
   @Override

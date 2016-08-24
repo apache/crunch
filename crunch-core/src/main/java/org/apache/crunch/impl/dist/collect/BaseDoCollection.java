@@ -46,7 +46,11 @@ public class BaseDoCollection<S> extends PCollectionImpl<S> {
 
   @Override
   protected long getSizeInternal() {
-    return (long) (fn.scaleFactor() * parent.getSize());
+    long parentSize = parent.getSize();
+    if (parentSize == 0L) {
+      return parentSize;
+    }
+    return Math.max(1L, (long) (fn.scaleFactor() * parentSize));
   }
 
   @Override
