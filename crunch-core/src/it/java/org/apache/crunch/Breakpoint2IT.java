@@ -96,7 +96,7 @@ public class Breakpoint2IT {
     MRPipelineExecution exec = pipeline.runAsync();
     int fnCount = 0;
     for (String line : exec.getPlanDotFile().split("\n")) {
-      if (line.contains("label=\"Transform pCol1 to PTable\"")) {
+      if (line.contains("label=\"Transform pCol1 to PTable 0 Mb\"")) {
         fnCount++;
       }
     }

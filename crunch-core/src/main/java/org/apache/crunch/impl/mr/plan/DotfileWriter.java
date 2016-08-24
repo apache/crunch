@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.mr.plan;
 
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,9 +65,28 @@ public class DotfileWriter {
     if (pcollectionImpl instanceof InputCollection) {
       shape = "folder";
     }
-    return String.format("%s [label=\"%s\" shape=%s];",
+
+    String size = "";
+    try {
+      DecimalFormat formatter = new DecimalFormat("#,###.##");
+      size = " " + formatter.format(pcollectionImpl.getSize()/1024.0/1024.0) + " Mb";
+    } catch (Exception e) {
+      // Just skip those that don't have a size
+    }
+
+    if (pcollectionImpl instanceof PGroupedTableImpl) {
+      int numReduceTasks = ((PGroupedTableImpl) pcollectionImpl).getNumReduceTasks();
+      if (numReduceTasks > 0) {
+        PGroupedTableImpl pGroupedTable = (PGroupedTableImpl) pcollectionImpl;
+        String setByUser = pGroupedTable.isNumReduceTasksSetByUser() ? "Manual" : "Automatic";
+        size += " (" + pGroupedTable.getNumReduceTasks() + " " + setByUser + " reducers)";
+      }
+    }
+
+    return String.format("%s [label=\"%s%s\" shape=%s];",
         formatPCollection(pcollectionImpl, jobPrototype),
         limitNodeNameLength(pcollectionImpl.getName()),
+        size,
         shape);
   }
 
