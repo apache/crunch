@@ -30,12 +30,14 @@ import kafka.javaapi.TopicMetadataRequest;
 import kafka.javaapi.TopicMetadataResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 import org.apache.commons.lang.StringUtils;
+import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.protocol.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -190,6 +192,10 @@ public class KafkaUtils {
             new HashMap<>();
 
         BrokerEndPoint brokerEndPoint = partition.leader();
+        if(brokerEndPoint == null){
+          throw new CrunchRuntimeException("Unable to find leader for topic:"+metadata.topic()
+            +" partition:"+partition.partitionId());
+        }
         Broker leader = new Broker(0, brokerEndPoint.host(), brokerEndPoint.port(), SecurityProtocol.PLAINTEXT);
 
         if (brokerRequests.containsKey(leader))
