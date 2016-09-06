@@ -72,11 +72,11 @@ public abstract class JoinTester implements Serializable {
 
   protected void run(Pipeline pipeline, PTypeFamily typeFamily) throws IOException {
     String shakesInputPath = tmpDir.copyResourceFileName("shakes.txt");
-    String maughamInputPath = tmpDir.copyResourceFileName("maugham.txt");
+    String dickensInputPath = tmpDir.copyResourceFileName("dickens.txt");
 
     PCollection<String> shakespeare = pipeline.readTextFile(shakesInputPath);
-    PCollection<String> maugham = pipeline.readTextFile(maughamInputPath);
-    PTable<String, Long> joined = join(shakespeare, maugham, typeFamily);
+    PCollection<String> dickens = pipeline.readTextFile(dickensInputPath);
+    PTable<String, Long> joined = join(shakespeare, dickens, typeFamily);
     Iterable<Pair<String, Long>> lines = joined.materialize();
 
     assertPassed(lines);

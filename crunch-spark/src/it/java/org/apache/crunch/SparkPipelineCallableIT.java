@@ -90,7 +90,7 @@ public class SparkPipelineCallableIT extends CrunchTestSupport {
       assertFalse(p.run().succeeded());
     } else {
       Map<String, Long> counts = top3.materializeToMap();
-      assertEquals(ImmutableMap.of("", 788L, "Enter Macbeth.", 7L, "Exeunt.", 21L), counts);
+      assertEquals(ImmutableMap.of("", 697L, "Enter.", 7L, "Exeunt.", 21L), counts);
       assertEquals(17, INC1);
       assertEquals(29, INC2);
     }

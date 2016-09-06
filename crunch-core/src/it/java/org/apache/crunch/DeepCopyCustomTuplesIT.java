@@ -54,7 +54,7 @@ public class DeepCopyCustomTuplesIT {
         .groupByKey()
         .parallelDo(new PostProcFn(), strings())
         .materialize();
-    assertEquals(65, Iterables.size(out));
+    assertEquals(59, Iterables.size(out));
     p.done();
   }
   

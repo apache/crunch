@@ -31,10 +31,10 @@ class CogroupTest extends CrunchSuite {
 
   @Test def cogroup {
     val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
-    val diffs = wordCount(shakespeare).cogroup(wordCount(maugham))
+    val dickens = tempDir.copyResourceFileName("dickens.txt")
+    val diffs = wordCount(shakespeare).cogroup(wordCount(dickens))
         .map((k, v) => (k, (v._1.sum - v._2.sum))).materialize
-    assert(diffs.exists(_ == ("the", -11390)))
+    assert(diffs.exists(_ == ("the", -11043)))
     pipeline.done
   }
 }

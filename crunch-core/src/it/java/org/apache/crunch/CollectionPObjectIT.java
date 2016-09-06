@@ -37,10 +37,10 @@ import org.junit.Test;
 @SuppressWarnings("serial")
 public class CollectionPObjectIT {
 
-  private static final int LINES_IN_SHAKES = 3667;
+  private static final int LINES_IN_SHAKES = 3285;
 
   private static final String FIRST_SHAKESPEARE_LINE =
-      "***The Project Gutenberg's Etext of Shakespeare's First Folio***";
+      "The Tragedie of Macbeth";
 
   private static final String LAST_SHAKESPEARE_LINE =
       "FINIS. THE TRAGEDIE OF MACBETH.";

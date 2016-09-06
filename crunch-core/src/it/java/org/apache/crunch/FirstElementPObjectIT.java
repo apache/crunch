@@ -36,7 +36,7 @@ import org.junit.Test;
 public class FirstElementPObjectIT {
 
   private static final String FIRST_SHAKESPEARE_LINE =
-      "***The Project Gutenberg's Etext of Shakespeare's First Folio***";
+      "The Tragedie of Macbeth";
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();

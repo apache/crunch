@@ -54,7 +54,7 @@ public class RecordDropIT {
     }
     int index = 0;
     for (Iterable<Integer> iter : values) {
-      assertEquals("Checking index = " + index, 3667, Iterables.getFirst(iter, 0).intValue());
+      assertEquals("Checking index = " + index, 3285, Iterables.getFirst(iter, 0).intValue());
       index++;
     }
     p.done();

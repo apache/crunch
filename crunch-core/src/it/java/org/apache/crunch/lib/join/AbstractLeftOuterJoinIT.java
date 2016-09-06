@@ -28,13 +28,13 @@ public abstract class AbstractLeftOuterJoinIT extends JoinTester {
     boolean passed2 = false;
     boolean passed3 = true;
     for (Pair<String, Long> line : lines) {
-      if ("wretched".equals(line.first()) && 24 == line.second()) {
+      if ("wretched".equals(line.first()) && 19 == line.second()) {
         passed1 = true;
       }
       if ("againe".equals(line.first()) && 10 == line.second()) {
         passed2 = true;
       }
-      if ("Montparnasse.".equals(line.first())) {
+      if ("moon".equals(line.first())) {
         passed3 = false;
       }
     }

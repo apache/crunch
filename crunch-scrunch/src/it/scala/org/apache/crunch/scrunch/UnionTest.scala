@@ -30,21 +30,21 @@ class UnionTest extends CrunchSuite {
 
   @Test def testUnionCollection {
     val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val dickens = tempDir.copyResourceFileName("dickens.txt")
     val union = pipeline.read(from.textFile(shakespeare)).union(
-        pipeline.read(from.textFile(maugham)))
+        pipeline.read(from.textFile(dickens)))
     val wc = wordCount(union).materialize
-    assert(wc.exists(_ == ("you", 3691)))
+    assert(wc.exists(_ == ("you", 2552)))
     pipeline.done
   }
 
   @Test def testUnionTable {
     val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val dickens = tempDir.copyResourceFileName("dickens.txt")
     val wcs = wordCount(pipeline.read(from.textFile(shakespeare)))
-    val wcm = wordCount(pipeline.read(from.textFile(maugham)))
+    val wcm = wordCount(pipeline.read(from.textFile(dickens)))
     val wc = wcs.union(wcm).groupByKey.combine(v => v.sum).materialize
-    assert(wc.exists(_ == ("you", 3691)))
+    assert(wc.exists(_ == ("you", 2552)))
     pipeline.done
   }
 }

@@ -95,7 +95,7 @@ public class MapreduceIT extends CrunchTestSupport implements Serializable {
     PipelineResult res = p.done();
     assertEquals(1, res.getStageResults().size());
     StageResult sr = res.getStageResults().get(0);
-    assertEquals(3667, sr.getCounters().findCounter("written", "out").getValue());
+    assertEquals(3285, sr.getCounters().findCounter("written", "out").getValue());
   }
   
   @Test

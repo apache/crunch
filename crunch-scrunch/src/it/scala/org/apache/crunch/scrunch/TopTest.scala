@@ -35,6 +35,6 @@ class TopTest extends CrunchSuite {
     val wc = pipeline.read(from.textFile(input))
         .flatMap(_.toLowerCase.split("\\s+"))
         .filter(!_.isEmpty()).count
-    assert(wc.top(10, true).materialize.exists(_ == ("is", 205)))
+    assert(wc.top(10, true).materialize.exists(_ == ("is", 175)))
   }
 }

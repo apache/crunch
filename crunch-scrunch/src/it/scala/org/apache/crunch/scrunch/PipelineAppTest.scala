@@ -40,7 +40,7 @@ class PipelineAppTest extends CrunchSuite {
   @Test def run {
     val args = new Array[String](3)
     args(0) = tempDir.copyResourceFileName("shakes.txt")
-    args(1) = tempDir.copyResourceFileName("maugham.txt")
+    args(1) = tempDir.copyResourceFileName("dickens.txt")
     args(2) = tempDir.getFileName("output")
     tempDir.overridePathProperties(WordCount.configuration)
     WordCount.main(args)
