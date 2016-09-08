@@ -41,7 +41,7 @@ import com.google.common.io.Files;
  */
 public class CleanTextIT {
 
-  private static final int LINES_IN_SHAKES = 3667;
+  private static final int LINES_IN_SHAKES = 3285;
   
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();

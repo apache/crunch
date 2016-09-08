@@ -30,11 +30,11 @@ import org.scalatest.junit.JUnitSuite
 class PCollectionTest extends CrunchSuite {
 
   // Number of lines in the Shakespeare data set.
-  val linesInShakespeare: Int = 3667
+  val linesInShakespeare: Int = 3285
 
   // The first line in the Shakespeare data set.
   val firstLineInShakespeare: String =
-      "***The Project Gutenberg's Etext of Shakespeare's First Folio***"
+      "The Tragedie of Macbeth"
 
   // The last line in the Shakespeare data set.
   val lastLineInShakespeare: String =
@@ -79,6 +79,6 @@ class PCollectionTest extends CrunchSuite {
     // With a seed of 1L, 380 elements should be sampled.
     val sampledCollection = shakespeare.sample(0.10, 1L)
     val length = sampledCollection.length().value()
-    assertEquals("Incorrect number of elements sampled with seed 1L.", 380L, length)
+    assertEquals("Incorrect number of elements sampled with seed 1L.", 338L, length)
   }
 }

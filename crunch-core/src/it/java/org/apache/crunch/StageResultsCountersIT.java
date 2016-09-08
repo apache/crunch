@@ -89,7 +89,7 @@ public class StageResultsCountersIT {
 
     Map<String, Long> keywordsMap = countersToMap(result.getStageResults(), KEYWORDS_COUNTER_GROUP);
 
-    assertThat(keywordsMap, is((Map<String, Long>) ImmutableMap.of("NOT", 157L, "AND", 596L, "OR", 81L)));
+    assertThat(keywordsMap, is((Map<String, Long>) ImmutableMap.of("NOT", 145L, "AND", 544L, "OR", 37L)));
   }
 
   private static PipelineResult coutSpecialKeywords(Pipeline pipeline, String inputFileName, PTypeFamily tf) {

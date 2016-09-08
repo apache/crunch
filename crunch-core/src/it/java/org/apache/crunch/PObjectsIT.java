@@ -37,7 +37,7 @@ import org.junit.Test;
 @SuppressWarnings("serial")
 public class PObjectsIT {
 
-  private static final Integer LINES_IN_SHAKES = 3667;
+  private static final Integer LINES_IN_SHAKES = 3285;
 
   @Rule
   public TemporaryPath tmpDir = TemporaryPaths.create();

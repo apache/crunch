@@ -33,7 +33,7 @@ class WordCountTest extends CrunchSuite {
         .write(to.textFile(wordCountOut)) // Word counts
         .map((w, c) => (w.slice(0, 1), c))
         .groupByKey.combine(v => v.sum).materialize
-    assert(fcc.exists(_ == ("w", 1404)))
+    assert(fcc.exists(_ == ("w", 1302)))
 
     pipeline.done
   }

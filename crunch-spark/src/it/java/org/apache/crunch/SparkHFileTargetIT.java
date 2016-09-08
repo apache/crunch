@@ -170,7 +170,7 @@ public class SparkHFileTargetIT implements Serializable {
 
     FileSystem fs = FileSystem.get(HBASE_TEST_UTILITY.getConfiguration());
     KeyValue kv = readFromHFiles(fs, outputPath, "and");
-    assertEquals(427L, Bytes.toLong(kv.getValue()));
+    assertEquals(375L, Bytes.toLong(kv.getValue()));
     pipeline.done();
   }
 
@@ -199,11 +199,11 @@ public class SparkHFileTargetIT implements Serializable {
             .doBulkLoad(outputPath, testTable);
 
     Map<String, Long> EXPECTED = ImmutableMap.<String, Long>builder()
-            .put("__EMPTY__", 1470L)
-            .put("the", 620L)
-            .put("and", 427L)
-            .put("of", 396L)
-            .put("to", 367L)
+            .put("__EMPTY__", 1345L)
+            .put("the", 528L)
+            .put("and", 375L)
+            .put("I", 314L)
+            .put("of", 314L)
             .build();
 
     for (Map.Entry<String, Long> e : EXPECTED.entrySet()) {
@@ -246,8 +246,8 @@ public class SparkHFileTargetIT implements Serializable {
     loader.doBulkLoad(outputPath1, table1);
     loader.doBulkLoad(outputPath2, table2);
 
-    assertEquals(396L, getWordCountFromTable(table1, "of"));
-    assertEquals(427L, getWordCountFromTable(table2, "and"));
+    assertEquals(314L, getWordCountFromTable(table1, "of"));
+    assertEquals(375L, getWordCountFromTable(table2, "and"));
     pipeline.done();
   }
 

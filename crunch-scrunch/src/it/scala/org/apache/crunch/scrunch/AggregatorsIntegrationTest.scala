@@ -34,7 +34,7 @@ class AggregatorsIntegrationTest extends CrunchSuite {
       .groupByKey
       .combineValues(Aggregators.product[(Long, Int)](Aggregators.sum[Long], Aggregators.max[Int]))
       .materialize
-    assert(fcc.exists(_ == ("w", (1404, 12))))
+    assert(fcc.exists(_ == ("w", (1302, 12))))
 
     pipeline.done
   }

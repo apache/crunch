@@ -46,9 +46,9 @@ class IncrementTest extends CrunchSuite {
 
     val res = pipeline.done()
     val sr0 = res.getStageResults.get(0)
-    assertEquals(21836, sr0.getCounterValue("TOP", "ALLWORDS"))
-    assertEquals(20366, sr0.getCounterValue("TOP", "NONEMPTY"))
-    assertEquals(3604, sr0.getCounterValue("TOP", "AWORDS_2x"))
-    assertEquals(20366, sr0.getCounterValue("Inc", "A"))
+    assertEquals(19082, sr0.getCounterValue("TOP", "ALLWORDS"))
+    assertEquals(17737, sr0.getCounterValue("TOP", "NONEMPTY"))
+    assertEquals(3088, sr0.getCounterValue("TOP", "AWORDS_2x"))
+    assertEquals(17737, sr0.getCounterValue("Inc", "A"))
   }
 }

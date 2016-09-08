@@ -34,25 +34,25 @@ class JoinTest extends CrunchSuite {
 
   @Test def join {
     val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val dickens = tempDir.copyResourceFileName("dickens.txt")
     val output = tempDir.getFile("output")
-    val filtered = wordCount(shakespeare).join(wordCount(maugham))
+    val filtered = wordCount(shakespeare).join(wordCount(dickens))
         .map((k, v) => (k, v._1 - v._2))
         .write(to.textFile(output.getAbsolutePath()))
         .filter((k, d) => d > 0).materialize
-    assert(filtered.exists(_ == ("macbeth", 66)))
+    assert(filtered.exists(_ == ("noble", 9)))
     pipeline.done
   }
 
   @Test def joinMapside {
     val shakespeare = tempDir.copyResourceFileName("shakes.txt")
-    val maugham = tempDir.copyResourceFileName("maugham.txt")
+    val dickens = tempDir.copyResourceFileName("dickens.txt")
     val output = tempDir.getFile("output")
-    val filtered = wordCount(shakespeare).innerJoinUsing(wordCount(maugham), Joins.mapside())
+    val filtered = wordCount(shakespeare).innerJoinUsing(wordCount(dickens), Joins.mapside())
       .map((k, v) => (k, v._1 - v._2))
       .write(to.textFile(output.getAbsolutePath()))
       .filter((k, d) => d > 0).materialize
-    assert(filtered.exists(_ == ("macbeth", 66)))
+    assert(filtered.exists(_ == ("noble", 9)))
     pipeline.done
   }
 
