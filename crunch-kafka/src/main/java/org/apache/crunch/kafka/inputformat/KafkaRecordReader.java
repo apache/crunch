@@ -46,6 +46,7 @@ import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_ATTEMPTS_DEFAULT;
 import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_ATTEMPTS_KEY;
 import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_EMPTY_ATTEMPTS_DEFAULT;
 import static org.apache.crunch.kafka.KafkaUtils.getKafkaConnectionProperties;
+import static org.apache.crunch.kafka.inputformat.KafkaInputFormat.filterConnectionProperties;
 
 /**
  * A {@link RecordReader} for pulling data from Kafka.
@@ -75,14 +76,15 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
     if(!(inputSplit instanceof KafkaInputSplit)){
       throw new CrunchRuntimeException("InputSplit for RecordReader is not valid split type.");
     }
+    Properties kafkaConnectionProperties = filterConnectionProperties(
+            getKafkaConnectionProperties(taskAttemptContext.getConfiguration()));
+
+    consumer = new KafkaConsumer<>(kafkaConnectionProperties);
     KafkaInputSplit split = (KafkaInputSplit) inputSplit;
-    topicPartition = split.getTopicPartition();
-
-    connectionProperties = getKafkaConnectionProperties(taskAttemptContext.getConfiguration());
-
-    consumer = new KafkaConsumer<>(connectionProperties);
+    TopicPartition topicPartition = split.getTopicPartition();
 
     consumer.assign(Collections.singletonList(topicPartition));
+
     //suggested hack to gather info without gathering data
     consumer.poll(0);
     //now seek to the desired start location
@@ -119,8 +121,7 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
         }
         return true;
       } else {
-        LOG.warn("nextKeyValue: Retrieved null record last offset was {} and ending offset is {}", currentOffset,
-                endingOffset);
+        LOG.warn("nextKeyValue: Retrieved null record last offset was {} and ending offset is {}", currentOffset, endingOffset);
       }
     }
     record = null;

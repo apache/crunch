@@ -148,23 +148,20 @@ public class KafkaSource
     FormatBundle<KafkaInputFormat> bundle = FormatBundle.forInput(KafkaInputFormat.class);
 
     KafkaInputFormat.writeOffsetsToBundle(offsets, bundle);
-
-    for (String name : kafkaConnectionProperties.stringPropertyNames()) {
-      bundle.set(name, kafkaConnectionProperties.getProperty(name));
-    }
+    KafkaInputFormat.writeConnectionPropertiesToBundle(kafkaConnectionProperties, bundle);
 
     return bundle;
   }
 
-  private static <K, V> Properties copyAndSetProperties(Properties kakfaConnectionProperties) {
+  private static <K, V> Properties copyAndSetProperties(Properties kafkaConnectionProperties) {
     Properties props = new Properties();
-    props.putAll(kakfaConnectionProperties);
+    props.putAll(kafkaConnectionProperties);
 
     //Setting the key/value deserializer to ensure proper translation from Kafka to PType format.
     props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
     props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
 
-    return props;
+    return KafkaInputFormat.tagExistingKafkaConnectionProperties(props);
   }
 
 
@@ -173,8 +170,8 @@ public class KafkaSource
     // consumer will get closed when the iterable is fully consumed.
     // skip using the inputformat/splits since this will be read in a single JVM and don't need the complexity
     // of parallelism when reading.
-    Consumer<BytesWritable, BytesWritable> consumer = new KafkaConsumer<>(props);
-    return new KafkaRecordsIterable<>(consumer, offsets, props);
+    Consumer<BytesWritable, BytesWritable> consumer = new KafkaConsumer<>(KafkaInputFormat.filterConnectionProperties(props));
+    return new KafkaRecordsIterable<>(consumer, offsets, KafkaInputFormat.filterConnectionProperties(props));
   }
 
 

@@ -89,13 +89,17 @@ public class KafkaInputFormatIT {
     topic = testName.getMethodName();
     consumerProps = ClusterTest.getConsumerProperties();
 
-    consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, KafkaSource.BytesDeserializer.class.getName());
-    consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaSource.BytesDeserializer.class.getName());
+    consumerProps.setProperty(KafkaInputFormat.generateConnectionPropertyKey(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG),
+        KafkaSource.BytesDeserializer.class.getName());
+    consumerProps.setProperty(KafkaInputFormat.generateConnectionPropertyKey(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG),
+        KafkaSource.BytesDeserializer.class.getName());
 
     config = ClusterTest.getConsumerConfig();
 
-    config.set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, KafkaSource.BytesDeserializer.class.getName());
-    config.set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaSource.BytesDeserializer.class.getName());
+    config.set(KafkaInputFormat.generateConnectionPropertyKey(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG),
+        KafkaSource.BytesDeserializer.class.getName());
+    config.set(KafkaInputFormat.generateConnectionPropertyKey(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG),
+        KafkaSource.BytesDeserializer.class.getName());
   }
 
   @Test
@@ -183,9 +187,11 @@ public class KafkaInputFormatIT {
       recordReader.initialize(split, taskContext);
 
       int numRecordsFound = 0;
+      String currentKey;
       while (recordReader.nextKeyValue()) {
-        keysRead.add(new String(recordReader.getCurrentKey().getBytes()));
-        assertThat(keys, hasItem(new String(recordReader.getCurrentKey().getBytes())));
+        currentKey = new String(recordReader.getCurrentKey().getBytes());
+        keysRead.add(currentKey);
+        assertThat(keys, hasItem(currentKey));
         assertThat(recordReader.getCurrentValue(), is(notNullValue()));
         numRecordsFound++;
       }
@@ -354,6 +360,54 @@ public class KafkaInputFormatIT {
     }
   }
 
+  @Test
+  public void generateConnectionPropertyKey() {
+    String propertyName = "some.property";
+    String actual = KafkaInputFormat.generateConnectionPropertyKey(propertyName);
+    String expected = "org.apache.crunch.kafka.connection.properties.some.property";
+    assertThat(expected, is(actual));
+  }
+
+  @Test
+  public void getConnectionPropertyFromKey() {
+    String prefixedConnectionProperty = "org.apache.crunch.kafka.connection.properties.some.property";
+    String actual = KafkaInputFormat.getConnectionPropertyFromKey(prefixedConnectionProperty);
+    String expected = "some.property";
+    assertThat(expected, is(actual));
+  }
+
+  @Test
+  public void writeConnectionPropertiesToBundle() {
+    FormatBundle<KafkaInputFormat> actual = FormatBundle.forInput(KafkaInputFormat.class);
+    Properties connectionProperties = new Properties();
+    connectionProperties.put("key1", "value1");
+    connectionProperties.put("key2", "value2");
+    KafkaInputFormat.writeConnectionPropertiesToBundle(connectionProperties, actual);
+
+    FormatBundle<KafkaInputFormat> expected = FormatBundle.forInput(KafkaInputFormat.class);
+    expected.set("key1", "value1");
+    expected.set("key2", "value2");
+
+    assertThat(expected, is(actual));
+  }
+
+  @Test
+  public void filterConnectionProperties() {
+    Properties props = new Properties();
+    props.put("org.apache.crunch.kafka.connection.properties.key1", "value1");
+    props.put("org.apache.crunch.kafka.connection.properties.key2", "value2");
+    props.put("org_apache_crunch_kafka_connection_properties.key3", "value3");
+    props.put("org.apache.crunch.another.prefix.properties.key4", "value4");
+
+    Properties actual = KafkaInputFormat.filterConnectionProperties(props);
+    Properties expected = new Properties();
+    expected.put("key1", "value1");
+    expected.put("key2", "value2");
+
+    assertThat(expected, is(actual));
+  }
+
+
   @Test(expected=IllegalStateException.class)
   public void getOffsetsFromConfigMissingStart() {
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
@@ -403,5 +457,4 @@ public class KafkaInputFormatIT {
 
     Map<TopicPartition, Pair<Long, Long>> returnedOffsets = KafkaInputFormat.getOffsets(config);
   }
-
 }

@@ -24,6 +24,7 @@ import kafka.serializer.Decoder;
 import kafka.serializer.Encoder;
 import kafka.utils.VerifiableProperties;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
+import org.apache.crunch.kafka.inputformat.KafkaInputFormat;
 import org.apache.crunch.kafka.inputformat.KafkaInputFormatIT;
 import org.apache.crunch.kafka.inputformat.KafkaRecordReaderIT;
 import org.apache.crunch.kafka.utils.KafkaBrokerTestHarness;
@@ -135,7 +136,8 @@ public class ClusterTest {
 
   public static Configuration getConsumerConfig() {
     Configuration kafkaConfig = new Configuration(conf);
-    KafkaUtils.addKafkaConnectionProperties(getConsumerProperties(), kafkaConfig);
+    KafkaUtils.addKafkaConnectionProperties(KafkaInputFormat.tagExistingKafkaConnectionProperties(
+        getConsumerProperties()), kafkaConfig);
     return kafkaConfig;
   }
 

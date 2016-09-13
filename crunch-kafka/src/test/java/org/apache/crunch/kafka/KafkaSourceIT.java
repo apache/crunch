@@ -48,7 +48,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static org.apache.crunch.kafka.KafkaUtils.getBrokerOffsets;
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.apache.crunch.kafka.inputformat.KafkaInputFormat.filterConnectionProperties;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
@@ -105,8 +105,10 @@ public class KafkaSourceIT {
 
     Set<String> keysRead = new HashSet<>();
     int numRecordsFound = 0;
+    String currentKey;
     for (Pair<BytesWritable, BytesWritable> values : read.materialize()) {
-      assertThat(keys, hasItem(new String(values.first().getBytes())));
+      currentKey = new String(values.first().getBytes());
+      assertThat(keys, hasItem(currentKey));
       numRecordsFound++;
       keysRead.add(new String(values.first().getBytes()));
     }
