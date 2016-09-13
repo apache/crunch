@@ -294,6 +294,47 @@ public class KafkaRecordReaderIT {
     assertThat(keysRead.size(), is(keys.size()));
   }
 
+  @Test
+  public void pollEarliestEqualsEnding() throws IOException, InterruptedException {
+    List<String> keys = ClusterTest.writeData(ClusterTest.getProducerProperties(), topic, "batch", 10, 10);
+
+    Map<TopicPartition, Long> startOffsets = getBrokerOffsets(consumerProps, OffsetRequest.EarliestTime(), topic);
+    Map<TopicPartition, Long> endOffsets = getBrokerOffsets(consumerProps, OffsetRequest.LatestTime(), topic);
+
+    Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
+    for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
+      Long endingOffset = endOffsets.get(entry.getKey());
+      offsets.put(entry.getKey(), Pair.of(entry.getValue(), endingOffset));
+    }
+
+    KafkaInputFormat.writeOffsetsToConfiguration(offsets, config);
+
+    Set<String> keysRead = new HashSet<>();
+    //read all data from all splits
+    for (Map.Entry<TopicPartition, Pair<Long, Long>> partitionInfo : offsets.entrySet()) {
+      KafkaInputSplit split = new KafkaInputSplit(partitionInfo.getKey().topic(), partitionInfo.getKey().partition(),
+              partitionInfo.getValue().first(), partitionInfo.getValue().second());
+
+      when(consumer.poll(Matchers.anyLong())).thenReturn(ConsumerRecords.<String, String>empty());
+      KafkaRecordReader<String, String> recordReader = new EarliestRecordReader<>(consumer,
+              partitionInfo.getValue().second());
+      recordReader.initialize(split, context);
+
+      int numRecordsFound = 0;
+      while (recordReader.nextKeyValue()) {
+        keysRead.add(recordReader.getCurrentKey());
+        numRecordsFound++;
+      }
+      recordReader.close();
+
+      //assert that it encountered a partitions worth of data
+      assertThat(numRecordsFound, is(0));
+    }
+
+    //validate the same number of unique keys was read as were written.
+    assertThat(keysRead.size(), is(0));
+  }
+
 
   private static class NullAtStartKafkaRecordReader<K, V> extends KafkaRecordReader<K, V>{
 
@@ -342,4 +383,24 @@ public class KafkaRecordReaderIT {
     }
   }
 
+  private static class EarliestRecordReader<K,V> extends KafkaRecordReader<K, V>{
+
+    private final long earliest;
+    private final Consumer consumer;
+
+    public EarliestRecordReader(Consumer consumer, long earliest){
+      this.earliest = earliest;
+      this.consumer = consumer;
+    }
+
+    @Override
+    protected Consumer<K, V> getConsumer() {
+      return consumer;
+    }
+
+    @Override
+    protected long getEarliestOffset() {
+      return earliest;
+    }
+  }
 }

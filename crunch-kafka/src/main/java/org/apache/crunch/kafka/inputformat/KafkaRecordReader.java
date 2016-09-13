@@ -17,7 +17,9 @@
  */
 package org.apache.crunch.kafka.inputformat;
 
+import kafka.api.OffsetRequest;
 import org.apache.crunch.CrunchRuntimeException;
+import org.apache.crunch.kafka.KafkaUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -34,11 +36,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.apache.crunch.kafka.KafkaSource.CONSUMER_POLL_TIMEOUT_DEFAULT;
 import static org.apache.crunch.kafka.KafkaSource.CONSUMER_POLL_TIMEOUT_KEY;
+import static org.apache.crunch.kafka.KafkaUtils.KAFKA_EMPTY_RETRY_ATTEMPTS_KEY;
 import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_ATTEMPTS_DEFAULT;
 import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_ATTEMPTS_KEY;
+import static org.apache.crunch.kafka.KafkaUtils.KAFKA_RETRY_EMPTY_ATTEMPTS_DEFAULT;
 import static org.apache.crunch.kafka.KafkaUtils.getKafkaConnectionProperties;
 
 /**
@@ -59,15 +65,23 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
   private long startingOffset;
   private long currentOffset;
   private int maxNumberAttempts;
+  private Properties connectionProperties;
+  private TopicPartition topicPartition;
+  private int concurrentEmptyResponses;
+  private int maxConcurrentEmptyResponses;
 
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
-    consumer = new KafkaConsumer<>(getKafkaConnectionProperties(taskAttemptContext.getConfiguration()));
     if(!(inputSplit instanceof KafkaInputSplit)){
       throw new CrunchRuntimeException("InputSplit for RecordReader is not valid split type.");
     }
     KafkaInputSplit split = (KafkaInputSplit) inputSplit;
-    TopicPartition topicPartition = split.getTopicPartition();
+    topicPartition = split.getTopicPartition();
+
+    connectionProperties = getKafkaConnectionProperties(taskAttemptContext.getConfiguration());
+
+    consumer = new KafkaConsumer<>(connectionProperties);
+
     consumer.assign(Collections.singletonList(topicPartition));
     //suggested hack to gather info without gathering data
     consumer.poll(0);
@@ -86,6 +100,8 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
     Configuration config = taskAttemptContext.getConfiguration();
     consumerPollTimeout = config.getLong(CONSUMER_POLL_TIMEOUT_KEY, CONSUMER_POLL_TIMEOUT_DEFAULT);
     maxNumberAttempts = config.getInt(KAFKA_RETRY_ATTEMPTS_KEY, KAFKA_RETRY_ATTEMPTS_DEFAULT);
+    maxConcurrentEmptyResponses = config.getInt(KAFKA_EMPTY_RETRY_ATTEMPTS_KEY, KAFKA_RETRY_EMPTY_ATTEMPTS_DEFAULT);
+    concurrentEmptyResponses = 0;
   }
 
   @Override
@@ -130,7 +146,19 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
   private boolean hasPendingData(){
     //offset range is exclusive at the end which means the ending offset is one higher
     // than the actual physical last offset
-    return currentOffset < endingOffset-1;
+
+    boolean hasPending = currentOffset < endingOffset-1;
+
+    if(concurrentEmptyResponses > maxConcurrentEmptyResponses){
+      long earliest = getEarliestOffset();
+      if(earliest == endingOffset){
+        LOG.warn("Possible data loss for {} as earliest {} is equal to {} and greater than expected current {}.",
+          new Object[]{topicPartition, earliest, endingOffset, currentOffset});
+        return false;
+      }
+    }
+
+    return hasPending;
   }
 
   private Iterator<ConsumerRecord<K, V>> getRecords() {
@@ -151,11 +179,14 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
           }
         }
         if((records == null || records.isEmpty()) && hasPendingData()){
-          LOG.warn("No records retrieved but pending offsets to consume therefore polling again.");
+          concurrentEmptyResponses++;
+          LOG.warn("No records retrieved but pending offsets to consume therefore polling again. Attempt {}/{}",
+            concurrentEmptyResponses, maxConcurrentEmptyResponses);
         }else{
           success = true;
         }
       }
+      concurrentEmptyResponses = 0;
 
       if(records == null || records.isEmpty()){
         LOG.info("No records retrieved from Kafka therefore nothing to iterate over.");
@@ -169,6 +200,19 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
 
   protected Consumer<K,V> getConsumer(){
     return consumer;
+  }
+
+  protected long getEarliestOffset(){
+    Map<TopicPartition, Long> brokerOffsets = KafkaUtils
+      .getBrokerOffsets(connectionProperties, OffsetRequest.EarliestTime(), topicPartition.topic());
+    Long offset = brokerOffsets.get(topicPartition);
+    if(offset == null){
+      LOG.debug("Unable to determine earliest offset for {} so returning earliest {}", topicPartition,
+        OffsetRequest.EarliestTime());
+      return OffsetRequest.EarliestTime();
+    }
+    LOG.debug("Earliest offset for {} is {}", topicPartition, offset);
+    return offset;
   }
 
   @Override
