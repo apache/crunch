@@ -171,7 +171,10 @@ public interface PTable<K, V> extends PCollection<Pair<K, V>> {
   <U> PTable<K, Pair<V, U>> join(PTable<K, U> other);
 
   /**
-   * Co-group operation with the given table on common keys.
+   * Co-group operation with the given table.
+   * <p>
+   * <b>Note:</b> If the given table contains keys that are not present in this PTable, an empty
+   * PCollection is set for the relationship.
    */
   <U> PTable<K, Pair<Collection<V>, Collection<U>>> cogroup(PTable<K, U> other);
 
