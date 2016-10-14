@@ -40,8 +40,7 @@ class CrunchTaskContext {
     this.taskContext = taskContext;
     this.nodeContext = nodeContext;
     Configuration conf = taskContext.getConfiguration();
-    Path path = new Path(new Path(conf.get(PlanningParameters.CRUNCH_WORKING_DIRECTORY)),
-        nodeContext.toString());
+    Path path = new Path(nodeContext.toString());
     try {
       this.nodes = (List<RTNode>) DistCache.read(conf, path);
     } catch (IOException e) {

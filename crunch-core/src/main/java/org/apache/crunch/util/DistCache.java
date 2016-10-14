@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
@@ -67,27 +66,32 @@ public class DistCache {
     DistributedCache.addCacheFile(path.toUri(), conf);
   }
 
-  public static Object read(Configuration conf, Path path) throws IOException {
-    URI target = null;
-    for (URI uri : DistributedCache.getCacheFiles(conf)) {
-      if (uri.toString().equals(path.toString())) {
-        target = uri;
-        break;
+  public static Object read(Configuration conf, Path requestedFile) throws IOException {
+    FileSystem localFs = FileSystem.getLocal(conf);
+
+    Path cachedPath = null;
+
+    try {
+      cachedPath = getPathToCacheFile(requestedFile, conf);
+    } catch (CrunchRuntimeException cre) {
+      throw new IOException("Can not determine cached location for " + requestedFile.toString(), cre);
+    }
+
+    if(cachedPath == null || !localFs.exists(cachedPath)) {
+      throw new IOException("Expected file with path: " + requestedFile.toString() + " to be cached");
+    }
+
+    ObjectInputStream ois = null;
+    try {
+      ois = new ObjectInputStream(localFs.open(cachedPath));
+      return ois.readObject();
+    } catch (ClassNotFoundException e) {
+      throw new CrunchRuntimeException(e);
+    } finally {
+      if (ois != null) {
+        ois.close();
       }
     }
-    Object value = null;
-    if (target != null) {
-      Path targetPath = new Path(target.toString());
-      ObjectInputStream ois = new ClassloaderFallbackObjectInputStream(
-          targetPath.getFileSystem(conf).open(targetPath));
-      try {
-        value = ois.readObject();
-      } catch (ClassNotFoundException e) {
-        throw new CrunchRuntimeException(e);
-      }
-      ois.close();
-    }
-    return value;
   }
 
   public static void addCacheFile(Path path, Configuration conf) {
