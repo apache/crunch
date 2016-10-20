@@ -18,6 +18,7 @@
 package org.apache.crunch.lambda;
 
 import org.apache.crunch.GroupingOptions;
+import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
 import org.apache.crunch.Target;
@@ -213,5 +214,15 @@ public interface LTable<K, V> extends LCollection<Pair<K, V>> {
             if (condition.test(ctx.element())) ctx.increment(counterGroup, counterName);
             ctx.emit(ctx.element());
         }, pType());
+    }
+
+    /** {@inheritDoc */
+    default LTable<K, V> union(LTable<K, V> other) {
+        return factory().wrap(underlying().union(other.underlying()));
+    }
+
+    /** {@inheritDoc */
+    default LTable<K, V> union(PTable<K, V> other) {
+        return factory().wrap(underlying().union(other));
     }
 }
