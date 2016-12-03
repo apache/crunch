@@ -346,7 +346,7 @@ public class From {
   static Schema getSchemaFromPath(Path path, Configuration conf) {
     DataFileReader reader = null;
     try {
-      FileSystem fs = FileSystem.get(conf);
+      FileSystem fs = path.getFileSystem(conf);
       if (!fs.isFile(path)) {
         FileStatus[] fstat = fs.listStatus(path, new PathFilter() {
           @Override
