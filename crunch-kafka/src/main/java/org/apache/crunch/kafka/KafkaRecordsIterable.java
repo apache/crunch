@@ -283,7 +283,7 @@ class KafkaRecordsIterable<K, V> implements Iterable<Pair<K, V>> {
               new Object[]{topicPartion, offset, endOffset});
         }
         remainingPartitions.remove(topicPartion);
-        consumer.pause(topicPartion);
+        consumer.pause(Collections.singleton(topicPartion));
       }
       LOG.debug("Value for partition {} and offset {} is within range.", topicPartion, offset);
       return emit;
