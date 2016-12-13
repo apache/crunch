@@ -163,11 +163,11 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
   }
 
   private Iterator<ConsumerRecord<K, V>> getRecords() {
-    if (recordIterator == null || !recordIterator.hasNext()) {
+    if ((recordIterator == null) || !recordIterator.hasNext()) {
       ConsumerRecords<K, V> records = null;
       int numTries = 0;
       boolean success = false;
-      while(!success && numTries < maxNumberAttempts) {
+      while(!success && (numTries < maxNumberAttempts)) {
         try {
           records = getConsumer().poll(consumerPollTimeout);
         } catch (RetriableException re) {
@@ -179,7 +179,7 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
             throw re;
           }
         }
-        if((records == null || records.isEmpty()) && hasPendingData()){
+        if(((records == null) || records.isEmpty()) && hasPendingData()){
           concurrentEmptyResponses++;
           LOG.warn("No records retrieved but pending offsets to consume therefore polling again. Attempt {}/{}",
             concurrentEmptyResponses, maxConcurrentEmptyResponses);
@@ -189,7 +189,7 @@ public class KafkaRecordReader<K, V> extends RecordReader<K, V> {
       }
       concurrentEmptyResponses = 0;
 
-      if(records == null || records.isEmpty()){
+      if((records == null) || records.isEmpty()){
         LOG.info("No records retrieved from Kafka therefore nothing to iterate over.");
       }else{
         LOG.info("Retrieved records from Kafka to iterate over.");
