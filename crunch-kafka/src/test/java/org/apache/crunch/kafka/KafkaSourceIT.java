@@ -25,13 +25,16 @@ import org.apache.crunch.Pair;
 import org.apache.crunch.Pipeline;
 import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.MRPipeline;
+import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.From;
 import org.apache.crunch.io.To;
+import org.apache.crunch.kafka.inputformat.KafkaInputFormat;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -40,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -80,6 +84,43 @@ public class KafkaSourceIT {
     topic = testName.getMethodName();
     consumerProps = ClusterTest.getConsumerProperties();
     config = ClusterTest.getConsumerConfig();
+  }
+
+  @Test
+  public void defaultEarliestOffsetReset() {
+    Map<TopicPartition, Pair<Long, Long>> offsets = Collections.emptyMap();
+
+    Configuration config = ClusterTest.getConf();
+
+    //Remove this so should revert to default.
+    consumerProps.remove(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+
+    KafkaSource kafkaSource = new KafkaSource(consumerProps, offsets);
+
+    FormatBundle inputBundle = kafkaSource.getInputBundle();
+    Configuration cfg = new Configuration(false);
+    inputBundle.configure(cfg);
+    Properties kafkaConnectionProperties = KafkaUtils.getKafkaConnectionProperties(cfg);
+    kafkaConnectionProperties = KafkaInputFormat.filterConnectionProperties(kafkaConnectionProperties);
+    assertThat(kafkaConnectionProperties.getProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), is("earliest"));
+  }
+
+  @Test
+  public void offsetResetOverridable() {
+    Map<TopicPartition, Pair<Long, Long>> offsets = Collections.emptyMap();
+
+    Configuration config = ClusterTest.getConf();
+
+    consumerProps.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
+    KafkaSource kafkaSource = new KafkaSource(consumerProps, offsets);
+
+    FormatBundle inputBundle = kafkaSource.getInputBundle();
+    Configuration cfg = new Configuration(false);
+    inputBundle.configure(cfg);
+    Properties kafkaConnectionProperties = KafkaUtils.getKafkaConnectionProperties(cfg);
+    kafkaConnectionProperties = KafkaInputFormat.filterConnectionProperties(kafkaConnectionProperties);
+    assertThat(kafkaConnectionProperties.getProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), is("latest"));
   }
 
   @Test
