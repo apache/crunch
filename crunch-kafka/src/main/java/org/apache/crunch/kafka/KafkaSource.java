@@ -155,6 +155,10 @@ public class KafkaSource
 
   private static <K, V> Properties copyAndSetProperties(Properties kafkaConnectionProperties) {
     Properties props = new Properties();
+
+    //set the default to be earliest for auto reset but allow it to be overridden if appropriate.
+    props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
     props.putAll(kafkaConnectionProperties);
 
     //Setting the key/value deserializer to ensure proper translation from Kafka to PType format.
@@ -198,6 +202,10 @@ public class KafkaSource
     return new KafkaData<>(props, offsets);
   }
 
+  //exposed for testing purposes
+  FormatBundle getInputBundle() {
+    return inputBundle;
+  }
 
   /**
    * Basic {@link Deserializer} which simply wraps the payload as a {@link BytesWritable}.
