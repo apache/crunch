@@ -18,14 +18,19 @@
 package org.apache.crunch.io.text.csv;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 
 import org.apache.crunch.io.FileReaderFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Iterators;
+import org.apache.hadoop.fs.viewfs.ConfigUtil;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +46,8 @@ public class CSVFileReaderFactory implements FileReaderFactory<String> {
   private final char closeQuoteChar;
   private final char escapeChar;
   private final int maximumRecordSize;
+
+  private CompressionCodecFactory compressionCodecFactory;
 
   /**
    * Creates a new {@code CSVFileReaderFactory} instance with default
@@ -88,14 +95,23 @@ public class CSVFileReaderFactory implements FileReaderFactory<String> {
 
   @Override
   public Iterator<String> read(final FileSystem fs, final Path path) {
-    FSDataInputStream is;
+    InputStream is;
     try {
-      is = fs.open(path);
+      CompressionCodec codec = getCompressionCodec(path, fs.getConf());
+      is = codec == null ? fs.open(path): codec.createInputStream(fs.open(path));
       return new CSVRecordIterator(is, bufferSize, inputFileEncoding, openQuoteChar, closeQuoteChar, escapeChar,
           maximumRecordSize);
     } catch (final IOException e) {
       LOG.info("Could not read path: {}", path, e);
       return Iterators.emptyIterator();
     }
+  }
+
+  private CompressionCodec getCompressionCodec(Path path, Configuration configuration){
+    if(compressionCodecFactory == null){
+      compressionCodecFactory = new CompressionCodecFactory(configuration);
+    }
+
+    return compressionCodecFactory.getCodec(path);
   }
 }

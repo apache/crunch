@@ -18,12 +18,15 @@
 package org.apache.crunch.io.text.csv;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -44,7 +47,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
   private LongWritable key = null;
   private Text value = null;
 
-  private FSDataInputStream fileIn;
+  private InputStream fileIn;
   private CSVLineReader csvLineReader;
   private final char openQuote;
   private final char closeQuote;
@@ -117,15 +120,25 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
     this.pos = start;
 
     final Path file = split.getPath();
-    LOGGER.info("Initializing processing of split for file: " + file);
-    LOGGER.info("File size is: " + file.getFileSystem(job).getFileStatus(file).getLen());
-    LOGGER.info("Split starts at: " + start);
-    LOGGER.info("Split will end at: " + end);
+
+    CompressionCodecFactory codecFactory = new CompressionCodecFactory(context.getConfiguration());
+    CompressionCodec compressionCodec = codecFactory.getCodec(file);
+
+    LOGGER.info("Initializing processing of split for file: {}", file);
+    LOGGER.info("File size is: {}", file.getFileSystem(job).getFileStatus(file).getLen());
+    LOGGER.info("Split starts at: {}", start);
+    LOGGER.info("Split will end at: {}", end);
+    LOGGER.info("File is compressed: {}", (compressionCodec != null));
 
     // Open the file, seek to the start of the split
     // then wrap it in a CSVLineReader
-    fileIn = file.getFileSystem(job).open(file);
-    fileIn.seek(start);
+    if(compressionCodec == null) {
+      FSDataInputStream in = file.getFileSystem(job).open(file);
+      in.seek(start);
+      fileIn = in;
+    }else{
+      fileIn = compressionCodec.createInputStream(file.getFileSystem(job).open(file));
+    }
     csvLineReader = new CSVLineReader(fileIn, this.fileStreamBufferSize, inputFileEncoding, this.openQuote,
         this.closeQuote, this.escape, this.maximumRecordSize);
   }
@@ -150,7 +163,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
     if (pos >= end) {
       key = null;
       value = null;
-      LOGGER.info("End of split reached, ending processing. Total records read for this split: " + totalRecordsRead);
+      LOGGER.info("End of split reached, ending processing. Total records read for this split: {}", totalRecordsRead);
       close();
       return false;
     }
@@ -158,7 +171,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, Text> {
     final int newSize = csvLineReader.readCSVLine(value);
 
     if (newSize == 0) {
-      LOGGER.info("End of file reached. Ending processing. Total records read for this split: " + totalRecordsRead);
+      LOGGER.info("End of file reached. Ending processing. Total records read for this split: {}", totalRecordsRead);
       return false;
     }
 

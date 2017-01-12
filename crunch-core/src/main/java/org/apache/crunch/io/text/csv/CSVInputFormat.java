@@ -30,6 +30,8 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -93,11 +95,22 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
     final List<InputSplit> splits = new ArrayList<InputSplit>();
     final Path[] paths = FileUtil.stat2Paths(listStatus(job).toArray(new FileStatus[0]));
     FSDataInputStream inputStream = null;
+
+    Configuration config = job.getConfiguration();
+    CompressionCodecFactory compressionCodecFactory = new CompressionCodecFactory(config);
+
     try {
       for (final Path path : paths) {
-        FileSystem fileSystem = path.getFileSystem(job.getConfiguration());
-        inputStream = fileSystem.open(path);
-        splits.addAll(getSplitsForFile(splitSize, fileSystem.getFileStatus(path).getLen(), path, inputStream));
+        FileSystem fileSystem = path.getFileSystem(config);
+        CompressionCodec codec = compressionCodecFactory.getCodec(path);
+        if(codec == null) {
+          //if file is not compressed then split it up.
+          inputStream = fileSystem.open(path);
+          splits.addAll(getSplitsForFile(splitSize, fileSystem.getFileStatus(path).getLen(), path, inputStream));
+        }else{
+          //compressed file so no splitting it
+          splits.add(new FileSplit(path,0, Long.MAX_VALUE, new String[0]));
+        }
       }
       return splits;
     } finally {
@@ -198,5 +211,11 @@ public class CSVInputFormat extends FileInputFormat<LongWritable, Text> implemen
     }
 
     return splitsList;
+  }
+
+  @Override
+  protected boolean isSplitable(JobContext context, Path file) {
+    CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
+    return codec == null;
   }
 }

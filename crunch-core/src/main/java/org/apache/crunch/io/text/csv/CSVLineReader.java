@@ -125,7 +125,7 @@ public class CSVLineReader {
    *          Used to specify a custom open quote character
    * @param closeQuoteChar
    *          Used to specify a custom close quote character
-   * @param escape
+   * @param escapeChar
    *          Used to specify a custom escape character
    * @param maximumRecordSize
    *          The maximum acceptable size of one CSV record. Beyond this limit,
@@ -205,8 +205,8 @@ public class CSVLineReader {
         // wrong.
         if (totalBytesConsumed > maximumRecordSize || totalBytesConsumed > Integer.MAX_VALUE) {
           final String record = stringBuilder.toString();
-          LOGGER.error("Possibly malformed file encountered. First line of record: "
-              + record.substring(0, record.indexOf('\n')));
+          LOGGER.error("Possibly malformed file encountered. First line of record: {}",
+               record.substring(0, record.indexOf('\n')));
           throw new IOException("Possibly malformed file encountered. Check log statements for more information");
         }
       }
