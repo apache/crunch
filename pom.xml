@@ -53,8 +53,8 @@ under the License.
     <module>crunch-scrunch</module>
     <module>crunch-spark</module>
     <module>crunch-hive</module>
-    <module>crunch-dist</module>
     <module>crunch-kafka</module>
+    <module>crunch-dist</module>
   </modules>
   <profiles>
     <profile>
