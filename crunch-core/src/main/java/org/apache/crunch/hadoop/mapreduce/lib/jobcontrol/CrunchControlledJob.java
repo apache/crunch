@@ -115,7 +115,7 @@ public class CrunchControlledJob implements MRJob {
       sb.append("job has no depending job:\t").append("\n");
     } else {
       sb.append("job has ").append(this.dependingJobs.size())
-          .append(" dependeng jobs:\n");
+          .append(" depending jobs:\n");
       for (int i = 0; i < this.dependingJobs.size(); i++) {
         sb.append("\t depending job ").append(i).append(":\t");
         sb.append((this.dependingJobs.get(i)).getJobName()).append("\n");
