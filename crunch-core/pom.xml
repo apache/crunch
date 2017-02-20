@@ -128,13 +128,6 @@ under the License.
       <scope>provided</scope>
     </dependency>
 
-    <!-- Used by LocalJobRunner in integration tests -->
-    <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-test</artifactId>

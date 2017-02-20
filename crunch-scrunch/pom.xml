@@ -82,12 +82,6 @@ under the License.
       <artifactId>crunch-test</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- Used by LocalJobRunner in integration tests -->
-    <dependency>
-      <groupId>commons-httpclient</groupId>
-      <artifactId>commons-httpclient</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
