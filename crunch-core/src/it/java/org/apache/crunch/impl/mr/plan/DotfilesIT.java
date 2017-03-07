@@ -116,10 +116,11 @@ public class DotfilesIT {
 
     String[] dotfileNames = dotfileNames(dotfileDir.getRootFile());
 
-    assertEquals(5, dotfileNames.length);
+    assertEquals(6, dotfileNames.length);
 
     assertTrue(containsFileEndingWith(dotfileNames, "jobplan.dot"));
     assertTrue(containsFileEndingWith(dotfileNames, "split_graph_plan.dot"));
+    assertTrue(containsFileEndingWith(dotfileNames, "split_graph_with_components_plan.dot"));
     assertTrue(containsFileEndingWith(dotfileNames, "rt_plan.dot"));
     assertTrue(containsFileEndingWith(dotfileNames, "base_graph_plan.dot"));
     assertTrue(containsFileEndingWith(dotfileNames, "lineage_plan.dot"));

@@ -137,8 +137,9 @@ public class MSCRPlanner {
       List<List<Vertex>> components = graph.connectedComponents();
 
       // Generate the debug graph dotfiles (if configuration is enabled)
-      dotfileUtil.buildBaseGraphDotfile(outputs, graph);
-      dotfileUtil.buildSplitGraphDotfile(outputs, graph, components);
+      dotfileUtil.buildBaseGraphDotfile(outputs, baseGraph);
+      dotfileUtil.buildSplitGraphDotfile(outputs, graph);
+      dotfileUtil.buildSplitGraphWithComponentsDotfile(outputs, graph, components);
 
       // For each component, we will create one or more job prototypes,
       // depending on its profile.

@@ -47,6 +47,7 @@ public class DotfileUtil {
   private String rtNodesDotfile = "";
   private String basePlanGraphDotfile = "";
   private String splitGraphPlanDotfile = "";
+  private String splitGraphWithComponentsPlanDotfile = "";
   private String pcollectionLineageDotfile = "";
   private String planDotFile = "";
 
@@ -75,8 +76,8 @@ public class DotfileUtil {
   void buildBaseGraphDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph) {
     if (isDebugDotfilesEnabled(conf)) {
       try {
-        basePlanGraphDotfile = new DotfileWriterGraph(graph, outputs, null).buildDiagram("Base Graph ("
-            + jarClass.getSimpleName() + ")");
+        basePlanGraphDotfile = new DotfileWriterGraph(graph, outputs, null)
+                .buildDiagram("Base Graph (" + jarClass.getSimpleName() + ")");
       } catch (Exception ex) {
         LOG.error("Problem creating debug dotfile:", ex);
       }
@@ -84,13 +85,29 @@ public class DotfileUtil {
   }
 
   /**
-   * Builds a split graph dotfile only if the dotfile-debug mode is enabled.
+   * Builds the split graph dotfile only if the dotfile-debug mode is enabled.
    */
-  void buildSplitGraphDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph, List<List<Vertex>> components) {
+  void buildSplitGraphDotfile(Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph) {
     if (isDebugDotfilesEnabled(conf)) {
       try {
-        splitGraphPlanDotfile = new DotfileWriterGraph(graph, outputs, components)
-            .buildDiagram("Graph With Components (" + jarClass.getSimpleName() + ")");
+        splitGraphPlanDotfile = new DotfileWriterGraph(graph, outputs, null)
+                .buildDiagram("Split Graph (" + jarClass.getSimpleName() + ")");
+      } catch (Exception ex) {
+        LOG.error("Problem creating debug dotfile:", ex);
+      }
+    }
+  }
+
+  /**
+   * Builds a split graph with components dotfile only if the dotfile-debug mode is enabled.
+   */
+  void buildSplitGraphWithComponentsDotfile(
+          Map<PCollectionImpl<?>, Set<Target>> outputs, Graph graph, List<List<Vertex>> components
+  ) {
+    if (isDebugDotfilesEnabled(conf)) {
+      try {
+        splitGraphWithComponentsPlanDotfile = new DotfileWriterGraph(graph, outputs, components)
+            .buildDiagram("Split Graph With Components (" + jarClass.getSimpleName() + ")");
       } catch (Exception ex) {
         LOG.error("Problem creating debug dotfile:", ex);
       }
@@ -145,6 +162,7 @@ public class DotfileUtil {
         exec.addNamedDotFile("rt_plan", rtNodesDotfile);
         exec.addNamedDotFile("base_graph_plan", basePlanGraphDotfile);
         exec.addNamedDotFile("split_graph_plan", splitGraphPlanDotfile);
+        exec.addNamedDotFile("split_graph_with_components_plan", splitGraphWithComponentsPlanDotfile);
         exec.addNamedDotFile("lineage_plan", pcollectionLineageDotfile);
       }
     } catch (Exception ex) {
