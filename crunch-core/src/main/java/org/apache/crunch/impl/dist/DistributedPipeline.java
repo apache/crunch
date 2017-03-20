@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.impl.dist;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -51,6 +52,7 @@ import org.apache.crunch.io.From;
 import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.ReadableSourceTarget;
 import org.apache.crunch.io.To;
+import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
@@ -58,6 +60,7 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,6 +74,7 @@ public abstract class DistributedPipeline implements Pipeline {
   private static final Logger LOG = LoggerFactory.getLogger(DistributedPipeline.class);
 
   private static final Random RANDOM = new Random();
+  private static final String CRUNCH_TMP_DIRS = "crunch.tmp.dirs";
 
   private final String name;
   protected final PCollectionFactory factory;
@@ -101,6 +105,22 @@ public abstract class DistributedPipeline implements Pipeline {
     this.conf = conf;
     this.tempFileIndex = 0;
     this.nextAnonymousStageId = 0;
+  }
+
+  public static boolean isTempDir(Job job, String outputPath) {
+    String tmpDirs = job.getConfiguration().get(CRUNCH_TMP_DIRS);
+
+    if (tmpDirs == null ) {
+      return false;
+    }
+
+    for (String p : tmpDirs.split(":")) {
+      if (outputPath.contains(p)) {
+        LOG.debug(String.format("Matched temporary directory : %s in %s", p, outputPath));
+        return true;
+      }
+    }
+    return false;
   }
 
   public PCollectionFactory getFactory() {
@@ -390,7 +410,25 @@ public abstract class DistributedPipeline implements Pipeline {
 
   public Path createTempPath() {
     tempFileIndex++;
-    return new Path(getTempDirectory(), "p" + tempFileIndex);
+    Path path = new Path(getTempDirectory(), "p" + tempFileIndex);
+    storeTempDirLocation(path);
+    return path;
+  }
+
+  @VisibleForTesting
+  protected void storeTempDirLocation(Path t) {
+    String tmpCfg = conf.get(CRUNCH_TMP_DIRS);
+    String tmpDir = t.toString();
+
+    LOG.debug(String.format("Temporary directory created: %s", tmpDir));
+
+    if (tmpCfg != null && !tmpCfg.contains(tmpDir)) {
+      conf.set(CRUNCH_TMP_DIRS, String.format("%s:%s", tmpCfg, tmpDir));
+    }
+    else if (tmpCfg == null) {
+      conf.set(CRUNCH_TMP_DIRS, tmpDir);
+    }
+
   }
 
   private synchronized Path getTempDirectory() {

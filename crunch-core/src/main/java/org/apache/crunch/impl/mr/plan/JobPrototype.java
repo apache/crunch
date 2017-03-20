@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.crunch.Pipeline;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.crunch.Target;
 import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchControlledJob;
+import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.impl.mr.collect.DoTable;
@@ -39,9 +40,11 @@ import org.apache.crunch.impl.mr.run.CrunchOutputFormat;
 import org.apache.crunch.impl.mr.run.CrunchReducer;
 import org.apache.crunch.impl.mr.run.NodeContext;
 import org.apache.crunch.impl.mr.run.RTNode;
+import org.apache.crunch.io.impl.FileTargetImpl;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.util.DistCache;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 
@@ -51,11 +54,18 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 class JobPrototype {
 
+  private static final String DFS_REPLICATION = "dfs.replication";
+  private static final String DFS_REPLICATION_INITIAL = "dfs.replication.initial";
+  private static final String CRUNCH_TMP_DIR_REPLICATION = "crunch.tmp.dir.replication";
+
   public static JobPrototype createMapReduceJob(int jobID, PGroupedTableImpl<?, ?> group,
-      Set<NodePath> inputs, Path workingPath) {
+                                                Set<NodePath> inputs, Path workingPath) {
     return new JobPrototype(jobID, inputs, group, workingPath);
   }
 
@@ -84,6 +94,7 @@ class JobPrototype {
     this.targetsToNodePaths = null;
   }
 
+  @VisibleForTesting
   private JobPrototype(int jobID, HashMultimap<Target, NodePath> outputPaths, Path workingPath) {
     this.jobID = jobID;
     this.group = null;
@@ -141,9 +152,13 @@ class JobPrototype {
     return job;
   }
 
+  private static final Logger LOG = LoggerFactory.getLogger(JobPrototype.class);
+
   private CrunchControlledJob build(
       Class<?> jarClass, Configuration conf, MRPipeline pipeline, int numOfJobs) throws IOException {
+
     Job job = new Job(conf);
+    LOG.debug(String.format("Replication factor: %s", job.getConfiguration().get(DFS_REPLICATION)));
     conf = job.getConfiguration();
     conf.set(PlanningParameters.CRUNCH_WORKING_DIRECTORY, workingPath.toString());
     job.setJarByClass(jarClass);
@@ -152,18 +167,27 @@ class JobPrototype {
     Set<Target> allTargets = Sets.newHashSet();
     Path outputPath = new Path(workingPath, "output");
     MSCROutputHandler outputHandler = new MSCROutputHandler(job, outputPath, group == null);
+
+    boolean onlyHasTemporaryOutput =true;
+
     for (Target target : targetsToNodePaths.keySet()) {
       DoNode node = null;
+      LOG.debug("Target path: " + target);
       for (NodePath nodePath : targetsToNodePaths.get(target)) {
         if (node == null) {
           PType<?> ptype = nodePath.tail().getPType();
           node = DoNode.createOutputNode(target.toString(), target.getConverter(ptype), ptype);
           outputHandler.configureNode(node, target);
+
+          onlyHasTemporaryOutput &= DistributedPipeline.isTempDir(job, target.toString());
         }
         outputNodes.add(walkPath(nodePath.descendingIterator(), node));
       }
       allTargets.add(target);
     }
+
+    setJobReplication(job.getConfiguration(), onlyHasTemporaryOutput);
+
 
     Set<DoNode> mapSideNodes = Sets.newHashSet();
     if (mapSideNodePaths != null) {
@@ -241,6 +265,72 @@ class JobPrototype {
         allTargets,
         prepareHook,
         completionHook);
+  }
+
+  @VisibleForTesting
+  protected void setJobReplication(Configuration jobConfiguration, boolean onlyHasTemporaryOutput) {
+    String userSuppliedTmpDirReplication = jobConfiguration.get(CRUNCH_TMP_DIR_REPLICATION);
+    if  (userSuppliedTmpDirReplication == null) {
+      return;
+    }
+
+    handleInitialReplication(jobConfiguration);
+
+    if (onlyHasTemporaryOutput) {
+      LOG.debug(String.format("Setting replication factor to: %s ", userSuppliedTmpDirReplication));
+      jobConfiguration.set(DFS_REPLICATION, userSuppliedTmpDirReplication);
+    }
+    else {
+      String originalReplication = jobConfiguration.get(DFS_REPLICATION_INITIAL);
+      LOG.debug(String.format("Using initial replication factor (%s)", originalReplication));
+      jobConfiguration.set(DFS_REPLICATION, originalReplication);
+    }
+  }
+
+  @VisibleForTesting
+  protected void handleInitialReplication(Configuration jobConfiguration) {
+
+    String origReplication = jobConfiguration.get(DFS_REPLICATION_INITIAL);
+    if (origReplication != null) {
+      LOG.debug(String.format("Initial replication has been already set (%s); nothing to do.", origReplication));
+      return;
+    }
+
+    String defaultReplication = jobConfiguration.get(DFS_REPLICATION);
+
+    if (defaultReplication != null) {
+      LOG.debug(String.format("Using dfs.replication (%s) set by user as initial replication.",
+              defaultReplication));
+      setInitialJobReplicationConfig(jobConfiguration, defaultReplication);
+      return;
+    }
+
+    Set<Target> targets = targetsToNodePaths.keySet();
+    Target t = targets.iterator().next();
+    if (t instanceof FileTargetImpl) {
+      Path path = ((FileTargetImpl) t).getPath();
+      defaultReplication = tryGetDefaultReplicationFromFileSystem(jobConfiguration, path, "3");
+    }
+
+    setInitialJobReplicationConfig(jobConfiguration, defaultReplication);
+  }
+
+  private String tryGetDefaultReplicationFromFileSystem(Configuration jobConf, Path path, String defaultReplication) {
+    String d;
+    try {
+      FileSystem fs = path.getFileSystem(jobConf);
+      d = fs.getConf().get(DFS_REPLICATION);
+      LOG.debug(
+              String.format("Using dfs.replication (%s) retrieved from remote filesystem as initial replication.", d));
+    } catch (IOException e) {
+      d = defaultReplication;
+      LOG.warn(String.format("Cannot read job's config. Setting initial replication to %s.", d));
+    }
+    return d;
+  }
+
+  private void setInitialJobReplicationConfig(Configuration job, String defaultReplication) {
+    job.set(DFS_REPLICATION_INITIAL, defaultReplication);
   }
 
   private static CrunchControlledJob.Hook getHook(
