@@ -329,8 +329,8 @@ class JobPrototype {
     return d;
   }
 
-  private void setInitialJobReplicationConfig(Configuration job, String defaultReplication) {
-    job.set(DFS_REPLICATION_INITIAL, defaultReplication);
+  private void setInitialJobReplicationConfig(Configuration jobConf, String defaultReplication) {
+    jobConf.set(DFS_REPLICATION_INITIAL, defaultReplication);
   }
 
   private static CrunchControlledJob.Hook getHook(

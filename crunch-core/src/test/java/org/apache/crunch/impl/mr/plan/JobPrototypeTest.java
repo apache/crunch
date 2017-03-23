@@ -48,7 +48,6 @@ public class JobPrototypeTest {
   @Mock private Path mockPath;
   @Mock private FileTargetImpl mockTarget;
   @Mock private FileSystem mockFs;
-  @Mock private DoNode mockNode;
   @Mock private PGroupedTableImpl<String, String> mockPgroup;
   @Mock private Set<NodePath> mockInputs;
   private JobPrototype jobPrototypeUnderTest;
@@ -86,7 +85,6 @@ public class JobPrototypeTest {
 
   @Test
   public void initialReplicationFactorUsedFromFileSystem() throws IOException {
-    testConfiguration = new Configuration();
     HashMultimap<Target, NodePath> targetNodePaths = HashMultimap.create();
     targetNodePaths.put(mockTarget, new NodePath());
     doReturn(mockPath).when(mockTarget).getPath();
@@ -95,6 +93,7 @@ public class JobPrototypeTest {
     c.set("dfs.replication", TEST_INITIAL_DFS_REPLICATION);
     doReturn(c).when(mockFs).getConf();
     jobPrototypeUnderTest.addReducePaths(targetNodePaths);
+    testConfiguration = new Configuration(false);
 
     jobPrototypeUnderTest.handleInitialReplication(testConfiguration);
     assertEquals(TEST_INITIAL_DFS_REPLICATION, testConfiguration.get("dfs.replication.initial"));
@@ -102,7 +101,6 @@ public class JobPrototypeTest {
 
   @Test
   public void initialReplicationFactorUsedWhenItCannotBeRetrievedFromFileSystem() throws IOException {
-    testConfiguration = new Configuration();
     HashMultimap<Target, NodePath> targetNodePaths = HashMultimap.create();
     targetNodePaths.put(mockTarget, new NodePath());
     doReturn(mockPath).when(mockTarget).getPath();
@@ -110,6 +108,7 @@ public class JobPrototypeTest {
     Configuration c = new Configuration();
     c.set("dfs.replication", TEST_INITIAL_DFS_REPLICATION);
     jobPrototypeUnderTest.addReducePaths(targetNodePaths);
+    testConfiguration = new Configuration(false);
 
     jobPrototypeUnderTest.handleInitialReplication(testConfiguration);
     assertEquals("3", testConfiguration.get("dfs.replication.initial"));  //default
