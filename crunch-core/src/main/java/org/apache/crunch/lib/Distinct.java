@@ -45,7 +45,7 @@ public final class Distinct {
    * @return A new {@code PCollection} that contains the unique elements of the input
    */
   public static <S> PCollection<S> distinct(PCollection<S> input) {
-    return distinct(input, DEFAULT_FLUSH_EVERY);
+    return distinct(input, DEFAULT_FLUSH_EVERY, 0);
   }
   
   /**
@@ -65,22 +65,42 @@ public final class Distinct {
    * @return A new {@code PCollection} that contains the unique elements of the input
    */
   public static <S> PCollection<S> distinct(PCollection<S> input, int flushEvery) {
-    Preconditions.checkArgument(flushEvery > 0);
-    PType<S> pt = input.getPType();
-    PTypeFamily ptf = pt.getFamily();
-    return input
-        .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery, pt), ptf.tableOf(pt, ptf.nulls()))
-        .groupByKey()
-        .parallelDo("post-distinct", new PostDistinctFn<S>(), pt);
+    return distinct(input, flushEvery, 0);
   }
-  
+
   /**
    * A {@code PTable<K, V>} analogue of the {@code distinct} function.
    */
   public static <K, V> PTable<K, V> distinct(PTable<K, V> input, int flushEvery) {
     return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input, flushEvery));
   }
-  
+
+    /**
+   * A {@code distinct} operation that gives the client more control over how frequently
+   * elements are flushed to disk in order to allow control over performance or
+   * memory consumption.
+   *
+   * @param input       The input {@code PCollection}
+   * @param flushEvery  Flush the elements to disk whenever we encounter this many unique values
+   * @param numReducers The number of reducers to use
+   * @return A new {@code PCollection} that contains the unique elements of the input
+   */
+  public static <S> PCollection<S> distinct(PCollection<S> input, int flushEvery, int numReducers) {
+    Preconditions.checkArgument(flushEvery > 0);
+    PType<S> pt = input.getPType();
+    PTypeFamily ptf = pt.getFamily();
+    return input
+        .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery, pt), ptf.tableOf(pt, ptf.nulls()))
+        .groupByKey(numReducers)
+        .parallelDo("post-distinct", new PostDistinctFn<S>(), pt);
+  }
+   /**
+   * A {@code PTable<K, V>} analogue of the {@code distinct} function.
+   */
+  public static <K, V> PTable<K, V> distinct(PTable<K, V> input, int flushEvery, int numReducers) {
+    return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input, flushEvery, numReducers));
+  }
+
   private static class PreDistinctFn<S> extends DoFn<S, Pair<S, Void>> {
     private final Set<S> values = Sets.newHashSet();
     private final int flushEvery;
