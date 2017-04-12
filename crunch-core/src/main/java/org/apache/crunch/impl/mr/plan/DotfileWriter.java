@@ -18,7 +18,9 @@
 package org.apache.crunch.impl.mr.plan;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -68,7 +70,8 @@ public class DotfileWriter {
 
     String size = "";
     try {
-      DecimalFormat formatter = new DecimalFormat("#,###.##");
+      DecimalFormatSymbols formatSymbols = new DecimalFormatSymbols(Locale.ENGLISH);
+      DecimalFormat formatter = new DecimalFormat("#,###.##", formatSymbols);
       size = " " + formatter.format(pcollectionImpl.getSize()/1024.0/1024.0) + " Mb";
     } catch (Exception e) {
       // Just skip those that don't have a size
