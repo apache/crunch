@@ -32,7 +32,7 @@ public abstract class SPairFlatMapFunction<T, K, V> extends SparkDoFn<T, Pair<K,
   @Override
   public void process(T input, Emitter<Pair<K, V>> emitter) {
     try {
-      for (Tuple2<K, V> kv : call(input)) {
+      for (Tuple2<K, V> kv : new IterableIterator<Tuple2<K, V>>(call(input))) {
         emitter.emit(Pair.of(kv._1(), kv._2()));
       }
     } catch (Exception e) {

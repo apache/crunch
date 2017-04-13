@@ -264,8 +264,8 @@ trait PTypeFamily extends GeneratedTuplePTypeFamily {
   }
 
   private def products[T <: Product](tpe: Type, mirror: Mirror): PType[T] = {
-    val ctor = tpe.member(nme.CONSTRUCTOR).asMethod
-    val args = ctor.paramss.head.map(x => (x.name.toString,
+    val ctor = tpe.member(termNames.CONSTRUCTOR).asMethod
+    val args = ctor.paramLists.head.map(x => (x.name.toString,
       typeToPType(x.typeSignature, mirror)))
     val out = (x: Product) => TupleN.of(x.productIterator.toArray.asInstanceOf[Array[Object]] : _*)
     val rtc = mirror.runtimeClass(tpe)

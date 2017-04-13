@@ -22,8 +22,6 @@ import java.io.FileOutputStream
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 
-import scala.tools.nsc.io.VirtualDirectory
-
 import com.google.common.io.Files
 import org.junit.Assert.assertNotNull
 import org.junit.Test
@@ -31,30 +29,35 @@ import org.apache.crunch.test.CrunchTestSupport
 import org.scalatest.junit.JUnitSuite
 import org.apache.crunch.scrunch.CrunchSuite
 
+import scala.tools.nsc.interpreter.{ReplDir, ReplOutput}
+import scala.tools.nsc.settings.MutableSettings
+
 /**
- * Tests creating jars from a {@link scala.tools.nsc.io.VirtualDirectory}.
+ * Tests creating jars from a {@link scala.tools.nsc.interpreter.ReplDir}.
  */
 class InterpreterJarTest extends CrunchSuite {
 
   /**
-   * Tests transforming a virtual directory into a temporary jar file.
+   * Tests transforming an output directory into a temporary jar file.
    */
-  @Test def virtualDirToJar: Unit = {
-    // Create a virtual directory and populate with some mock content.
-    val root = new VirtualDirectory("testDir", None)
+  @Test def outputDirToJar: Unit = {
+    // Create an output directory and populate with some mock content.
+    val settings = new MutableSettings(e => println("ERROR: "+e))
+    val dirSetting = settings.StringSetting("-Yrepl-outdir", "path", "Test path", "")
+    val root: ReplDir = new ReplOutput(dirSetting).dir
     // Add some subdirectories to the root.
     (1 to 10).foreach { i =>
-      val subdir = root.subdirectoryNamed("subdir" + i).asInstanceOf[VirtualDirectory]
+      val subdir = root.subdirectoryNamed("subdir" + i)
       // Add some classfiles to each sub directory.
       (1 to 10).foreach { j =>
         subdir.fileNamed("MyClass" + j + ".class")
       }
     }
 
-    // Now generate a jar file from the virtual directory.
+    // Now generate a jar file from the output directory.
     val tempJar = new File(tempDir.getRootFile(), "replJar.jar")
     val jarStream = new JarOutputStream(new FileOutputStream(tempJar))
-    InterpreterRunner.addVirtualDirectoryToJar(root, "top/pack/name/", jarStream)
+    InterpreterRunner.addOutputDirectoryToJar(root, "top/pack/name/", jarStream)
     jarStream.close()
 
     // Verify the contents of the jar.

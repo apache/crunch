@@ -105,11 +105,11 @@ under the License.
     <avro.classifier>hadoop2</avro.classifier>
 
     <kafka.version>0.10.0.1</kafka.version>
-    <scala.base.version>2.10</scala.base.version>
-    <scala.version>2.10.4</scala.version>
+    <scala.base.version>2.11</scala.base.version>
+    <scala.version>2.11.8</scala.version>
     <scalatest.version>2.2.4</scalatest.version>
-    <spark.version>1.3.1</spark.version>
-    <jline.version>2.10.4</jline.version>
+    <spark.version>2.0.0</spark.version>
+    <jline.version>2.12.1</jline.version>
     <jsr305.version>1.3.9</jsr305.version>
   </properties>
 
@@ -456,7 +456,7 @@ under the License.
       </dependency>
 
       <dependency>
-        <groupId>org.scala-lang</groupId>
+        <groupId>jline</groupId>
         <artifactId>jline</artifactId>
         <version>${jline.version}</version>
       </dependency>

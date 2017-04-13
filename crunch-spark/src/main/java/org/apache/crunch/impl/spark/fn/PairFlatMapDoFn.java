@@ -37,10 +37,10 @@ public class PairFlatMapDoFn<T, K, V> implements PairFlatMapFunction<Iterator<T>
   }
 
   @Override
-  public Iterable<Tuple2<K, V>> call(Iterator<T> input) throws Exception {
+  public Iterator<Tuple2<K, V>> call(Iterator<T> input) throws Exception {
     ctxt.initialize(fn, null);
     return Iterables.transform(
         new CrunchIterable<T, Pair<K, V>>(fn, input),
-        GuavaUtils.<K, V>pair2tupleFunc());
+        GuavaUtils.<K, V>pair2tupleFunc()).iterator();
   }
 }

@@ -30,7 +30,7 @@ public abstract class SFlatMapFunction<T, R> extends SparkDoFn<T, R>
   @Override
   public void process(T input, Emitter<R> emitter) {
     try {
-      for (R r : call(input)) {
+      for (R r : new IterableIterator<R>(call(input))) {
         emitter.emit(r);
       }
     } catch (Exception e) {

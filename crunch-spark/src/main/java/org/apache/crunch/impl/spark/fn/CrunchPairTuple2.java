@@ -27,12 +27,7 @@ import java.util.Iterator;
 
 public class CrunchPairTuple2<K, V> implements PairFlatMapFunction<Iterator<Pair<K, V>>, K, V> {
   @Override
-  public Iterable<Tuple2<K, V>> call(final Iterator<Pair<K, V>> iterator) throws Exception {
-    return new Iterable<Tuple2<K, V>>() {
-      @Override
-      public Iterator<Tuple2<K, V>> iterator() {
-        return Iterators.transform(iterator, GuavaUtils.<K, V>pair2tupleFunc());
-      }
-    };
+  public Iterator<Tuple2<K, V>> call(final Iterator<Pair<K, V>> iterator) throws Exception {
+    return Iterators.transform(iterator, GuavaUtils.<K, V>pair2tupleFunc());
   }
 }

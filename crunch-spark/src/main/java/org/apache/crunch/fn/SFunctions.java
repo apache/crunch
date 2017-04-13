@@ -17,6 +17,8 @@
  */
 package org.apache.crunch.fn;
 
+import java.util.Iterator;
+
 import org.apache.spark.api.java.function.DoubleFlatMapFunction;
 import org.apache.spark.api.java.function.DoubleFunction;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -62,7 +64,7 @@ public final class SFunctions {
   public static <T, R> SFlatMapFunction<T, R> wrap(final FlatMapFunction<T, R> f) {
     return new SFlatMapFunction<T, R>() {
       @Override
-      public Iterable<R> call(T t) throws Exception {
+      public Iterator<R> call(T t) throws Exception {
         return f.call(t);
       }
     };
@@ -71,7 +73,7 @@ public final class SFunctions {
   public static <K, V, R> SFlatMapFunction2<K, V, R> wrap(final FlatMapFunction2<K, V, R> f) {
     return new SFlatMapFunction2<K, V, R>() {
       @Override
-      public Iterable<R> call(K k, V v) throws Exception {
+      public Iterator<R> call(K k, V v) throws Exception {
         return f.call(k, v);
       }
     };
@@ -89,7 +91,7 @@ public final class SFunctions {
   public static <T> SDoubleFlatMapFunction<T> wrap(final DoubleFlatMapFunction<T> f) {
     return new SDoubleFlatMapFunction<T>() {
       @Override
-      public Iterable<Double> call(T t) throws Exception {
+      public Iterator<Double> call(T t) throws Exception {
         return f.call(t);
       }
     };

@@ -32,7 +32,7 @@ public abstract class SFlatMapFunction2<K, V, R> extends DoFn<Pair<K, V>, R>
   @Override
   public void process(Pair<K, V> input, Emitter<R> emitter) {
     try {
-      for (R r : call(input.first(), input.second())) {
+      for (R r : new IterableIterator<R>(call(input.first(), input.second()))) {
         emitter.emit(r);
       }
     } catch (Exception e) {

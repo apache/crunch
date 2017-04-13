@@ -37,9 +37,9 @@ public class FlatMapPairDoFn<K, V, T> implements FlatMapFunction<Iterator<Tuple2
   }
 
   @Override
-  public Iterable<T> call(Iterator<Tuple2<K, V>> input) throws Exception {
+  public Iterator<T> call(Iterator<Tuple2<K, V>> input) throws Exception {
     ctxt.initialize(fn, null);
     return new CrunchIterable<Pair<K, V>, T>(fn,
-        Iterators.transform(input, GuavaUtils.<K, V>tuple2PairFunc()));
+        Iterators.transform(input, GuavaUtils.<K, V>tuple2PairFunc())).iterator();
   }
 }

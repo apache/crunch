@@ -50,14 +50,9 @@ public class ReduceGroupingFunction implements PairFlatMapFunction<Iterator<Tupl
   }
 
   @Override
-  public Iterable<Tuple2<ByteArray, List<byte[]>>> call(
+  public Iterator<Tuple2<ByteArray, List<byte[]>>> call(
       final Iterator<Tuple2<ByteArray, List<byte[]>>> iter) throws Exception {
-    return new Iterable<Tuple2<ByteArray, List<byte[]>>>() {
-      @Override
-      public Iterator<Tuple2<ByteArray, List<byte[]>>> iterator() {
-        return new GroupingIterator(iter, rawComparator());
-      }
-    };
+    return new GroupingIterator(iter, rawComparator());
   }
 
   private RawComparator<?> rawComparator() {

@@ -45,7 +45,7 @@ public class CombineMapsideFunction<K, V> implements PairFlatMapFunction<Iterato
   }
 
   @Override
-  public Iterable<Tuple2<K, V>> call(Iterator<Tuple2<K, V>> iter) throws Exception {
+  public Iterator<Tuple2<K, V>> call(Iterator<Tuple2<K, V>> iter) throws Exception {
     ctxt.initialize(combineFn, null);
     Map<K, List<V>> cache = Maps.newHashMap();
     int cnt = 0;
@@ -63,7 +63,7 @@ public class CombineMapsideFunction<K, V> implements PairFlatMapFunction<Iterato
       }
     }
 
-    return new Flattener<K, V>(cache);
+    return new Flattener<K, V>(cache).iterator();
   }
 
   private Map<K, List<V>> reduce(Map<K, List<V>> cache) {

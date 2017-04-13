@@ -38,7 +38,7 @@ under the License.
       <artifactId>scala-compiler</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.scala-lang</groupId>
+      <groupId>jline</groupId>
       <artifactId>jline</artifactId>
     </dependency>
     <dependency>

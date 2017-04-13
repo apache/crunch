@@ -17,24 +17,12 @@
  */
 package org.apache.crunch.fn;
 
-import org.apache.crunch.CrunchRuntimeException;
-import org.apache.crunch.Emitter;
-import org.apache.spark.api.java.function.DoubleFlatMapFunction;
+import java.util.Iterator;
 
-/**
- * A Crunch-compatible abstract base class for Spark's {@link DoubleFlatMapFunction}. Subclasses
- * of this class may be used against either Crunch {@code PCollections} or Spark {@code RDDs}.
- */
-public abstract class SDoubleFlatMapFunction<T> extends SparkDoFn<T, Double>
-    implements DoubleFlatMapFunction<T> {
-  @Override
-  public void process(T input, Emitter<Double> emitter) {
-    try {
-      for (Double d : new IterableIterator<Double>(call(input))) {
-        emitter.emit(d);
-      }
-    } catch (Exception e) {
-      throw new CrunchRuntimeException(e);
-    }
+class IterableIterator<T> implements Iterable<T> {
+  private final Iterator<T> itr;
+  IterableIterator(Iterator<T> itr) {
+    this.itr = itr;
   }
+  public Iterator<T> iterator() { return itr;}
 }
