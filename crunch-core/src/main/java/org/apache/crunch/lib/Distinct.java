@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.apache.crunch.DoFn;
 import org.apache.crunch.Emitter;
+import org.apache.crunch.GroupingOptions;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.PTable;
 import org.apache.crunch.Pair;
@@ -45,7 +46,7 @@ public final class Distinct {
    * @return A new {@code PCollection} that contains the unique elements of the input
    */
   public static <S> PCollection<S> distinct(PCollection<S> input) {
-    return distinct(input, DEFAULT_FLUSH_EVERY, 0);
+    return distinct(input, DEFAULT_FLUSH_EVERY, GroupingOptions.builder().build());
   }
   
   /**
@@ -65,7 +66,7 @@ public final class Distinct {
    * @return A new {@code PCollection} that contains the unique elements of the input
    */
   public static <S> PCollection<S> distinct(PCollection<S> input, int flushEvery) {
-    return distinct(input, flushEvery, 0);
+    return distinct(input, flushEvery, GroupingOptions.builder().build());
   }
 
   /**
@@ -99,6 +100,33 @@ public final class Distinct {
    */
   public static <K, V> PTable<K, V> distinct(PTable<K, V> input, int flushEvery, int numReducers) {
     return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input, flushEvery, numReducers));
+  }
+
+  /**
+   * A {@code distinct} operation that gives the client more control over how frequently
+   * elements are flushed to disk in order to allow control over performance or
+   * memory consumption.
+   *
+   * @param input      The input {@code PCollection}
+   * @param flushEvery Flush the elements to disk whenever we encounter this many unique values
+   * @param options    Options to provide finer control on how grouping is performed.
+   * @return A new {@code PCollection} that contains the unique elements of the input
+   */
+  public static <S> PCollection<S> distinct(PCollection<S> input, int flushEvery, GroupingOptions options) {
+    Preconditions.checkArgument(flushEvery > 0);
+    PType<S> pt = input.getPType();
+    PTypeFamily ptf = pt.getFamily();
+    return input
+        .parallelDo("pre-distinct", new PreDistinctFn<S>(flushEvery, pt), ptf.tableOf(pt, ptf.nulls()))
+        .groupByKey(options)
+        .parallelDo("post-distinct", new PostDistinctFn<S>(), pt);
+  }
+
+  /**
+   * A {@code PTable<K, V>} analogue of the {@code distinct} function.
+   */
+  public static <K, V> PTable<K, V> distinct(PTable<K, V> input, int flushEvery, GroupingOptions options) {
+    return PTables.asPTable(distinct((PCollection<Pair<K, V>>) input, flushEvery, options));
   }
 
   private static class PreDistinctFn<S> extends DoFn<S, Pair<S, Void>> {
