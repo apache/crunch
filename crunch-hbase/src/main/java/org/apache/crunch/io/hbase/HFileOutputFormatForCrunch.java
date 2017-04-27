@@ -19,17 +19,22 @@
  */
 package org.apache.crunch.io.hbase;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.io.ByteStreams;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.Tag;
+import org.apache.hadoop.hbase.fs.HFileSystem;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
@@ -47,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  * This is a thin wrapper of {@link HFile.Writer}. It only calls {@link HFile.Writer#append}
@@ -71,8 +77,8 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
   public RecordWriter<Object, Cell> getRecordWriter(final TaskAttemptContext context)
       throws IOException, InterruptedException {
     Path outputPath = getDefaultWorkFile(context, "");
-    Configuration conf = context.getConfiguration();
-    FileSystem fs = outputPath.getFileSystem(conf);
+    final Configuration conf = context.getConfiguration();
+    FileSystem fs = new HFileSystem(outputPath.getFileSystem(conf));
 
     final boolean compactionExclude = conf.getBoolean(
         COMPACTION_EXCLUDE_CONF_KEY, false);
@@ -93,17 +99,26 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
     LOG.info("HColumnDescriptor: {}", hcol.toString());
     Configuration noCacheConf = new Configuration(conf);
     noCacheConf.setFloat(HConstants.HFILE_BLOCK_CACHE_SIZE_KEY, 0.0f);
-    final StoreFile.Writer writer = new StoreFile.WriterBuilder(conf, new CacheConfig(noCacheConf), fs)
+    final StoreFile.WriterBuilder writerBuilder = new StoreFile.WriterBuilder(conf, new CacheConfig(noCacheConf), fs)
         .withComparator(KeyValue.COMPARATOR)
         .withFileContext(getContext(hcol))
         .withFilePath(outputPath)
-        .withBloomType(hcol.getBloomFilterType())
-        .build();
+        .withBloomType(hcol.getBloomFilterType());
 
     return new RecordWriter<Object, Cell>() {
+
+      StoreFile.Writer writer = null;
+
       @Override
       public void write(Object row, Cell cell)
           throws IOException {
+
+        if (writer == null) {
+          writer = writerBuilder
+              .withFavoredNodes(getPreferredNodes(conf, cell))
+              .build();
+        }
+
         KeyValue copy = KeyValue.cloneAndAddTags(cell, ImmutableList.<Tag>of());
         if (copy.getTimestamp() == HConstants.LATEST_TIMESTAMP) {
           copy.updateLatestStamp(now);
@@ -114,19 +129,46 @@ public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
 
       @Override
       public void close(TaskAttemptContext c) throws IOException {
-        writer.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,
-            Bytes.toBytes(System.currentTimeMillis()));
-        writer.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY,
-            Bytes.toBytes(context.getTaskAttemptID().toString()));
-        writer.appendFileInfo(StoreFile.MAJOR_COMPACTION_KEY,
-            Bytes.toBytes(true));
-        writer.appendFileInfo(StoreFile.EXCLUDE_FROM_MINOR_COMPACTION_KEY,
-            Bytes.toBytes(compactionExclude));
-        writer.appendFileInfo(StoreFile.TIMERANGE_KEY,
-            WritableUtils.toByteArray(trt));
-        writer.close();
+        if (writer != null) {
+          writer.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,
+              Bytes.toBytes(System.currentTimeMillis()));
+          writer.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY,
+              Bytes.toBytes(context.getTaskAttemptID().toString()));
+          writer.appendFileInfo(StoreFile.MAJOR_COMPACTION_KEY,
+              Bytes.toBytes(true));
+          writer.appendFileInfo(StoreFile.EXCLUDE_FROM_MINOR_COMPACTION_KEY,
+              Bytes.toBytes(compactionExclude));
+          writer.appendFileInfo(StoreFile.TIMERANGE_KEY,
+              WritableUtils.toByteArray(trt));
+          writer.close();
+        }
       }
     };
+  }
+
+  /**
+   * Returns the "preferred" node for the given cell, or null if no preferred node can be found. The "preferred"
+   * node for a cell is defined as the host where the region server is located that is hosting the region that will
+   * contain the given cell.
+   */
+  private InetSocketAddress[] getPreferredNodes(Configuration conf, Cell cell) throws IOException {
+    String regionLocationFilePathStr = conf.get(RegionLocationTable.REGION_LOCATION_TABLE_PATH);
+    if (regionLocationFilePathStr != null) {
+      LOG.debug("Reading region location file from {}", regionLocationFilePathStr);
+      Path regionLocationPath = new Path(regionLocationFilePathStr);
+      try (FSDataInputStream inputStream = regionLocationPath.getFileSystem(conf).open(regionLocationPath)) {
+        RegionLocationTable regionLocationTable = RegionLocationTable.deserialize(inputStream);
+        InetSocketAddress preferredNodeForRow = regionLocationTable.getPreferredNodeForRow(CellUtil.cloneRow(cell));
+        if (preferredNodeForRow != null) {
+          return new InetSocketAddress[] { preferredNodeForRow };
+        } else {
+          return null;
+        }
+      }
+    } else {
+      LOG.warn("No region location file path found in configuration");
+      return null;
+    }
   }
 
   private HFileContext getContext(HColumnDescriptor desc) {

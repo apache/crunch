@@ -51,6 +51,7 @@ import org.apache.crunch.impl.dist.DistributedPipeline;
 import org.apache.crunch.lib.sort.TotalOrderPartitioner;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
@@ -61,6 +62,7 @@ import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.RegionLocator;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.io.TimeRange;
@@ -399,11 +401,20 @@ public final class HFileUtils {
       return;
     }
     PCollection<C> partitioned = sortAndPartition(cells, table, limitToAffectedRegions);
+    RegionLocationTable regionLocationTable = RegionLocationTable.create(
+        table.getName().getNameAsString(),
+        ((RegionLocator) table).getAllRegionLocations());
+    Path regionLocationFilePath = new Path(((DistributedPipeline) cells.getPipeline()).createTempPath(),
+        "regionLocations" + table.getName().getNameAsString());
+     writeRegionLocationTable(cells.getPipeline().getConfiguration(), regionLocationFilePath, regionLocationTable);
+
     for (HColumnDescriptor f : families) {
       byte[] family = f.getName();
+      HFileTarget hfileTarget = new HFileTarget(new Path(outputPath, Bytes.toString(family)), f);
+      hfileTarget.outputConf(RegionLocationTable.REGION_LOCATION_TABLE_PATH, regionLocationFilePath.toString());
       partitioned
           .filter(new FilterByFamilyFn<C>(family))
-          .write(new HFileTarget(new Path(outputPath, Bytes.toString(family)), f));
+          .write(hfileTarget);
     }
   }
 
@@ -578,6 +589,14 @@ public final class HFileUtils {
       writer.append(NullWritable.get(), HBaseTypes.keyValueToBytes(key));
     }
     writer.close();
+  }
+
+  private static void writeRegionLocationTable(Configuration conf, Path outputPath,
+      RegionLocationTable regionLocationTable) throws IOException {
+    LOG.info("Writing region location table for {} to {}", regionLocationTable.getTableName(), outputPath);
+    try (FSDataOutputStream fsDataOutputStream = outputPath.getFileSystem(conf).create(outputPath)) {
+      regionLocationTable.serialize(fsDataOutputStream);
+    }
   }
 
   private static Result doCombineIntoRow(List<KeyValue> kvs, int versions) {
