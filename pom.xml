@@ -88,7 +88,6 @@ under the License.
     <hive.version>0.13.1</hive.version>
     <parquet.version>1.8.1</parquet.version>
     <javassist.version>3.16.1-GA</javassist.version>
-    <jackson.version>1.8.8</jackson.version>
     <jackson.databind.version>2.6.1</jackson.databind.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
@@ -277,18 +276,6 @@ under the License.
         <groupId>commons-lang</groupId>
         <artifactId>commons-lang</artifactId>
         <version>${commons-lang.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.codehaus.jackson</groupId>
-        <artifactId>jackson-core-asl</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.codehaus.jackson</groupId>
-        <artifactId>jackson-mapper-asl</artifactId>
-        <version>${jackson.version}</version>
       </dependency>
 
       <dependency>

@@ -87,18 +87,6 @@ under the License.
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-core-asl</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.codehaus.jackson</groupId>
-      <artifactId>jackson-mapper-asl</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    
     <!-- Both Protobufs and Thrift are supported as
          derived serialization types, and you can use
          (almost) any version of them you like, Crunch
