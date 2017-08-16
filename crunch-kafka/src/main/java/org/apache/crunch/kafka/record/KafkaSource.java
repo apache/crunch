@@ -15,29 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.kafka;
+package org.apache.crunch.kafka.record;
 
-
-import org.apache.crunch.DoFn;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ReadableData;
 import org.apache.crunch.Source;
-import org.apache.crunch.TableSource;
 import org.apache.crunch.impl.mr.run.CrunchMapper;
 import org.apache.crunch.io.CrunchInputs;
 import org.apache.crunch.io.FormatBundle;
 import org.apache.crunch.io.ReadableSource;
-import org.apache.crunch.kafka.inputformat.KafkaInputFormat;
 import org.apache.crunch.types.Converter;
-import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
-import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -54,28 +49,19 @@ import java.util.Properties;
  * A Crunch Source that will retrieve events from Kafka given start and end offsets.  The source is not designed to
  * process unbounded data but instead to retrieve data between a specified range.
  * <p>
- *
- * The values retrieved from Kafka are returned as raw bytes inside of a {@link BytesWritable}.  If callers
- * need specific parsing logic based on the topic then consumers are encouraged to use multiple Kafka Sources
- * for each topic and use special {@link DoFn} to parse the payload.
- *
- * @deprecated Use {@link org.apache.crunch.kafka.record.KafkaSource} instead
+ * <p>
+ * The values retrieved from Kafka are returned as {@link ConsumerRecord} with key and value as raw bytes. If callers need specific
+ * parsing logic based on the topic then consumers are encouraged to use multiple Kafka Sources for each topic and use special
+ * {@link org.apache.crunch.DoFn} to parse the payload.
  */
-@Deprecated
 public class KafkaSource
-    implements TableSource<BytesWritable, BytesWritable>, ReadableSource<Pair<BytesWritable, BytesWritable>> {
+    implements Source<ConsumerRecord<BytesWritable, BytesWritable>>, ReadableSource<ConsumerRecord<BytesWritable, BytesWritable>> {
 
   private static final Logger LOG = LoggerFactory.getLogger(KafkaSource.class);
 
   private final FormatBundle inputBundle;
   private final Properties props;
   private final Map<TopicPartition, Pair<Long, Long>> offsets;
-
-  /**
-   * The consistent PType describing all of the data being retrieved from Kafka as a BytesWritable.
-   */
-  private static PTableType<BytesWritable, BytesWritable> KAFKA_SOURCE_TYPE =
-      Writables.tableOf(Writables.writables(BytesWritable.class), Writables.writables(BytesWritable.class));
 
   /**
    * Constant to indicate how long the reader waits before timing out when retrieving data from Kafka.
@@ -87,17 +73,18 @@ public class KafkaSource
    */
   public static final long CONSUMER_POLL_TIMEOUT_DEFAULT = 1000L;
 
-
   /**
    * Constructs a Kafka source that will read data from the Kafka cluster identified by the {@code kafkaConnectionProperties}
    * and from the specific topics and partitions identified in the {@code offsets}
+   *
    * @param kafkaConnectionProperties The connection properties for reading from Kafka.  These properties will be honored
    *                                  with the exception of the {@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} and
    *                                  {@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG}
-   * @param offsets A map of {@link TopicPartition} to a pair of start and end offsets respectively.  The start and end offsets
-   *                are evaluated at [start, end) where the ending offset is excluded.  Each TopicPartition must have a
-   *                non-null pair describing its offsets.  The start offset should be less than the end offset.  If the values
-   *                are equal or start is greater than the end then that partition will be skipped.
+   * @param offsets                   A map of {@link TopicPartition} to a pair of start and end offsets respectively.  The start
+   *                                  and end offsets are evaluated at [start, end) where the ending offset is excluded.  Each
+   *                                  TopicPartition must have a non-null pair describing its offsets.  The start offset should be
+   *                                  less than the end offset.  If the values are equal or start is greater than the end then
+   *                                  that partition will be skipped.
    */
   public KafkaSource(Properties kafkaConnectionProperties, Map<TopicPartition, Pair<Long, Long>> offsets) {
     this.props = copyAndSetProperties(kafkaConnectionProperties);
@@ -108,24 +95,19 @@ public class KafkaSource
   }
 
   @Override
-  public Source<Pair<BytesWritable, BytesWritable>> inputConf(String key, String value) {
+  public Source<ConsumerRecord<BytesWritable, BytesWritable>> inputConf(String key, String value) {
     inputBundle.set(key, value);
     return this;
   }
 
   @Override
-  public PType<Pair<BytesWritable, BytesWritable>> getType() {
-    return KAFKA_SOURCE_TYPE;
+  public PType<ConsumerRecord<BytesWritable, BytesWritable>> getType() {
+    return ConsumerRecordHelper.CONSUMER_RECORD_P_TYPE;
   }
 
   @Override
   public Converter<?, ?, ?, ?> getConverter() {
-    return KAFKA_SOURCE_TYPE.getConverter();
-  }
-
-  @Override
-  public PTableType<BytesWritable, BytesWritable> getTableType() {
-    return KAFKA_SOURCE_TYPE;
+    return new KafkaSourceConverter();
   }
 
   @Override
@@ -136,7 +118,7 @@ public class KafkaSource
 
   @Override
   public String toString() {
-    return "KafkaSource("+props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)+")";
+    return "KafkaSource(" + props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) + ")";
   }
 
   @Override
@@ -146,7 +128,7 @@ public class KafkaSource
   }
 
   private static <K, V> FormatBundle createFormatBundle(Properties kafkaConnectionProperties,
-                                                        Map<TopicPartition, Pair<Long, Long>> offsets) {
+      Map<TopicPartition, Pair<Long, Long>> offsets) {
 
     FormatBundle<KafkaInputFormat> bundle = FormatBundle.forInput(KafkaInputFormat.class);
 
@@ -156,7 +138,7 @@ public class KafkaSource
     return bundle;
   }
 
-  private static <K, V> Properties copyAndSetProperties(Properties kafkaConnectionProperties) {
+  private static Properties copyAndSetProperties(Properties kafkaConnectionProperties) {
     Properties props = new Properties();
 
     //set the default to be earliest for auto reset but allow it to be overridden if appropriate.
@@ -168,21 +150,20 @@ public class KafkaSource
     props.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
     props.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BytesDeserializer.class.getName());
 
-    return KafkaInputFormat.tagExistingKafkaConnectionProperties(props);
+    return props;
   }
 
-
   @Override
-  public Iterable<Pair<BytesWritable, BytesWritable>> read(Configuration conf) throws IOException {
+  public Iterable<ConsumerRecord<BytesWritable, BytesWritable>> read(Configuration conf) throws IOException {
     // consumer will get closed when the iterable is fully consumed.
     // skip using the inputformat/splits since this will be read in a single JVM and don't need the complexity
     // of parallelism when reading.
-    Consumer<BytesWritable, BytesWritable> consumer = new KafkaConsumer<>(KafkaInputFormat.filterConnectionProperties(props));
-    return new KafkaRecordsIterable<>(consumer, offsets, KafkaInputFormat.filterConnectionProperties(props));
+    Consumer<BytesWritable, BytesWritable> consumer = new KafkaConsumer<>(props);
+    return new KafkaRecordsIterable<>(consumer, offsets, props);
   }
 
-
   @Override
+  @SuppressWarnings("unchecked")
   public void configureSource(Job job, int inputId) throws IOException {
     Configuration conf = job.getConfiguration();
     //an id of -1 indicates that this is the only input so just use it directly
@@ -198,16 +179,16 @@ public class KafkaSource
     }
   }
 
-  @Override
-  public ReadableData<Pair<BytesWritable, BytesWritable>> asReadable() {
-    // skip using the inputformat/splits since this will be read in a single JVM and don't need the complexity
-    // of parallelism when reading.
-    return new KafkaData<>(props, offsets);
-  }
-
   //exposed for testing purposes
   FormatBundle getInputBundle() {
     return inputBundle;
+  }
+
+  @Override
+  public ReadableData<ConsumerRecord<BytesWritable, BytesWritable>> asReadable() {
+    // skip using the inputformat/splits since this will be read in a single JVM and don't need the complexity
+    // of parallelism when reading.
+    return new KafkaData<>(props, offsets);
   }
 
   /**
