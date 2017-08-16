@@ -51,6 +51,9 @@ import java.util.Properties;
     KafkaSourceIT.class, KafkaRecordsIterableIT.class, KafkaDataIT.class,
     //org.apache.crunch.kafka.inputformat
     KafkaRecordReaderIT.class, KafkaInputFormatIT.class, KafkaUtilsIT.class,
+    // org.apache.crunch.kafka.record
+    org.apache.crunch.kafka.record.KafkaSourceIT.class, org.apache.crunch.kafka.record.KafkaRecordsIterableIT.class,
+    org.apache.crunch.kafka.record.KafkaDataIT.class
 })
 public class ClusterTest {
 
