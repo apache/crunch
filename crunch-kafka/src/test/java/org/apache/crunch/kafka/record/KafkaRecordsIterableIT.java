@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.crunch.kafka;
+package org.apache.crunch.kafka.record;
+
+import org.apache.crunch.kafka.*;
+import org.junit.Test;
 
 import kafka.api.OffsetRequest;
 import org.apache.crunch.Pair;
@@ -44,6 +47,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static org.apache.crunch.kafka.ClusterTest.writeData;
 import static org.hamcrest.Matchers.hasItem;
@@ -85,13 +89,14 @@ public class KafkaRecordsIterableIT {
 
   @Before
   public void setup() {
-    topic = testName.getMethodName();
+    topic = UUID.randomUUID().toString();
 
     props = ClusterTest.getConsumerProperties();
 
     startOffsets = new HashMap<>();
     stopOffsets = new HashMap<>();
     offsets = new HashMap<>();
+
     for (int i = 0; i < 4; i++) {
       TopicPartition tp = new TopicPartition(topic, i);
       startOffsets.put(tp, 0L);
@@ -100,7 +105,6 @@ public class KafkaRecordsIterableIT {
       offsets.put(tp, Pair.of(0L, 100L));
     }
 
-
     consumerProps = new Properties();
     consumerProps.putAll(props);
   }
@@ -108,7 +112,6 @@ public class KafkaRecordsIterableIT {
   @After
   public void shutdown() {
   }
-
 
   @Test(expected = IllegalArgumentException.class)
   public void nullConsumer() {
@@ -122,8 +125,8 @@ public class KafkaRecordsIterableIT {
 
   @Test(expected=IllegalArgumentException.class)
   public void emptyOffsets() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<String, String>(consumer,
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(consumer,
         Collections.<TopicPartition, Pair<Long, Long>>emptyMap(), new Properties());
   }
 
@@ -134,7 +137,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void iterateOverValues() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 10;
     int numPerLoop = 100;
     int total = loops * numPerLoop;
@@ -149,12 +152,12 @@ public class KafkaRecordsIterableIT {
     }
 
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
-      assertThat(keys, hasItem(event.first()));
-      assertTrue(keys.remove(event.first()));
+    for (ConsumerRecord<String, String> record : data) {
+      assertThat(keys, hasItem(record.key()));
+      assertTrue(keys.remove(record.key()));
       count++;
     }
 
@@ -164,7 +167,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void iterateOverOneValue() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 1;
     int numPerLoop = 1;
     int total = loops * numPerLoop;
@@ -178,12 +181,12 @@ public class KafkaRecordsIterableIT {
       offsets.put(entry.getKey(), Pair.of(entry.getValue(), stopOffsets.get(entry.getKey())));
     }
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
-      assertThat(keys, hasItem(event.first()));
-      assertTrue(keys.remove(event.first()));
+    for (ConsumerRecord<String, String> record : data) {
+      assertThat(keys, hasItem(record.key()));
+      assertTrue(keys.remove(record.key()));
       count++;
     }
 
@@ -193,7 +196,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void iterateOverNothing() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 10;
     int numPerLoop = 100;
     writeData(props, topic, "batch", loops, numPerLoop);
@@ -207,10 +210,10 @@ public class KafkaRecordsIterableIT {
       offsets.put(entry.getKey(), Pair.of(entry.getValue(), stopOffsets.get(entry.getKey())));
     }
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
+    for (ConsumerRecord<String, String> record : data) {
       count++;
     }
 
@@ -219,7 +222,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void iterateOverPartial() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 10;
     int numPerLoop = 100;
     int numPerPartition = 50;
@@ -233,10 +236,10 @@ public class KafkaRecordsIterableIT {
       offsets.put(entry.getKey(), Pair.of(entry.getValue(), entry.getValue() + numPerPartition));
     }
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
+    for (ConsumerRecord<String, String> record : data) {
       count++;
     }
 
@@ -245,7 +248,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void dontIteratePastStop() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 10;
     int numPerLoop = 100;
 
@@ -262,13 +265,13 @@ public class KafkaRecordsIterableIT {
 
     List<String> secondKeys = writeData(props, topic, "batch2", loops, numPerLoop);
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(consumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
-      assertThat(keys, hasItem(event.first()));
-      assertTrue(keys.remove(event.first()));
-      assertThat(secondKeys, not(hasItem(event.first())));
+    for (ConsumerRecord<String, String> record : data) {
+      assertThat(keys, hasItem(record.key()));
+      assertTrue(keys.remove(record.key()));
+      assertThat(secondKeys, not(hasItem(record.key())));
       count++;
     }
 
@@ -278,7 +281,7 @@ public class KafkaRecordsIterableIT {
 
   @Test
   public void iterateSkipInitialValues() {
-    consumer = new KafkaConsumer<String, String>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
+    consumer = new KafkaConsumer<>(consumerProps, new ClusterTest.StringSerDe(), new ClusterTest.StringSerDe());
     int loops = 10;
     int numPerLoop = 100;
 
@@ -298,14 +301,14 @@ public class KafkaRecordsIterableIT {
     }
 
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets,
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<String, String>(consumer, offsets,
         new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
-      assertThat(secondKeys, hasItem(event.first()));
-      assertTrue(secondKeys.remove(event.first()));
-      assertThat(keys, not(hasItem(event.first())));
+    for (ConsumerRecord<String, String> record : data) {
+      assertThat(secondKeys, hasItem(record.key()));
+      assertTrue(secondKeys.remove(record.key()));
+      assertThat(keys, not(hasItem(record.key())));
       count++;
     }
 
@@ -343,10 +346,10 @@ public class KafkaRecordsIterableIT {
         // shows to stop retrieving data
         .thenReturn(null);
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
+    for (ConsumerRecord<String, String> record : data) {
       count++;
     }
 
@@ -366,10 +369,10 @@ public class KafkaRecordsIterableIT {
     when(records.iterator()).thenReturn(returnedRecords.iterator());
     when(mockedConsumer.poll(Matchers.anyLong())).thenReturn(records).thenReturn(records).thenReturn(null);
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
 
     int count = 0;
-    for (Pair<String, String> event : data) {
+    for (ConsumerRecord<String, String> record : data) {
       count++;
     }
 
@@ -398,7 +401,7 @@ public class KafkaRecordsIterableIT {
         .thenThrow(new TimeoutException("fail5"))
         .thenThrow(new TimeoutException("fail6"));
 
-    Iterable<Pair<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
+    Iterable<ConsumerRecord<String, String>> data = new KafkaRecordsIterable<>(mockedConsumer, offsets, new Properties());
 
     data.iterator().next();
   }
