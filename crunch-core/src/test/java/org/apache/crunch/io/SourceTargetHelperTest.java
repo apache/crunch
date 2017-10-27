@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.junit.Test;
 
 public class SourceTargetHelperTest {
@@ -36,7 +37,7 @@ public class SourceTargetHelperTest {
     File tmp = File.createTempFile("pathsize", "");
     Path tmpPath = new Path(tmp.getAbsolutePath());
     tmp.delete();
-    FileSystem fs = FileSystem.getLocal(new Configuration());
+    FileSystem fs = FileSystem.getLocal(new Configuration(false));
     assertEquals(-1L, SourceTargetHelper.getPathSize(fs, tmpPath));
   }
 
@@ -49,7 +50,17 @@ public class SourceTargetHelperTest {
   /**
    * Mock FileSystem that returns null for {@link FileSystem#listStatus(Path)}.
    */
-  static class MockFileSystem extends LocalFileSystem {
+  private static class MockFileSystem extends LocalFileSystem {
+
+    private static RawLocalFileSystem createConfiguredRawLocalFileSystem() {
+      RawLocalFileSystem fs = new RawLocalFileSystem();
+      fs.setConf(new Configuration(false));
+      return fs;
+    }
+
+    private MockFileSystem() {
+      super(createConfiguredRawLocalFileSystem());
+    }
 
     @Override
     public FileStatus[] listStatus(Path f) throws IOException {
