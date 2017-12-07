@@ -42,10 +42,10 @@ import org.apache.hadoop.io.BytesWritable;
  *
  */
 public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector {
-  
+
   private TupleFactory<T> tupleFactory;
   private List<TupleField> fields;
-  
+
   public TupleObjectInspector(TupleFactory<T> tupleFactory, PType... ptypes) {
     this.tupleFactory = tupleFactory;
     fields = new ArrayList<TupleField>();
@@ -54,23 +54,23 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
       fields.add(field);
     }
   }
-  
+
   static class TupleField implements StructField {
-    
+
     private int index;
     private ObjectInspector oi;
-    
+
     public TupleField(int index, PType<?> ptype) {
       this.index = index;
       oi = createObjectInspector(ptype);
     }
-    
+
     private ObjectInspector createObjectInspector(PType<?> ptype) {
       Class typeClass = ptype.getTypeClass();
       if (typeClass == Union.class || typeClass == Void.class) {
         throw new IllegalArgumentException(typeClass.getName() + " is not supported yet");
       }
-      
+
       ObjectInspector result;
       if (typeClass == ByteBuffer.class) {
         result = new ByteBufferObjectInspector();
@@ -103,10 +103,15 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
     }
 
     @Override
+    public int getFieldID() {
+      return index;
+    }
+
+    @Override
     public String getFieldComment() {
       return null;
     }
-    
+
   }
 
   @Override
@@ -130,7 +135,7 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
   public Category getCategory() {
     return Category.STRUCT;
   }
-  
+
   public T create(Object... values) {
     return tupleFactory.makeTuple(values);
   }
@@ -149,7 +154,7 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
     }
     return null;
   }
-  
+
   @Override
   public Object getStructFieldData(Object data, StructField fieldRef) {
     TupleField field = (TupleField) fieldRef;
@@ -165,14 +170,14 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
     }
     return result;
   }
-  
-  
+
+
   static class ByteBufferObjectInspector extends AbstractPrimitiveJavaObjectInspector implements SettableBinaryObjectInspector {
 
     ByteBufferObjectInspector() {
       super(TypeInfoFactory.binaryTypeInfo);
     }
-    
+
     @Override
     public ByteBuffer copyObject(Object o) {
       if (o == null) {
@@ -184,7 +189,7 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
       ByteBuffer duplicate = ByteBuffer.wrap(copiedBytes);
       return duplicate;
     }
-    
+
     @Override
     public BytesWritable getPrimitiveWritableObject(Object o) {
       if (o == null) {
@@ -195,7 +200,7 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
       bw.set(buf.array(), buf.arrayOffset(), buf.limit());
       return bw;
     }
-    
+
     @Override
     public byte[] getPrimitiveJavaObject(Object o) {
       if (o == null) {
@@ -227,7 +232,7 @@ public class TupleObjectInspector<T extends Tuple> extends StructObjectInspector
       return bw == null ? null : ByteBuffer.wrap(bw.getBytes());
     }
 
-    
+
   }
 
 }
