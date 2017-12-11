@@ -105,7 +105,7 @@ under the License.
     <avro.classifier>hadoop2</avro.classifier>
     <hive.version>2.1.0</hive.version>
 
-    <kafka.version>0.10.0.1</kafka.version>
+    <kafka.version>0.10.2.1</kafka.version>
     <scala.base.version>2.11</scala.base.version>
     <scala.version>2.11.8</scala.version>
     <scalatest.version>2.2.4</scalatest.version>

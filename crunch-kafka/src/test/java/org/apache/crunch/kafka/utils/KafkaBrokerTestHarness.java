@@ -17,17 +17,20 @@
 
 package org.apache.crunch.kafka.utils;
 
+import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import kafka.utils.Time;
 import org.apache.commons.io.FileUtils;
+import org.apache.kafka.common.utils.Time;
 import scala.Option;
+import scala.collection.JavaConversions;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -341,7 +344,8 @@ public class KafkaBrokerTestHarness extends ZookeeperTestHarness {
   }
 
   private static KafkaServer startBroker(KafkaConfig config) {
-    KafkaServer server = new KafkaServer(config, new SystemTime(), Option.<String>empty());
+    KafkaServer server = new KafkaServer(config, new SystemTime(), Option.<String>empty(),
+        JavaConversions.asScalaBuffer(Collections.<KafkaMetricsReporter>emptyList()));
     server.startup();
     return server;
   }
@@ -349,6 +353,11 @@ public class KafkaBrokerTestHarness extends ZookeeperTestHarness {
   private static class SystemTime implements Time {
     @Override
     public long milliseconds() {
+      return System.currentTimeMillis();
+    }
+
+    @Override
+    public long hiResClockMs() {
       return System.currentTimeMillis();
     }
 

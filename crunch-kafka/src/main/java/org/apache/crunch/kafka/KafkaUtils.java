@@ -33,11 +33,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.crunch.CrunchRuntimeException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.protocol.SecurityProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
+import scala.collection.JavaConversions;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -147,7 +149,9 @@ public class KafkaUtils {
    *                                  the topics are {@code null}, empty or blank, or if there is an error parsing the
    *                                  properties.
    * @throws IllegalStateException if there is an error communicating with the Kafka cluster to retrieve information.
+   * @deprecated As of 1.0. Use beginning/end offset APIs on {@link org.apache.kafka.clients.consumer.Consumer}
    */
+  @Deprecated
   public static Map<TopicPartition, Long> getBrokerOffsets(Properties properties, long time, String... topics) {
     if (properties == null)
       throw new IllegalArgumentException("properties cannot be null");
@@ -179,7 +183,7 @@ public class KafkaUtils {
         topicMetadataResponse = consumer.send(topicMetadataRequest);
         break;
       } catch (Exception err) {
-        EndPoint endpoint = broker.endPoints().get(SecurityProtocol.PLAINTEXT).get();
+        EndPoint endpoint = JavaConversions.seqAsJavaList(broker.endPoints()).get(0);
         LOG.warn(String.format("Fetching topic metadata for topic(s) '%s' from broker '%s' failed",
             Arrays.toString(topics), endpoint.host()), err);
       } finally {
@@ -209,7 +213,12 @@ public class KafkaUtils {
           throw new CrunchRuntimeException("Unable to find leader for topic:"+metadata.topic()
             +" partition:"+partition.partitionId());
         }
-        Broker leader = new Broker(0, brokerEndPoint.host(), brokerEndPoint.port(), SecurityProtocol.PLAINTEXT);
+
+        EndPoint endPoint = new EndPoint(brokerEndPoint.host(), brokerEndPoint.port(),
+            ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT), SecurityProtocol.PLAINTEXT);
+
+        Broker leader = new Broker(0, JavaConversions.asScalaBuffer(Arrays.asList(endPoint)),
+            Option.<String>empty());
 
         if (brokerRequests.containsKey(leader))
           requestInfo = brokerRequests.get(leader);
@@ -279,7 +288,7 @@ public class KafkaUtils {
    */
   private static SimpleConsumer getSimpleConsumer(final Broker broker) {
     // BrokerHost, BrokerPort, timeout, buffer size, client id
-    EndPoint endpoint = broker.endPoints().get(SecurityProtocol.PLAINTEXT).get();
+    EndPoint endpoint = JavaConversions.seqAsJavaList(broker.endPoints()).get(0);
     return new SimpleConsumer(endpoint.host(), endpoint.port(), 100000, 64 * 1024, CLIENT_ID);
   }
 
@@ -309,7 +318,10 @@ public class KafkaUtils {
         throw new IllegalArgumentException("Unable to parse host/port from broker string : ["
             + Arrays.toString(brokerHostPort) + "] from broker list : [" + Arrays.toString(brokerPortList) + "]");
       try {
-        brokers.add(new Broker(0, brokerHostPort[0], Integer.parseInt(brokerHostPort[1]), SecurityProtocol.PLAINTEXT));
+        EndPoint endPoint = new EndPoint(brokerHostPort[0], Integer.parseInt(brokerHostPort[1]),
+            ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT), SecurityProtocol.PLAINTEXT);
+        brokers.add(new Broker(0, JavaConversions.asScalaBuffer(Arrays.asList(endPoint)),
+            Option.<String>empty()));
       } catch (NumberFormatException e) {
         throw new IllegalArgumentException("Error parsing broker port : " + brokerHostPort[1], e);
       }

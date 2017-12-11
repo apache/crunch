@@ -18,11 +18,13 @@
 package org.apache.crunch.kafka;
 
 import kafka.cluster.Broker;
+import kafka.cluster.EndPoint;
 import org.apache.crunch.kafka.ClusterTest;
 import org.apache.crunch.kafka.KafkaUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.network.ListenerName;
 import org.apache.kafka.common.protocol.SecurityProtocol;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -30,6 +32,8 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import scala.Option;
+import scala.collection.JavaConversions;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -63,7 +67,9 @@ public class KafkaUtilsIT {
     String brokerHost = brokerHostPort[0];
     int brokerPort = Integer.parseInt(brokerHostPort[1]);
 
-    broker = new Broker(0, brokerHost, brokerPort, SecurityProtocol.PLAINTEXT);
+    EndPoint endPoint = new EndPoint(brokerHost, brokerPort,
+        ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT), SecurityProtocol.PLAINTEXT);
+    broker = new Broker(0, JavaConversions.asScalaBuffer(Arrays.asList(endPoint)), Option.<String>empty());
   }
 
   @AfterClass
@@ -181,7 +187,9 @@ public class KafkaUtilsIT {
 
   @Test
   public void getBrokerOffsetsSomeHostsUnavailable() throws IOException {
-    final Broker bad = new Broker(0, "dummyBrokerHost1", 0, SecurityProtocol.PLAINTEXT);
+    EndPoint endPoint = new EndPoint("dummyBrokerHost1", 0,
+        ListenerName.forSecurityProtocol(SecurityProtocol.PLAINTEXT), SecurityProtocol.PLAINTEXT);
+    final Broker bad = new Broker(0, JavaConversions.asScalaBuffer(Arrays.asList(endPoint)), Option.<String>empty());
     assertNotNull(KafkaUtils.getBrokerOffsets(Arrays.asList(broker, bad), kafka.api.OffsetRequest.LatestTime(), topic));
     assertNotNull(KafkaUtils.getBrokerOffsets(Arrays.asList(bad, broker), kafka.api.OffsetRequest.LatestTime(), topic));
   }

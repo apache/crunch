@@ -17,9 +17,7 @@
  */
 package org.apache.crunch.kafka.record;
 
-import kafka.api.OffsetRequest;
 import org.apache.crunch.CrunchRuntimeException;
-import org.apache.crunch.kafka.KafkaUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -214,10 +212,10 @@ public class KafkaRecordReader<K, V> extends RecordReader<ConsumerRecord<K, V>, 
    * @return the earliest offset of the topic partition
    */
   protected long getEarliestOffset() {
-    Map<TopicPartition, Long> brokerOffsets = KafkaUtils
-        .getBrokerOffsets(kafkaConnectionProperties, OffsetRequest.EarliestTime(), topicPartition.topic());
+    Map<TopicPartition, Long> brokerOffsets = consumer.beginningOffsets(
+        Collections.singletonList(topicPartition));
     Long offset = brokerOffsets.get(topicPartition);
-    if (offset == null) {
+    if(offset == null){
       LOG.debug("Unable to determine earliest offset for {} so returning 0", topicPartition);
       return 0L;
     }
