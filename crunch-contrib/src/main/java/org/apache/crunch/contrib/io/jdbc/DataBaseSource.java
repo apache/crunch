@@ -75,37 +75,37 @@ public class DataBaseSource<T extends DBWritable & Writable> extends FileSourceI
       this.inputClass = inputClass;
     }
 
-    Builder<T> setDriverClass(Class<? extends Driver> driverClass) {
+    public Builder<T> setDriverClass(Class<? extends Driver> driverClass) {
       this.driverClass = driverClass.getName();
       return this;
     }
 
-    Builder<T> setUrl(String url) {
+    public Builder<T> setUrl(String url) {
       this.url = url;
       return this;
     }
 
-    Builder<T> setUsername(String username) {
+    public Builder<T> setUsername(String username) {
       this.username = username;
       return this;
     }
 
-    Builder<T> setPassword(String password) {
+    public Builder<T> setPassword(String password) {
       this.password = password;
       return this;
     }
 
-    Builder<T> selectSQLQuery(String selectClause) {
+    public Builder<T> selectSQLQuery(String selectClause) {
       this.selectClause = selectClause;
       return this;
     }
 
-    Builder<T> countSQLQuery(String countClause) {
+    public Builder<T> countSQLQuery(String countClause) {
       this.countClause = countClause;
       return this;
     }
 
-    DataBaseSource<T> build() {
+    public DataBaseSource<T> build() {
       return new DataBaseSource<T>(
           inputClass,
           driverClass,
