@@ -37,6 +37,7 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
   private TaskAttemptContext context;
   private int idx;
   private long progress;
+  private Configuration rootConf;
 
   public CrunchRecordReader(InputSplit inputSplit, final TaskAttemptContext context) throws IOException,
       InterruptedException {
@@ -44,6 +45,7 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     if (crunchSplit.get() instanceof CombineFileSplit) {
       combineFileSplit = (CombineFileSplit) crunchSplit.get();
     }
+    rootConf = context.getConfiguration();
     crunchSplit.setConf(context.getConfiguration());
     this.context = new TaskAttemptContextImpl(crunchSplit.getConf(), context.getTaskAttemptID());
     initNextRecordReader();
@@ -70,7 +72,13 @@ class CrunchRecordReader<K, V> extends RecordReader<K, V> {
     InputFormat<K, V> inputFormat = (InputFormat<K, V>) ReflectionUtils.newInstance(
         crunchSplit.getInputFormatClass(),
         crunchSplit.getConf());
-    this.curReader = inputFormat.createRecordReader(getDelegateSplit(), context);
+
+    InputSplit inputSplit = getDelegateSplit();
+    if (inputSplit instanceof FileSplit)
+    {
+      rootConf.set("crunch.split.file", ((FileSplit) inputSplit).getPath().toString());
+    }
+    this.curReader = inputFormat.createRecordReader(inputSplit, context);
     return true;
   }
 

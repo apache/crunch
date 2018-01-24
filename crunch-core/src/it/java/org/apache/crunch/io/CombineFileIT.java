@@ -18,18 +18,26 @@
 package org.apache.crunch.io;
 
 import com.google.common.io.Files;
+import org.apache.crunch.DoFn;
+import org.apache.crunch.Emitter;
 import org.apache.crunch.PCollection;
+import org.apache.crunch.Pair;
 import org.apache.crunch.impl.mr.MRPipeline;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.test.TemporaryPaths;
 import org.apache.crunch.test.Tests;
+import org.apache.crunch.types.avro.Avros;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.File;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class CombineFileIT {
   @Rule
@@ -37,7 +45,7 @@ public class CombineFileIT {
 
   @Test
   public void testCombine() throws Exception {
-    File srcFiles = tmpDir.getFile("srcs");
+    final File srcFiles = tmpDir.getFile("srcs");
     File outputFiles = tmpDir.getFile("out");
     assertTrue(srcFiles.mkdir());
     File src1 = tmpDir.copyResourceFile(Tests.resource(this, "src1.txt"));
@@ -47,9 +55,51 @@ public class CombineFileIT {
 
     MRPipeline p = new MRPipeline(CombineFileIT.class, tmpDir.getDefaultConfiguration());
     PCollection<String> in = p.readTextFile(srcFiles.getAbsolutePath());
-    in.write(To.textFile(outputFiles.getAbsolutePath()));
+    PCollection<Pair<String, String>> out = in.parallelDo(
+            new IdentityPlusPathFn(srcFiles), Avros.pairs(Avros.strings(), Avros.strings()));
+    out.write(To.textFile(outputFiles.getAbsolutePath()));
     p.done();
     assertEquals(4, outputFiles.listFiles().length);
+
+    // verify "crunch.split.file" is being handled correctly
+    FileSystem fs = FileSystem.get(tmpDir.getDefaultConfiguration());
+    Path qualifiedSourcePath = fs.makeQualified(new Path(srcFiles.getAbsolutePath()));
+    Iterable<Pair<String, String>> materialized = out.materialize();
+    for (Pair<String, String> pair : materialized) {
+      Path path = new Path(pair.first());
+      String text = pair.second();
+      assertEquals(qualifiedSourcePath, path.getParent());
+      String fileName = path.getName();
+
+      // make sure filename is correct for each record
+      String[] parts = text.split(",");
+      switch (fileName) {
+        case "src1.txt":
+          assertEquals("1", parts[1].substring(0, 1));
+          break;
+        case "src2.txt":
+          assertEquals("2", parts[1].substring(0, 1));
+          break;
+        default:
+          fail("unexpected filename: " + fileName);
+      }
+    }
+
   }
 
+  private static class IdentityPlusPathFn extends DoFn<String, Pair<String, String>> {
+    private final File srcFiles;
+
+    public IdentityPlusPathFn(File srcFiles) {
+      this.srcFiles = srcFiles;
+    }
+
+    @Override
+    public void process(String input, Emitter<Pair<String, String>> emitter) {
+      String filePath = getConfiguration().get("crunch.split.file");
+      assertNotNull(filePath);
+
+      emitter.emit(Pair.of(filePath, input));
+    }
+  }
 }
