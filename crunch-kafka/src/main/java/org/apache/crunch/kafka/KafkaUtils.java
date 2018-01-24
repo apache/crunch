@@ -69,7 +69,7 @@ public class KafkaUtils {
   /**
    * Default number of retry attempts.
    */
-  public static final int KAFKA_RETRY_ATTEMPTS_DEFAULT = 5;
+  public static final int KAFKA_RETRY_ATTEMPTS_DEFAULT = 120;
   public static final String KAFKA_RETRY_ATTEMPTS_DEFAULT_STRING = Integer.toString(KAFKA_RETRY_ATTEMPTS_DEFAULT);
 
   /**
