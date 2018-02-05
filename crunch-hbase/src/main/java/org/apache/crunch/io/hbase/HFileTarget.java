@@ -56,7 +56,7 @@ public class HFileTarget extends FileTargetImpl {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     Configuration conf = job.getConfiguration();
-    HBaseConfiguration.addHbaseResources(conf);
+    HBaseConfiguration.merge(conf, HBaseConfiguration.create(conf));
     conf.setStrings("io.serializations", conf.get("io.serializations"),
         KeyValueSerialization.class.getName());
     super.configureForMapReduce(job, ptype, outputPath, name);

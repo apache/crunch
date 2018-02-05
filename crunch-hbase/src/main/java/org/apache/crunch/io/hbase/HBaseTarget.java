@@ -100,7 +100,7 @@ public class HBaseTarget implements MapReduceTarget {
   @Override
   public void configureForMapReduce(Job job, PType<?> ptype, Path outputPath, String name) {
     final Configuration conf = job.getConfiguration();
-    HBaseConfiguration.addHbaseResources(conf);
+    HBaseConfiguration.merge(conf, HBaseConfiguration.create(conf));
     conf.setStrings("io.serializations", conf.get("io.serializations"),
         MutationSerialization.class.getName());
     Class<?> typeClass = ptype.getTypeClass(); // Either Put or Delete
