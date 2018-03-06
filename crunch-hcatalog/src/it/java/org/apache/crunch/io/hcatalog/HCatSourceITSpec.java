@@ -95,7 +95,7 @@ public class HCatSourceITSpec extends CrunchTestSupport {
     Path tableRootLocation = temporaryPath.getPath(tableName);
     String data = "17,josh\n29,indiana\n";
     writeDataToHdfs(data, tableRootLocation, conf);
-    HCatTestUtils.createUnpartitionedTable(client, tableName, TableType.MANAGED_TABLE);
+    HCatTestUtils.createUnpartitionedTable(client, tableName, TableType.MANAGED_TABLE, tableRootLocation);
 
     Pipeline p = new MRPipeline(HCatSourceITSpec.class, conf);
     HCatSourceTarget src = (HCatSourceTarget) FromHCat.table(tableName);
