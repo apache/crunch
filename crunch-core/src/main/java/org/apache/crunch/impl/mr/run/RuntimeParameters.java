@@ -45,6 +45,8 @@ public final class RuntimeParameters {
 
   public static final String FILE_TARGET_MAX_THREADS = "crunch.file.target.max.threads";
 
+  public static final String MAX_POLL_INTERVAL = "crunch.max.poll.interval";
+
   // Not instantiated
   private RuntimeParameters() {
   }

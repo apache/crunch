@@ -31,6 +31,7 @@ import org.apache.crunch.hadoop.mapreduce.lib.jobcontrol.CrunchJobControl;
 import org.apache.crunch.impl.dist.collect.PCollectionImpl;
 import org.apache.crunch.impl.mr.MRJob;
 import org.apache.crunch.impl.mr.MRPipelineExecution;
+import org.apache.crunch.impl.mr.run.RuntimeParameters;
 import org.apache.crunch.materialize.MaterializableIterable;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -90,9 +91,7 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
         monitorLoop();
       }
     });
-    this.pollInterval = isLocalMode()
-      ? new CappedExponentialCounter(50, 1000)
-      : new CappedExponentialCounter(500, 10000);
+    this.pollInterval = getPollInterval(conf);
 
     this.namedDotFiles = new ConcurrentHashMap<String, String>();
   }
@@ -253,6 +252,21 @@ public class MRExecutor extends AbstractFuture<PipelineResult> implements MRPipe
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private CappedExponentialCounter getPollInterval(Configuration conf) {
+    long maxPollInterval = conf.getLong(RuntimeParameters.MAX_POLL_INTERVAL, -1);
+
+    if (maxPollInterval <= 0) {
+      if (isLocalMode()) {
+        maxPollInterval = 1_000;
+      } else {
+        maxPollInterval = 10_000;
+      }
+    }
+
+    long minPollInterval = Math.max(maxPollInterval / 20, 1);
+    return new CappedExponentialCounter(minPollInterval, maxPollInterval);
   }
 
   private static boolean isLocalMode() {
