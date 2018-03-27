@@ -17,14 +17,32 @@
  */
 package org.apache.crunch.io;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+
 import com.google.common.collect.ImmutableList;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaBuilder;
+import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.io.DatumWriter;
+import org.apache.crunch.Source;
+import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 public class FromTest {
+
+  @Rule
+  public TemporaryFolder tmp = new TemporaryFolder();
 
   @Test(expected=IllegalArgumentException.class)
   public void testAvroFile_EmptyPathListNotAllowed() {
@@ -44,5 +62,56 @@ public class FromTest {
   @Test(expected=IllegalArgumentException.class)
   public void testSequenceFile_EmptyPathListNotAllowed() {
     From.sequenceFile(ImmutableList.<Path>of(), LongWritable.class, Text.class);
+  }
+
+  @Test
+  public void testAvroFile_GlobWithSchemaInferenceIsSupported() throws IOException {
+    Schema schema = SchemaBuilder.record("record")
+            .fields()
+            .endRecord();
+
+    DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+    try (DataFileWriter<GenericRecord> writer = new DataFileWriter<>(datumWriter)) {
+      writer.create(schema, tmp.newFile("1"));
+      writer.append(new GenericData.Record(schema));
+    }
+
+    Source<GenericData.Record> source = From.avroFile(new Path(tmp.getRoot().toString() + "/*"));
+
+    assertEquals(source.getType(), Avros.generics(schema));
+  }
+
+  @Test
+  public void testAvroFile_DirectoryWithSchemaInferenceIsSupported() throws IOException {
+    Schema schema = SchemaBuilder.record("record")
+            .fields()
+            .endRecord();
+
+    DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+    try (DataFileWriter<GenericRecord> writer = new DataFileWriter<>(datumWriter)) {
+      writer.create(schema, tmp.newFile("1"));
+      writer.append(new GenericData.Record(schema));
+    }
+
+    Source<GenericData.Record> source = From.avroFile(new Path(tmp.getRoot().toString()));
+
+    assertEquals(source.getType(), Avros.generics(schema));
+  }
+
+  @Test
+  public void testAvroFile_FileWithSchemaInferenceIsSupported() throws IOException {
+    Schema schema = SchemaBuilder.record("record")
+            .fields()
+            .endRecord();
+
+    DatumWriter<GenericRecord> datumWriter = new GenericDatumWriter<>(schema);
+    try (DataFileWriter<GenericRecord> writer = new DataFileWriter<>(datumWriter)) {
+      writer.create(schema, tmp.newFile("1"));
+      writer.append(new GenericData.Record(schema));
+    }
+
+    Source<GenericData.Record> source = From.avroFile(new Path(tmp.getRoot().toString(), "1"));
+
+    assertEquals(source.getType(), Avros.generics(schema));
   }
 }

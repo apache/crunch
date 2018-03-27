@@ -347,19 +347,41 @@ public class From {
     DataFileReader reader = null;
     try {
       FileSystem fs = path.getFileSystem(conf);
+
       if (!fs.isFile(path)) {
-        FileStatus[] fstat = fs.listStatus(path, new PathFilter() {
+        PathFilter ignoreHidden = new PathFilter() {
           @Override
           public boolean accept(Path path) {
             String name = path.getName();
             return !name.startsWith("_") && !name.startsWith(".");
           }
-        });
-        if (fstat == null || fstat.length == 0) {
+        };
+
+        FileStatus[] globStatus = fs.globStatus(path, ignoreHidden);
+        if (globStatus == null) {
           throw new IllegalArgumentException("No valid files found in directory: " + path);
         }
-        path = fstat[0].getPath();
+
+        Path newPath = null;
+        for (FileStatus status : globStatus) {
+          if (status.isFile()) {
+              newPath = status.getPath();
+              break;
+          } else {
+            FileStatus[] listStatus = fs.listStatus(path, ignoreHidden);
+            if (listStatus != null && listStatus.length > 0) {
+                newPath = listStatus[0].getPath();
+                break;
+            }
+          }
+        }
+
+        if (newPath == null) {
+          throw new IllegalArgumentException("No valid files found in directory: " + path);
+        }
+        path = newPath;
       }
+
       reader = new DataFileReader(new FsInput(path, conf), new GenericDatumReader<GenericRecord>());
       return reader.getSchema();
     } catch (IOException e) {
