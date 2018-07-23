@@ -40,13 +40,14 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.MasterNotRunningException;
-import org.apache.hadoop.hbase.ZooKeeperConnectionException;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.util.Tool;
@@ -147,11 +148,13 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    * @throws IOException
    */
   private static void putInHbase(List<Put> putList, Configuration conf) throws IOException {
-    HTable htable = new HTable(conf, TABLE_SOURCE);
+    Connection connection = ConnectionFactory.createConnection(conf);
+    Table htable = connection.getTable(TableName.valueOf(TABLE_SOURCE));
     try {
       htable.put(putList);
     } finally {
       htable.close();
+      connection.close();
     }
   }
 
@@ -161,16 +164,15 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
    * @param conf the hbase configuration
    * @param htableName the table name
    * @param families the column family names
-   * @throws MasterNotRunningException
-   * @throws ZooKeeperConnectionException
    * @throws IOException
    */
-  private static void createTable(Configuration conf, String htableName, String... families) throws MasterNotRunningException, ZooKeeperConnectionException,
-      IOException {
-    HBaseAdmin hbase = new HBaseAdmin(conf);
+  private static void createTable(Configuration conf, String htableName, String... families) throws IOException {
+    Connection connection = ConnectionFactory.createConnection(conf);
+    Admin hbase = connection.getAdmin();
     try {
-      if (!hbase.tableExists(htableName)) {
-        HTableDescriptor desc = new HTableDescriptor(htableName);
+      TableName tableName = TableName.valueOf(htableName);
+      if (!hbase.tableExists(tableName)) {
+        HTableDescriptor desc = new HTableDescriptor(tableName);
         for (String s : families) {
           HColumnDescriptor meta = new HColumnDescriptor(s);
           desc.addFamily(meta);
@@ -179,6 +181,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
       }
     } finally {
       hbase.close();
+      connection.close();
     }
   }
 
@@ -197,8 +200,8 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
     }
     for (int i = 0; i < character.size(); i++) {
       Put put = new Put(Bytes.toBytes(character.get(i)));
-      put.add(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_PLAY, Bytes.toBytes(play.get(i)));
-      put.add(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_QUOTE, Bytes.toBytes(quote.get(i)));
+      put.addColumn(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_PLAY, Bytes.toBytes(play.get(i)));
+      put.addColumn(COLUMN_FAMILY_SOURCE, COLUMN_QUALIFIER_SOURCE_QUOTE, Bytes.toBytes(quote.get(i)));
       list.add(put);
     }
     return list;
@@ -238,7 +241,7 @@ public class WordAggregationHBase extends Configured implements Tool, Serializab
       @Override
       public void process(Pair<String, String> input, Emitter<Put> emitter) {
         Put put = new Put(Bytes.toBytes(input.first()));
-        put.add(COLUMN_FAMILY_TARGET, COLUMN_QUALIFIER_TARGET_TEXT, Bytes.toBytes(input.second()));
+        put.addColumn(COLUMN_FAMILY_TARGET, COLUMN_QUALIFIER_TARGET_TEXT, Bytes.toBytes(input.second()));
         emitter.emit(put);
       }
     }, HBaseTypes.puts());

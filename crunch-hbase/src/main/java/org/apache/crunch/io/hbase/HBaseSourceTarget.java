@@ -19,6 +19,7 @@ package org.apache.crunch.io.hbase;
 
 import java.io.IOException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.crunch.Pair;
 import org.apache.crunch.ReadableData;
@@ -49,7 +50,6 @@ import org.apache.hadoop.hbase.mapreduce.ResultSerialization;
 import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.ClientProtos;
-import org.apache.hadoop.hbase.util.Base64;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
@@ -176,11 +176,11 @@ public class HBaseSourceTarget extends HBaseTarget implements
 
   static String convertScanToString(Scan scan) throws IOException {
     ClientProtos.Scan proto = ProtobufUtil.toScan(scan);
-    return Base64.encodeBytes(proto.toByteArray());
+    return Base64.encodeBase64String(proto.toByteArray());
   }
 
   public static Scan convertStringToScan(String string) throws IOException {
-    ClientProtos.Scan proto = ClientProtos.Scan.parseFrom(Base64.decode(string));
+    ClientProtos.Scan proto = ClientProtos.Scan.parseFrom(Base64.decodeBase64(string));
     return ProtobufUtil.toScan(proto);
   }
 

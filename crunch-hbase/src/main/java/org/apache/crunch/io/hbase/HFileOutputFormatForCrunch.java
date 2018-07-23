@@ -19,28 +19,25 @@
  */
 package org.apache.crunch.io.hbase;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteStreams;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
-import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.CellComparatorImpl;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
-import org.apache.hadoop.hbase.fs.HFileSystem;
+import org.apache.hadoop.hbase.io.encoding.DataBlockEncoding;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
 import org.apache.hadoop.hbase.io.hfile.HFileContext;
+import org.apache.hadoop.hbase.io.hfile.HFileContextBuilder;
+import org.apache.hadoop.hbase.io.hfile.HFileWriterImpl;
 import org.apache.hadoop.hbase.regionserver.BloomType;
-import org.apache.hadoop.hbase.regionserver.StoreFile;
-import org.apache.hadoop.hbase.regionserver.TimeRangeTracker;
+import org.apache.hadoop.hbase.regionserver.HStoreFile;
+import org.apache.hadoop.hbase.regionserver.StoreFileWriter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -49,10 +46,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 /**
  * This is a thin wrapper of {@link HFile.Writer}. It only calls {@link HFile.Writer#append}
@@ -66,115 +60,83 @@ import java.net.InetSocketAddress;
  */
 public class HFileOutputFormatForCrunch extends FileOutputFormat<Object, Cell> {
 
+  // HCOLUMN_DESCRIPTOR_KEY is no longer used, but left for binary compatibility
   public static final String HCOLUMN_DESCRIPTOR_KEY = "hbase.hfileoutputformat.column.descriptor";
+  public static final String HCOLUMN_DESCRIPTOR_COMPRESSION_TYPE_KEY = "hbase.hfileoutputformat.column.descriptor.compressiontype";
+  public static final String HCOLUMN_DESCRIPTOR_DATA_BLOCK_ENCODING_KEY = "hbase.hfileoutputformat.column.descriptor.datablockencoding";
+  public static final String HCOLUMN_DESCRIPTOR_BLOOM_FILTER_TYPE_KEY = "hbase.hfileoutputformat.column.descriptor.bloomfiltertype";
   private static final String COMPACTION_EXCLUDE_CONF_KEY = "hbase.mapreduce.hfileoutputformat.compaction.exclude";
   private static final Logger LOG = LoggerFactory.getLogger(HFileOutputFormatForCrunch.class);
 
   private final byte [] now = Bytes.toBytes(System.currentTimeMillis());
-  private final TimeRangeTracker trt = new TimeRangeTracker();
 
   @Override
   public RecordWriter<Object, Cell> getRecordWriter(final TaskAttemptContext context)
       throws IOException, InterruptedException {
     Path outputPath = getDefaultWorkFile(context, "");
-    final Configuration conf = context.getConfiguration();
-    FileSystem fs = new HFileSystem(outputPath.getFileSystem(conf));
+    Configuration conf = context.getConfiguration();
+    FileSystem fs = outputPath.getFileSystem(conf);
 
     final boolean compactionExclude = conf.getBoolean(
         COMPACTION_EXCLUDE_CONF_KEY, false);
 
-    String hcolStr = conf.get(HCOLUMN_DESCRIPTOR_KEY);
-    if (hcolStr == null) {
-      throw new AssertionError(HCOLUMN_DESCRIPTOR_KEY + " is not set in conf");
-    }
-    byte[] hcolBytes;
-    try {
-      hcolBytes = Hex.decodeHex(hcolStr.toCharArray());
-    } catch (DecoderException e) {
-      throw new AssertionError("Bad hex string: " + hcolStr);
-    }
-    HColumnDescriptor hcol = new HColumnDescriptor();
-    hcol.readFields(new DataInputStream(new ByteArrayInputStream(hcolBytes)));
     LOG.info("Output path: {}", outputPath);
-    LOG.info("HColumnDescriptor: {}", hcol.toString());
     Configuration noCacheConf = new Configuration(conf);
     noCacheConf.setFloat(HConstants.HFILE_BLOCK_CACHE_SIZE_KEY, 0.0f);
-    final StoreFile.WriterBuilder writerBuilder = new StoreFile.WriterBuilder(conf, new CacheConfig(noCacheConf), fs)
-        .withComparator(KeyValue.COMPARATOR)
-        .withFileContext(getContext(hcol))
+    StoreFileWriter.Builder writerBuilder =
+        new StoreFileWriter.Builder(conf, new CacheConfig(noCacheConf), fs)
+        .withComparator(CellComparatorImpl.COMPARATOR)
         .withFilePath(outputPath)
-        .withBloomType(hcol.getBloomFilterType());
+        .withFileContext(getContext(conf));
+    String bloomFilterType = conf.get(HCOLUMN_DESCRIPTOR_BLOOM_FILTER_TYPE_KEY);
+    if (bloomFilterType != null) {
+      writerBuilder.withBloomType(BloomType.valueOf(bloomFilterType));
+    }
+    final StoreFileWriter writer = writerBuilder.build();
 
     return new RecordWriter<Object, Cell>() {
 
-      StoreFile.Writer writer = null;
+      long maxSeqId = 0L;
 
       @Override
       public void write(Object row, Cell cell)
           throws IOException {
-
-        if (writer == null) {
-          writer = writerBuilder
-              .withFavoredNodes(getPreferredNodes(conf, cell))
-              .build();
-        }
-
-        KeyValue copy = KeyValue.cloneAndAddTags(cell, ImmutableList.<Tag>of());
+        KeyValue copy = KeyValueUtil.copyToNewKeyValue(cell);
         if (copy.getTimestamp() == HConstants.LATEST_TIMESTAMP) {
           copy.updateLatestStamp(now);
         }
         writer.append(copy);
-        trt.includeTimestamp(copy);
+        long seqId = cell.getSequenceId();
+        if (seqId > maxSeqId) {
+          maxSeqId = seqId;
+        }
       }
 
       @Override
       public void close(TaskAttemptContext c) throws IOException {
-        if (writer != null) {
-          writer.appendFileInfo(StoreFile.BULKLOAD_TIME_KEY,
-              Bytes.toBytes(System.currentTimeMillis()));
-          writer.appendFileInfo(StoreFile.BULKLOAD_TASK_KEY,
-              Bytes.toBytes(context.getTaskAttemptID().toString()));
-          writer.appendFileInfo(StoreFile.MAJOR_COMPACTION_KEY,
-              Bytes.toBytes(true));
-          writer.appendFileInfo(StoreFile.EXCLUDE_FROM_MINOR_COMPACTION_KEY,
-              Bytes.toBytes(compactionExclude));
-          writer.appendFileInfo(StoreFile.TIMERANGE_KEY,
-              WritableUtils.toByteArray(trt));
-          writer.close();
-        }
+        // true => product of major compaction
+        writer.appendMetadata(maxSeqId, true);
+        writer.appendFileInfo(HStoreFile.BULKLOAD_TIME_KEY,
+            Bytes.toBytes(System.currentTimeMillis()));
+        writer.appendFileInfo(HStoreFile.BULKLOAD_TASK_KEY,
+            Bytes.toBytes(context.getTaskAttemptID().toString()));
+        writer.appendFileInfo(HStoreFile.EXCLUDE_FROM_MINOR_COMPACTION_KEY,
+            Bytes.toBytes(compactionExclude));
+        writer.close();
       }
     };
   }
 
-  /**
-   * Returns the "preferred" node for the given cell, or null if no preferred node can be found. The "preferred"
-   * node for a cell is defined as the host where the region server is located that is hosting the region that will
-   * contain the given cell.
-   */
-  private InetSocketAddress[] getPreferredNodes(Configuration conf, Cell cell) throws IOException {
-    String regionLocationFilePathStr = conf.get(RegionLocationTable.REGION_LOCATION_TABLE_PATH);
-    if (regionLocationFilePathStr != null) {
-      LOG.debug("Reading region location file from {}", regionLocationFilePathStr);
-      Path regionLocationPath = new Path(regionLocationFilePathStr);
-      try (FSDataInputStream inputStream = regionLocationPath.getFileSystem(conf).open(regionLocationPath)) {
-        RegionLocationTable regionLocationTable = RegionLocationTable.deserialize(inputStream);
-        InetSocketAddress preferredNodeForRow = regionLocationTable.getPreferredNodeForRow(CellUtil.cloneRow(cell));
-        if (preferredNodeForRow != null) {
-          return new InetSocketAddress[] { preferredNodeForRow };
-        } else {
-          return null;
-        }
-      }
-    } else {
-      LOG.warn("No region location file path found in configuration");
-      return null;
+  private HFileContext getContext(Configuration conf) {
+    HFileContextBuilder contextBuilder = new HFileContextBuilder();
+    String compressionType = conf.get(HCOLUMN_DESCRIPTOR_COMPRESSION_TYPE_KEY);
+    if (compressionType != null) {
+      contextBuilder.withCompression(HFileWriterImpl.compressionByName(compressionType));
     }
-  }
-
-  private HFileContext getContext(HColumnDescriptor desc) {
-    HFileContext ctxt = new HFileContext();
-    ctxt.setDataBlockEncoding(desc.getDataBlockEncoding());
-    ctxt.setCompression(desc.getCompression());
-    return ctxt;
+    String dataBlockEncoding = conf.get(HCOLUMN_DESCRIPTOR_DATA_BLOCK_ENCODING_KEY);
+    if (dataBlockEncoding != null) {
+      contextBuilder.withDataBlockEncoding(DataBlockEncoding.valueOf(dataBlockEncoding));
+    }
+    return contextBuilder.build();
   }
 }

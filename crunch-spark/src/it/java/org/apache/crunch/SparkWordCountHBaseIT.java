@@ -33,12 +33,13 @@ import org.apache.crunch.test.TemporaryPath;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormatBase;
@@ -103,9 +104,9 @@ public class SparkWordCountHBaseIT {
     @Before
     public void setUp() throws Exception {
         Configuration conf = HBaseConfiguration.create(tmpDir.getDefaultConfiguration());
+        conf.set(HConstants.TEMPORARY_FS_DIRECTORY_KEY, tmpDir.getFile("hbase-staging").getAbsolutePath());
         hbaseTestUtil = new HBaseTestingUtility(conf);
-        hbaseTestUtil.startMiniZKCluster();
-        hbaseTestUtil.startMiniHBaseCluster(1, 1);
+        hbaseTestUtil.startMiniCluster();
     }
 
     @Test
@@ -123,8 +124,7 @@ public class SparkWordCountHBaseIT {
 
     @After
     public void tearDown() throws Exception {
-        hbaseTestUtil.shutdownMiniHBaseCluster();
-        hbaseTestUtil.shutdownMiniZKCluster();
+        hbaseTestUtil.shutdownMiniCluster();
     }
 
     public void run(Pipeline pipeline) throws Exception {
@@ -135,17 +135,17 @@ public class SparkWordCountHBaseIT {
 
         Random rand = new Random();
         int postFix = rand.nextInt() & 0x7FFFFFFF;
-        String inputTableName = "crunch_words_" + postFix;
-        String outputTableName = "crunch_counts_" + postFix;
-        String otherTableName = "crunch_other_" + postFix;
+        TableName inputTableName = TableName.valueOf("crunch_words_" + postFix);
+        TableName outputTableName = TableName.valueOf("crunch_counts_" + postFix);
+        TableName otherTableName = TableName.valueOf("crunch_other_" + postFix);
 
-        HTable inputTable = hbaseTestUtil.createTable(Bytes.toBytes(inputTableName), WORD_COLFAM);
+        Table inputTable = hbaseTestUtil.createTable(inputTableName, WORD_COLFAM);
 
         int key = 0;
         key = put(inputTable, key, "cat");
         key = put(inputTable, key, "cat");
         key = put(inputTable, key, "dog");
-        inputTable.flushCommits();
+        inputTable.close();
 
         //Setup scan using multiple scans that simply cut the rows in half.
         Scan scan = new Scan();
@@ -158,7 +158,7 @@ public class SparkWordCountHBaseIT {
 
         HBaseSourceTarget source = null;
         if (clazz == null) {
-            source = new HBaseSourceTarget(TableName.valueOf(inputTableName), scan, scan2);
+            source = new HBaseSourceTarget(inputTableName, scan, scan2);
         } else {
             source = new HBaseSourceTarget(inputTableName, clazz, new Scan[]{scan, scan2});
         }
@@ -172,9 +172,9 @@ public class SparkWordCountHBaseIT {
         pipeline.done();
     }
 
-    protected int put(HTable table, int key, String value) throws IOException {
+    protected int put(Table table, int key, String value) throws IOException {
         Put put = new Put(Bytes.toBytes(key));
-        put.add(WORD_COLFAM, null, Bytes.toBytes(value));
+        put.addColumn(WORD_COLFAM, null, Bytes.toBytes(value));
         table.put(put);
         return key + 1;
     }

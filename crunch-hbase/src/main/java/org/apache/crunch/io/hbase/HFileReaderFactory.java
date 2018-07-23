@@ -23,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -41,7 +42,7 @@ public class HFileReaderFactory implements FileReaderFactory<KeyValue> {
     Configuration conf = fs.getConf();
     CacheConfig cacheConfig = new CacheConfig(conf);
     try {
-      HFile.Reader hfr = HFile.createReader(fs, path, cacheConfig, conf);
+      HFile.Reader hfr = HFile.createReader(fs, path, cacheConfig, true, conf);
       HFileScanner scanner = hfr.getScanner(
           conf.getBoolean(HFILE_SCANNER_CACHE_BLOCKS, false),
           conf.getBoolean(HFILE_SCANNER_PREAD, false));
@@ -59,7 +60,7 @@ public class HFileReaderFactory implements FileReaderFactory<KeyValue> {
 
     public HFileIterator(HFileScanner scanner) {
       this.scanner = scanner;
-      this.curr = KeyValue.cloneAndAddTags(scanner.getKeyValue(), ImmutableList.<Tag>of());
+      this.curr = KeyValueUtil.copyToNewKeyValue(scanner.getCell());
     }
 
     @Override
@@ -72,7 +73,7 @@ public class HFileReaderFactory implements FileReaderFactory<KeyValue> {
       KeyValue ret = curr;
       try {
         if (scanner.next()) {
-          curr = KeyValue.cloneAndAddTags(scanner.getKeyValue(), ImmutableList.<Tag>of());
+          curr = KeyValueUtil.copyToNewKeyValue(scanner.getCell());
         } else {
           curr = null;
         }

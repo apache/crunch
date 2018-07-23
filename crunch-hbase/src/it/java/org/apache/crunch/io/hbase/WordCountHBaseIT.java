@@ -42,13 +42,14 @@ import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormat;
 import org.apache.hadoop.hbase.mapreduce.MultiTableInputFormatBase;
@@ -101,7 +102,7 @@ public class WordCountHBaseIT {
       @Override
       public void process(Pair<String, Long> input, Emitter<Put> emitter) {
         Put put = new Put(Bytes.toBytes(input.first()));
-        put.add(COUNTS_COLFAM, null, Bytes.toBytes(input.second()));
+        put.addColumn(COUNTS_COLFAM, null, Bytes.toBytes(input.second()));
         emitter.emit(put);
       }
 
@@ -123,9 +124,9 @@ public class WordCountHBaseIT {
   @Before
   public void setUp() throws Exception {
     Configuration conf = HBaseConfiguration.create(tmpDir.getDefaultConfiguration());
+    conf.set(HConstants.TEMPORARY_FS_DIRECTORY_KEY, tmpDir.getFile("hbase-staging").getAbsolutePath());
     hbaseTestUtil = new HBaseTestingUtility(conf);
-    hbaseTestUtil.startMiniZKCluster();
-    hbaseTestUtil.startMiniHBaseCluster(1, 1);
+    hbaseTestUtil.startMiniCluster();
   }
 
   @Test
@@ -141,8 +142,7 @@ public class WordCountHBaseIT {
 
   @After
   public void tearDown() throws Exception {
-    hbaseTestUtil.shutdownMiniHBaseCluster();
-    hbaseTestUtil.shutdownMiniZKCluster();
+    hbaseTestUtil.shutdownMiniCluster();
   }
 
   public void run(Pipeline pipeline) throws Exception {
@@ -153,20 +153,20 @@ public class WordCountHBaseIT {
 
     Random rand = new Random();
     int postFix = rand.nextInt() & 0x7FFFFFFF;
-    String inputTableName = "crunch_words_" + postFix;
-    String outputTableName = "crunch_counts_" + postFix;
-    String otherTableName = "crunch_other_" + postFix;
-    String joinTableName = "crunch_join_words_" + postFix;
+    TableName inputTableName = TableName.valueOf("crunch_words_" + postFix);
+    TableName outputTableName = TableName.valueOf("crunch_counts_" + postFix);
+    TableName otherTableName = TableName.valueOf("crunch_other_" + postFix);
+    TableName joinTableName = TableName.valueOf("crunch_join_words_" + postFix);
 
-    HTable inputTable = hbaseTestUtil.createTable(Bytes.toBytes(inputTableName), WORD_COLFAM);
-    HTable outputTable = hbaseTestUtil.createTable(Bytes.toBytes(outputTableName), COUNTS_COLFAM);
-    HTable otherTable = hbaseTestUtil.createTable(Bytes.toBytes(otherTableName), COUNTS_COLFAM);
+    Table inputTable = hbaseTestUtil.createTable(inputTableName, WORD_COLFAM);
+    Table outputTable = hbaseTestUtil.createTable(outputTableName, COUNTS_COLFAM);
+    Table otherTable = hbaseTestUtil.createTable(otherTableName, COUNTS_COLFAM);
 
     int key = 0;
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "cat");
     key = put(inputTable, key, "dog");
-    inputTable.flushCommits();
+    inputTable.close();
 
     //Setup scan using multiple scans that simply cut the rows in half.
     Scan scan = new Scan();
@@ -179,7 +179,7 @@ public class WordCountHBaseIT {
 
     HBaseSourceTarget source = null;
     if(clazz == null){
-      source = new HBaseSourceTarget(TableName.valueOf(inputTableName), scan, scan2);
+      source = new HBaseSourceTarget(inputTableName, scan, scan2);
     }else{
       source = new HBaseSourceTarget(inputTableName, clazz, new Scan[]{scan, scan2});
     }
@@ -200,14 +200,13 @@ public class WordCountHBaseIT {
     assertIsLong(outputTable, "dog", 1);
 
     // verify we can do joins.
-    HTable joinTable = hbaseTestUtil.createTable(Bytes.toBytes(joinTableName), WORD_COLFAM);
+    Table joinTable = hbaseTestUtil.createTable(joinTableName, WORD_COLFAM);
     try {
       key = 0;
       key = put(joinTable, key, "zebra");
       key = put(joinTable, key, "donkey");
       key = put(joinTable, key, "bird");
       key = put(joinTable, key, "horse");
-      joinTable.flushCommits();
     } finally {
       joinTable.close();
     }
@@ -233,14 +232,14 @@ public class WordCountHBaseIT {
     assertDeleted(outputTable, "dog");
   }
 
-  protected int put(HTable table, int key, String value) throws IOException {
+  protected int put(Table table, int key, String value) throws IOException {
     Put put = new Put(Bytes.toBytes(key));
-    put.add(WORD_COLFAM, null, Bytes.toBytes(value));
+    put.addColumn(WORD_COLFAM, null, Bytes.toBytes(value));
     table.put(put);
     return key + 1;
   }
 
-  protected static void assertIsLong(HTable table, String key, long i) throws IOException {
+  protected static void assertIsLong(Table table, String key, long i) throws IOException {
     Get get = new Get(Bytes.toBytes(key));
     get.addFamily(COUNTS_COLFAM);
     Result result = table.get(get);
@@ -250,7 +249,7 @@ public class WordCountHBaseIT {
     assertEquals(i, Bytes.toLong(rawCount));
   }
   
-  protected static void assertDeleted(HTable table, String key) throws IOException {
+  protected static void assertDeleted(Table table, String key) throws IOException {
     Get get = new Get(Bytes.toBytes(key));
     get.addFamily(COUNTS_COLFAM);
     Result result = table.get(get);

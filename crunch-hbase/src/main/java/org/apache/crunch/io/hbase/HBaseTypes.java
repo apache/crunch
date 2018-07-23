@@ -26,6 +26,7 @@ import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Put;
@@ -103,7 +104,7 @@ public final class HBaseTypes {
   }
 
   public static BytesWritable keyValueToBytes(Cell input) {
-    return keyValueToBytes(KeyValue.cloneAndAddTags(input, ImmutableList.<Tag>of()));
+    return keyValueToBytes(KeyValueUtil.copyToNewKeyValue(input));
   }
 
   public static BytesWritable keyValueToBytes(KeyValue kv) {

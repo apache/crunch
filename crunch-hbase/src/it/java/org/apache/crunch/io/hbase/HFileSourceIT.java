@@ -35,6 +35,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellComparatorImpl;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
@@ -126,9 +129,9 @@ public class HFileSourceIT implements Serializable {
     assertEquals(1, results.size());
     Result result = Iterables.getOnlyElement(results);
     assertArrayEquals(ROW1, result.getRow());
-    assertEquals(2, result.raw().length);
-    assertArrayEquals(VALUE1, result.getColumnLatest(FAMILY1, QUALIFIER1).getValue());
-    assertArrayEquals(VALUE2, result.getColumnLatest(FAMILY1, QUALIFIER2).getValue());
+    assertEquals(2, result.rawCells().length);
+    assertArrayEquals(VALUE1, CellUtil.cloneValue(result.getColumnLatestCell(FAMILY1, QUALIFIER1)));
+    assertArrayEquals(VALUE2, CellUtil.cloneValue(result.getColumnLatestCell(FAMILY1, QUALIFIER2)));
   }
 
   @Test
@@ -142,11 +145,11 @@ public class HFileSourceIT implements Serializable {
     List<Result> results = doTestScanHFiles(kvs, scan);
     assertEquals(1, results.size());
     Result result = Iterables.getOnlyElement(results);
-    List<KeyValue> kvs2 = result.getColumn(FAMILY1, QUALIFIER1);
+    List<Cell> kvs2 = result.getColumnCells(FAMILY1, QUALIFIER1);
     assertEquals(3, kvs2.size());
-    assertArrayEquals(VALUE3, kvs2.get(0).getValue());
-    assertArrayEquals(VALUE2, kvs2.get(1).getValue());
-    assertArrayEquals(VALUE1, kvs2.get(2).getValue());
+    assertArrayEquals(VALUE3, CellUtil.cloneValue(kvs2.get(0)));
+    assertArrayEquals(VALUE2, CellUtil.cloneValue(kvs2.get(1)));
+    assertArrayEquals(VALUE1, CellUtil.cloneValue(kvs2.get(2)));
   }
 
   @Test
@@ -173,8 +176,8 @@ public class HFileSourceIT implements Serializable {
     scan.setStartRow(ROW1);
     List<Result> results = doTestScanHFiles(kvs, scan);
     assertEquals(2, results.size());
-    assertArrayEquals(ROW2, kvs.get(0).getRow());
-    assertArrayEquals(ROW3, kvs.get(1).getRow());
+    assertArrayEquals(ROW2, results.get(0).getRow());
+    assertArrayEquals(ROW3, results.get(1).getRow());
   }
 
   //@Test
@@ -214,8 +217,8 @@ public class HFileSourceIT implements Serializable {
     assertEquals(1, results.size());
     Result result = Iterables.getOnlyElement(results);
     assertEquals(2, result.size());
-    assertNotNull(result.getColumnLatest(FAMILY1, QUALIFIER1));
-    assertNotNull(result.getColumnLatest(FAMILY2, QUALIFIER2));
+    assertNotNull(result.getColumnLatestCell(FAMILY1, QUALIFIER1));
+    assertNotNull(result.getColumnLatestCell(FAMILY2, QUALIFIER2));
   }
 
   @Test
@@ -230,7 +233,7 @@ public class HFileSourceIT implements Serializable {
     assertEquals(1, results.size());
     Result result = Iterables.getOnlyElement(results);
     assertEquals(1, result.size());
-    assertNotNull(result.getColumnLatest(FAMILY1, QUALIFIER2));
+    assertNotNull(result.getColumnLatestCell(FAMILY1, QUALIFIER2));
   }
 
   @Test
@@ -326,7 +329,7 @@ public class HFileSourceIT implements Serializable {
       FileSystem fs = FileSystem.get(conf);
       w = HFile.getWriterFactory(conf, new CacheConfig(conf))
           .withPath(fs, inputPath)
-          .withComparator(KeyValue.COMPARATOR)
+          .withComparator(CellComparatorImpl.COMPARATOR)
           .withFileContext(new HFileContext())
           .create();
       for (KeyValue kv : sortedKVs) {

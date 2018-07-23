@@ -25,7 +25,10 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.PrivateCellUtil;
 import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.KeyValueUtil;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.io.hfile.CacheConfig;
 import org.apache.hadoop.hbase.io.hfile.HFile;
@@ -93,7 +96,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       Path path = fileSplit.getPath();
       FileSystem fs = path.getFileSystem(conf);
       LOG.info("Initialize HFileRecordReader for {}", path);
-      this.in = HFile.createReader(fs, path, new CacheConfig(conf), conf);
+      this.in = HFile.createReader(fs, path, new CacheConfig(conf), true, conf);
 
       // The file info must be loaded before the scanner can be used.
       // This seems like a bug in HBase, but it's easily worked around.
@@ -129,8 +132,8 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
           if(LOG.isInfoEnabled()) {
             LOG.info("Seeking to start row {}", Bytes.toStringBinary(startRow));
           }
-          KeyValue kv = KeyValue.createFirstOnRow(startRow);
-          hasNext = seekAtOrAfter(scanner, kv);
+          Cell cell = PrivateCellUtil.createFirstOnRow(startRow, 0, (short) startRow.length);
+          hasNext = seekAtOrAfter(scanner, cell);
         } else {
           LOG.info("Seeking to start");
           hasNext = scanner.seekTo();
@@ -142,7 +145,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
       if (!hasNext) {
         return false;
       }
-      value = KeyValue.cloneAndAddTags(scanner.getKeyValue(), ImmutableList.<Tag>of());
+      value = KeyValueUtil.copyToNewKeyValue(scanner.getCell());
       if (stopRow != null &&
           Bytes.compareTo(
               value.getRowArray(), value.getRowOffset(), value.getRowLength(),
@@ -185,7 +188,7 @@ public class HFileInputFormat extends FileInputFormat<NullWritable, KeyValue> {
 
     // This method is copied from o.a.h.hbase.regionserver.StoreFileScanner, as we don't want
     // to depend on it.
-    private static boolean seekAtOrAfter(HFileScanner s, KeyValue k)
+    private static boolean seekAtOrAfter(HFileScanner s, Cell k)
         throws IOException {
       int result = s.seekTo(k);
       if(result < 0) {

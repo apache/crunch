@@ -71,12 +71,12 @@ class HTableIterator implements Iterator<Pair<ImmutableBytesWritable, Result>> {
         try {
           table.close();
         } catch (IOException e) {
-          LOG.error("Exception closing HTable: {}", table.getName(), e);
+          LOG.error("Exception closing Table: {}", table.getName(), e);
         }
         try {
           connection.close();
         } catch (IOException e) {
-          LOG.error("Exception closing HTable: {}", table.getName(), e);
+          LOG.error("Exception closing Table: {}", table.getName(), e);
         }
       }
     }
