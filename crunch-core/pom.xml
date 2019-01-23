@@ -67,6 +67,12 @@ under the License.
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-distcp</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Override the slf4j dependency from Avro, which is incompatible with
          Hadoop's. -->
     <dependency>
