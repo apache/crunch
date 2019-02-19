@@ -373,7 +373,11 @@ public class FileTargetImpl implements PathTarget {
       exists = fs.exists(path);
       if (exists) {
         successful = fs.exists(getSuccessIndicator());
-        lastModForTarget = SourceTargetHelper.getLastModifiedAt(fs, path);
+        // Last modified time is only relevant when the path exists and the
+        // write mode is checkpoint
+        if (successful && strategy == WriteMode.CHECKPOINT) {
+          lastModForTarget = SourceTargetHelper.getLastModifiedAt(fs, path);
+        }
       }
     } catch (IOException e) {
       LOG.error("Exception checking existence of path: {}", path, e);

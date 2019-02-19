@@ -238,8 +238,10 @@ public abstract class DistributedPipeline implements Pipeline {
       pcollection = pcollection.parallelDo("UnionCollectionWrapper",
           (MapFn) IdentityFn.<Object> getInstance(), pcollection.getPType());
     }
-    boolean exists = target.handleExisting(writeMode, ((PCollectionImpl) pcollection).getLastModifiedAt(),
-        getConfiguration());
+    // Last modified time is only relevant when write mode is checkpoint
+    long lastModifiedAt = (writeMode == Target.WriteMode.CHECKPOINT)
+        ? ((PCollectionImpl) pcollection).getLastModifiedAt() : -1;
+    boolean exists = target.handleExisting(writeMode, lastModifiedAt, getConfiguration());
     if (exists && writeMode == Target.WriteMode.CHECKPOINT) {
       SourceTarget<?> st = target.asSourceTarget(pcollection.getPType());
       if (st == null) {
