@@ -50,9 +50,6 @@ public class BaseUnionCollection<S> extends PCollectionImpl<S> {
         throw new IllegalStateException("Cannot union PCollections from different Pipeline instances");
       }
       size += parent.getSize();
-      if (parent.getLastModifiedAt() > lastModifiedAt) {
-        this.lastModifiedAt = parent.getLastModifiedAt();
-      }
     }
   }
 
@@ -72,6 +69,14 @@ public class BaseUnionCollection<S> extends PCollectionImpl<S> {
 
   @Override
   public long getLastModifiedAt() {
+    if (lastModifiedAt == -1) {
+      for (PCollectionImpl<S> parent : parents) {
+        long parentLastModifiedAt = parent.getLastModifiedAt();
+        if (parentLastModifiedAt > lastModifiedAt) {
+          lastModifiedAt = parentLastModifiedAt;
+        }
+      }
+    }
     return lastModifiedAt;
   }
   

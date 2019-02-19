@@ -200,6 +200,8 @@ public class MemPipeline implements Pipeline {
 
   @Override
   public void write(PCollection<?> collection, Target target, Target.WriteMode writeMode) {
+    // Last modified time does not need to be retrieved for this
+    // pipeline implementation
     target.handleExisting(writeMode, -1, getConfiguration());
     if (writeMode != Target.WriteMode.APPEND && activeTargets.contains(target)) {
       throw new CrunchRuntimeException("Target " + target

@@ -56,9 +56,6 @@ public class BaseUnionTable<K, V> extends PTableBase<K, V> {
       }
       this.parents.add(parent);
       size += parent.getSize();
-      if (parent.getLastModifiedAt() > lastModifiedAt) {
-        this.lastModifiedAt = parent.getLastModifiedAt();
-      }
     }
   }
 
@@ -77,6 +74,14 @@ public class BaseUnionTable<K, V> extends PTableBase<K, V> {
 
   @Override
   public long getLastModifiedAt() {
+    if (lastModifiedAt == -1) {
+      for (PCollectionImpl<Pair<K, V>> parent : parents) {
+        long parentLastModifiedAt = parent.getLastModifiedAt();
+        if (parentLastModifiedAt > lastModifiedAt) {
+          lastModifiedAt = parentLastModifiedAt;
+        }
+      }
+    }
     return lastModifiedAt;
   }
   
