@@ -17,6 +17,7 @@
  */
 package org.apache.crunch.io;
 
+import com.google.common.collect.Sets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -27,12 +28,15 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Map;
 
+import java.util.Set;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -94,9 +98,27 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
 
   public Configuration configure(Configuration conf) {
     for (Map.Entry<String, String> e : extraConf.entrySet()) {
-      conf.set(e.getKey(), e.getValue());
+      String key = e.getKey();
+      String value = e.getValue();
+      // merge the value if it is DFS_NAMESERVICES to support additional filesystems
+      if (key.equals(DFSConfigKeys.DFS_NAMESERVICES)) {
+        String[] originalValue = conf.getStrings(key);
+        if (originalValue != null) {
+          String[] newValue = value != null ? value.split(",") : new String[0];
+          conf.setStrings(key, mergeValues(originalValue, newValue));
+          continue;
+        }
+      }
+      conf.set(key, value);
     }
     return conf;
+  }
+
+  private static String[] mergeValues(String[] value1, String[] value2) {
+    Set<String> values = Sets.newHashSet();
+    values.addAll(Arrays.asList(value1));
+    values.addAll(Arrays.asList(value2));
+    return values.toArray(new String[0]);
   }
 
   public String serialize() {

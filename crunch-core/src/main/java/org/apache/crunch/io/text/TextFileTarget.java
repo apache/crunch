@@ -98,9 +98,9 @@ public class TextFileTarget extends FileTargetImpl {
       return null;
     }
     if (ptype instanceof PTableType) {
-      return new TextFileTableSourceTarget(path, (PTableType) ptype);
+      return new TextFileTableSourceTarget(path, (PTableType) ptype).fileSystem(getFileSystem());
     }
-    return new TextFileSourceTarget<T>(path, ptype);
+    return new TextFileSourceTarget<T>(path, ptype).fileSystem(getFileSystem());
   }
   
   private <T> boolean isTextCompatible(PType<T> ptype) {

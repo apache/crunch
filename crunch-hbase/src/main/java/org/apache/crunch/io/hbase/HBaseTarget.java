@@ -32,6 +32,7 @@ import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -143,6 +144,18 @@ public class HBaseTarget implements MapReduceTarget {
   public Target outputConf(String key, String value) {
     extraConf.put(key, value);
     return this;
+  }
+
+  @Override
+  public Target fileSystem(FileSystem fileSystem) {
+    // not currently supported/applicable for HBase
+    return this;
+  }
+
+  @Override
+  public FileSystem getFileSystem() {
+    // not currently supported/applicable for HBase
+    return null;
   }
 
   @Override

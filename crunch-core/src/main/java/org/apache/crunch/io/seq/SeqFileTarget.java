@@ -47,9 +47,9 @@ public class SeqFileTarget extends FileTargetImpl {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof PTableType) {
-      return new SeqFileTableSourceTarget(path, (PTableType) ptype);
+      return new SeqFileTableSourceTarget(path, (PTableType) ptype).fileSystem(getFileSystem());
     } else {
-      return new SeqFileSourceTarget(path, ptype);
+      return new SeqFileSourceTarget(path, ptype).fileSystem(getFileSystem());
     }
   }
 }

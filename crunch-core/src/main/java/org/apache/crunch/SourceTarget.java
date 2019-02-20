@@ -17,6 +17,8 @@
  */
 package org.apache.crunch;
 
+import org.apache.hadoop.fs.FileSystem;
+
 /**
  * An interface for classes that implement both the {@code Source} and the
  * {@code Target} interfaces.
@@ -29,4 +31,19 @@ public interface SourceTarget<T> extends Source<T>, Target {
    * re-use the same config keys with different values when necessary.
    */
   SourceTarget<T> conf(String key, String value);
+
+  /**
+   * Adds the {@code Configuration} of the given filesystem such that the source-target can read/write from/to it when
+   * the {@code Pipeline} itself does not have that configuration.
+   * </p>
+   * Changing the filesystem after it is set is not supported and will result in {@link
+   * IllegalStateException}
+   *
+   * @param fileSystem the filesystem
+   * @return this SourceTarget
+   * @throws IllegalStateException if the filesystem has already been set
+   * @throws IllegalArgumentException if the source/target is pointing to a fully qualified Path in a different
+   * FileSystem
+   */
+  SourceTarget<T> fileSystem(FileSystem fileSystem);
 }
