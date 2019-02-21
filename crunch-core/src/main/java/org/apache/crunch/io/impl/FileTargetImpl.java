@@ -259,7 +259,7 @@ public class FileTargetImpl implements PathTarget {
     }
   }
 
-  private void handeOutputsDistributedCopy(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
+  private void handleOutputsDistributedCopy(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
           int maxDistributedCopyTasks) throws IOException {
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(srcPattern), srcPattern);
     if (srcs.length > 0) {

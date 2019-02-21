@@ -35,6 +35,7 @@ import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.common.StatsSetupConst;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -132,6 +133,18 @@ public class HCatSourceTarget extends HCatTarget implements ReadableSourceTarget
   public Source<HCatRecord> inputConf(String key, String value) {
     bundle.set(key, value);
     return this;
+  }
+
+  @Override
+  public SourceTarget<HCatRecord> fileSystem(FileSystem fileSystem) {
+    // not currently supported/applicable for HCatalog
+    return this;
+  }
+
+  @Override
+  public FileSystem getFileSystem() {
+    // not currently supported/applicable for HCatalog
+    return null;
   }
 
   @Override
