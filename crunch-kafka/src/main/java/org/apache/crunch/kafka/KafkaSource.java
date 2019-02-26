@@ -33,6 +33,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapreduce.Job;
@@ -111,6 +112,18 @@ public class KafkaSource
   public Source<Pair<BytesWritable, BytesWritable>> inputConf(String key, String value) {
     inputBundle.set(key, value);
     return this;
+  }
+
+  @Override
+  public Source<Pair<BytesWritable, BytesWritable>> fileSystem(FileSystem fileSystem) {
+    // not currently applicable/supported for Kafka
+    return this;
+  }
+
+  @Override
+  public FileSystem getFileSystem() {
+    // not currently applicable/supported for Kafka
+    return null;
   }
 
   @Override

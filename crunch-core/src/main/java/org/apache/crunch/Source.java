@@ -22,6 +22,7 @@ import java.io.IOException;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Job;
 
 /**
@@ -37,6 +38,26 @@ public interface Source<T> {
    * different values when necessary.
    */
   Source<T> inputConf(String key, String value);
+
+  /**
+   * Adds the {@code Configuration} of the given filesystem such that the source can read from it when the {@code
+   * Pipeline} itself does not have that configuration.
+   * </p>
+   * Changing the filesystem after it is set is not supported and will result in {@link
+   * IllegalStateException}
+   *
+   * @param fileSystem the filesystem
+   * @return this Source
+   * @throws IllegalStateException if the filesystem has already been set
+   * @throws IllegalArgumentException if the source is pointing to a fully qualified Path in a different FileSystem
+   */
+  Source<T> fileSystem(FileSystem fileSystem);
+
+  /**
+   * Returns the {@code FileSystem} for this source or null if no explicit filesystem {@link #fileSystem(FileSystem)
+   * has been set}.
+   */
+  FileSystem getFileSystem();
 
   /**
    * Returns the {@code PType} for this source.

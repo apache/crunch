@@ -102,7 +102,7 @@ public class AvroParquetFileTarget extends FileTargetImpl {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof AvroType && IndexedRecord.class.isAssignableFrom(((AvroType) ptype).getTypeClass())) {
-      return new AvroParquetFileSourceTarget(path, (AvroType<T>) ptype);
+      return new AvroParquetFileSourceTarget(path, (AvroType<T>) ptype).fileSystem(getFileSystem());
     }
     return null;
   }

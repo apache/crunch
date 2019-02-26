@@ -88,7 +88,7 @@ public class AvroFileTarget extends FileTargetImpl {
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
     if (ptype instanceof AvroType) {
-      return new AvroFileSourceTarget<T>(path, (AvroType<T>) ptype);
+      return new AvroFileSourceTarget<T>(path, (AvroType<T>) ptype).fileSystem(getFileSystem());
     }
     return null;
   }

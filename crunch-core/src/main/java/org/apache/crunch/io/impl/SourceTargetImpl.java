@@ -27,6 +27,7 @@ import org.apache.crunch.io.OutputHandler;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Job;
 
 class SourceTargetImpl<T> implements SourceTarget<T> {
@@ -43,6 +44,19 @@ class SourceTargetImpl<T> implements SourceTarget<T> {
   public Source<T> inputConf(String key, String value) {
     source.inputConf(key, value);
     return this;
+  }
+
+  @Override
+  public SourceTarget<T> fileSystem(FileSystem fileSystem) {
+    source.fileSystem(fileSystem);
+    target.fileSystem(fileSystem);
+    return this;
+  }
+
+  @Override
+  public FileSystem getFileSystem() {
+    // could either return source or target filesytem as they are the same
+    return source.getFileSystem();
   }
 
   @Override

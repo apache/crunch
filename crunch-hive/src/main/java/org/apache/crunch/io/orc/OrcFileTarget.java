@@ -45,7 +45,7 @@ public class OrcFileTarget extends FileTargetImpl {
   
   @Override
   public <T> SourceTarget<T> asSourceTarget(PType<T> ptype) {
-    return new OrcFileSourceTarget<T>(path, ptype);
+    return new OrcFileSourceTarget<T>(path, ptype).fileSystem(getFileSystem());
   }
   
 }

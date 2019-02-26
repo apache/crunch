@@ -35,6 +35,7 @@ import org.apache.crunch.types.PTableType;
 import org.apache.crunch.types.PType;
 import org.apache.crunch.types.writable.Writables;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
@@ -125,6 +126,12 @@ public class HBaseSourceTarget extends HBaseTarget implements
   @Override
   public Source<Pair<ImmutableBytesWritable, Result>> inputConf(String key, String value) {
     inputBundle.set(key, value);
+    return this;
+  }
+
+  @Override
+  public SourceTarget<Pair<ImmutableBytesWritable, Result>> fileSystem(FileSystem fileSystem) {
+    // not currently supported/applicable for HBase
     return this;
   }
 

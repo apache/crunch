@@ -19,8 +19,10 @@ package org.apache.crunch.io.impl;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -63,9 +65,10 @@ public class FileTargetImpl implements PathTarget {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileTargetImpl.class);
   
-  protected final Path path;
+  protected Path path;
   private final FormatBundle<? extends FileOutputFormat> formatBundle;
   private final FileNamingScheme fileNamingScheme;
+  private FileSystem fileSystem;
 
   public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass,
                         FileNamingScheme fileNamingScheme) {
@@ -88,6 +91,30 @@ public class FileTargetImpl implements PathTarget {
   public Target outputConf(String key, String value) {
     formatBundle.set(key, value);
     return this;
+  }
+
+  @Override
+  public Target fileSystem(FileSystem fileSystem) {
+    if (this.fileSystem != null) {
+      throw new IllegalStateException("Filesystem already set. Change is not supported.");
+    }
+
+    if (fileSystem != null) {
+      path = fileSystem.makeQualified(path);
+
+      this.fileSystem = fileSystem;
+
+      Configuration fsConf = fileSystem.getConf();
+      for (Entry<String, String> entry : fsConf) {
+        formatBundle.set(entry.getKey(), entry.getValue());
+      }
+    }
+    return this;
+  }
+
+  @Override
+  public FileSystem getFileSystem() {
+    return fileSystem;
   }
 
   @Override
@@ -164,7 +191,8 @@ public class FileTargetImpl implements PathTarget {
   @Override
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
-    FileSystem dstFs = path.getFileSystem(conf);
+    Configuration dstFsConf = getEffectiveBundleConfig(conf);
+    FileSystem dstFs = path.getFileSystem(dstFsConf);
     if (!dstFs.exists(path)) {
       dstFs.mkdirs(path);
     }
@@ -178,7 +206,7 @@ public class FileTargetImpl implements PathTarget {
       if (useDistributedCopy) {
         LOG.info("Source and destination are in different file systems, performing distributed copy from {} to {}", srcPattern,
             path);
-        handeOutputsDistributedCopy(conf, srcPattern, srcFs, dstFs, maxDistributedCopyTasks);
+        handleOutputsDistributedCopy(dstFsConf, srcPattern, srcFs, dstFs, maxDistributedCopyTasks);
       } else {
         LOG.info("Source and destination are in different file systems, performing asynch copies from {} to {}", srcPattern, path);
         handleOutputsAsynchronously(conf, srcPattern, srcFs, dstFs, sameFs, maxThreads);
@@ -198,8 +226,9 @@ public class FileTargetImpl implements PathTarget {
         MoreExecutors.listeningDecorator(
             Executors.newFixedThreadPool(
                 maxThreads));
+    Configuration dstFsConf = getEffectiveBundleConfig(conf);
     for (Path s : srcs) {
-      Path d = getDestFile(conf, s, path, s.getName().contains("-m-"));
+      Path d = getDestFile(dstFsConf, s, path, s.getName().contains("-m-"));
       renameFutures.add(
           executorService.submit(
               new WorkingPathFileMover(conf, s, d, srcFs, dstFs, sameFs)));
@@ -230,7 +259,7 @@ public class FileTargetImpl implements PathTarget {
     }
   }
 
-  private void handeOutputsDistributedCopy(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
+  private void handleOutputsDistributedCopy(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
           int maxDistributedCopyTasks) throws IOException {
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(srcPattern), srcPattern);
     if (srcs.length > 0) {
@@ -356,11 +385,16 @@ public class FileTargetImpl implements PathTarget {
     return null;
   }
 
+  private Configuration getEffectiveBundleConfig(Configuration configuration) {
+    // overlay the bundle config on top of a copy of the supplied config
+    return formatBundle.configure(new Configuration(configuration));
+  }
+
   @Override
   public boolean handleExisting(WriteMode strategy, long lastModForSource, Configuration conf) {
     FileSystem fs = null;
     try {
-      fs = path.getFileSystem(conf);
+      fs = path.getFileSystem(getEffectiveBundleConfig(conf));
     } catch (IOException e) {
       LOG.error("Could not retrieve FileSystem object to check for existing path", e);
       throw new CrunchRuntimeException(e);
