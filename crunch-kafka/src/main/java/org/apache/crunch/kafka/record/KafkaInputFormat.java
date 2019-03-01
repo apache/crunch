@@ -89,6 +89,17 @@ public class KafkaInputFormat extends InputFormat<ConsumerRecord<BytesWritable, 
   private static final String KAFKA_CONNECTION_PROPERTY_BASE = "org.apache.crunch.kafka.connection.properties";
 
   /**
+   * Configuration property for the maximum number of records per input split. Partitions with more qualifying records than this
+   * limit will be divided into multiple splits.
+   */
+  public static final String KAFKA_MAX_RECORDS_PER_SPLIT = "org.apache.crunch.kafka.split.max";
+
+  /**
+   * Default value for {@link #KAFKA_MAX_RECORDS_PER_SPLIT}
+   */
+  public static final long DEFAULT_KAFKA_MAX_RECORDS_PER_SPLIT = 5000000L;
+
+  /**
    * Regex to discover all of the defined Kafka connection properties which should be passed to the ConsumerConfig.
    */
   private static final Pattern CONNECTION_PROPERTY_REGEX = Pattern
@@ -98,16 +109,27 @@ public class KafkaInputFormat extends InputFormat<ConsumerRecord<BytesWritable, 
 
   @Override
   public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
-    Map<TopicPartition, Pair<Long, Long>> offsets = getOffsets(getConf());
+    Configuration conf = getConf();
+    long maxRecordsPerSplit = conf.getLong(KAFKA_MAX_RECORDS_PER_SPLIT, DEFAULT_KAFKA_MAX_RECORDS_PER_SPLIT);
+    if (maxRecordsPerSplit < 1L) {
+      throw new IllegalArgumentException("Invalid " + KAFKA_MAX_RECORDS_PER_SPLIT + " value [" + maxRecordsPerSplit + "]");
+    }
+
+    Map<TopicPartition, Pair<Long, Long>> offsets = getOffsets(conf);
     List<InputSplit> splits = new LinkedList<>();
     for (Map.Entry<TopicPartition, Pair<Long, Long>> entry : offsets.entrySet()) {
       TopicPartition topicPartition = entry.getKey();
 
       long start = entry.getValue().first();
       long end = entry.getValue().second();
-      if (start != end) {
-        splits.add(new KafkaInputSplit(topicPartition.topic(), topicPartition.partition(), entry.getValue().first(),
-            entry.getValue().second()));
+
+      // Chop up any excessively large partitions into multiple splits for more balanced map task durations. This will
+      // also exclude any partitions with no records to read (where the start offset equals the end offset).
+      long splitStart = start;
+      while (splitStart < end) {
+        long splitEnd = Math.min(splitStart + maxRecordsPerSplit, end);
+        splits.add(new KafkaInputSplit(topicPartition.topic(), topicPartition.partition(), splitStart, splitEnd));
+        splitStart = splitEnd;
       }
     }
 

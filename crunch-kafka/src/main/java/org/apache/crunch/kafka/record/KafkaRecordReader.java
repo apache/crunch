@@ -75,7 +75,7 @@ public class KafkaRecordReader<K, V> extends RecordReader<ConsumerRecord<K, V>, 
 
     kafkaConnectionProperties = filterConnectionProperties(getKafkaConnectionProperties(taskAttemptContext.getConfiguration()));
 
-    consumer = new KafkaConsumer<>(kafkaConnectionProperties);
+    consumer = buildConsumer(kafkaConnectionProperties);
 
     KafkaInputSplit split = (KafkaInputSplit) inputSplit;
     topicPartition = split.getTopicPartition();
@@ -100,6 +100,26 @@ public class KafkaRecordReader<K, V> extends RecordReader<ConsumerRecord<K, V>, 
     Configuration config = taskAttemptContext.getConfiguration();
     consumerPollTimeout = config.getLong(CONSUMER_POLL_TIMEOUT_KEY, CONSUMER_POLL_TIMEOUT_DEFAULT);
     maxNumberAttempts = config.getInt(KAFKA_RETRY_ATTEMPTS_KEY, KAFKA_RETRY_ATTEMPTS_DEFAULT);
+  }
+
+  /**
+   * Builds a new kafka consumer
+   *
+   * @param properties
+   *      the properties to configure the consumer
+   * @return a new kafka consumer
+   */
+  // Visible for testing
+  protected KafkaConsumer<K, V> buildConsumer(Properties properties) {
+    return new KafkaConsumer<>(properties);
+  }
+
+  /**
+   * @return the current offset for the reader
+   */
+  // Visible for testing
+  protected long getCurrentOffset() {
+    return currentOffset;
   }
 
   @Override
@@ -173,9 +193,18 @@ public class KafkaRecordReader<K, V> extends RecordReader<ConsumerRecord<K, V>, 
   }
 
   /**
+   * @return the record iterator used by the reader
+   */
+  // Visble for testing
+  protected Iterator<ConsumerRecord<K, V>> getRecordIterator() {
+    return recordIterator;
+  }
+
+  /**
    * Loads new records into the record iterator
    */
-  private void loadRecords() {
+  // Visible for testing
+  protected void loadRecords() {
     if ((recordIterator == null) || !recordIterator.hasNext()) {
       ConsumerRecords<K, V> records = null;
       int numTries = 0;
@@ -212,7 +241,8 @@ public class KafkaRecordReader<K, V> extends RecordReader<ConsumerRecord<K, V>, 
       if ((records == null) || records.isEmpty()){
         LOG.info("No records retrieved from Kafka partition {} therefore nothing to iterate over", topicPartition);
       } else{
-        LOG.info("Retrieved records {} from Kafka partition {} to iterate over", records.count(), topicPartition);
+        LOG.info("Retrieved {} records from Kafka partition {} to iterate over starting from offset {}", new Object[] {
+            records.count(), topicPartition, records.iterator().next().offset()});
       }
 
       recordIterator = records != null ? records.iterator() : ConsumerRecords.<K, V>empty().iterator();
