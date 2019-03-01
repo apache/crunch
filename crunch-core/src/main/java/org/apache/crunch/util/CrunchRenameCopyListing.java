@@ -123,7 +123,15 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
       fileListWriter.close();
       fileListWriter = null;
     } finally {
-      fileListWriter.close();
+      if (fileListWriter != null) {
+        try {
+          fileListWriter.close();
+        } catch(IOException e) {
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("Exception in closing " + fileListWriter, e);
+          }
+        }
+      }
     }
   }
 
