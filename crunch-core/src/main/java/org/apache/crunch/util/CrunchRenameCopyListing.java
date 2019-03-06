@@ -54,13 +54,13 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
   private long totalBytesToCopy = 0;
 
   /**
-   * Protected constructor, to initialize configuration.
+   * Constructor, to initialize configuration.
    *
    * @param configuration The input configuration, with which the source/target FileSystems may be accessed.
    * @param credentials - Credentials object on which the FS delegation tokens are cached. If null
    * delegation token caching is skipped
    */
-  protected CrunchRenameCopyListing(Configuration configuration, Credentials credentials) {
+  public CrunchRenameCopyListing(Configuration configuration, Credentials credentials) {
     super(configuration, credentials);
 
     pathRenames = new HashMap<>();
