@@ -443,6 +443,14 @@ public final class HFileUtils {
         }, HBaseTypes.results());
   }
 
+  /**
+   * Writes out cells to HFiles for incremental load.
+   *
+   * @param cells the HBase cells to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   */
   public static <C extends Cell> void writeToHFilesForIncrementalLoad(
           PCollection<C> cells,
           Connection connection,
@@ -451,6 +459,15 @@ public final class HFileUtils {
     writeToHFilesForIncrementalLoad(cells, connection, tableName, outputPath, false);
   }
 
+  /**
+   * Writes out cells to HFiles for incremental load.
+   *
+   * @param cells the HBase cells to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param fs the filesystem where the HFiles will be written
+   */
   public static <C extends Cell> void writeToHFilesForIncrementalLoad(
       PCollection<C> cells,
       Connection connection,
@@ -460,6 +477,19 @@ public final class HFileUtils {
     writeToHFilesForIncrementalLoad(cells, connection, tableName, outputPath, false, fs);
   }
 
+  /**
+   * Writes out cells to HFiles for incremental load.
+   *
+   * @param cells the HBase cells to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param limitToAffectedRegions used to indicate that the regions the {@code puts} will be loaded into should be
+   *     identified prior to writing HFiles. Identifying the regions ahead of time will reduce the number of reducers needed
+   *     when writing. This is beneficial if the data to be loaded only touches a small enough subset of the total regions in
+   *     the table. If set to false, the number of reducers will equal the number of regions in the table.
+   * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
+   */
   public static <C extends Cell> void writeToHFilesForIncrementalLoad(
       PCollection<C> cells,
       Connection connection,
@@ -470,12 +500,17 @@ public final class HFileUtils {
   }
 
   /**
-   * Writes out HFiles from the provided <code>cells</code> and <code>table</code>. <code>limitToAffectedRegions</code>
-   * is used to indicate that the regions the <code>cells</code> will be loaded into should be identified prior to writing
-   * HFiles. Identifying the regions ahead of time will reduce the number of reducers needed when writing. This is
-   * beneficial if the data to be loaded only touches a small enough subset of the total regions in the table. If set to
-   * false, the number of reducers will equal the number of regions in the table.
+   * Writes out cells to HFiles for incremental load.
    *
+   * @param cells the HBase cells to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param limitToAffectedRegions used to indicate that the regions the {@code puts} will be loaded into should be
+   *     identified prior to writing HFiles. Identifying the regions ahead of time will reduce the number of reducers needed
+   *     when writing. This is beneficial if the data to be loaded only touches a small enough subset of the total regions in
+   *     the table. If set to false, the number of reducers will equal the number of regions in the table.
+   * @param fs the filesystem where the HFiles will be written
    * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
    */
   public static <C extends Cell> void writeToHFilesForIncrementalLoad(
@@ -510,6 +545,14 @@ public final class HFileUtils {
     }
   }
 
+  /**
+   * Writes out puts to HFiles for incremental load.
+   *
+   * @param puts the HBase puts to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   */
   public static void writePutsToHFilesForIncrementalLoad(
           PCollection<Put> puts,
           Connection connection,
@@ -518,6 +561,15 @@ public final class HFileUtils {
     writePutsToHFilesForIncrementalLoad(puts, connection, tableName, outputPath, false);
   }
 
+  /**
+   * Writes out puts to HFiles for incremental load.
+   *
+   * @param puts the HBase puts to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param fs the filesystem where the HFiles will be written
+   */
   public static void writePutsToHFilesForIncrementalLoad(
       PCollection<Put> puts,
       Connection connection,
@@ -527,6 +579,19 @@ public final class HFileUtils {
     writePutsToHFilesForIncrementalLoad(puts, connection, tableName, outputPath, false, fs);
   }
 
+  /**
+   * Writes out puts to HFiles for incremental load.
+   *
+   * @param puts the HBase puts to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param limitToAffectedRegions used to indicate that the regions the {@code puts} will be loaded into should be
+   *     identified prior to writing HFiles. Identifying the regions ahead of time will reduce the number of reducers needed
+   *     when writing. This is beneficial if the data to be loaded only touches a small enough subset of the total regions in
+   *     the table. If set to false, the number of reducers will equal the number of regions in the table.
+   * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
+   */
   public static void writePutsToHFilesForIncrementalLoad(
       PCollection<Put> puts,
       Connection connection,
@@ -537,12 +602,17 @@ public final class HFileUtils {
   }
 
   /**
-   * Writes out HFiles from the provided <code>puts</code> and <code>table</code>. <code>limitToAffectedRegions</code>
-   * is used to indicate that the regions the <code>puts</code> will be loaded into should be identified prior to writing
-   * HFiles. Identifying the regions ahead of time will reduce the number of reducers needed when writing. This is
-   * beneficial if the data to be loaded only touches a small enough subset of the total regions in the table. If set to
-   * false, the number of reducers will equal the number of regions in the table.
+   * Writes out puts to HFiles for incremental load.
    *
+   * @param puts the HBase puts to write
+   * @param connection HBase client connection
+   * @param tableName HBase table name
+   * @param outputPath HFile location
+   * @param limitToAffectedRegions used to indicate that the regions the {@code puts} will be loaded into should be
+   *     identified prior to writing HFiles. Identifying the regions ahead of time will reduce the number of reducers needed
+   *     when writing. This is beneficial if the data to be loaded only touches a small enough subset of the total regions in
+   *     the table. If set to false, the number of reducers will equal the number of regions in the table.
+   * @param fs the filesystem where the HFiles will be written
    * @see <a href='https://issues.apache.org/jira/browse/CRUNCH-588'>CRUNCH-588</a>
    */
   public static void writePutsToHFilesForIncrementalLoad(
