@@ -41,17 +41,23 @@ public class SourceTargetHelper {
     }
     long size = 0;
     for (FileStatus status : stati) {
-      if (status.isDir()) {
-        for (FileStatus st : fs.listStatus(status.getPath())) {
-          size += getPathSize(fs, st.getPath());
-        }
-      } else {
-        size += status.getLen();
-      }
+      size += getPathSize(fs, status);
     }
     return size;
   }
-  
+
+  private static long getPathSize(final FileSystem fs, final FileStatus status) throws IOException {
+    if (status.isDirectory()) {
+      long size = 0;
+      for (final FileStatus st : fs.listStatus(status.getPath())) {
+        size += getPathSize(fs, st);
+      }
+      return size;
+    } else {
+      return status.getLen();
+    }
+  }
+
   public static long getLastModifiedAt(FileSystem fs, Path path) throws IOException {
     FileStatus[] stati = fs.globStatus(path);
     if (stati == null || stati.length == 0) {

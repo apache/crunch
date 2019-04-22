@@ -18,6 +18,11 @@
 package org.apache.crunch.io;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +50,27 @@ public class SourceTargetHelperTest {
   public void testGetNonExistentPathSize_NonExistantPath() throws IOException {
     FileSystem mockFs = new MockFileSystem();
     assertEquals(-1L, SourceTargetHelper.getPathSize(mockFs, new Path("does/not/exist")));
+  }
+
+  @Test
+  public void testGetPathSize_NoRedundantListStatusCalls() throws IOException {
+    final Path parent = new Path("parent");
+    final Path childFile = new Path(parent, "childFile");
+    final Path childDir = new Path(parent, "childDir");
+    final Path grandchildFile = new Path(childDir, "grandchildFile");
+    final FileStatus childFileStatus = new FileStatus(1, false, 0, 0, 0, childFile); // file, size = 1
+    final FileStatus childDirStatus = new FileStatus(0, true, 0, 0, 0, childDir); // directory
+    final FileStatus grandchildFileStatus = new FileStatus(2, false, 0, 0, 0, grandchildFile); // file, size = 2
+
+    final FileSystem fs = mock(FileSystem.class);
+    when(fs.globStatus(parent)).thenReturn(new FileStatus[] { childFileStatus, childDirStatus });
+    when(fs.listStatus(childDir)).thenReturn(new FileStatus[] { grandchildFileStatus });
+
+    assertEquals(3, SourceTargetHelper.getPathSize(fs, parent));
+    verify(fs, times(1)).globStatus(parent);
+    verify(fs, times(1)).listStatus(childDir);
+    verify(fs, times(1)).globStatus(any(Path.class)); // Fails prior to CRUNCH-683
+    verify(fs, times(1)).listStatus(any(Path.class));
   }
 
   /**
