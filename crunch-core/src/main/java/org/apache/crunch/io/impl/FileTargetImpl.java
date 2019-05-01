@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -361,12 +362,12 @@ public class FileTargetImpl implements PathTarget {
       return false;
     }
     FileTargetImpl o = (FileTargetImpl) other;
-    return path.equals(o.path);
+    return Objects.equals(path, o.path) && Objects.equals(formatBundle, o.formatBundle);
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(path).toHashCode();
+    return new HashCodeBuilder().append(path).append(formatBundle).toHashCode();
   }
 
   @Override
