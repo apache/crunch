@@ -19,8 +19,10 @@ package org.apache.crunch.io.impl;
 
 
 import org.apache.commons.io.FileUtils;
+import org.apache.crunch.Target;
 import org.apache.crunch.io.SequentialFileNamingScheme;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.junit.Rule;
@@ -28,6 +30,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,9 +39,12 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class FileTargetImplTest {
 
@@ -76,5 +82,113 @@ public class FileTargetImplTest {
     for(String content: expectedContent){
       assertThat(fileContents, hasItem(content));
     }
+  }
+
+  @Test
+  public void testEquality() {
+    Target target = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance());
+    Target target2 = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance());
+
+    assertEquals(target, target2);
+    assertEquals(target.hashCode(), target2.hashCode());
+  }
+
+  @Test
+  public void testEqualityWithExtraConf() {
+    Target target = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).outputConf("key", "value");
+    Target target2 = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).outputConf("key", "value");
+
+    assertEquals(target, target2);
+    assertEquals(target.hashCode(), target2.hashCode());
+  }
+
+  @Test
+  public void testEqualityWithFileSystem() {
+    Path path = new Path("/path");
+    Path qualifiedPath = path.makeQualified(URI.create("scheme://cluster"), new Path("/"));
+    FileSystem fs = mock(FileSystem.class);
+    when(fs.makeQualified(path)).thenReturn(qualifiedPath);
+    Configuration conf = new Configuration(false);
+    conf.set("key", "value");
+    when(fs.getConf()).thenReturn(conf);
+
+    Target target = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs);
+    Target target2 = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs);
+
+    assertEquals(target, target2);
+    assertEquals(target.hashCode(), target2.hashCode());
+  }
+
+  @Test
+  public void testInequality() {
+    Target target = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance());
+    Target target2 = new FileTargetImpl(new Path("/path2"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance());
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
+  }
+
+  @Test
+  public void testInequalityWithExtraConf() {
+    Target target = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).outputConf("key", "value");
+    Target target2 = new FileTargetImpl(new Path("/path"), SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).outputConf("key", "value2");
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
+  }
+
+  @Test
+  public void testInequalityWithFileSystemURI() {
+    Path path = new Path("/path");
+    Path qualifiedPath = path.makeQualified(URI.create("scheme://cluster"), new Path("/"));
+    Path qualifiedPath2 = path.makeQualified(URI.create("scheme://cluster2"), new Path("/"));
+    FileSystem fs = mock(FileSystem.class);
+    FileSystem fs2 = mock(FileSystem.class);
+    when(fs.makeQualified(path)).thenReturn(qualifiedPath);
+    when(fs2.makeQualified(path)).thenReturn(qualifiedPath2);
+    when(fs.getConf()).thenReturn(new Configuration(false));
+    when(fs2.getConf()).thenReturn(new Configuration(false));
+
+    Target target = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs);
+    Target target2 = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs2);
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
+  }
+
+  @Test
+  public void testInequalityWithFileSystemConf() {
+    Path path = new Path("/path");
+    Path qualifiedPath = path.makeQualified(URI.create("scheme://cluster"), new Path("/"));
+    FileSystem fs = mock(FileSystem.class);
+    FileSystem fs2 = mock(FileSystem.class);
+    when(fs.makeQualified(path)).thenReturn(qualifiedPath);
+    when(fs2.makeQualified(path)).thenReturn(qualifiedPath);
+    Configuration conf = new Configuration(false);
+    conf.set("key", "value");
+    Configuration conf2 = new Configuration(false);
+    conf2.set("key", "value2");
+    when(fs.getConf()).thenReturn(conf);
+    when(fs2.getConf()).thenReturn(conf2);
+
+    Target target = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs);
+    Target target2 = new FileTargetImpl(path, SequenceFileOutputFormat.class,
+        SequentialFileNamingScheme.getInstance()).fileSystem(fs2);
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
   }
 }

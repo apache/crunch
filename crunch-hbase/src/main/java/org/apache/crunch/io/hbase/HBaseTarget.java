@@ -19,6 +19,7 @@ package org.apache.crunch.io.hbase;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -75,13 +76,13 @@ public class HBaseTarget implements MapReduceTarget {
     if (!other.getClass().equals(getClass()))
       return false;
     HBaseTarget o = (HBaseTarget) other;
-    return table.equals(o.table);
+    return Objects.equals(table, o.table) && Objects.equals(extraConf, o.extraConf);
   }
 
   @Override
   public int hashCode() {
     HashCodeBuilder hcb = new HashCodeBuilder();
-    return hcb.append(table).toHashCode();
+    return hcb.append(table).append(extraConf).toHashCode();
   }
 
   @Override

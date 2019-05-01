@@ -17,9 +17,14 @@
  */
 package org.apache.crunch.io.hbase;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+
+import org.apache.crunch.Target;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.junit.Test;
@@ -37,5 +42,41 @@ public class HBaseTargetTest {
     target.configureForMapReduce(job, HBaseTypes.keyValues(), new Path("/"), "name");
 
     assertEquals("12345", job.getConfiguration().get("hbase.client.scanner.timeout.period"));
+  }
+
+  @Test
+  public void testEquality() {
+    Target target = new HBaseTarget("testTable");
+    Target target2 = new HBaseTarget("testTable");
+
+    assertEquals(target, target2);
+    assertEquals(target.hashCode(), target2.hashCode());
+  }
+
+  @Test
+  public void testEqualityWithExtraConf() {
+    Target target = new HBaseTarget("testTable").outputConf("key", "value");
+    Target target2 = new HBaseTarget("testTable").outputConf("key", "value");
+
+    assertEquals(target, target2);
+    assertEquals(target.hashCode(), target2.hashCode());
+  }
+
+  @Test
+  public void testInequality() {
+    Target target = new HBaseTarget("testTable");
+    Target target2 = new HBaseTarget("testTable2");
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
+  }
+
+  @Test
+  public void testInequalityWithExtraConf() {
+    Target target = new HBaseTarget("testTable").outputConf("key", "value");
+    Target target2 = new HBaseTarget("testTable").outputConf("key", "value2");
+
+    assertThat(target, is(not(target2)));
+    assertThat(target.hashCode(), is(not(target2.hashCode())));
   }
 }
