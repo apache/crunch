@@ -31,6 +31,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 
+import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -147,7 +148,7 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
       return false;
     }
     FormatBundle<K> oib = (FormatBundle<K>) other;
-    return formatClass.equals(oib.formatClass) && extraConf.equals(oib.extraConf);
+    return Objects.equals(formatClass, oib.formatClass) && Objects.equals(extraConf, oib.extraConf);
   }
 
   @Override
