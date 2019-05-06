@@ -35,7 +35,7 @@ import java.util.Stack;
 
 /**
  * A custom {@link CopyListing} implementation capable of dynamically renaming
- * the target paths according to a configured set of values.
+ * the target paths according to a {@link #DISTCP_PATH_RENAMES configured set of values}.
  * <p>
  * Once https://issues.apache.org/jira/browse/HADOOP-16147 is available, this
  * class can be significantly simplified.
@@ -79,6 +79,9 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
       }
     }
     LOG.info("Loaded {} path rename entries", pathRenames.size());
+
+    // Clear out the rename configuration property, as it is no longer needed
+    configuration.unset(DISTCP_PATH_RENAMES);
   }
 
   @Override
