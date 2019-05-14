@@ -186,7 +186,7 @@ public class ExternalFilesystemIT {
     }
 
     private static Configuration getDfsConf(String nsName, MiniDFSCluster cluster) {
-        Configuration conf = new Configuration();
+        Configuration conf = new Configuration(false);
         conf.set("dfs.nameservices", nsName);
         conf.set("dfs.client.failover.proxy.provider." + nsName,
             "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider");

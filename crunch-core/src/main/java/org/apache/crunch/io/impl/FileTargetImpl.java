@@ -69,7 +69,6 @@ public class FileTargetImpl implements PathTarget {
   protected Path path;
   private final FormatBundle<? extends FileOutputFormat> formatBundle;
   private final FileNamingScheme fileNamingScheme;
-  private FileSystem fileSystem;
 
   public FileTargetImpl(Path path, Class<? extends FileOutputFormat> outputFormatClass,
                         FileNamingScheme fileNamingScheme) {
@@ -96,26 +95,21 @@ public class FileTargetImpl implements PathTarget {
 
   @Override
   public Target fileSystem(FileSystem fileSystem) {
-    if (this.fileSystem != null) {
+    if (formatBundle.getFileSystem() != null) {
       throw new IllegalStateException("Filesystem already set. Change is not supported.");
     }
 
     if (fileSystem != null) {
       path = fileSystem.makeQualified(path);
 
-      this.fileSystem = fileSystem;
-
-      Configuration fsConf = fileSystem.getConf();
-      for (Entry<String, String> entry : fsConf) {
-        formatBundle.set(entry.getKey(), entry.getValue());
-      }
+      formatBundle.setFileSystem(fileSystem);
     }
     return this;
   }
 
   @Override
   public FileSystem getFileSystem() {
-    return fileSystem;
+    return formatBundle.getFileSystem();
   }
 
   @Override
