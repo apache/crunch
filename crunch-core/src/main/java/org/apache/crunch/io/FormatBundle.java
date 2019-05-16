@@ -168,7 +168,13 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
     Map<String, String> appliedProperties = new HashMap<>();
     for (Entry<String, String> e : fileSystemConf) {
       String key = e.getKey();
-      String value = e.getValue();
+      String value = fileSystemConf.get(key);
+      String originalValue = conf.get(key);
+
+      if (value.equals(originalValue)) {
+        continue;
+      }
+
       Pattern matchingBlacklistPattern = matchingPattern(key, blacklistPatterns);
       if (matchingBlacklistPattern != null) {
         LOG.info("{}={} matches blacklist pattern '{}', omitted",
@@ -183,10 +189,10 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
       }
 
       if (key.equals(DFSConfigKeys.DFS_NAMESERVICES)) {
-        String[] originalValue = conf.getStrings(key);
+        String[] originalArrayValue = conf.getStrings(key);
         if (originalValue != null) {
           String[] newValue = value != null ? value.split(",") : new String[0];
-          String[] merged = mergeValues(originalValue, newValue);
+          String[] merged = mergeValues(originalArrayValue, newValue);
           LOG.info("Merged '{}' into '{}' with result '{}'",
               new Object[] {newValue, DFSConfigKeys.DFS_NAMESERVICES, merged});
           conf.setStrings(key, merged);
@@ -194,17 +200,15 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
           continue;
         }
       }
-      String originalValue = conf.get(key);
-      if (!value.equals(originalValue)) {
-        String message = "Applied {}={} from FS '{}'";
-        if (originalValue != null) {
-          message += ", overriding '{}'";
-        }
-        LOG.info(message,
-            new Object[] {key, value, fileSystem.getUri(), originalValue});
-        conf.set(key, value);
-        appliedProperties.put(key, value);
+
+      String message = "Applied {}={} from FS '{}'";
+      if (originalValue != null) {
+        message += ", overriding '{}'";
       }
+      LOG.info(message,
+          new Object[] {key, value, fileSystem.getUri(), originalValue});
+      conf.set(key, value);
+      appliedProperties.put(key, value);
     }
     return appliedProperties;
   }
