@@ -19,25 +19,30 @@ package org.apache.crunch.io;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 
+import org.apache.crunch.test.TemporaryPath;
+import org.apache.crunch.test.TemporaryPaths;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
+
+import org.junit.Rule;
 import org.junit.Test;
 
 public class SourceTargetHelperTest {
+  @Rule
+  public TemporaryPath tmpDir = TemporaryPaths.create();
 
   @Test
   public void testGetNonexistentPathSize() throws Exception {
-    File tmp = File.createTempFile("pathsize", "");
-    Path tmpPath = new Path(tmp.getAbsolutePath());
-    tmp.delete();
-    FileSystem fs = FileSystem.getLocal(new Configuration(false));
+    Path tmpPath = tmpDir.getRootPath();
+    tmpDir.delete();
+    FileSystem fs = FileSystem.getLocal(tmpDir.getDefaultConfiguration());
     assertEquals(-1L, SourceTargetHelper.getPathSize(fs, tmpPath));
   }
 
@@ -45,6 +50,41 @@ public class SourceTargetHelperTest {
   public void testGetNonExistentPathSize_NonExistantPath() throws IOException {
     FileSystem mockFs = new MockFileSystem();
     assertEquals(-1L, SourceTargetHelper.getPathSize(mockFs, new Path("does/not/exist")));
+  }
+
+  /**
+   * Tests for proper recursive size calculation on a path containing a glob pattern.
+   */
+  @Test
+  public void testGetPathSizeGlobPathRecursive() throws Exception {
+    FileSystem fs = FileSystem.getLocal(tmpDir.getDefaultConfiguration());
+
+    // Create a directory structure with 3 files spread across 2 top-level directories and one subdirectory:
+    // foo1/file1
+    // foo1/subdir/file2
+    // foo2/file3
+    Path foo1 = tmpDir.getPath("foo1");
+    fs.mkdirs(foo1);
+    createFile(fs, new Path(foo1, "file1"), 3);
+
+    Path subDir = tmpDir.getPath("foo1/subdir");
+    fs.mkdirs(subDir);
+    createFile(fs, new Path(subDir, "file2"), 5);
+
+    Path foo2 = tmpDir.getPath("foo2");
+    fs.mkdirs(foo2);
+    createFile(fs, new Path(foo2, "file3"), 11);
+
+    // assert total size with glob pattern (3 + 5 + 11 = 19)
+    assertEquals(19, SourceTargetHelper.getPathSize(fs, tmpDir.getPath("foo*")));
+  }
+
+  private static void createFile(FileSystem fs, Path path, int size) throws IOException {
+    FSDataOutputStream outputStream = fs.create(path);
+    for (int i = 0; i < size; i++) {
+      outputStream.write(0);
+    }
+    outputStream.close();
   }
 
   /**
