@@ -202,7 +202,7 @@ public class FileTargetImpl implements PathTarget {
     Path srcPattern = getSourcePattern(workingPath, index);
     boolean sameFs = isCompatible(srcFs, path);
     boolean useDistributedCopy = conf.getBoolean(RuntimeParameters.FILE_TARGET_USE_DISTCP, true);
-    int maxDistributedCopyTasks = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASKS, 1000);
+    int maxDistributedCopyTasks = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASKS, 100);
     int maxDistributedCopyTaskBandwidthMB = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASK_BANDWIDTH_MB,
         DistCpConstants.DEFAULT_BANDWIDTH_MB);
     int maxThreads = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_THREADS, 1);
