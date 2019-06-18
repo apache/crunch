@@ -18,6 +18,7 @@
 package org.apache.crunch.io;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -34,12 +35,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.conf.Configurable;
@@ -51,8 +50,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.util.StringUtils;
-
-import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +64,12 @@ import org.slf4j.LoggerFactory;
 public class FormatBundle<K> implements Serializable, Writable, Configurable {
 
   private final Logger LOG = LoggerFactory.getLogger(FormatBundle.class);
+  /**
+   * A comma-separated list of properties whose value will be redacted.
+   * MR config to redact job conf properties: https://issues.apache.org/jira/browse/MAPREDUCE-6741
+   */
+  private static final String MR_JOB_REDACTED_PROPERTIES = "mapreduce.job.redacted-properties";
+  private static final String REDACTION_REPLACEMENT_VAL = "*********(redacted)";
 
   private final String FILESYSTEM_BLACKLIST_PATTERNS_KEY = "crunch.fs.props.blacklist.patterns";
   private final String[] FILESYSTEM_BLACKLIST_PATTERNS_DEFAULT =
@@ -166,6 +169,8 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
 
     Configuration fileSystemConf = fileSystem.getConf();
     Map<String, String> appliedProperties = new HashMap<>();
+    Collection<String> redactedProperties = conf.getTrimmedStringCollection(MR_JOB_REDACTED_PROPERTIES);
+
     for (Entry<String, String> e : fileSystemConf) {
       String key = e.getKey();
       String value = fileSystemConf.get(key);
@@ -205,8 +210,13 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
       if (originalValue != null) {
         message += ", overriding '{}'";
       }
-      LOG.info(message,
-          new Object[] {key, value, fileSystem.getUri(), originalValue});
+      if (redactedProperties.contains(key)) {
+        LOG.info(message,
+            new Object[]{key, REDACTION_REPLACEMENT_VAL, fileSystem.getUri(), REDACTION_REPLACEMENT_VAL});
+      } else {
+        LOG.info(message,
+            new Object[]{key, value, fileSystem.getUri(), originalValue});
+      }
       conf.set(key, value);
       appliedProperties.put(key, value);
     }
