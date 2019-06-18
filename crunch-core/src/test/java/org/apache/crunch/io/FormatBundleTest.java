@@ -17,13 +17,19 @@
  */
 package org.apache.crunch.io;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class FormatBundleTest {
   @Test
@@ -66,4 +72,67 @@ public class FormatBundleTest {
     Assert.assertArrayEquals(new String [] {"pipeline-cluster", "fs-cluster"},
         conf.getStrings(DFSConfigKeys.DFS_NAMESERVICES));
   }
+  @Test
+  public void testRedactedFileSystemConfs() throws Exception {
+    Configuration fsConf = new Configuration(false);
+    fsConf.set("fs.s3a.access.key", "accessKey");
+    fsConf.set("fs.s3a.secret.key", "secretKey");
+    fsConf.set("fs.fake.impl", "FakeFileSystem");
+    FileSystem fs = FileSystem.newInstance(fsConf);
+
+    FormatBundle<TextInputFormat> formatBundle = new FormatBundle<>(TextInputFormat.class);
+    formatBundle.setFileSystem(fs);
+
+    Configuration conf = new Configuration();
+    conf.set("mapreduce.job.redacted-properties", "fs.s3a.access.key,fs.s3a.secret.key");
+
+    final FormatBundleTestAppender appender = new FormatBundleTestAppender();
+    final Logger logger = Logger.getRootLogger();
+    logger.addAppender(appender);
+    try {
+      Logger.getLogger(FormatBundleTest.class);
+      formatBundle.configure(conf);
+    } finally {
+      logger.removeAppender(appender);
+    }
+
+    final List<LoggingEvent> log = appender.getLog();
+
+    // redacted value: accesskey
+    Assert.assertThat(log.get(0).getMessage().toString(),
+        is("Applied fs.s3a.access.key=*********(redacted) from FS 'file:///'"));
+
+    // fake non redacted value: fs.fake.impl
+    Assert.assertThat(log.get(1).getMessage().toString(),
+        is("Applied fs.fake.impl=FakeFileSystem from FS 'file:///'"));
+
+    // redacted value: secretKey
+    Assert.assertThat(log.get(2).getMessage().toString(),
+        is("Applied fs.s3a.secret.key=*********(redacted) from FS 'file:///'"));
+  }
+
+
+  class FormatBundleTestAppender extends AppenderSkeleton {
+
+    private final List<LoggingEvent> log = new ArrayList<>();
+
+    @Override
+    public boolean requiresLayout() {
+      return false;
+    }
+
+    @Override
+    protected void append(final LoggingEvent loggingEvent) {
+      log.add(loggingEvent);
+    }
+
+    @Override
+    public void close() {
+    }
+
+    public List<LoggingEvent> getLog() {
+      return new ArrayList<>(log);
+    }
+  }
+
 }
