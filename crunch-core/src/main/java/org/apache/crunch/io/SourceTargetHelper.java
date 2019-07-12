@@ -22,7 +22,9 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 
 /**
  * Functions for configuring the inputs/outputs of MapReduce jobs.
@@ -42,8 +44,8 @@ public class SourceTargetHelper {
     long size = 0;
     for (FileStatus status : stati) {
       if (status.isDir()) {
-        for (FileStatus st : fs.listStatus(status.getPath())) {
-          size += getPathSize(fs, st.getPath());
+        for (RemoteIterator<LocatedFileStatus> iterator = fs.listFiles(status.getPath(), true); iterator.hasNext();) {
+          size += iterator.next().getLen();
         }
       } else {
         size += status.getLen();
