@@ -55,7 +55,6 @@ public class FileSourceImpl<T> implements ReadableSource<T> {
   protected List<Path> paths;
   protected final PType<T> ptype;
   protected final FormatBundle<? extends InputFormat> inputBundle;
-  private FileSystem fileSystem;
 
   public FileSourceImpl(Path path, PType<T> ptype, Class<? extends InputFormat> inputFormatClass) {
     this(path, ptype, FormatBundle.forInput(inputFormatClass));
@@ -91,7 +90,7 @@ public class FileSourceImpl<T> implements ReadableSource<T> {
 
   @Override
   public FileSystem getFileSystem() {
-    return fileSystem;
+    return inputBundle.getFileSystem();
   }
 
   @Override
@@ -102,11 +101,9 @@ public class FileSourceImpl<T> implements ReadableSource<T> {
 
   @Override
   public Source<T> fileSystem(FileSystem fileSystem) {
-    if (this.fileSystem != null) {
+    if (inputBundle.getFileSystem() != null) {
       throw new IllegalStateException("Filesystem already set. Change is not supported.");
     }
-
-    this.fileSystem = fileSystem;
 
     if (fileSystem != null) {
       List<Path> qualifiedPaths = new ArrayList<>(paths.size());
@@ -114,11 +111,7 @@ public class FileSourceImpl<T> implements ReadableSource<T> {
         qualifiedPaths.add(fileSystem.makeQualified(path));
       }
       paths = qualifiedPaths;
-
-      Configuration fsConf = fileSystem.getConf();
-      for (Entry<String, String> entry : fsConf) {
-        inputBundle.set(entry.getKey(), entry.getValue());
-      }
+      inputBundle.setFileSystem(fileSystem);
     }
     return this;
   }
