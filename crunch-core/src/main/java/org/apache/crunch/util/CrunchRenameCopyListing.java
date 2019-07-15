@@ -107,7 +107,7 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
         if (explore) {
           for (FileStatus sourceStatus : sourceFiles) {
             if (LOG.isDebugEnabled()) {
-              LOG.debug("Recording source-path: " + sourceStatus.getPath() + " for copy.");
+              LOG.debug("Recording source-path: {} for copy.", sourceStatus.getPath());
             }
             CopyListingFileStatus sourceCopyListingStatus = DistCpUtils.toCopyListingFileStatus(sourceFS, sourceStatus,
                 preserveAcls && sourceStatus.isDirectory(), preserveXAttrs && sourceStatus.isDirectory(),
@@ -116,7 +116,7 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
 
             if (isDirectoryAndNotEmpty(sourceFS, sourceStatus)) {
               if (LOG.isDebugEnabled()) {
-                LOG.debug("Traversing non-empty source dir: " + sourceStatus.getPath());
+                LOG.debug("Traversing non-empty source dir: {}", sourceStatus.getPath());
               }
               traverseNonEmptyDirectory(fileListWriter, sourceStatus, sourcePathRoot, options);
             }
@@ -131,7 +131,7 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
           fileListWriter.close();
         } catch(IOException e) {
           if (LOG.isDebugEnabled()) {
-            LOG.debug("Exception in closing " + fileListWriter, e);
+            LOG.debug("Exception in closing {}", fileListWriter, e);
           }
         }
       }
@@ -184,14 +184,14 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
     while (!pathStack.isEmpty()) {
       for (FileStatus child : getChildren(sourceFS, pathStack.pop())) {
         if (LOG.isDebugEnabled()) {
-          LOG.debug("Recording source-path: " + sourceStatus.getPath() + " for copy.");
+          LOG.debug("Recording source-path: {} for copy.", sourceStatus.getPath());
         }
         CopyListingFileStatus childCopyListingStatus = DistCpUtils.toCopyListingFileStatus(sourceFS, child,
             preserveAcls && child.isDirectory(), preserveXAttrs && child.isDirectory(), preserveRawXattrs && child.isDirectory());
         writeToFileListing(fileListWriter, childCopyListingStatus, sourcePathRoot, options);
         if (isDirectoryAndNotEmpty(sourceFS, child)) {
           if (LOG.isDebugEnabled()) {
-            LOG.debug("Traversing non-empty source dir: " + sourceStatus.getPath());
+            LOG.debug("Traversing non-empty source dir: {}", sourceStatus.getPath());
           }
           pathStack.push(child);
         }
@@ -205,7 +205,7 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
     if (fileStatus.getPath().equals(sourcePathRoot) && fileStatus.isDirectory() && syncOrOverwrite) {
       // Skip the root-paths when syncOrOverwrite
       if (LOG.isDebugEnabled()) {
-        LOG.debug("Skip " + fileStatus.getPath());
+        LOG.debug("Skip {}", fileStatus.getPath());
       }
       return;
     }
@@ -215,8 +215,8 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
   private void writeToFileListing(SequenceFile.Writer fileListWriter, CopyListingFileStatus fileStatus, Path sourcePathRoot,
       DistCpOptions options) throws IOException {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("REL PATH: " + DistCpUtils.getRelativePath(sourcePathRoot, fileStatus.getPath()) + ", FULL PATH: "
-          + fileStatus.getPath());
+      LOG.debug("REL PATH: {}, FULL PATH: {}",
+          DistCpUtils.getRelativePath(sourcePathRoot, fileStatus.getPath()), fileStatus.getPath());
     }
 
     if (!shouldCopy(fileStatus.getPath(), options)) {
