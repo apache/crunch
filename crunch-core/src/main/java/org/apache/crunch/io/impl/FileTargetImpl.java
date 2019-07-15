@@ -51,13 +51,16 @@ import org.apache.crunch.io.PathTarget;
 import org.apache.crunch.io.SourceTargetHelper;
 import org.apache.crunch.types.Converter;
 import org.apache.crunch.types.PType;
+import org.apache.crunch.util.CrunchRenameCopyListing;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.tools.CopyListing;
 import org.apache.hadoop.tools.DistCp;
+import org.apache.hadoop.tools.DistCpConstants;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,14 +197,17 @@ public class FileTargetImpl implements PathTarget {
     Path srcPattern = getSourcePattern(workingPath, index);
     boolean sameFs = isCompatible(srcFs, path);
     boolean useDistributedCopy = conf.getBoolean(RuntimeParameters.FILE_TARGET_USE_DISTCP, true);
-    int maxDistributedCopyTasks = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASKS, 1000);
+    int maxDistributedCopyTasks = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASKS, 100);
+    int maxDistributedCopyTaskBandwidthMB = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_DISTCP_TASK_BANDWIDTH_MB,
+        DistCpConstants.DEFAULT_BANDWIDTH_MB);
     int maxThreads = conf.getInt(RuntimeParameters.FILE_TARGET_MAX_THREADS, 1);
 
     if (!sameFs) {
       if (useDistributedCopy) {
         LOG.info("Source and destination are in different file systems, performing distributed copy from {} to {}", srcPattern,
             path);
-        handleOutputsDistributedCopy(dstFsConf, srcPattern, srcFs, dstFs, maxDistributedCopyTasks);
+        handleOutputsDistributedCopy(conf, srcPattern, srcFs, dstFs, maxDistributedCopyTasks,
+            maxDistributedCopyTaskBandwidthMB);
       } else {
         LOG.info("Source and destination are in different file systems, performing asynch copies from {} to {}", srcPattern, path);
         handleOutputsAsynchronously(conf, srcPattern, srcFs, dstFs, sameFs, maxThreads);
@@ -210,18 +216,17 @@ public class FileTargetImpl implements PathTarget {
       LOG.info("Source and destination are in the same file system, performing asynch renames from {} to {}", srcPattern, path);
       handleOutputsAsynchronously(conf, srcPattern, srcFs, dstFs, sameFs, maxThreads);
     }
-
   }
 
   private void handleOutputsAsynchronously(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
           boolean sameFs, int maxThreads) throws IOException {
+    Configuration dstFsConf = getEffectiveBundleConfig(conf);
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(srcPattern), srcPattern);
     List<ListenableFuture<Boolean>> renameFutures = Lists.newArrayList();
     ListeningExecutorService executorService =
         MoreExecutors.listeningDecorator(
             Executors.newFixedThreadPool(
                 maxThreads));
-    Configuration dstFsConf = getEffectiveBundleConfig(conf);
     for (Path s : srcs) {
       Path d = getDestFile(dstFsConf, s, path, s.getName().contains("-m-"));
       renameFutures.add(
@@ -255,26 +260,12 @@ public class FileTargetImpl implements PathTarget {
   }
 
   private void handleOutputsDistributedCopy(Configuration conf, Path srcPattern, FileSystem srcFs, FileSystem dstFs,
-          int maxDistributedCopyTasks) throws IOException {
+          int maxTasks, int maxBandwidthMB) throws IOException {
+    Configuration dstFsConf = getEffectiveBundleConfig(conf);
     Path[] srcs = FileUtil.stat2Paths(srcFs.globStatus(srcPattern), srcPattern);
     if (srcs.length > 0) {
-      LOG.info("Distributed copying {} files using at most {} tasks", srcs.length, maxDistributedCopyTasks);
-      // Once https://issues.apache.org/jira/browse/HADOOP-15281 is available, we can use the direct write
-      // distcp optimization if the target path is in S3
-      DistCpOptions options = new DistCpOptions(Arrays.asList(srcs), path);
-      options.setMaxMaps(maxDistributedCopyTasks);
-      options.setOverwrite(true);
-      options.setBlocking(true);
-
-      Configuration distCpConf = new Configuration(conf);
-      // Remove unnecessary and problematic properties from the DistCp configuration. This is necessary since
-      // files referenced by these properties may have already been deleted when the DistCp is being started.
-      distCpConf.unset("mapreduce.job.cache.files");
-      distCpConf.unset("mapreduce.job.classpath.files");
-      distCpConf.unset("tmpjars");
-
       try {
-        DistCp distCp = new DistCp(distCpConf, options);
+        DistCp distCp = createDistCp(srcs, maxTasks, maxBandwidthMB, dstFsConf);
         if (!distCp.execute().isSuccessful()) {
           throw new CrunchRuntimeException("Distributed copy failed from " + srcPattern + " to " + path);
         }
@@ -329,7 +320,38 @@ public class FileTargetImpl implements PathTarget {
     }
     return new Path(dir, outputFilename);
   }
-  
+
+  protected DistCp createDistCp(Path[] srcs, int maxTasks, int maxBandwidthMB, Configuration conf) throws Exception {
+    LOG.info("Distributed copying {} files using at most {} tasks and bandwidth limit of {} MB/s per task",
+        new Object[]{srcs.length, maxTasks, maxBandwidthMB});
+
+    Configuration distCpConf = new Configuration(conf);
+
+    // Remove unnecessary and problematic properties from the DistCp configuration. This is necessary since
+    // files referenced by these properties may have already been deleted when the DistCp is being started.
+    distCpConf.unset("mapreduce.job.cache.files");
+    distCpConf.unset("mapreduce.job.classpath.files");
+    distCpConf.unset("tmpjars");
+
+    // Setup renaming for part files
+    List<String> renames = Lists.newArrayList();
+    for (Path s : srcs) {
+      Path d = getDestFile(conf, s, path, s.getName().contains("-m-"));
+      renames.add(s.getName() + ":" + d.getName());
+    }
+    distCpConf.setStrings(CrunchRenameCopyListing.DISTCP_PATH_RENAMES, renames.toArray(new String[renames.size()]));
+    distCpConf.setClass(DistCpConstants.CONF_LABEL_COPY_LISTING_CLASS, CrunchRenameCopyListing.class, CopyListing.class);
+
+    // Once https://issues.apache.org/jira/browse/HADOOP-15281 is available, we can use the direct write
+    // distcp optimization if the target path is in S3
+    DistCpOptions options = new DistCpOptions(Arrays.asList(srcs), path);
+    options.setMaxMaps(maxTasks);
+    options.setMapBandwidth(maxBandwidthMB);
+    options.setBlocking(true);
+
+    return new DistCp(distCpConf, options);
+  }
+
   /**
    * Extract the partition number from a raw reducer output filename.
    *

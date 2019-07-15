@@ -101,7 +101,7 @@ public class ExternalFilesystemIT {
         pipeline.run();
 
         // assert the output was written correctly
-        try (FSDataInputStream inputStream = dfsCluster2.open(new Path("hdfs://cluster2/output/out0-m-00000"))) {
+        try (FSDataInputStream inputStream = dfsCluster2.open(new Path("hdfs://cluster2/output/part-m-00000"))) {
             String readValue = IOUtils.toString(inputStream).trim();
             Assert.assertEquals(testString, readValue);
         }
