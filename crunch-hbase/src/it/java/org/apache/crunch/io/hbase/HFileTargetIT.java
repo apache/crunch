@@ -57,6 +57,8 @@ import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.KeyValueUtil;
+import org.apache.hadoop.hbase.NamespaceDescriptor;
+import org.apache.hadoop.hbase.NamespaceExistException;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.Tag;
 import org.apache.hadoop.hbase.client.Admin;
@@ -113,6 +115,7 @@ import static org.junit.Assert.fail;
 public class HFileTargetIT implements Serializable {
 
   private static HBaseTestingUtility HBASE_TEST_UTILITY;
+  private static final String TEST_NAMESPACE = "test_namespace";
   private static final byte[] TEST_FAMILY = Bytes.toBytes("test_family");
   private static final byte[] TEST_QUALIFIER = Bytes.toBytes("count");
   private static final Path TEMP_DIR = new Path("/tmp");
@@ -156,15 +159,36 @@ public class HFileTargetIT implements Serializable {
   }
 
   private static Table createTable(int splits) throws Exception {
-    HColumnDescriptor hcol = new HColumnDescriptor(TEST_FAMILY);
-    return createTable(splits, hcol);
+    return createTable(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR, splits);
   }
 
   private static Table createTable(int splits, HColumnDescriptor... hcols) throws Exception {
-    TableName tableName = TableName.valueOf(Bytes.toBytes("test_table_" + RANDOM.nextInt(1000000000)));
+    return createTable(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR, splits, hcols);
+  }
+
+  private static Table createTable(String namespace, int splits) throws Exception {
+    return createTable(namespace, splits, new HColumnDescriptor(TEST_FAMILY));
+  }
+
+  private static Table createTable(String namespace, int splits, HColumnDescriptor... hcols) throws Exception {
+    TableName tableName;
+    if (NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR.equals(namespace)) {
+      tableName = TableName.valueOf(Bytes.toBytes("test_table_" + RANDOM.nextInt(1000000000)));
+    } else {
+      tableName = TableName.valueOf(Bytes.toBytes(namespace + TableName.NAMESPACE_DELIM +
+          "test_table_" + RANDOM.nextInt(1000000000)));
+    }
     HTableDescriptor htable = new HTableDescriptor(tableName);
     for (HColumnDescriptor hcol : hcols) {
       htable.addFamily(hcol);
+    }
+
+    if (!NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR.equals(namespace)) {
+      try {
+        HBASE_TEST_UTILITY.getAdmin().createNamespace(NamespaceDescriptor.create(namespace).build());
+      } catch (NamespaceExistException e) {
+        // Ignore expected exception
+      }
     }
     return HBASE_TEST_UTILITY.createTable(htable,
         Bytes.split(Bytes.toBytes("a"), Bytes.toBytes("z"), splits));
@@ -202,13 +226,23 @@ public class HFileTargetIT implements Serializable {
 
   @Test
   public void testBulkLoad() throws Exception {
+    bulkLoadTest(NamespaceDescriptor.DEFAULT_NAMESPACE_NAME_STR);
+  }
+
+  @Test
+  public void testBulkLoadWithNamespace() throws Exception {
+    bulkLoadTest(TEST_NAMESPACE);
+  }
+
+  private void bulkLoadTest(String namespace) throws Exception {
     Pipeline pipeline = new MRPipeline(HFileTargetIT.class, HBASE_TEST_UTILITY.getConfiguration());
     Path inputPath = copyResourceFileToHDFS("shakes.txt");
     Path outputPath = getTempPathOnHDFS("out");
     byte[] columnFamilyA = Bytes.toBytes("colfamA");
     byte[] columnFamilyB = Bytes.toBytes("colfamB");
     Admin admin = HBASE_TEST_UTILITY.getAdmin();
-    Table testTable = createTable(26, new HColumnDescriptor(columnFamilyA), new HColumnDescriptor(columnFamilyB));
+    Table testTable = createTable(namespace, 26, new HColumnDescriptor(columnFamilyA),
+        new HColumnDescriptor(columnFamilyB));
     Connection connection = admin.getConnection();
     RegionLocator regionLocator = connection.getRegionLocator(testTable.getName());
     PCollection<String> shakespeare = pipeline.read(At.textFile(inputPath, Writables.strings()));
@@ -250,8 +284,9 @@ public class HFileTargetIT implements Serializable {
     Path outputPath2 = getTempPathOnHDFS("out2");
     Admin admin = HBASE_TEST_UTILITY.getAdmin();
     Connection connection = admin.getConnection();
+    // Test both default and non-default namespaces
     Table table1 = createTable(26);
-    Table table2 = createTable(26);
+    Table table2 = createTable(TEST_NAMESPACE, 26);
     RegionLocator regionLocator1 = connection.getRegionLocator(table1.getName());
     RegionLocator regionLocator2 = connection.getRegionLocator(table2.getName());
     LoadIncrementalHFiles loader = new LoadIncrementalHFiles(HBASE_TEST_UTILITY.getConfiguration());

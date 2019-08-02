@@ -532,7 +532,7 @@ public final class HFileUtils {
         table.getName().getNameAsString(),
         regionLocator.getAllRegionLocations());
     Path regionLocationFilePath = new Path(((DistributedPipeline) cells.getPipeline()).createTempPath(),
-        "regionLocations" + table.getName().getNameAsString());
+        "regionLocations_" + table.getName().getNameAsString().replace(":", "_"));
      writeRegionLocationTable(cells.getPipeline().getConfiguration(), regionLocationFilePath, regionLocationTable);
 
     for (HColumnDescriptor f : families) {

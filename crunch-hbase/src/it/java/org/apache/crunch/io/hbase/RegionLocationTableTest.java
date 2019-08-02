@@ -40,7 +40,7 @@ import org.junit.Test;
 
 public class RegionLocationTableTest {
 
-  private static final String TABLE_NAME = "DATA_TABLE";
+  private static final String TABLE_NAME = "namespace:DATA_TABLE";
   private RegionLocationTable regionLocationTable;
 
   @Before
