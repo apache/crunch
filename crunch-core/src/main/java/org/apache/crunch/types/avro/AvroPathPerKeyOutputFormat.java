@@ -44,7 +44,7 @@ public class AvroPathPerKeyOutputFormat<T> extends FileOutputFormat<AvroWrapper<
   public RecordWriter<AvroWrapper<Pair<Utf8, T>>, NullWritable> getRecordWriter(TaskAttemptContext taskAttemptContext)
       throws IOException, InterruptedException {
     Configuration conf = taskAttemptContext.getConfiguration();
-    Path basePath = new Path(getOutputPath(taskAttemptContext), conf.get("mapreduce.output.basename", "part"));
+    Path basePath = new Path(getOutputPath(taskAttemptContext), conf.get("mapreduce.output.basename", "out0"));
     return new AvroFilePerKeyRecordWriter<T>(basePath, getUniqueFile(taskAttemptContext, "part", ".avro"), conf);
   }
 

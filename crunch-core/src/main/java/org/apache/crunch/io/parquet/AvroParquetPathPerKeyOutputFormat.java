@@ -42,7 +42,7 @@ public class AvroParquetPathPerKeyOutputFormat<T> extends FileOutputFormat<AvroW
   public RecordWriter<AvroWrapper<Pair<Utf8, T>>, NullWritable> getRecordWriter(TaskAttemptContext taskAttemptContext)
       throws IOException, InterruptedException {
     Configuration conf = taskAttemptContext.getConfiguration();
-    Path basePath = new Path(getOutputPath(taskAttemptContext), conf.get("mapreduce.output.basename", "part"));
+    Path basePath = new Path(getOutputPath(taskAttemptContext), conf.get("mapreduce.output.basename", "out0"));
     return new AvroParquetFilePerKeyRecordWriter<T>(basePath,
         getUniqueFile(taskAttemptContext, "part", ".parquet"), conf);
   }

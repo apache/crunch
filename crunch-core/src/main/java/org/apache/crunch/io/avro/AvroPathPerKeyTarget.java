@@ -92,6 +92,11 @@ public class AvroPathPerKeyTarget extends FileTargetImpl {
   @Override
   public void handleOutputs(Configuration conf, Path workingPath, int index) throws IOException {
     FileSystem srcFs = workingPath.getFileSystem(conf);
+    if (index == -1) {
+      // Map the -1 index from the SparkRuntime to the (correct) out0 value that
+      // the AvroPathPerKeyTarget expects.
+      index = 0;
+    }
     Path base = new Path(workingPath, PlanningParameters.MULTI_OUTPUT_PREFIX + index);
     if (!srcFs.exists(base)) {
       LOG.warn("Nothing to copy from {}", base);
