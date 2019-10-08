@@ -61,6 +61,10 @@ under the License.
       <groupId>org.apache.crunch</groupId>
       <artifactId>crunch-contrib</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.crunch</groupId>
+      <artifactId>crunch-kafka</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
