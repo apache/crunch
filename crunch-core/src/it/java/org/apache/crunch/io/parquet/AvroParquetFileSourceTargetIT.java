@@ -153,7 +153,7 @@ public class AvroParquetFileSourceTargetIT implements Serializable {
 
     Person person = Iterables.getOnlyElement(ageOnly.materialize());
     assertNull(person.getName());
-    assertEquals(person.getAge(), new Integer(42));
+    assertEquals(person.getAge(), 42);
     assertNull(person.getSiblingnames());
   }
 

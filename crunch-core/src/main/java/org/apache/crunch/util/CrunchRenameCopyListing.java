@@ -219,7 +219,7 @@ public class CrunchRenameCopyListing extends SimpleCopyListing {
           DistCpUtils.getRelativePath(sourcePathRoot, fileStatus.getPath()), fileStatus.getPath());
     }
 
-    if (!shouldCopy(fileStatus.getPath(), options)) {
+    if (!shouldCopy(fileStatus.getPath())) {
       return;
     }
 

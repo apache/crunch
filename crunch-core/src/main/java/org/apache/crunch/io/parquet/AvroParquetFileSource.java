@@ -186,7 +186,7 @@ public class AvroParquetFileSource<T extends IndexedRecord> extends FileSourceIm
       if (field == null) {
         throw new IllegalArgumentException("No field " + fieldName + " in schema: " + baseSchema.getName());
       }
-      fields.add(new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultValue(), field.order()));
+      fields.add(new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultVal(), field.order()));
       return this;
     }
 
