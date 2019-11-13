@@ -89,7 +89,7 @@ under the License.
     <hive.version>2.1.0</hive.version>
     <parquet.version>1.8.1</parquet.version>
     <javassist.version>3.16.1-GA</javassist.version>
-    <jackson.databind.version>2.6.1</jackson.databind.version>
+    <jackson.databind.version>2.10.1</jackson.databind.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
     <slf4j.version>1.6.1</slf4j.version>
