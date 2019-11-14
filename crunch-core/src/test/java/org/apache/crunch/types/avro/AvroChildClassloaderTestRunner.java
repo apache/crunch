@@ -17,6 +17,8 @@
  */
 package org.apache.crunch.types.avro;
 
+import java.io.File;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -45,11 +47,25 @@ public class AvroChildClassloaderTestRunner extends BlockJUnit4ClassRunner {
     private static ClassLoader parentClassLoader;
     private static URL[] crunchURLs;
     static {
-      URLClassLoader systemClassLoader = (URLClassLoader) getSystemClassLoader();
+      ClassLoader classLoader = getSystemClassLoader();
+      URL[] urls = null;
+      if (classLoader instanceof URLClassLoader) {
+	 urls = ((URLClassLoader) classLoader).getURLs();
+      } else {
+        String[] pieces = ManagementFactory.getRuntimeMXBean().getClassPath().split(File.pathSeparator);
+        urls = new URL[pieces.length];
+        for (int i = 0; i < pieces.length; i++) {
+          try {
+            urls[i] = new File(pieces[i]).toURI().toURL();
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
 
       Collection<URL> crunchURLs = new ArrayList<URL>();
       Collection<URL> otherURLs = new ArrayList<URL>();
-      for (URL url : systemClassLoader.getURLs()) {
+      for (URL url : urls) {
         if (url.getPath().matches("^.*/crunch-?.*/.*$")) {
           crunchURLs.add(url);
         } else {
@@ -58,7 +74,7 @@ public class AvroChildClassloaderTestRunner extends BlockJUnit4ClassRunner {
       }
 
       TestClassLoader.crunchURLs = crunchURLs.toArray(new URL[crunchURLs.size()]);
-      parentClassLoader = new URLClassLoader(otherURLs.toArray(new URL[otherURLs.size()]), null);
+      parentClassLoader = new URLClassLoader(otherURLs.toArray(new URL[otherURLs.size()]), classLoader);
     }
 
     public TestClassLoader() {
