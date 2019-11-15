@@ -92,7 +92,7 @@ under the License.
     <jackson.databind.version>2.6.1</jackson.databind.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <libthrift.version>0.8.0</libthrift.version>
-    <slf4j.version>1.6.1</slf4j.version>
+    <slf4j.version>1.7.25</slf4j.version>
     <log4j.version>1.2.15</log4j.version>
     <algebird.version>0.13.2</algebird.version>
     <junit.version>4.10</junit.version>
@@ -269,6 +269,12 @@ under the License.
             <artifactId>avro-ipc</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>com.thoughtworks.paranamer</groupId>
+        <artifactId>paranamer</artifactId>
+        <version>2.8</version>
       </dependency>
 
       <dependency>

@@ -323,6 +323,7 @@ public class KafkaBrokerTestHarness extends ZookeeperTestHarness {
       props.setProperty("num.partitions", String.valueOf(PARTITIONS_PER_TOPIC));
       props.setProperty("default.replication.factor", String.valueOf(brokers));
       props.setProperty("auto.create.topics.enable", Boolean.FALSE.toString());
+      props.setProperty("offsets.topic.replication.factor", String.valueOf(brokers));
 
       props.putAll(baseProperties);
 
