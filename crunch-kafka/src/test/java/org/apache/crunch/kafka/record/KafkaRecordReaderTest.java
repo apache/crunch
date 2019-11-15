@@ -63,9 +63,6 @@ public class KafkaRecordReaderTest {
 
     inputSplit = new KafkaInputSplit(topicPartition.topic(), topicPartition.partition(), startOffset, endOffset);
 
-    when(consumer.beginningOffsets(Collections.singleton(inputSplit.getTopicPartition()))).thenReturn(
-        Collections.singletonMap(inputSplit.getTopicPartition(), 0L));
-
     records = new ConsumerRecords<>(Collections.singletonMap(inputSplit.getTopicPartition(),
         Collections.singletonList(new ConsumerRecord<>("topic", 0, 0, "key", "value"))));
 
