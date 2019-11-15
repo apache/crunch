@@ -388,8 +388,6 @@ public class KafkaRecordsIterableIT {
           entry.getKey().partition(), entry.getValue() + 1, "key", null));
     }
 
-    when(records.isEmpty()).thenReturn(false);
-    when(records.iterator()).thenReturn(returnedRecords.iterator());
     when(mockedConsumer.poll(Matchers.anyLong()))
         //for the fill poll call
         .thenReturn(null)
