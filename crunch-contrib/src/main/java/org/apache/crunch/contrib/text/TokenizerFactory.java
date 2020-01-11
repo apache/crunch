@@ -17,13 +17,13 @@
  */
 package org.apache.crunch.contrib.text;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.Set;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
 
 /**
  * Factory class that constructs {@link Tokenizer} instances for input strings that use a fixed
@@ -65,6 +65,7 @@ public class TokenizerFactory implements Serializable {
    */
   public Tokenizer create(String input) {
     Scanner s = new Scanner(input);
+    s.useLocale(Locale.US); // Use period for floating point number formatting
     if (delim != null) {
       s.useDelimiter(delim);
     }
