@@ -98,7 +98,7 @@ public class AvroParquetFileReaderFactoryTest {
   }
 
   public static Schema.Field cloneField(Schema.Field field) {
-    return new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultValue());
+    return new Schema.Field(field.name(), field.schema(), field.doc(), field.defaultVal());
   }
 
 }
