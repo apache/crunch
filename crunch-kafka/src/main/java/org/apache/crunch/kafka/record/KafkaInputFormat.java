@@ -337,4 +337,22 @@ public class KafkaInputFormat extends InputFormat<ConsumerRecord<BytesWritable, 
     // Strip off the base key + a trailing "."
     return key.substring(KAFKA_CONNECTION_PROPERTY_BASE.length() + 1);
   }
+
+  /**
+   * Generates a {@link Properties} object containing the properties in {@code connectionProperties}, but with every
+   * property prefixed with "org.apache.crunch.kafka.connection.properties".
+   *
+   * @param connectionProperties the properties to be prefixed with "org.apache.crunch.kafka.connection.properties"
+   * @return a {@link Properties} object representing Kafka connection properties
+   */
+  public static Properties tagExistingKafkaConnectionProperties(Properties connectionProperties) {
+    Properties taggedProperties = new Properties();
+
+    for (final String name : connectionProperties.stringPropertyNames()) {
+      taggedProperties.put(generateConnectionPropertyKey(name), connectionProperties.getProperty(name));
+    }
+
+    return taggedProperties;
+  }
+
 }

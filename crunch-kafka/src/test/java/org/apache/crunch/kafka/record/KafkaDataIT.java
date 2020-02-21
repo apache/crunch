@@ -17,24 +17,21 @@
  */
 package org.apache.crunch.kafka.record;
 
-import kafka.api.OffsetRequest;
 import org.apache.crunch.Pair;
-import org.apache.crunch.kafka.*;
+import org.apache.crunch.kafka.ClusterTest;
+import org.apache.crunch.kafka.KafkaUtils;
+import org.apache.crunch.kafka.utils.KafkaTestUtils;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestName;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 import static org.apache.crunch.kafka.ClusterTest.writeData;
 import static org.hamcrest.Matchers.hasItem;
@@ -51,6 +48,7 @@ public class KafkaDataIT {
   private Map<TopicPartition, Long> stopOffsets;
   private Map<TopicPartition, Pair<Long, Long>> offsets;
   private Properties props;
+  private Consumer<String, String> consumer;
 
   @BeforeClass
   public static void init() throws Exception {
@@ -78,6 +76,8 @@ public class KafkaDataIT {
 
       offsets.put(tp, Pair.of(0L, 100L));
     }
+
+    consumer = new KafkaConsumer<>(props);
   }
 
   @Test
@@ -87,8 +87,8 @@ public class KafkaDataIT {
     int total = loops * numPerLoop;
     List<String> keys = writeData(props, topic, "batch", loops, numPerLoop);
 
-    startOffsets = getStartOffsets(props, topic);
-    stopOffsets = getStopOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    stopOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -106,13 +106,5 @@ public class KafkaDataIT {
 
     assertThat(count, is(total));
     assertThat(keys.size(), is(0));
-  }
-
-  private static Map<TopicPartition, Long> getStopOffsets(Properties props, String topic) {
-    return KafkaUtils.getBrokerOffsets(props, OffsetRequest.LatestTime(), topic);
-  }
-
-  private static Map<TopicPartition, Long> getStartOffsets(Properties props, String topic) {
-    return KafkaUtils.getBrokerOffsets(props, OffsetRequest.EarliestTime(), topic);
   }
 }

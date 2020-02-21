@@ -17,20 +17,17 @@
  */
 package org.apache.crunch.kafka;
 
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
 import kafka.serializer.Decoder;
-import kafka.serializer.Encoder;
 import kafka.utils.VerifiableProperties;
 import org.apache.crunch.impl.mr.run.RuntimeParameters;
-import org.apache.crunch.kafka.inputformat.KafkaInputFormat;
-import org.apache.crunch.kafka.inputformat.KafkaInputFormatIT;
-import org.apache.crunch.kafka.inputformat.KafkaRecordReaderIT;
+import org.apache.crunch.kafka.record.KafkaInputFormat;
 import org.apache.crunch.kafka.utils.KafkaBrokerTestHarness;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.junit.AfterClass;
@@ -47,13 +44,9 @@ import java.util.Properties;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    //org.apache.crunch.kafka
-    KafkaSourceIT.class, KafkaRecordsIterableIT.class, KafkaDataIT.class,
-    //org.apache.crunch.kafka.inputformat
-    KafkaRecordReaderIT.class, KafkaInputFormatIT.class, KafkaUtilsIT.class,
-    // org.apache.crunch.kafka.record
-    org.apache.crunch.kafka.record.KafkaSourceIT.class, org.apache.crunch.kafka.record.KafkaRecordsIterableIT.class,
-    org.apache.crunch.kafka.record.KafkaDataIT.class
+        // org.apache.crunch.kafka.record
+        org.apache.crunch.kafka.record.KafkaSourceIT.class, org.apache.crunch.kafka.record.KafkaRecordsIterableIT.class,
+        org.apache.crunch.kafka.record.KafkaDataIT.class
 })
 public class ClusterTest {
 
@@ -140,34 +133,30 @@ public class ClusterTest {
   public static Configuration getConsumerConfig() {
     Configuration kafkaConfig = new Configuration(conf);
     KafkaUtils.addKafkaConnectionProperties(KafkaInputFormat.tagExistingKafkaConnectionProperties(
-        getConsumerProperties()), kafkaConfig);
+            getConsumerProperties()), kafkaConfig);
     return kafkaConfig;
   }
 
   public static List<String> writeData(Properties props, String topic, String batch, int loops, int numValuesPerLoop) {
     Properties producerProps = new Properties();
     producerProps.putAll(props);
-    producerProps.setProperty("serializer.class", StringEncoderDecoder.class.getName());
-    producerProps.setProperty("key.serializer.class", StringEncoderDecoder.class.getName());
+    producerProps.setProperty("value.serializer", StringSerDe.class.getName());
+    producerProps.setProperty("key.serializer", StringSerDe.class.getName());
 
     // Set the default compression used to be snappy
     producerProps.setProperty("compression.codec", "snappy");
     producerProps.setProperty("request.required.acks", "1");
 
-    ProducerConfig producerConfig = new ProducerConfig(producerProps);
-
-    Producer<String, String> producer = new Producer<>(producerConfig);
+    Producer<String, String> producer = new KafkaProducer<>(producerProps);
     List<String> keys = new LinkedList<>();
     try {
       for (int i = 0; i < loops; i++) {
-        List<KeyedMessage<String, String>> events = new LinkedList<>();
         for (int j = 0; j < numValuesPerLoop; j++) {
           String key = "key" + batch + i + j;
           String value = "value" + batch + i + j;
           keys.add(key);
-          events.add(new KeyedMessage<>(topic, key, value));
+          producer.send(new ProducerRecord<>(topic, key, value));
         }
-        producer.send(events);
       }
     } finally {
       producer.close();
@@ -199,24 +188,4 @@ public class ClusterTest {
     }
   }
 
-  public static class StringEncoderDecoder implements Encoder<String>, Decoder<String> {
-
-    public StringEncoderDecoder() {
-
-    }
-
-    public StringEncoderDecoder(VerifiableProperties props) {
-
-    }
-
-    @Override
-    public String fromBytes(byte[] bytes) {
-      return new String(bytes);
-    }
-
-    @Override
-    public byte[] toBytes(String value) {
-      return value.getBytes();
-    }
-  }
 }

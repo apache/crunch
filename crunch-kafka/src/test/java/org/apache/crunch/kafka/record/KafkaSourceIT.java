@@ -17,7 +17,6 @@
  */
 package org.apache.crunch.kafka.record;
 
-import kafka.api.OffsetRequest;
 import org.apache.crunch.MapFn;
 import org.apache.crunch.PCollection;
 import org.apache.crunch.Pair;
@@ -29,6 +28,7 @@ import org.apache.crunch.io.ReadableSource;
 import org.apache.crunch.io.To;
 import org.apache.crunch.kafka.ClusterTest;
 import org.apache.crunch.kafka.KafkaUtils;
+import org.apache.crunch.kafka.utils.KafkaTestUtils;
 import org.apache.crunch.test.TemporaryPath;
 import org.apache.crunch.types.avro.Avros;
 import org.apache.hadoop.conf.Configuration;
@@ -36,24 +36,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestName;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-import static org.apache.crunch.kafka.KafkaUtils.getBrokerOffsets;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.matchers.JUnitMatchers.hasItem;
@@ -121,8 +110,9 @@ public class KafkaSourceIT {
   @Test
   public void sourceReadData() {
     List<String> keys = ClusterTest.writeData(ClusterTest.getProducerProperties(), topic, "batch", 10, 10);
-    Map<TopicPartition, Long> startOffsets = getBrokerOffsets(consumerProps, OffsetRequest.EarliestTime(), topic);
-    Map<TopicPartition, Long> endOffsets = getBrokerOffsets(consumerProps, OffsetRequest.LatestTime(), topic);
+    KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
+    Map<TopicPartition, Long> startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    Map<TopicPartition, Long> endOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -159,8 +149,9 @@ public class KafkaSourceIT {
   @Test
   public void sourceReadDataThroughPipeline() {
     List<String> keys = ClusterTest.writeData(ClusterTest.getProducerProperties(), topic, "batch", 10, 10);
-    Map<TopicPartition, Long> startOffsets = getBrokerOffsets(consumerProps, OffsetRequest.EarliestTime(), topic);
-    Map<TopicPartition, Long> endOffsets = getBrokerOffsets(consumerProps, OffsetRequest.LatestTime(), topic);
+    KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
+    Map<TopicPartition, Long> startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    Map<TopicPartition, Long> endOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -204,8 +195,9 @@ public class KafkaSourceIT {
     config.setLong(KafkaInputFormat.KAFKA_MAX_RECORDS_PER_SPLIT, 7L);
 
     List<String> keys = ClusterTest.writeData(ClusterTest.getProducerProperties(), topic, "batch", 10, 10);
-    Map<TopicPartition, Long> startOffsets = getBrokerOffsets(consumerProps, OffsetRequest.EarliestTime(), topic);
-    Map<TopicPartition, Long> endOffsets = getBrokerOffsets(consumerProps, OffsetRequest.LatestTime(), topic);
+    KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
+    Map<TopicPartition, Long> startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    Map<TopicPartition, Long> endOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {

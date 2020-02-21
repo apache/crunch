@@ -18,8 +18,8 @@
 package org.apache.crunch.kafka.offset.hdfs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kafka.api.OffsetRequest;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.kafka.common.requests.ListOffsetRequest;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -102,7 +102,7 @@ public class OffsetsTest {
     Offsets.PartitionOffset partitionOffset = Offsets.PartitionOffset.Builder.newBuilder()
         .setTopic(testName.getMethodName()).setPartition(1).build();
 
-    assertThat(partitionOffset.getOffset(), is(OffsetRequest.EarliestTime()));
+    assertThat(partitionOffset.getOffset(), is(ListOffsetRequest.EARLIEST_TIMESTAMP));
     assertThat(partitionOffset.getPartition(), is(1));
     assertThat(partitionOffset.getTopic(), is(testName.getMethodName()));
   }

@@ -17,10 +17,17 @@
  */
 package org.apache.crunch.kafka.utils;
 
+import org.apache.crunch.kafka.KafkaUtils;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.common.TopicPartition;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -90,5 +97,14 @@ public class KafkaTestUtils {
 
     return ports;
   }
+
+  public static Map<TopicPartition, Long> getStartOffsets(Consumer<?, ?> consumer, String topic) {
+    return consumer.beginningOffsets(KafkaUtils.getTopicPartitions(consumer, topic), Duration.of(1, ChronoUnit.MINUTES));
+  }
+
+  public static Map<TopicPartition, Long> getStopOffsets(Consumer<?, ?> consumer, String topic) {
+    return consumer.endOffsets(KafkaUtils.getTopicPartitions(consumer, topic), Duration.of(1, ChronoUnit.MINUTES));
+  }
+
 }
 

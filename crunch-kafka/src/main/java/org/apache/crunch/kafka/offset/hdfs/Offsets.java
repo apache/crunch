@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import kafka.api.OffsetRequest;
 import org.apache.commons.lang.StringUtils;
+import org.apache.kafka.common.requests.ListOffsetRequest;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -254,7 +254,7 @@ public class Offsets {
 
       private String topic;
       private int partition = -1;
-      private long offset = OffsetRequest.EarliestTime();
+      private long offset = ListOffsetRequest.EARLIEST_TIMESTAMP;
 
       /**
        * Creates a new builder instance.
@@ -299,7 +299,7 @@ public class Offsets {
 
       /**
        * Set the {@code offset} for the partition offset being built.  If the {@code offset} is not
-       * set then it defaults to {@link OffsetRequest#EarliestTime()}.
+       * set then it defaults to {@link ListOffsetRequest#EARLIEST_TIMESTAMP}.
        *
        * @param offset the topic for the partition offset being built.
        * @return builder instance

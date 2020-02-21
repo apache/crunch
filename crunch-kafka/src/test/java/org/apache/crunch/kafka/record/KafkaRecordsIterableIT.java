@@ -18,9 +18,9 @@
 package org.apache.crunch.kafka.record;
 
 import org.apache.crunch.kafka.*;
+import org.apache.crunch.kafka.utils.KafkaTestUtils;
 import org.junit.Test;
 
-import kafka.api.OffsetRequest;
 import org.apache.crunch.Pair;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -143,8 +143,8 @@ public class KafkaRecordsIterableIT {
     int total = loops * numPerLoop;
     List<String> keys = writeData(props, topic, "batch", loops, numPerLoop);
 
-    startOffsets = getStartOffsets(props, topic);
-    stopOffsets = getStopOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    stopOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -173,8 +173,8 @@ public class KafkaRecordsIterableIT {
     int total = loops * numPerLoop;
     List<String> keys = writeData(props, topic, "batch", loops, numPerLoop);
 
-    startOffsets = getStartOffsets(props, topic);
-    stopOffsets = getStopOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    stopOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -202,8 +202,8 @@ public class KafkaRecordsIterableIT {
     writeData(props, topic, "batch", loops, numPerLoop);
 
     //set the start offsets equal to the stop so won't iterate over anything
-    startOffsets = getStartOffsets(props, topic);
-    stopOffsets = getStartOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    stopOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -230,8 +230,7 @@ public class KafkaRecordsIterableIT {
     writeData(props, topic, "batch", loops, numPerLoop);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
-    //set the start offsets equal to the stop so won't iterate over anything
-    startOffsets = getStartOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
       offsets.put(entry.getKey(), Pair.of(entry.getValue(), entry.getValue() + numPerPartition));
     }
@@ -254,9 +253,8 @@ public class KafkaRecordsIterableIT {
 
     List<String> keys = writeData(props, topic, "batch1", loops, numPerLoop);
 
-    //set the start offsets equal to the stop so won't iterate over anything
-    startOffsets = getStartOffsets(props, topic);
-    stopOffsets = getStopOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStartOffsets(consumer, topic);
+    stopOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
     for (Map.Entry<TopicPartition, Long> entry : startOffsets.entrySet()) {
@@ -288,11 +286,11 @@ public class KafkaRecordsIterableIT {
     List<String> keys = writeData(props, topic, "batch1", loops, numPerLoop);
 
     //set the start offsets equal to the stop so won't iterate over anything
-    startOffsets = getStopOffsets(props, topic);
+    startOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
     List<String> secondKeys = writeData(props, topic, "batch2", loops, numPerLoop);
 
-    stopOffsets = getStopOffsets(props, topic);
+    stopOffsets = KafkaTestUtils.getStopOffsets(consumer, topic);
 
 
     Map<TopicPartition, Pair<Long, Long>> offsets = new HashMap<>();
@@ -404,11 +402,4 @@ public class KafkaRecordsIterableIT {
     data.iterator().next();
   }
 
-  private static Map<TopicPartition, Long> getStopOffsets(Properties props, String topic) {
-    return KafkaUtils.getBrokerOffsets(props, OffsetRequest.LatestTime(), topic);
-  }
-
-  private static Map<TopicPartition, Long> getStartOffsets(Properties props, String topic) {
-    return KafkaUtils.getBrokerOffsets(props, OffsetRequest.EarliestTime(), topic);
-  }
 }
