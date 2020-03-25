@@ -128,10 +128,36 @@ public class RegionLocationTableTest {
         deserialized.getPreferredNodeForRow(new byte[] { 10 }));
   }
 
+  @Test
+  public void testNullRegionInfo() {
+    RegionLocationTable table = RegionLocationTable.create(TABLE_NAME,
+        ImmutableList.of(location(null, serverName("serverA"))));
+    assertNull(
+        table.getPreferredNodeForRow(new byte[] { 15 }));
+  }
+
+  @Test
+  public void testNullServerName() {
+    RegionLocationTable table = RegionLocationTable.create(TABLE_NAME,
+        ImmutableList.of(location(regionInfo(new byte[] { 10 }, new byte[] { 20 }), null)));
+    assertNull(
+        table.getPreferredNodeForRow(new byte[] { 15 }));
+  }
+
   private static HRegionLocation location(byte[] startKey, byte[] endKey, String hostName) {
-    return new HRegionLocation(
-        new HRegionInfo(TableName.valueOf(TABLE_NAME), startKey, endKey),
-        ServerName.valueOf(hostName, 60020, System.currentTimeMillis()));
+    return location(regionInfo(startKey, endKey), serverName(hostName));
+  }
+
+  private static HRegionLocation location(HRegionInfo regionInfo, ServerName serverName) {
+    return new HRegionLocation(regionInfo, serverName);
+  }
+
+  private static HRegionInfo regionInfo(byte[] startKey, byte[] endKey) {
+    return new HRegionInfo(TableName.valueOf(TABLE_NAME), startKey, endKey);
+  }
+
+  private static ServerName serverName(String hostName) {
+    return ServerName.valueOf(hostName, 60020, System.currentTimeMillis());
   }
 
 }

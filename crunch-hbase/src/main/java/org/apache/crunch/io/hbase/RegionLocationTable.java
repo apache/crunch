@@ -29,7 +29,9 @@ import java.util.NavigableMap;
 
 import com.google.common.collect.Maps;
 import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.HRegionInfo;
 import org.apache.hadoop.hbase.HRegionLocation;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.util.Bytes;
 
 /**
@@ -54,13 +56,18 @@ class RegionLocationTable {
   public static RegionLocationTable create(String tableName, List<HRegionLocation> regionLocationList) {
     NavigableMap<byte[], String> regionStartToServerHostName = Maps.newTreeMap(Bytes.BYTES_COMPARATOR);
     for (HRegionLocation regionLocation : regionLocationList) {
-      byte[] startKey = regionLocation.getRegionInfo().getStartKey();
+      HRegionInfo regionInfo = regionLocation.getRegionInfo();
+      if (regionInfo == null) {
+        continue;
+      }
+      byte[] startKey = regionInfo.getStartKey();
       if (startKey == null) {
         startKey = HConstants.EMPTY_START_ROW;
       }
-      regionStartToServerHostName.put(
-          startKey,
-          regionLocation.getServerName().getHostname());
+      ServerName serverName = regionLocation.getServerName();
+      if (serverName != null) {
+        regionStartToServerHostName.put(startKey, serverName.getHostname());
+      }
     }
     return new RegionLocationTable(tableName, regionStartToServerHostName);
   }
