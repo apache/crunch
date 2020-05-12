@@ -26,6 +26,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
@@ -290,7 +291,21 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
       String value = Text.readString(in);
       extraConf.put(key, value);
     }
-    if (in.readBoolean()) {
+    boolean hasFilesystem;
+    try {
+      hasFilesystem = in.readBoolean();
+    } catch (EOFException e) {
+      // This can be a normal occurrence when Crunch is treated as a  cluster-provided
+      // dependency and the version is upgraded.  Some jobs will have been submitted with
+      // code that does not contain the filesystem field.  If those jobs run later with
+      // this code that does contain the field, EOFException will occur trying to read
+      // the non-existent field.
+      LOG.debug("EOFException caught attempting to read filesystem field.  This condition "
+          + "may temporarily occur with jobs that are submitted before but run after a "
+          + "cluster-provided Crunch version upgrade.", e);
+      hasFilesystem = false;
+    }
+    if (hasFilesystem) {
       String fileSystemUri = Text.readString(in);
       Configuration filesystemConf = new Configuration(false);
       filesystemConf.readFields(in);
