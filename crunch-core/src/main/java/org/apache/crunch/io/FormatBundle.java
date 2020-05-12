@@ -300,8 +300,8 @@ public class FormatBundle<K> implements Serializable, Writable, Configurable {
       // code that does not contain the filesystem field.  If those jobs run later with
       // this code that does contain the field, EOFException will occur trying to read
       // the non-existent field.
-      LOG.debug("EOFException caught attempting to read filesystem field.  This condition"
-          + "may temporarily occur with jobs that are submitted before but run after a"
+      LOG.debug("EOFException caught attempting to read filesystem field.  This condition "
+          + "may temporarily occur with jobs that are submitted before but run after a "
           + "cluster-provided Crunch version upgrade.", e);
       hasFilesystem = false;
     }
